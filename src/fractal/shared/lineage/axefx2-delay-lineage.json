@@ -1,0 +1,226 @@
+{
+  "_source": "Re-keyed from src/fractal/shared/lineage/delay-lineage.json against AMP_EFFECT_TYPE_VALUES from src/fractal/axe-fx-ii/params.ts",
+  "_extractedAt": "2026-05-10T19:48:27.105Z",
+  "_enumSize": 18,
+  "_matched": 17,
+  "_unmatched": 1,
+  "_matchedVia": {
+    "direct": 17,
+    "unmatched": 1
+  },
+  "_note": "Status: wiki-documented (🟡), not yet hardware-verified on Q8.02. Records inherit lineage prose from the AM4 wiki entry; the matchVia field surfaces match-strategy confidence — `direct` is name-exact, `reverb-swap` / `abbrev-expand` / `prefix` should be spot-checked. Unmatched entries carry no lineage data; manual fill or a future hardware-aware extractor can promote them.",
+  "records": [
+    {
+      "axefx2Name": "DIGITAL MONO",
+      "wireIndex": 0,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Digital Mono",
+      "description": "Full-range, pristine modern digital delay in mono.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "DIGITAL STEREO",
+      "wireIndex": 1,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Digital Stereo",
+      "description": "Stereo variant — Full-range, pristine modern digital delay in mono, stereo in/stereo out.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "ANALOG MONO",
+      "wireIndex": 2,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Analog Mono",
+      "description": "Features the frequency response and character of an analog delay.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "ANALOG STEREO",
+      "wireIndex": 3,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Analog Stereo",
+      "description": "Stereo variant — Features the frequency response and character of an analog delay, stereo in/stereo out.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "MONO TAPE",
+      "wireIndex": 4,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Mono Tape",
+      "description": "Special type with dedicated algorithm featuring Motor Speed and other tape controls.",
+      "fractalQuotes": [
+        {
+          "text": "The algorithm is a single tape with one record head and two playback heads. The signal from each head can be fed back (Feedback) and panned and leveled.",
+          "url": "https://forum.fractalaudio.com/posts/592160",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "[…] Originally all the delays \"chirped\" when changing the tempo (like many other effects processors). I rewrote the primary delay types so it cross-fades between tempos when you tap a new one to avoid this. The tape delay type doesn't do this so that you can use it as you would an actual tape delay and get all those cool effects by changing the head position or motor speed.",
+          "url": "https://forum.fractalaudio.com/posts/936496",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The tools are already there for wow and flutter. Wow is modulation below 6 Hz. Flutter is above 6 Hz.",
+          "url": "https://forum.fractalaudio.com/threads/a-few-wishes-about-delays.157274/post-1875476",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Wow is low frequency modulation. It occurs with records when the hole in the middle isn't perfectly centered or when the record has a warp or due to motor issues.",
+          "url": "https://forum.fractalaudio.com/threads/a-few-wishes-about-delays.157274/post-1875767",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "That algorithm does not support bit reduction.",
+          "url": "https://forum.fractalaudio.com/threads/tape-delay-bit-reduction-not-working-and-delay-drive-question.101561/#post-1218097",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "LFO 1&2 modulate motor speed in that type.",
+          "url": "https://forum.fractalaudio.com/threads/delay-block-lfo-3-add-motor-speed-as-destination-for-mono-tape-type.190283/post-2362000",
+          "attribution": "Fractal Audio"
+        }
+      ]
+    },
+    {
+      "axefx2Name": "STEREO TAPE",
+      "wireIndex": 5,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Stereo Tape",
+      "description": "A stereo delay with the sonic properties of a tape echo.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "PING-PONG",
+      "wireIndex": 6,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Ping-Pong",
+      "description": "Echoes bounce from left to right automatically.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "DUAL DELAY",
+      "wireIndex": 7,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Dual Delay",
+      "description": "Two delays in one, each with a full set of controls, plus cross-feedback options!",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "REVERSE DELAY",
+      "wireIndex": 8,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Reverse Delay",
+      "description": "This type samples continuously and plays backwards snippets of audio.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "SWEEP DELAY",
+      "wireIndex": 9,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Sweep Delay",
+      "description": "An LFO controls stereo bandpass filters at the output of a stereo delay.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "DUCKING DELAY",
+      "wireIndex": 10,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Ducking Delay",
+      "description": "This stereo delay has dynamic ducking to lower echo levels when you play harder.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "VINTAGE DIGITAL",
+      "wireIndex": 11,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Vintage Digital",
+      "description": "Uses bit-depth reduction for a lo-fi vibe.",
+      "fractalQuotes": [
+        {
+          "text": "It uses virtual crappy converters with low bit depth.",
+          "url": "https://forum.fractalaudio.com/threads/vintage-digital-delay-small-buzz-or-digital-artifact.200612/#post-2503381",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The whole point of the Vintage Digital type is the artifacts. It's modeling an early, primitive digital delay w/ an 8-bit converter.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-24-04-release.201076/page-7#post-2511395",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Just modeled it after how devices in that era worked.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-24-04-release.201076/page-7#post-2511404",
+          "attribution": "Fractal Audio"
+        }
+      ]
+    },
+    {
+      "axefx2Name": "2290 W/ MOD",
+      "wireIndex": 12,
+      "matchVia": "unmatched",
+      "flags": [
+        "VERIFY: no wiki match — Axe-Fx II enum entry has no AM4-lineage counterpart"
+      ]
+    },
+    {
+      "axefx2Name": "AMBIENT STEREO",
+      "wireIndex": 13,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Ambient Stereo",
+      "description": "Ultra-wide echoes with reverb-like diffusion.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "DELUXE MIND GUY",
+      "wireIndex": 14,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Deluxe Mind Guy",
+      "description": "Recreates the sound of a classic memory guy delay pedal.",
+      "basedOn": {
+        "primary": "classic memory guy delay pedal",
+        "source": "fractal-blocks-guide"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "MONO BBD",
+      "wireIndex": 15,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Mono BBD",
+      "description": "Mono delay with vintage \"bucket brigade delay\" tone.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "STEREO BBD",
+      "wireIndex": 16,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Stereo BBD",
+      "description": "Stereo variant — Mono delay with vintage \"bucket brigade delay\" tone, stereo in/stereo out.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "LO-FI TAPE",
+      "wireIndex": 17,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Lo-Fi Tape",
+      "description": "As mono tape, but very low fidelity to create the sound of a worn-out tape.",
+      "fractalQuotes": []
+    }
+  ]
+}

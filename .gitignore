@@ -1,0 +1,55 @@
+node_modules/
+dist/
+build/
+*.log
+.env
+.env.local
+
+# IDE / per-developer config
+.idea/
+.claude/settings.local.json
+
+# Stale path — wiki cache lives at `docs/_private/wiki/` now (covered by
+# the `docs/_private/` rule below). Kept here as a guard against a
+# regression that puts it back at the old location.
+docs/wiki/
+
+# Third-party copyrighted Fractal Audio documentation.
+# Download from https://www.fractalaudio.com/am4-downloads/ to your local
+# clone. See docs/manuals/README.md for the expected file list.
+docs/manuals/*.pdf
+docs/manuals/*.txt
+
+# Other-manufacturer manuals (Roland/Boss, etc.) — copyright-owned PDFs
+# stay local. The .txt extractions alongside them ARE committed, so
+# future Claude Code sessions can grep them without requiring the founder
+# to re-supply the source PDFs.
+docs/manuals/other-gear/*.pdf
+
+# samples/ is entirely local-only — captures, factory preset exports
+# (Fractal IP, don't redistribute), debug logs, and decoded outputs
+# from analysis scripts. Nothing in here is committed. Generated
+# artifacts that DO ship with the binary (e.g. data/factory-data.json,
+# data/axefx2-factory-data.json) live in `data/` so this gitignore
+# stays simple.
+samples/
+
+# Local user backups of preset dumps. Created automatically by the
+# backup_location MCP tool (and by the auto-backup path in
+# save_to_location when overwriting non-factory content with force=true).
+# Each file is ~12 KB; never committed.
+backups/
+
+# SPD-SX reverse-engineering scratch work (BK-019 feasibility probe).
+# Local-only until the format decode stabilizes and we decide what belongs
+# in the repo.
+scripts/spdsx-td0/
+
+# Private operational docs — founder TODO lists, session logs, marketing
+# drafts, internal data dumps. Decided 2026-05-09 (Session 52): keep
+# protocol RE / architecture / decisions / capture-guides / research
+# artefacts committed (the OSS public good); the rest live here, local
+# only. See `docs/_private/STATE.md` for session orientation when
+# working in this repo locally.
+docs/_private/
+docs/spdsx-kits/

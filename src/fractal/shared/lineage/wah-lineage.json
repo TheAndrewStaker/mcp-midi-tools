@@ -1,0 +1,117 @@
+{
+  "_source": "Fractal Audio wiki — Wah_block.md",
+  "_extractedAt": "2026-04-26T02:14:32.329Z",
+  "_catalogSize": 9,
+  "_recordCount": 9,
+  "records": [
+    {
+      "am4Name": "FAS Wah",
+      "wikiName": "FAS Wah",
+      "description": "Fractal Audio's custom model.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Clyde",
+      "wikiName": "Clyde",
+      "description": "Based on original Vox Clyde McCoy wah pedal.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Vox Clyde McCoy",
+        "manufacturer": "Vox",
+        "productName": "Clyde McCoy",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Cry Babe",
+      "wikiName": "Cry Babe",
+      "description": "Based on Dunlop Cry Baby.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Dunlop Cry Baby",
+        "manufacturer": "Dunlop",
+        "productName": "Cry Baby",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "VX846",
+      "wikiName": "VX846",
+      "description": "Based on Vox V846-HW handwired wah pedal (Stevie Ray Vaughan).",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Vox V846 -HW",
+        "manufacturer": "Vox",
+        "model": "V846",
+        "productName": "-HW",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Color-Tone",
+      "wikiName": "Color-Tone",
+      "description": "Based on Sola Colorsound wah pedal.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Colorsound Sola",
+        "manufacturer": "Colorsound",
+        "productName": "Sola",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Funk Wah",
+      "wikiName": "Funk Wah",
+      "description": "Wah sound from the “Shaft” movie.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Mortal",
+      "wikiName": "Mortal",
+      "description": "Based on Morley wah/volume pedal.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Morley wah/volume",
+        "manufacturer": "Morley",
+        "productName": "wah/volume",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "VX845",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no wiki entry found",
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Paragon",
+      "wikiName": "Paragon",
+      "description": "Based on Tycobrahe Parapedal.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Tycobrahe Parapedal",
+        "manufacturer": "Tycobrahe",
+        "productName": "Parapedal",
+        "source": "fractal-wiki"
+      }
+    }
+  ]
+}

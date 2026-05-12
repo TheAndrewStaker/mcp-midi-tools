@@ -1,0 +1,208 @@
+{
+  "_source": "Fractal Audio wiki — Phaser_block.md",
+  "_extractedAt": "2026-04-26T02:14:32.327Z",
+  "_catalogSize": 17,
+  "_recordCount": 17,
+  "records": [
+    {
+      "am4Name": "Digital Mono",
+      "wikiName": "Digital Mono",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Digital Stereo",
+      "wikiName": "Digital Stereo",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Script 45",
+      "wikiName": "Script 45",
+      "description": "See Block 90 above.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Script 90",
+      "wikiName": "Script 90",
+      "description": "See Block 90 above.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Block 90",
+      "wikiName": "Block 90",
+      "description": "Based on the MXR Phase 90 and Phase 45 pedals. The 45 uses subtle two-stage phasing, while the 90 type uses more pronounced four-stage phasing.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "MXR Phase 90 and Phase 45",
+        "manufacturer": "MXR",
+        "productName": "Phase 90 and Phase 45",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Classic Vibe",
+      "wikiName": "Classic Vibe",
+      "description": "The Uni-Vibe effect is a type within the Phaser block. The Classic Vibe type is based on the Fulltone Deja-Vibe.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Fulltone Deja-Vibe",
+        "manufacturer": "Fulltone",
+        "productName": "Deja-Vibe",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Stereo 8-Stage",
+      "wikiName": "Stereo 8-Stage",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Barber Pole",
+      "wikiName": "Barber Pole",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Stripe 90",
+      "wikiName": "Stripe 90",
+      "description": "See Block 90 above.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Naughty Rock",
+      "wikiName": "Naughty Rock",
+      "description": "Based on an Electro-Harmonix [Bad Stone](https://www.ehx.com/products/bad-stone) phaser that uses six stages as opposed to the more famous four-stage EHX Small Stone phaser, it models the original controls: Rate, Manual Shift, Feedback, Auto/Manual.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Electro-Harmonix Bad Stone",
+        "manufacturer": "Electro-Harmonix",
+        "productName": "Bad Stone",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Rate",
+          "Manual Shift",
+          "Feedback",
+          "Auto/Manual"
+        ],
+        "raw": "Rate, Manual Shift, Feedback, Auto/Manual",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "FAS Vibe",
+      "wikiName": "FAS Vibe",
+      "description": "Fractal Audio's custom Uni-Vibe version.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Treadle Phaser",
+      "wikiName": "Treadle-Phaser",
+      "description": "Based on the large chrome Morley Pro PFA Phaser, with a treadle mechanism.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Morley large chrome Pro PFA treadle mechanism",
+        "manufacturer": "Morley",
+        "productName": "large chrome Pro PFA treadle mechanism",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Virtuoso Phaser",
+      "wikiName": "Virtuoso Phaser",
+      "description": "Based on the venerable Maestro MP-1 phaser, made by Bob Moog. This is a six-stage phaser, assumed to be the pedal that Jimmy Page used on Led Zeppelin's Nobody's Fault But Mine.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Maestro MP-1 made Bob Moog",
+        "manufacturer": "Maestro",
+        "model": "MP-1",
+        "productName": "made Bob Moog",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Borg Phaser",
+      "wikiName": "Borg Phaser",
+      "description": "Based on the black-with-orange Korg PHS-1, and models the Speed and Intensity controls on the original pedal.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Orange PHS-1 black-with- Korg and models Speed and Intensity controls on",
+        "manufacturer": "Orange",
+        "model": "PHS-1",
+        "productName": "black-with- Korg and models Speed and Intensity controls on",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Ultra-Super-Mega Phaser",
+      "wikiName": "Ultra-Super-Mega Phaser",
+      "description": "Either based on the Boss Super Phaser, or a Fractal Audio custom phaser type.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Boss Super or Fractal Audio",
+        "manufacturer": "Boss",
+        "productName": "Super or Fractal Audio",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Mutated Twin-Phaser",
+      "wikiName": "Mutated Twin-Phaser",
+      "description": "Based on the multifunctional stereo Mutron Bi-Phase.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Mutron Bi-Phase",
+        "manufacturer": "Mutron",
+        "productName": "Bi-Phase",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Modern Vibe",
+      "wikiName": "Modern Vibe",
+      "description": "Based on a classic UniVibe but with modern input buffer and LFO.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "classic UniVibe",
+        "source": "fractal-wiki"
+      }
+    }
+  ]
+}

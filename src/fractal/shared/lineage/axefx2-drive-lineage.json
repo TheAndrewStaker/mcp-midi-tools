@@ -1,0 +1,575 @@
+{
+  "_source": "Re-keyed from src/fractal/shared/lineage/drive-lineage.json against AMP_EFFECT_TYPE_VALUES from src/fractal/axe-fx-ii/params.ts",
+  "_extractedAt": "2026-05-10T19:48:27.101Z",
+  "_enumSize": 36,
+  "_matched": 34,
+  "_unmatched": 2,
+  "_matchedVia": {
+    "abbrev-expand": 7,
+    "direct": 26,
+    "unmatched": 2,
+    "prefix": 1
+  },
+  "_note": "Status: wiki-documented (🟡), not yet hardware-verified on Q8.02. Records inherit lineage prose from the AM4 wiki entry; the matchVia field surfaces match-strategy confidence — `direct` is name-exact, `reverb-swap` / `abbrev-expand` / `prefix` should be spot-checked. Unmatched entries carry no lineage data; manual fill or a future hardware-aware extractor can promote them.",
+  "records": [
+    {
+      "axefx2Name": "RAT DIST",
+      "wireIndex": 0,
+      "matchVia": "abbrev-expand",
+      "flags": [
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "Rat Distortion",
+      "wikiName": "RAT DISTORTION",
+      "basedOn": {
+        "primary": "Pro Co RAT",
+        "manufacturer": "Pro Co",
+        "productName": "RAT",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "PI FUZZ",
+      "wireIndex": 1,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "PI Fuzz",
+      "wikiName": "PI FUZZ",
+      "description": "Based on the Big Muff Pi fuzz.",
+      "basedOn": {
+        "primary": "Electro-Harmonix Big Muff Pi current",
+        "manufacturer": "Electro-Harmonix",
+        "productName": "Big Muff Pi current",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "TUBE DRV 3-KNOB",
+      "wireIndex": 2,
+      "matchVia": "abbrev-expand",
+      "flags": [
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "Tube Drive 3-Knob",
+      "wikiName": "TUBE DRIVE 3-KNOB",
+      "basedOn": {
+        "primary": "Butler Tube Driver",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": [
+        {
+          "text": "The 3-knob version sounds very different than the 4-knob version.",
+          "url": "https://forum.fractalaudio.com/threads/tube-drive.72784/post-912764",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Both of my actual pedals go silent with the Drive set to zero as would be expected looking at the design.",
+          "url": "https://forum.fractalaudio.com/threads/tube-driver-drive-block-issue.103122/post-1234847",
+          "attribution": "Fractal Audio"
+        }
+      ]
+    },
+    {
+      "axefx2Name": "SUPER OD",
+      "wireIndex": 3,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Super OD",
+      "wikiName": "SUPER OD",
+      "description": "Based on the Boss Super Overdrive",
+      "basedOn": {
+        "primary": "Boss SD-1 Super Overdrive",
+        "manufacturer": "Boss",
+        "model": "SD-1",
+        "productName": "SD-1 Super Overdrive",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "TREBLE BOOST",
+      "wireIndex": 4,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Treble Boost",
+      "wikiName": "TREBLE BOOST",
+      "description": "Based on a classic treble booster.",
+      "basedOn": {
+        "primary": "silicon treble booster circuit",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": [
+        {
+          "text": "Boost was a switch and engaged the effect. Set was the amount of boost and is equivalent to Drive.",
+          "url": "https://forum.fractalaudio.com/threads/question-about-treble-boost.102850/post-1232043",
+          "attribution": "Fractal Audio"
+        }
+      ]
+    },
+    {
+      "axefx2Name": "MID BOOST",
+      "wireIndex": 5,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Mid Boost",
+      "wikiName": "MID BOOST",
+      "description": "A custom mid-boost overdrive.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "T808 OD",
+      "wireIndex": 6,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "T808 OD",
+      "wikiName": "T808 OD",
+      "description": "Based on the Ibanez TS-9 Tube Screamer overdrive.",
+      "basedOn": {
+        "primary": "Ibanez TS-808 Tube Screamer",
+        "manufacturer": "Ibanez",
+        "model": "TS-808",
+        "productName": "TS-808 Tube Screamer",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "FAT RAT",
+      "wireIndex": 7,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Fat Rat",
+      "wikiName": "FAT RAT",
+      "description": "A modified version of the Rat Distortion. Fuller and smoother.",
+      "basedOn": {
+        "primary": "Pro Co modded RAT LED clipping",
+        "manufacturer": "Pro Co",
+        "productName": "modded RAT LED clipping",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "T808 MOD",
+      "wireIndex": 8,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "T808 Mod",
+      "wikiName": "T808 MOD",
+      "description": "Captures the most popular TS overdrive mods.",
+      "basedOn": {
+        "primary": "Ibanez TS-808 Tube Screamer",
+        "manufacturer": "Ibanez",
+        "model": "TS-808",
+        "productName": "TS-808 Tube Screamer",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "OCTAVE DIST",
+      "wireIndex": 9,
+      "matchVia": "abbrev-expand",
+      "flags": [
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "Octave Distortion",
+      "wikiName": "OCTAVE DISTORTION",
+      "basedOn": {
+        "primary": "Tycobrahe Octavia",
+        "manufacturer": "Tycobrahe",
+        "productName": "Octavia",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "PLUS DIST",
+      "wireIndex": 10,
+      "matchVia": "unmatched",
+      "flags": [
+        "VERIFY: no wiki match — Axe-Fx II enum entry has no AM4-lineage counterpart"
+      ]
+    },
+    {
+      "axefx2Name": "HARD FUZZ",
+      "wireIndex": 11,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Hard Fuzz",
+      "wikiName": "HARD FUZZ",
+      "description": "A hard-clipping, 60s-style fuzz.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "FET BOOST",
+      "wireIndex": 12,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "FET Boost",
+      "wikiName": "FET BOOST",
+      "description": "A gentle, smooth clipping booster with tone controls.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "TAPE DIST",
+      "wireIndex": 13,
+      "matchVia": "abbrev-expand",
+      "flags": [
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "Tape Distortion",
+      "wikiName": "TAPE DISTORTION",
+      "description": "Simulates the clipping of an overdriven reel-to-reel tape deck.",
+      "basedOn": {
+        "primary": "tape distortion",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "FULL OD",
+      "wireIndex": 14,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Full OD",
+      "wikiName": "FULL OD",
+      "description": "Based on the Fulltone Fulldrive OD Pedal.",
+      "basedOn": {
+        "primary": "Fulltone Full-Drive 2",
+        "manufacturer": "Fulltone",
+        "productName": "Full-Drive 2",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": [
+        {
+          "text": "The Full OD model is based on a Fulltone Fulldrive 2.",
+          "url": "https://forum.fractalaudio.com/threads/ax8-drives.120062/post-1429331",
+          "attribution": "Fractal Audio"
+        }
+      ]
+    },
+    {
+      "axefx2Name": "BLUES OD",
+      "wireIndex": 15,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Blues OD",
+      "wikiName": "BLUES OD",
+      "description": "Based on the Marshall Bluesbreaker.",
+      "basedOn": {
+        "primary": "Marshall Bluesbreaker Mk1",
+        "manufacturer": "Marshall",
+        "productName": "Bluesbreaker Mk1",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "SHRED DIST",
+      "wireIndex": 16,
+      "matchVia": "abbrev-expand",
+      "flags": [
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "Shred Distortion",
+      "wikiName": "SHRED DISTORTION",
+      "basedOn": {
+        "primary": "Marshall Shredmaster",
+        "manufacturer": "Marshall",
+        "productName": "Shredmaster",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "M-ZONE DIST",
+      "wireIndex": 17,
+      "matchVia": "abbrev-expand",
+      "flags": [
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "M-Zone Distortion",
+      "wikiName": "M-ZONE DISTORTION",
+      "description": "Simulates the Boss Metal Zone, popular for extreme gain settings.",
+      "basedOn": {
+        "primary": "Boss MT-2 Metal Zone",
+        "manufacturer": "Boss",
+        "model": "MT-2",
+        "productName": "Metal Zone",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "BENDER FUZZ",
+      "wireIndex": 18,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Bender Fuzz",
+      "wikiName": "BENDER FUZZ",
+      "description": "Based on the classic Tone Bender circuit.",
+      "basedOn": {
+        "primary": "Sola Sound / Vox Tone Bender",
+        "manufacturer": "Sola Sound",
+        "productName": "/ Vox Tone Bender",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "BB PRE",
+      "wireIndex": 19,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "BB Pre",
+      "wikiName": "BB PRE",
+      "description": "Based on the Xotic BB preamp standard (v1.5)",
+      "basedOn": {
+        "primary": "Xotic BB",
+        "manufacturer": "Xotic",
+        "productName": "BB",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": [
+        {
+          "text": "The BB is more of a clean boost it's just pushing the amp (model).",
+          "url": "https://forum.fractalaudio.com/threads/drive-block-status.147823/page-5#post-1748658",
+          "attribution": "Fractal Audio"
+        }
+      ]
+    },
+    {
+      "axefx2Name": "MASTER FUZZ",
+      "wireIndex": 20,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Master Fuzz",
+      "wikiName": "MASTER FUZZ",
+      "description": "Based on the Maestro Fuzztone, aka \"Satisfaction\" fuzz.",
+      "basedOn": {
+        "primary": "Maestro FZ-1A Gibson Fuzz-Tone",
+        "manufacturer": "Maestro",
+        "model": "FZ-1A",
+        "productName": "Gibson Fuzz-Tone",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "FACE FUZZ",
+      "wireIndex": 21,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Face Fuzz",
+      "wikiName": "FACE FUZZ",
+      "description": "Based on Dallas Arbiter Fuzz Face",
+      "basedOn": {
+        "primary": "Dallas Arbiter Face",
+        "manufacturer": "Dallas Arbiter",
+        "productName": "Face",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "BIT CRUSHER",
+      "wireIndex": 22,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Bit Crusher",
+      "wikiName": "BIT CRUSHER",
+      "description": "Based on a black box we found in the dumpster outside Studio Harshclip.",
+      "basedOn": {
+        "primary": "black box we found in the dumpster outside Studio Harshclip",
+        "source": "fractal-blocks-guide"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "ETERNAL LOVE",
+      "wireIndex": 23,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Eternal Love",
+      "wikiName": "ETERNAL LOVE",
+      "description": "Based on a Lovepedal Eternity.",
+      "basedOn": {
+        "primary": "Lovepedal Eternity",
+        "manufacturer": "Lovepedal",
+        "productName": "Eternity",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "ESOTERIC ACB",
+      "wireIndex": 24,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Esoteric ACB",
+      "wikiName": "ESOTERIC ACB",
+      "description": "Based on the Xotic AC Booster",
+      "basedOn": {
+        "primary": "Xotic AC",
+        "manufacturer": "Xotic",
+        "productName": "AC",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "ESOTERIC RCB",
+      "wireIndex": 25,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Esoteric RCB",
+      "wikiName": "ESOTERIC RCB",
+      "description": "Based on the Xotic RC Booster",
+      "basedOn": {
+        "primary": "Xotic RC v1",
+        "manufacturer": "Xotic",
+        "productName": "RC v1",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "ZEN MASTER",
+      "wireIndex": 26,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Zen Master",
+      "wikiName": "ZEN MASTER",
+      "description": "Based on Hermida Zen Drive.",
+      "basedOn": {
+        "primary": "Hermida Zendrive",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "TUBE DRV 4-KNOB",
+      "wireIndex": 27,
+      "matchVia": "abbrev-expand",
+      "flags": [
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "Tube Drive 4-Knob",
+      "wikiName": "TUBE DRIVE 4-KNOB",
+      "basedOn": {
+        "primary": "Butler Tube Driver",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "FAS LED-DRIVE",
+      "wireIndex": 28,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "FAS LED-Drive",
+      "wikiName": "FAS LED-DRIVE",
+      "description": "LED clipping design by Fractal Audio Systems",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "SDD PREAMP",
+      "wireIndex": 29,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "SDD Preamp",
+      "wikiName": "SDD PREAMP",
+      "description": "Based on the preamp section of the famed SDD digital delay.",
+      "basedOn": {
+        "primary": "Korg SDD-3000",
+        "manufacturer": "Korg",
+        "model": "SDD-3000",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "FET PREAMP",
+      "wireIndex": 30,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "FET Preamp",
+      "wikiName": "FET PREAMP",
+      "description": "Based on (surprise!) a FET preamp.",
+      "basedOn": {
+        "primary": "Boss FA-1 FET",
+        "manufacturer": "Boss",
+        "model": "FA-1",
+        "productName": "FET",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "RUCKUS",
+      "wireIndex": 31,
+      "matchVia": "unmatched",
+      "flags": [
+        "VERIFY: no wiki match — Axe-Fx II enum entry has no AM4-lineage counterpart"
+      ]
+    },
+    {
+      "axefx2Name": "MICRO BOOST",
+      "wireIndex": 32,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Micro Boost",
+      "wikiName": "MICRO BOOST",
+      "description": "Based on MXR Micro Amp, an op amp-driven clean boost pedal.",
+      "basedOn": {
+        "primary": "MXR Micro",
+        "manufacturer": "MXR",
+        "productName": "Micro",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "FAS BOOST",
+      "wireIndex": 33,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "FAS Boost",
+      "wikiName": "FAS BOOST",
+      "description": "Our own take on the boost pedal.",
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "TIMOTHY",
+      "wireIndex": 34,
+      "matchVia": "prefix",
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match",
+        "VERIFY: matched via prefix — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "TIMOTHY DOWN",
+      "wikiName": "TIMOTHY DOWN",
+      "basedOn": {
+        "primary": "Paul Cochrane V4 Timmy",
+        "manufacturer": "Paul Cochrane",
+        "model": "V4",
+        "productName": "Timmy",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": []
+    },
+    {
+      "axefx2Name": "SHIMMER DRIVE",
+      "wireIndex": 35,
+      "matchVia": "direct",
+      "flags": [],
+      "am4Name": "Shimmer Drive",
+      "wikiName": "SHIMMER DRIVE",
+      "description": "An original creation primarily intended as a boost for amps without master volume.",
+      "fractalQuotes": []
+    }
+  ]
+}

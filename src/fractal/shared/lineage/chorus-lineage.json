@@ -1,0 +1,173 @@
+{
+  "_source": "Fractal Audio wiki — Chorus_block.md",
+  "_extractedAt": "2026-04-26T02:14:32.328Z",
+  "_catalogSize": 20,
+  "_recordCount": 20,
+  "records": [
+    {
+      "am4Name": "Digital Mono",
+      "wikiName": "Digital Mono",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Digital Stereo",
+      "wikiName": "Digital Stereo",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Analog Mono",
+      "wikiName": "Analog Mono",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Analog Stereo",
+      "wikiName": "Analog Stereo",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Japan CE-2",
+      "wikiName": "Japan CE-2",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Boss CE-2 Chorus",
+        "manufacturer": "Boss",
+        "model": "CE-2",
+        "productName": "CE-2 Chorus",
+        "source": "heuristic-inferred"
+      }
+    },
+    {
+      "am4Name": "Warm Stereo",
+      "wikiName": "Warm Stereo",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "80s Style",
+      "wikiName": "80's Style",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Triangle Chorus",
+      "wikiName": "Triangle Chorus",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "8-Voice Stereo",
+      "wikiName": "8-Voice Stereo",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Tape Chorus",
+      "wikiName": "Tape Chorus",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Dimension 1",
+      "wikiName": "Dimension 1",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Dimension 2",
+      "wikiName": "Dimension 2",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Dimension 3",
+      "wikiName": "Dimension 3",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "4-Voice Analog",
+      "wikiName": "4-Voice Analog",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "8-Voice Analog",
+      "wikiName": "8-Voice Analog",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Stereo Tri-Chorus",
+      "wikiName": "Stereo Tri-Chorus",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Dual Chorus",
+      "wikiName": "Dual Chorus",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Tape Flanger",
+      "wikiName": "Tape Flanger",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Vibrato 1",
+      "wikiName": "Vibrato 1",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Vibrato 2",
+      "wikiName": "Vibrato 2",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    }
+  ]
+}

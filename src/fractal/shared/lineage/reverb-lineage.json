@@ -1,0 +1,793 @@
+{
+  "_source": "Fractal Audio wiki — Reverb_block.md (family-level)",
+  "_extractedAt": "2026-04-26T02:14:32.324Z",
+  "_catalogSize": 79,
+  "_recordCount": 80,
+  "records": [
+    {
+      "am4Name": "Room, Small",
+      "familyType": "Room",
+      "description": "A natural realistic short reverb in a room",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Room, Medium",
+      "familyType": "Room",
+      "description": "A natural realistic short reverb in a room",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Room, Large",
+      "familyType": "Room",
+      "description": "A natural realistic short reverb in a room",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, Small",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, Medium",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, Large",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Chamber, Small",
+      "familyType": "Chamber",
+      "description": "A bright, resonant reverb natural reverb in a boxy chamber",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Chamber, Medium",
+      "familyType": "Chamber",
+      "description": "A bright, resonant reverb natural reverb in a boxy chamber",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Chamber, Large",
+      "familyType": "Chamber",
+      "description": "A bright, resonant reverb natural reverb in a boxy chamber",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Plate, Small",
+      "familyType": "Plate",
+      "description": "A vibrating reverb plate with a smooth sound",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Plate, Medium",
+      "familyType": "Plate",
+      "description": "A vibrating reverb plate with a smooth sound",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Plate, Large",
+      "familyType": "Plate",
+      "description": "A vibrating reverb plate with a smooth sound",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, St. George's Church",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, St. Albans Cathedral",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Huge, York Minster",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Spring, Small",
+      "familyType": "Spring",
+      "description": "A spring reverb in a guitar amp or standalone reverb tank",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Spring, Medium",
+      "familyType": "Spring",
+      "description": "A spring reverb in a guitar amp or standalone reverb tank",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Spring, Large",
+      "familyType": "Spring",
+      "description": "A spring reverb in a guitar amp or standalone reverb tank",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Huge, Cavern",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Huge, Stone Quarry",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Room, Studio",
+      "familyType": "Room",
+      "description": "A natural realistic short reverb in a room",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Ambience",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Hall, Concert",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, Large Deep",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Room, Recording Studio C",
+      "familyType": "Room",
+      "description": "A natural realistic short reverb in a room",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, North Church",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Bricasti",
+        "manufacturer": "Bricasti",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Hall, South Church",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Bricasti",
+        "manufacturer": "Bricasti",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Plate, London",
+      "familyType": "Plate",
+      "description": "A vibrating reverb plate with a smooth sound",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "EMT 140 plate",
+        "manufacturer": "EMT",
+        "productName": "140 plate",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Plate, Sun",
+      "familyType": "Plate",
+      "description": "A vibrating reverb plate with a smooth sound",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "plate reverb",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Room, Huge",
+      "familyType": "Room",
+      "description": "A natural realistic short reverb in a room",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Room, Drum",
+      "familyType": "Room",
+      "description": "A natural realistic short reverb in a room",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Room, Hallway",
+      "familyType": "Room",
+      "description": "A natural realistic short reverb in a room",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, Tunnel",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Chamber, Deep",
+      "familyType": "Chamber",
+      "description": "A bright, resonant reverb natural reverb in a boxy chamber",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Room, Large Wooden",
+      "familyType": "Room",
+      "description": "A natural realistic short reverb in a room",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Huge, Gymnasium",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Hall, Asylum",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Huge, Deep Space",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Room, Recording Studio A",
+      "familyType": "Room",
+      "description": "A natural realistic short reverb in a room",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Room, Large Tiled",
+      "familyType": "Room",
+      "description": "A natural realistic short reverb in a room",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Plate, Vocal",
+      "familyType": "Plate",
+      "description": "A vibrating reverb plate with a smooth sound",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, Wide",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, Mechanic's",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, Chorus",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Huge, Ice Castle",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Hall, Music",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, Symphony",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Cloud, Cirrocumulus",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Cloud, Cumulonimbus",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Cloud, Nimbostratus",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Cloud, Stratocumulus",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Spring, Deluxe",
+      "familyType": "Spring",
+      "description": "A spring reverb in a guitar amp or standalone reverb tank",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, Opera House",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Hall, Colosseum",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "SFX Sagittarius",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "SFX Gemini",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "SFX Capricorn",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "SFX Aquarius",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "SFX Andromeda",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "SFX Pegasus",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "SFX Centaurus",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "SFX Ursa Major",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "SFX Pleiades",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Echo, Plate",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Echo, Hall",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Echo, Room",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Spring, Tube",
+      "familyType": "Spring",
+      "description": "A spring reverb in a guitar amp or standalone reverb tank",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Spring, Studio",
+      "familyType": "Spring",
+      "description": "A spring reverb in a guitar amp or standalone reverb tank",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Spring, Vibrato-King",
+      "familyType": "Spring",
+      "description": "A spring reverb in a guitar amp or standalone reverb tank",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Spring, British",
+      "familyType": "Spring",
+      "description": "A spring reverb in a guitar amp or standalone reverb tank",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Echo, Fields of Pyrite",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Plate, Gold",
+      "familyType": "Plate",
+      "description": "A vibrating reverb plate with a smooth sound",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Echo, Pitch Plate",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Hall, Marble",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Huge, Mausoleum",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Hall, Nashville Church",
+      "familyType": "Hall",
+      "description": "A natural long reverb in a concert hall. Similar to Room but a little less smooth and with some response peaks. Use this when you want your sound to stand out",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Huge, Warehouse",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no family description found"
+      ]
+    },
+    {
+      "am4Name": "Spring, Lush",
+      "familyType": "Spring",
+      "description": "A spring reverb in a guitar amp or standalone reverb tank",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Spring, Vibrato-King Custom",
+      "familyType": "Spring",
+      "description": "A spring reverb in a guitar amp or standalone reverb tank",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "__block_level__",
+      "description": "Block-level Fractal Audio quotes for the Reverb block",
+      "fractalQuotes": [
+        {
+          "text": "The reverb block in the Axe-Fx is very powerful. Turn the Early Level up and the Late Level down and you can hear the different \"spaces\". There's a variety of room shapes from almost square to long and narrow along with plates and springs. The Size parameter allows you to scale the dimensions.",
+          "url": "https://forum.fractalaudio.com/threads/fas-uad-ocean-way-studio-plugin.125521/#post-1493632",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "[…] He probably knows more about reverb than everyone else combined. He's the father of the Lexicon reverbs. According to him, and I have no reason to doubt him, real reverb (i.e. reverb from a real space) is actually inferior to synthetic reverb. This is due to human perception. Real reverb (and by extension convolution reverb) actually reduces intelligibility and clarity due to the particular nature of the decay, the decay being exponential. Synthetic reverb allows one to craft the decay curve thereby rendering improved clarity. If the decay curve is flat for a period and then exponential it doesn't clutter the desired program material.",
+          "url": "https://forum.fractalaudio.com/threads/is-the-new-reverb-classed-as-a-convolution-reverb.92501/#post-1111995",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "An \"environment simulator\" is reverb. There are dozens of different room shapes/types in the Reverb block. Turn down the late level and increase the early reflections level to hear the \"room\" shape.",
+          "url": "https://forum.fractalaudio.com/threads/environment-simulator.172084/post-2076899",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The algorithm is not intended to be a binaural simulator.",
+          "url": "https://forum.fractalaudio.com/threads/10-questions-about-reverb.173557/post-2101296",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The new reverb algorithms use more CPU than those from the Axe-Fx II would use but they sound better. Also the reverb defaults to high-quality mode whereas the II defaults to normal-quality mode.",
+          "url": "https://www.thegearpage.net/board/index.php?threads/axe-fx-iii.1907452/page-68#post-25886137",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "All the reverbs were designed by me. A handful (i.e., North Church) were inspired by the Bricasti M7. Otherwise they weren't inspired by anything in particular.",
+          "url": "https://thegearforum.com/threads/fractal-reverbs-what-inspired-them.2727/post-93025",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Studio type is a different algorithm. The algorithms are similar but the Studio type is meant to reproduce that classic synthetic reverb sound in units like Lexicon and Eventide.",
+          "url": "https://forum.fractalaudio.com/threads/effects-quality.75657/#post-924391",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "I read many papers on reverb algorithms and there is one by David Griesinger that talks about perceptual qualities of reverb. I then spent a lot of time working out how to apply that to our reverberator. Our reverberator design is based on a modified FDN. FDNs are easy to make sound good. The hard part is making them sound great. The hardest part is getting the attack right.",
+          "url": "https://thegearforum.com/threads/fractal-reverbs-what-inspired-them.2727/post-93107",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "[That's very similar](https://signalsmith-audio.co.uk/writing/2021/lets-write-a-reverb/) to how our reverbs work. Our diffuser times are based on a different rule (hint: Fractals) and there's some trickery with matrix injection but the basics are similar. Hadamard for the decorrelation and Householder for the unitary feedback.",
+          "url": "https://thegearforum.com/threads/helix-dynamic-reverbs.7154/page-3#post-308492",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Reverb is already \"maximally circulant\". The feedback matrix in the reverb block is designed to circulate the data as much as possible. That's why it sounds good and isn't metallic. Old reverb algorithms suffer from metallic sound because the delay lines aren't cross-coupled which results in peaks in the frequency response.",
+          "url": "https://forum.fractalaudio.com/threads/3d-circular-delay.216192/page-3#post-2719530",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "This was an algorithm I've been working on on-and-off over the years. I dusted it off a couple weeks ago and took another go at it. I finally had a couple breakthroughs this week and spent the last few days refining the algorithm and the models. It's a sort of digital waveguide technique. It models the reflections off various points on the spring and the dispersion of the waves as they travel through the spring.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-23-00-public-beta-2.198814/page-2#post-2473171",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Typical guitar amp spring reverb time is between 2.75 and 4 seconds.",
+          "url": "https://forum.fractalaudio.com/threads/looking-for-a-simpler-way-to-browse-spring-reverbs.208267/#post-2600975",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The latest Axe-Fx III firmware has an excellent '63 spring reverb.",
+          "url": "https://thegearforum.com/threads/so-about-that-fender-spring-reverb….8177",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "New Plate Reverb algorithm. This new algorithm captures the dispersion (Star Wars™ Laser “pew, pew” sound) and unique stereo imaging of classic plate reverbs. Dispersion is adjustable via the Dispersion parameter. Typical plates are around 25-50%. Set to higher values to exaggerate the effect. Stereo imaging is adjustable via the Pickup Spacing parameter.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-23-00-public-beta-3.198986/",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The spring algorithm was the impetus for a new plate algorithm.",
+          "url": "https://forum.fractalaudio.com/threads/the-power-of-one-block.198958/post-2475936",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Our plate reverb algorithm is actually quite complex and accurately replicates the sound of a real plate reverb.",
+          "url": "https://forum.fractalaudio.com/threads/neunaber-style-plate-reverb-help.214439/#post-2695027",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Placing reverb after the Cab is the recommended routing. The reverb is stereo. The Cab block may be mono so you would lose the stereo field.",
+          "url": "https://forum.fractalaudio.com/threads/carr-troubles.79817/post-971141",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "You just need to put it before the amp block as this is equivalent to how it would be in the amp. If you put it after the amp block it won't sound the same.",
+          "url": "https://www.thegearpage.net/board/index.php?threads/fender-tonemaster-dr.2078420/page-3#post-29194985",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The spring reverb in a fender amp is \"effectively\" in front because the preamp is essentially linear. Any distortion in a Fender comes from the power amp. Since the preamp is linear putting the reverb before the preamp is the same as putting it after preamp since linear systems are commutative, i.e. x + y = y + x.",
+          "url": "https://www.thegearpage.net/board/index.php?threads/fender-tonemaster-dr.2078420/page-4#post-29198602",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "For authentic spring reverb sound you want the reverb in front of the amp block. A big reason spring reverbs sound the way they do is that they get colored by the amp.",
+          "url": "https://forum.fractalaudio.com/threads/spring-reverbs.110084/page-2#post-1317882",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "[…] The preamp of a Fender doesn't distort much, if at all. Therefore it can be considered linear. Linear systems are commutative. Therefore reverb before the amp is the same as reverb between the preamp and poweramp.",
+          "url": "https://forum.fractalaudio.com/threads/reverb-between-pre-and-power-like-in-a-fender.147574/#post-1744558",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The reverb cannot be placed between the preamp and power amp. Doesn't matter though as putting the reverb before the amp block is the same thing for Fender amps because the preamp doesn't distort.",
+          "url": "https://forum.fractalaudio.com/threads/reverb-between-pre-and-power-like-in-a-fender.147574/page-2#post-1744696",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Reverb is linear time-invariant (LTI) which means it's commutative. IOW, you can put EQ before or after and it will sound the same. It doesn't add harmonics or overtones, by definition. Now our reverb algorithms aren't exactly LTI because they have modulation but they are \"wide sense stationary\" which means for all intents and purposes you can treat them as linear.",
+          "url": "https://forum.fractalaudio.com/threads/to-all-the-pundits.137179/page-6#post-1713205",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "If there isn't distortion or modulation in the delay/reverb then the order is irrelevant since they are then Linear Time Invariant (or shift invariant in digital parlance). If there is a small amount of distortion or modulation then the order is probably still irrelevant. If there is a lot of distortion or modulation then the order may make a difference.",
+          "url": "https://forum.fractalaudio.com/threads/delay-before-reverb-or-reverb-before-delay-whats-your-preference.57690/page-2#post-723087",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The new reverb algorithms use more CPU than those from the Axe-Fx II would use but they sound better. Also the reverb defaults to high-quality mode whereas the II defaults to normal-quality mode.",
+          "url": "https://www.thegearpage.net/board/index.php?threads/axe-fx-iii.1907452/page-68#post-25886137",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "If you want stereo use two blocks and put them in parallel. Pan one hard left and the other hard right.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-23-00-public-beta-2.198814/post-2474280",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The non-spring types create stereo.",
+          "url": "https://forum.fractalaudio.com/threads/spring-reverb-12-09.162502/post-1947330",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Improved Cabinet block room modeling by including floor reflection modeling. The intensity of the floor reflections can be adjusted with the new “Floor Reflections” parameter. Floor reflections play a large role in “amp in the room” sound. If the amp is on a carpet the floor reflections are minimal. If the amp is on a wood or other hard surface the floor reflections are significant. Existing presets will initialize this value to 0% so as to not change the sound. The default value is 50%. Note that negative values, while not realistic, are supported which inverts the reflection.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-2-05-public-beta.146211/post-1729059",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The room stuff in the Cab block is a stripped-down, simplified version of the early reflections generator in the Reverb.",
+          "url": "https://forum.fractalaudio.com/threads/updated-%E2%80%9Croom%E2%80%9D-in-the-cab-block.136611/#post-1618628",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Frankly the best way to do it is to use the Early Reflections in the Reverb block to adjust your room level to taste. It's the same algorithm. The room stuff in the cab block is for those who add reverb in post-processing. The Early Reflections in the Reverb block are matched to the shape and size of the room so they are inherently better.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-version-2-03.145132/page-5#post-1717067",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "If you just want the \"room\" stuff turn the reverb level down and the early reflections level up.",
+          "url": "https://forum.fractalaudio.com/threads/updated-%E2%80%9Croom%E2%80%9D-in-the-cab-block.136611/#post-1618639",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The trick on the Axe-Fx to get room ambience is to do the following in the Reverb block: 1. Set Predelay to 0 1. Increase Early Level and/or decrease Late Level 1. Adjust Size and Mix to taste When Predelay is at zero, the Reverb block is simulating a room. Most of the Reverb presets have a bit of predelay because that is typically done on recordings to get the reverb \"out of the way\". Likewise the Early Reflections are mixed low because most engineers/producers find that they clutter the mix. Playing solo that \"in the room\" thing is cool but it makes the sound difficult to mix.",
+          "url": "https://www.thegearpage.net/board/index.php?threads/whats-lacking-in-todays-modelers.2009046/page-2#post-27810465",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The early reflections in both the cab and reverb block were tweaked. The cab block now assumes a dipole radiator so the reflections off the front wall are inverted.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-2-05-public-beta.146211/page-5#post-1729420",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Adjusting the size parameter will causes artifacts. Always has. Don't adjust it while playing.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-release-version-17-01-public-beta-2.177550/post-2162624",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "It requires a lot of calculations to change the Reverb time which is what Hold does (it increases it to a couple hours or something). If CPU use is high the calculations won't finish during one block which results in a click.",
+          "url": "https://forum.fractalaudio.com/threads/reverb-hold-causes-click-solved.92603/#post-1117218",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "When activating reverb hold the time is increased to infinity. This causes a bunch of stuff to be recalculated which can cause a click.",
+          "url": "https://forum.fractalaudio.com/threads/3-01-reverb-hold-crackling.147319/#post-1741239",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "[…] If you are asking about Low Freq Time and High Freq Time those set the decay time relative to the midband time for the low frequencies and high frequencies. If you set the Time to, say, 10 seconds and High Freq Time to 0.1 the high frequencies will decay to -60 dB in 1 second.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-version-3-00.147127/page-3#post-1738501",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The reverb tail is divided into three bands. The low-frequency band is defined by LF Xover and LF Time. LF Xover sets the crossover frequency between the low and mid bands. LF Time controls the decay time of the low band relative to the mid band. So if LF Time is 2.0 the low-frequency decay time will be twice as long as the mid-band time. You may be able to use this to reduce low-frequency buildup.",
+          "url": "https://forum.fractalaudio.com/threads/low-end-issues-with-verb-is-low-cut-in-the-verb-block-my-answer.105447/#post-1261649",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Another way to EQ the Reverb is to adjust the Low/High Freq Times. The reverb is essentially three bands. Time sets the RT60 (decay time) of the mid band. Low/High Freq Times adjust the decay times of the Low and High bands, respectively, relative to the mid band.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-16-00-beta-12-cygnus-firmware-public-release-candidate.172027/post-2079545",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Put a Megatap block in front of the Reverb block. Set the type to Reverb Pre-Swell. Run the two blocks in parallel to the main signal chain.",
+          "url": "https://forum.fractalaudio.com/threads/bloom-style-reverb.177759/#post-2164939",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Put the Formant Filter block in series with the Reverb block and run the two in parallel with the Reverb Mix at 100%.",
+          "url": "https://forum.fractalaudio.com/threads/strymon-voice-reverb-on-fm9.208977/#post-2610862",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": []
+    }
+  ]
+}

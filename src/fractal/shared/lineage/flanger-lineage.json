@@ -1,0 +1,313 @@
+{
+  "_source": "Fractal Audio wiki — Flanger_block.md",
+  "_extractedAt": "2026-04-26T02:14:32.328Z",
+  "_catalogSize": 32,
+  "_recordCount": 32,
+  "records": [
+    {
+      "am4Name": "Digital Mono",
+      "wikiName": "Digital Mono",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Digital Stereo",
+      "wikiName": "Digital Stereo",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Analog Mono",
+      "wikiName": "Analog Mono",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Analog Stereo",
+      "wikiName": "Analog Stereo",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Thru-Zero",
+      "wikiName": "Thru-Zero",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Stereo Jet",
+      "wikiName": "Stereo Jet",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Zero Flanger",
+      "wikiName": "Zero Flanger",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Pop Flanger",
+      "wikiName": "Pop Flanger",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "MXF-117",
+      "wikiName": "MXF-117",
+      "description": "based on the MXR 117",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "MXR 117",
+        "manufacturer": "MXR",
+        "productName": "117",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "BBF-2",
+      "wikiName": "BBF-2",
+      "description": "based on the Boss BF-2",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Boss BF-2",
+        "manufacturer": "Boss",
+        "model": "BF-2",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Electric Mystery",
+      "wikiName": "Electric Mystery",
+      "description": "based on the EHX Electric Mistress",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "EHX Electric Mistress",
+        "manufacturer": "EHX",
+        "productName": "Electric Mistress",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Deluxe Mystery",
+      "wikiName": "Deluxe Mystery",
+      "description": "based on the EHX Deluxe Electric Mistress",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "EHX Electric Mistress",
+        "manufacturer": "EHX",
+        "productName": "Electric Mistress",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "D/AD 185",
+      "wikiName": "D/AD 185",
+      "description": "based on the A/DA flanger",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "A/DA",
+        "manufacturer": "A/DA",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Manual Thru-Zero Flanger",
+      "wikiName": "Manual Thru-Zero Flanger",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Step Flanger",
+      "wikiName": "Step Flanger",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "FAS Flanger",
+      "wikiName": "FAS Flanger",
+      "description": "custom model",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Binary Flange",
+      "wikiName": "Binary Flange",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Cancel Flange",
+      "wikiName": "Cancel Flange",
+      "description": "through zero-flanging",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Count of Flanging",
+      "wikiName": "Count of Flanging",
+      "description": "based on Dream Theater's Count of Tuscany",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Dream Theater's Count of Tuscany",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Cuda Flange",
+      "wikiName": "Cuda Flange",
+      "description": "Based on Barracuda by Heart",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Barracuda by Heart",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Harmonoflange",
+      "wikiName": "Harmonoflange",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Hemisflange",
+      "wikiName": "Hemisflange",
+      "description": "based on Hemispheres by Rush",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Hemispheres by Rush",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Lofty Flange",
+      "wikiName": "Lofty Flange",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Melodic Flange",
+      "wikiName": "Melodic Flange",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "80's Rack Flanger",
+      "wikiName": "80's Rack Flanger",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Scion Stereo Flange",
+      "wikiName": "Scion Stereo Flange",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Spirit Flange",
+      "wikiName": "Spirit Flange",
+      "description": "based on The Spirit of Radio by Rush",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Spirit of Radio by Rush",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Starship Flanger",
+      "wikiName": "Starship Flanger",
+      "description": "based on Starship Trooper by Yes",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Starship Trooper by Yes",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Trippy Flanger",
+      "wikiName": "Trippy Flanger",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Tubular",
+      "wikiName": "Tubular",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Vowel Flanger",
+      "wikiName": "Vowel Flanger",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    },
+    {
+      "am4Name": "Manual Cancel Flanger",
+      "wikiName": "Manual Cancel Flanger",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no description or lineage identified"
+      ]
+    }
+  ]
+}

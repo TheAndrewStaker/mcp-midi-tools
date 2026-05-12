@@ -1,0 +1,68 @@
+MCP MIDI Tools v0.1.0
+=====================
+
+A local MCP server that lets Claude Desktop talk to your Fractal AM4
+over USB/MIDI.
+
+INSTALL (3 steps)
+-----------------
+
+1. Make sure Claude Desktop is closed (system tray right-click then
+   Quit, not just the window's X).
+
+2. Double-click setup.cmd. A console window opens, registers this
+   folder with Claude Desktop, and waits for you to press a key.
+
+3. Open Claude Desktop. Start a new chat. The mcp-midi-tools server
+   appears in the connector panel (the + button near the chat input).
+
+That's it. Ask Claude something like "Using mcp-midi-tools, list the
+MIDI ports you can see" to confirm the AM4 is reachable.
+
+REQUIREMENTS
+------------
+
+- Windows 10 or 11.
+- Fractal AM4 USB driver installed:
+  https://www.fractalaudio.com/am4-downloads/
+- Claude Desktop installed: https://claude.ai/download
+
+UNINSTALL
+---------
+
+1. Double-click uninstall.cmd to remove the entry from Claude
+   Desktop's config (any other MCP servers you have stay intact).
+2. Delete this folder.
+
+FAQ
+---
+
+Q: Windows says "this file came from another computer." Is it safe?
+A: Yes. v0.1.0 ships unsigned to keep the project free; the source is
+   open at https://github.com/TheAndrewStaker/mcp-midi-tools and you
+   can read every line including the install scripts. To dismiss the
+   warning, right-click the downloaded ZIP, choose Properties, tick
+   Unblock, then extract.
+
+Q: setup.cmd ran but Claude Desktop doesn't see the tools.
+A: Make sure you fully quit Claude Desktop (system tray right-click
+   then Quit) before reopening. Closing the window with X leaves it
+   running in the background, and it only reads the config at
+   startup.
+
+Q: Can I move this folder after install?
+A: Yes, but you'll need to re-run setup.cmd from the new location so
+   the config points at the right paths.
+
+LICENSE
+-------
+
+Apache License 2.0. See LICENSE for full text. Unaffiliated community
+tool. "Fractal Audio" and "AM4" are trademarks of Fractal Audio
+Systems, Inc. See NOTICE for the full trademark statement.
+
+LINKS
+-----
+
+- Source + issues: https://github.com/TheAndrewStaker/mcp-midi-tools
+- Forum thread:    [link goes in the launch post]

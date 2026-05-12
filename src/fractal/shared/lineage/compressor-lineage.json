@@ -1,0 +1,338 @@
+{
+  "_source": "Fractal Audio wiki — Compressor_block.md",
+  "_extractedAt": "2026-04-26T02:14:32.326Z",
+  "_catalogSize": 19,
+  "_recordCount": 19,
+  "records": [
+    {
+      "am4Name": "VCA Modern Compressor",
+      "wikiName": "Modern VCA Compressor",
+      "description": "It's not disclosed on what device this type is based.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Econo-Dyno-Comp",
+      "wikiName": "Econo-Dyno-Comp",
+      "description": "Low CPU version of Dynami-Comp algorithm. This replaces the former PEDAL 1 type.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Dynami-Comp Modern",
+      "wikiName": "Dynami-Comp Modern",
+      "description": "Based on MXR’s M-102 Dyna Comp pedal.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [
+        {
+          "text": "The Dynamicomp type is based on a Dynacomp.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-version-21-02-public-beta-beta-2.191173/post-2375490",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The attack time is dynamic. The greater the output of the compression circuit the faster the attack time.",
+          "url": "https://forum.fractalaudio.com/threads/compressor-attack-release-default-settings.183692/post-2260540",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The attack time is actually dynamic and a function of the input level. Our algorithm models this. The higher the input level, the lower the attack time.",
+          "url": "https://forum.fractalaudio.com/threads/compressor-attack-release-default-settings.183692/post-2260136",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Our model is based on the original ones that used the CA3080A. New ones use an LM13700.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-version-21-02-public-beta-beta-2.191173/post-2375507",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "A Ross-type circuit.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-28-00-public-beta-beta-4.211395/#post-2643757",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "MXR M-102 Dyna Comp",
+        "manufacturer": "MXR",
+        "model": "M-102",
+        "productName": "Dyna Comp",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Dynamics Processor",
+      "wikiName": "Dynamics Processor",
+      "description": "The Dynamics Processor allows compression or expansion with a single control. When set to negative values, the block compresses the signal. When set to positive values, the block expands the signal. A Dynamics Processor is also available in the Amp block on some products.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Optical Compressor",
+      "wikiName": "Optical Compressor",
+      "description": "Based on classic optical rackmount compressors, e.g. LA-2A, famous for their smooth sound.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [
+        {
+          "text": "Based on classic optical rackmount compressors.",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The Optical Compressor model is based on a LA-2A.",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "Teletronix LA-2A Leveling Amplifier",
+        "manufacturer": "Teletronix",
+        "model": "LA-2A",
+        "productName": "LA-2A Leveling Amplifier",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Vari-Mu Tube Compressor",
+      "wikiName": "Vari-Mu Tube Compressor",
+      "fractalQuotes": [
+        {
+          "text": "Based on a tube compressor using “remote-cutoff” tubes for gain control.",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [
+        "RENAME_NOTE: Previously titled Tube Compressor."
+      ],
+      "basedOn": {
+        "primary": "Fairchild",
+        "manufacturer": "Fairchild",
+        "source": "fractal-forum-quote"
+      }
+    },
+    {
+      "am4Name": "Analog Compressor",
+      "wikiName": "Analog Compressor",
+      "description": "Natural soft-knee response, capturing the vibe of the classic compressors of the 70s and 80s.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Dynami-Comp Classic",
+      "wikiName": "Dynami-Comp Classic",
+      "description": "Based on MXR’s M-102 Dyna Comp pedal.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [
+        {
+          "text": "The Dynamicomp type is based on a Dynacomp.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-version-21-02-public-beta-beta-2.191173/post-2375490",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The attack time is dynamic. The greater the output of the compression circuit the faster the attack time.",
+          "url": "https://forum.fractalaudio.com/threads/compressor-attack-release-default-settings.183692/post-2260540",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The attack time is actually dynamic and a function of the input level. Our algorithm models this. The higher the input level, the lower the attack time.",
+          "url": "https://forum.fractalaudio.com/threads/compressor-attack-release-default-settings.183692/post-2260136",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Our model is based on the original ones that used the CA3080A. New ones use an LM13700.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-version-21-02-public-beta-beta-2.191173/post-2375507",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "A Ross-type circuit.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-28-00-public-beta-beta-4.211395/#post-2643757",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "MXR M-102 Dyna Comp",
+        "manufacturer": "MXR",
+        "model": "M-102",
+        "productName": "Dyna Comp",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "JFET Studio Compressor",
+      "wikiName": "JFET Studio Compressor",
+      "description": "Based on classic JFET (Field Effect Transistor) rackmount compressors, like the Urei 1176.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [
+        {
+          "text": "Based on classic JFET rackmount compressors.",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "Urei 1176 Limiting Amplifier",
+        "manufacturer": "Urei",
+        "model": "1176",
+        "productName": "1176 Limiting Amplifier",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "VCA FF Sustainer",
+      "wikiName": "VCA FF Sustainer",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: wiki entry has no description, lineage, or quotes"
+      ]
+    },
+    {
+      "am4Name": "VCA Bus Compressor",
+      "wikiName": "VCA Bus Compressor",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "SSL VCA feedback design",
+        "manufacturer": "SSL",
+        "productName": "VCA feedback design",
+        "source": "fractal-forum-quote"
+      }
+    },
+    {
+      "am4Name": "VCA FB Sustainer",
+      "wikiName": "VCA FB Sustainer",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: wiki entry has no description, lineage, or quotes"
+      ]
+    },
+    {
+      "am4Name": "Compander",
+      "wikiName": "Compander",
+      "description": "A compander is a compressor followed by an expander. The Transients control adjusts the transient modification. Values less than zero soften the attack, value greater than zero emphasize the attack.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [
+        {
+          "text": "A Compander is a compressor followed by an expander. If the time constant of the compressor and expander are the same (and the \"channel\" is perfect, i.e. linear and lossless) then a Compander is transparent. If you change the time constant of one vs. the other the transients will become distorted. The \"Transients\" knob controls the time constant mismatch. Negative values smooth the transients, positive values enhance the transients. A Compander with transient enhancement can be used on kick drums, bass, etc. to add punch. Transient reduction can be used to reduce plosives. For guitar you can use the Compander to add or remove pick attack.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-release-version-16-03.174033/post-2109538",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The first step in adding compansion to the delay block was creating a compander algorithm. So I created a Compander type first in the Compressor block. Once that was working I used that algorithm in the Delay block. The Compander allows you to set the Ratio, Time, Transients and Level. Turn Transients down and the attack is reduced, turn it up and the attack is enhanced. You can use it with kick drum to enhance the punch, put it on vocals to reduce plosives, etc.",
+          "url": "https://forum.fractalaudio.com/threads/delay-block-update.173708/post-2104201",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": []
+    },
+    {
+      "am4Name": "VCA Classic Compressor",
+      "wikiName": "Classic VCA Compressor",
+      "fractalQuotes": [],
+      "flags": [
+        "RENAME_NOTE: Previously: Studio FF Compressor.",
+        "VERIFY: wiki entry has no description, lineage, or quotes"
+      ]
+    },
+    {
+      "am4Name": "Analog Sustainer",
+      "wikiName": "Analog Sustainer",
+      "description": "The same as the Analog Compressor type, but with upwards compression.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [
+        {
+          "text": "Upwards compressors INCREASE gain. Downwards compressors DECREASE gain.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-version-21-02-public-beta-beta-2.191173/post-2376038",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "A sustainer is an upwards compressor. It increases gain when the signal is below the threshold. Therefore it will increase noise. You may want to use a gate to kill the noise.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-version-21-02-public-beta-beta-2.191173/post-2375817",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": []
+    },
+    {
+      "am4Name": "JFET Pedal Compressor",
+      "wikiName": "JFET Pedal Compressor",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "pedals with a JFET as the shunt resistor in a non-inverting op-amp configuration",
+        "source": "fractal-forum-quote"
+      }
+    },
+    {
+      "am4Name": "Rockguy Compressor",
+      "wikiName": "Rockguy Compressor",
+      "description": "Based on the (Tom Scholz) Rockman Guitar Compressor.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Rockman Guitar",
+        "manufacturer": "Rockman",
+        "productName": "Guitar",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Dynami-Comp Soft",
+      "wikiName": "Dynami-Comp Soft",
+      "description": "Based on MXR’s M-102 Dyna Comp pedal.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [
+        {
+          "text": "The Dynamicomp type is based on a Dynacomp.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-version-21-02-public-beta-beta-2.191173/post-2375490",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The attack time is dynamic. The greater the output of the compression circuit the faster the attack time.",
+          "url": "https://forum.fractalaudio.com/threads/compressor-attack-release-default-settings.183692/post-2260540",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The attack time is actually dynamic and a function of the input level. Our algorithm models this. The higher the input level, the lower the attack time.",
+          "url": "https://forum.fractalaudio.com/threads/compressor-attack-release-default-settings.183692/post-2260136",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Our model is based on the original ones that used the CA3080A. New ones use an LM13700.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-version-21-02-public-beta-beta-2.191173/post-2375507",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "A Ross-type circuit.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-28-00-public-beta-beta-4.211395/#post-2643757",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "MXR M-102 Dyna Comp",
+        "manufacturer": "MXR",
+        "model": "M-102",
+        "productName": "Dyna Comp",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Citrus Juicer",
+      "wikiName": "Citrus Juicer",
+      "description": "Based on a Dan Armstrong Orange Squeezer. Unlike the Orange Squeezer, the model allows you to adjust the compression ratio and threshold independently and also features Emphasis, Drive and Tone controls. The ratio and threshold of the actual pedal vary with the particular JFET used and the internal bias trim. Set the Threshold to -26.0 dB and Compression to 8.0 as a starting point and adjust to taste.",
+      "descriptionSource": "fractal-wiki",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Dan Armstrong Orange Squeezer",
+        "manufacturer": "Dan Armstrong",
+        "productName": "Orange Squeezer",
+        "source": "fractal-wiki"
+      }
+    }
+  ]
+}

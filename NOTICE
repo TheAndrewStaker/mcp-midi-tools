@@ -1,0 +1,38 @@
+MCP MIDI Tools
+Copyright 2026 Stephen Staker
+
+This product is licensed under the Apache License, Version 2.0.
+See the LICENSE file for the full license text.
+
+---
+
+TRADEMARKS
+
+This project is an unaffiliated community tool. "Fractal Audio",
+"AM4", and related product names are trademarks of Fractal Audio
+Systems, Inc. This project neither claims endorsement from, nor
+affiliation with, Fractal Audio Systems. It is a software utility
+that communicates with AM4 hardware the user already owns via
+publicly-documented SysEx messages.
+
+---
+
+THIRD-PARTY SOFTWARE
+
+This product includes software from the following projects, each
+distributed under its own license. See the respective project's
+LICENSE / NOTICE files in node_modules/ for full license text
+when distributing in Object form.
+
+  - @modelcontextprotocol/sdk (MIT License)
+    https://github.com/modelcontextprotocol/typescript-sdk
+
+  - node-midi (MIT License)
+    https://github.com/justinlatimer/node-midi
+
+  - zod (MIT License)
+    https://github.com/colinhacks/zod
+
+Additional development-only dependencies (TypeScript, tsx, jest,
+etc.) are not redistributed in Object form and are listed in
+package.json.

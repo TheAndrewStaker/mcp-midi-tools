@@ -1,0 +1,313 @@
+{
+  "_source": "Fractal Audio wiki — Delay_block.md + Blocks Guide PDF",
+  "_extractedAt": "2026-04-26T02:14:32.325Z",
+  "_catalogSize": 29,
+  "_recordCount": 29,
+  "records": [
+    {
+      "am4Name": "Digital Mono",
+      "description": "Full-range, pristine modern digital delay in mono.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Digital Stereo",
+      "description": "Stereo variant — Full-range, pristine modern digital delay in mono, stereo in/stereo out.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Analog Mono",
+      "description": "Features the frequency response and character of an analog delay.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Analog Stereo",
+      "description": "Stereo variant — Features the frequency response and character of an analog delay, stereo in/stereo out.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Mono Tape",
+      "description": "Special type with dedicated algorithm featuring Motor Speed and other tape controls.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [
+        {
+          "text": "The algorithm is a single tape with one record head and two playback heads. The signal from each head can be fed back (Feedback) and panned and leveled.",
+          "url": "https://forum.fractalaudio.com/posts/592160",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "[…] Originally all the delays \"chirped\" when changing the tempo (like many other effects processors). I rewrote the primary delay types so it cross-fades between tempos when you tap a new one to avoid this. The tape delay type doesn't do this so that you can use it as you would an actual tape delay and get all those cool effects by changing the head position or motor speed.",
+          "url": "https://forum.fractalaudio.com/posts/936496",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The tools are already there for wow and flutter. Wow is modulation below 6 Hz. Flutter is above 6 Hz.",
+          "url": "https://forum.fractalaudio.com/threads/a-few-wishes-about-delays.157274/post-1875476",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Wow is low frequency modulation. It occurs with records when the hole in the middle isn't perfectly centered or when the record has a warp or due to motor issues.",
+          "url": "https://forum.fractalaudio.com/threads/a-few-wishes-about-delays.157274/post-1875767",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "That algorithm does not support bit reduction.",
+          "url": "https://forum.fractalaudio.com/threads/tape-delay-bit-reduction-not-working-and-delay-drive-question.101561/#post-1218097",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "LFO 1&2 modulate motor speed in that type.",
+          "url": "https://forum.fractalaudio.com/threads/delay-block-lfo-3-add-motor-speed-as-destination-for-mono-tape-type.190283/post-2362000",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": []
+    },
+    {
+      "am4Name": "Stereo Tape",
+      "description": "A stereo delay with the sonic properties of a tape echo.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Ping-Pong",
+      "description": "Echoes bounce from left to right automatically.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Dual Delay",
+      "description": "Two delays in one, each with a full set of controls, plus cross-feedback options!",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Reverse Delay",
+      "description": "This type samples continuously and plays backwards snippets of audio.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Sweep Delay",
+      "description": "An LFO controls stereo bandpass filters at the output of a stereo delay.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Ducking Delay",
+      "description": "This stereo delay has dynamic ducking to lower echo levels when you play harder.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Vintage Digital",
+      "description": "Uses bit-depth reduction for a lo-fi vibe.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [
+        {
+          "text": "It uses virtual crappy converters with low bit depth.",
+          "url": "https://forum.fractalaudio.com/threads/vintage-digital-delay-small-buzz-or-digital-artifact.200612/#post-2503381",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The whole point of the Vintage Digital type is the artifacts. It's modeling an early, primitive digital delay w/ an 8-bit converter.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-24-04-release.201076/page-7#post-2511395",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Just modeled it after how devices in that era worked.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-24-04-release.201076/page-7#post-2511404",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": []
+    },
+    {
+      "am4Name": "2290 w/ Modulation",
+      "description": "Based on the legendary original from Denmark.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [
+        {
+          "text": "The original 2290 was a “bit slice” processor. The sample rate was necessarily high because it was a one-bit converter.",
+          "url": "https://forum.fractalaudio.com/threads/question-for-cliff.138612/#post-1643914",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "TC Electronic 2290 Dynamic Digital Delay",
+        "manufacturer": "TC Electronic",
+        "model": "2290",
+        "productName": "2290 Dynamic Digital Delay",
+        "source": "heuristic-inferred"
+      }
+    },
+    {
+      "am4Name": "Ambient Stereo",
+      "description": "Ultra-wide echoes with reverb-like diffusion.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Deluxe Mind Guy",
+      "description": "Recreates the sound of a classic memory guy delay pedal.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "classic memory guy delay pedal",
+        "source": "fractal-blocks-guide"
+      }
+    },
+    {
+      "am4Name": "Mono BBD",
+      "description": "Mono delay with vintage \"bucket brigade delay\" tone.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Stereo BBD",
+      "description": "Stereo variant — Mono delay with vintage \"bucket brigade delay\" tone, stereo in/stereo out.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Lo-Fi Tape",
+      "description": "As mono tape, but very low fidelity to create the sound of a worn-out tape.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Stereo Mind Guy",
+      "description": "A stereo version of the deluxe memory guy.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Graphite Copy Delay",
+      "description": "Based on the Carbon Copy delay.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Carbon Copy delay",
+        "source": "fractal-blocks-guide"
+      }
+    },
+    {
+      "am4Name": "DM-Two Delay",
+      "fractalQuotes": [
+        {
+          "text": "[…] the DM-2 has a pre-emphasis/de-emphasis topology. The input is pre-emphasized by over 15 dB. The pre-emphasized data goes into the delay lines. When you switch to a different type with no de-emphasis, which is most of the types, you are getting pre-emphasized echoes out which will sound louder and brighter for a brief moment.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-version-21-01.189535/post-2364958",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [
+        "VERIFY: no Blocks Guide description"
+      ],
+      "basedOn": {
+        "primary": "Boss DM-2 Delay",
+        "manufacturer": "Boss",
+        "model": "DM-Two",
+        "productName": "DM-2 Delay",
+        "source": "heuristic-inferred"
+      }
+    },
+    {
+      "am4Name": "Diffused Delay",
+      "description": "This delay uses the diffuser for a reverb-like effect",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Zephyr",
+      "description": "An FAS original delay effect",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Worn Tape",
+      "description": "Simulates the reduced frequency response of a worn out tape echo.",
+      "descriptionSource": "fractal-blocks-guide",
+      "fractalQuotes": [],
+      "flags": []
+    },
+    {
+      "am4Name": "Pan Delay",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no Blocks Guide description"
+      ]
+    },
+    {
+      "am4Name": "Stereo Trem Delay",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no Blocks Guide description"
+      ]
+    },
+    {
+      "am4Name": "Wandering Delays",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no Blocks Guide description"
+      ]
+    },
+    {
+      "am4Name": "Dual Head Tape",
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no Blocks Guide description"
+      ]
+    },
+    {
+      "am4Name": "Surround Delay",
+      "fractalQuotes": [
+        {
+          "text": "The Rotation parameter determines how rapidly the echoes rotates. With Rotation at 100% the echoes will rotate 180 degrees each time (front, back, front, etc). At 50% the echoes will rotate 90 degrees (front, right, back, left, front, etc.). Negative values will cause the echoes to rotate in the opposite direction.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-31-00-public-beta-2.216600/post-2723743",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Sounds like you have the delay before the amp. This is normal behavior when putting a delay before a distorted (and therefore compressing) amp.",
+          "url": "https://forum.fractalaudio.com/threads/ax-8-firmware-version-10-00.141474/page-6#post-1677316",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "If there isn't distortion or modulation in the delay/reverb then the order is irrelevant since they are then Linear Time Invariant (or shift invariant in digital parlance). If there is a small amount of distortion or modulation then the order is probably still irrelevant. If there is a lot of distortion or modulation then the order may make a difference. However, typically the biggest difference, as noted above, is series vs. parallel since h1(t)*h2(t) is not the same as h1(t)+h2(t). If LTI h1*h2 = h2*h1. It may seem counter-intuitive that the order doesn't matter but try it and you'll be surprised.",
+          "url": "https://forum.fractalaudio.com/threads/delay-before-reverb-or-reverb-before-delay-whats-your-preference.57690/page-2#post-723087",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "We had to make a management decision. Under certain circumstances (using an Amp block and two Delay blocks with Diffusion on) the second DSP could get overloaded. The easiest solution at this time was to remove the Diffusion parameter. If we are able to improve the code efficiency we will reinstate the parameter. You have to realize the FM3 has only about 1/5 the DSP power of an Axe-Fx III. Trying to fit all those goodies in there while not sacrificing audio quality is a balancing act. I ALWAYS insist on quality over quantity. That's what differentiates our products. It takes a LOT of horsepower to do it right.",
+          "url": "https://forum.fractalaudio.com/threads/fm3-firmware-1-06-public-beta-3.165144/post-1981139",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [
+        "VERIFY: no Blocks Guide description"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1844 @@
+{
+  "_source": "Fractal Audio wiki — Drive_block.md + Blocks Guide PDF",
+  "_extractedAt": "2026-04-26T02:14:32.323Z",
+  "_catalogSize": 78,
+  "_recordCount": 83,
+  "records": [
+    {
+      "am4Name": "77 Custom OD",
+      "wikiName": "77 CUSTOM OD",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [
+        {
+          "text": "The Bump switch adds 5 dB of boost at 300 Hz. The Mid control is already set to do this. Turn the Mid control up to 7.4.",
+          "url": "https://forum.fractalaudio.com/threads/77-custom-od-bump-switch.218998/#post-2759146",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "MXR M77 Badass Modified OD",
+        "manufacturer": "MXR",
+        "model": "M77",
+        "productName": "Badass Modified OD",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Tone",
+          "Output",
+          "100HZ cut/boost",
+          "Gain",
+          "Bump switch"
+        ],
+        "raw": "Tone, Output, 100HZ cut/boost, Gain and Bump switch",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Angry Chuck",
+      "wikiName": "ANGRY CHUCK",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "LED"
+      ],
+      "fractalQuotes": [
+        {
+          "text": "A drive pedal that is marketed as sounding like a JCM800 but is really just another MI Audio Crunchbox / Suhr Riot / etc. derivative which can all trace their lineage back to the Marshall Bluesbreaker.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-28-07-release.213816/page-2#post-2681540",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "JHS V3 Angry Charlie",
+        "manufacturer": "JHS",
+        "model": "V3",
+        "productName": "Angry Charlie",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Drive",
+          "Volume",
+          "Bass",
+          "Middle",
+          "Treble"
+        ],
+        "raw": "Drive, Volume, Bass, Middle and Treble",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "BB Pre",
+      "wikiName": "BB PRE",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [
+        {
+          "text": "The BB is more of a clean boost it's just pushing the amp (model).",
+          "url": "https://forum.fractalaudio.com/threads/drive-block-status.147823/page-5#post-1748658",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "Xotic BB",
+        "manufacturer": "Xotic",
+        "productName": "BB",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Xotic BB preamp standard (v1.5)",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Gain",
+          "Volume",
+          "Bass",
+          "Treble"
+        ],
+        "raw": "Gain, Volume, Bass and Treble",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "BB Pre AT",
+      "wikiName": "BB PRE AT",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Xotic BB AT",
+        "manufacturer": "Xotic",
+        "productName": "BB AT",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the special \"Andy Timmons\" edition of the above (pre v1.5)",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Bender Fuzz",
+      "wikiName": "BENDER FUZZ",
+      "categories": [
+        "Bass",
+        "Fuzz"
+      ],
+      "clipTypes": [
+        "Hard"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Sola Sound / Vox Tone Bender",
+        "manufacturer": "Sola Sound",
+        "productName": "/ Vox Tone Bender",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the classic Tone Bender circuit.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Bit Crusher",
+      "wikiName": "BIT CRUSHER",
+      "categories": [
+        "Other"
+      ],
+      "clipTypes": [
+        "Silicon"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "description": "Based on a black box we found in the dumpster outside Studio Harshclip.",
+      "descriptionSource": "fractal-blocks-guide",
+      "basedOn": {
+        "primary": "black box we found in the dumpster outside Studio Harshclip",
+        "source": "fractal-blocks-guide"
+      }
+    },
+    {
+      "am4Name": "Blackglass 7K",
+      "wikiName": "BLACKGLASS 7K",
+      "categories": [
+        "Bass"
+      ],
+      "clipTypes": [
+        "Other"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Darkglass B7K Microtubes",
+        "manufacturer": "Darkglass",
+        "model": "B7K",
+        "productName": "Microtubes",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on Darkglass Microtubes B7K bass preamp and drive.",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Blend",
+          "Level",
+          "Drive",
+          "Low",
+          "Low Mids",
+          "Hi Mids",
+          "Treble"
+        ],
+        "raw": "Blend , Level, Drive and four EQ knobs: Low , Low Mids , Hi Mids , Treble",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Blues OD",
+      "wikiName": "BLUES OD",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Marshall Bluesbreaker Mk1",
+        "manufacturer": "Marshall",
+        "productName": "Bluesbreaker Mk1",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Marshall Bluesbreaker.",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Gain",
+          "Tone"
+        ],
+        "raw": "Gain, Tone, and Volume",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Bosom Boost",
+      "wikiName": "BOSOM BOOST",
+      "categories": [
+        "Clean boost"
+      ],
+      "clipTypes": [
+        "Other"
+      ],
+      "fractalQuotes": [
+        {
+          "text": "Actual pedal doesn't have a Level control so the default is 10.",
+          "url": "https://forum.fractalaudio.com/threads/buxom-boost-default-settings.195599/post-2435849",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "Friedman Buxom",
+        "manufacturer": "Friedman",
+        "productName": "Buxom",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on a Friedman Buxom Boost",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "BOX O'CRUNCH",
+      "wikiName": "BOX O'CRUNCH",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "LED"
+      ],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ],
+      "basedOn": {
+        "primary": "MI Audio V1 Crunch Box",
+        "manufacturer": "MI Audio",
+        "model": "V1",
+        "productName": "Crunch Box",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Gain",
+          "Tone"
+        ],
+        "raw": "Gain , Tone , and Vol",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Colortone Booster",
+      "wikiName": "COLORTONE BOOSTER",
+      "categories": [
+        "Fuzz"
+      ],
+      "clipTypes": [
+        "Silicon"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Colorsound",
+        "manufacturer": "Colorsound",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Colortone OD",
+      "wikiName": "COLORTONE OD",
+      "categories": [
+        "Fuzz"
+      ],
+      "clipTypes": [
+        "Silicon"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Colorsound Overdriver",
+        "manufacturer": "Colorsound",
+        "productName": "Overdriver",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "COMPULSION DISTORTION HP",
+      "wikiName": "COMPULSION DISTORTION HP",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ],
+      "basedOn": {
+        "primary": "Fulltone OCD",
+        "manufacturer": "Fulltone",
+        "productName": "OCD",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "COMPULSION DISTORTION LP",
+      "wikiName": "COMPULSION DISTORTION LP",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ],
+      "basedOn": {
+        "primary": "Fulltone OCD",
+        "manufacturer": "Fulltone",
+        "productName": "OCD",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "DS1 Distortion",
+      "wikiName": "DS1 DISTORTION",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [
+        {
+          "text": "Some component values changed. Not a big difference.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-27-03-public-beta-2.210131/#post-2626446",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "Boss DS-1 Distortion",
+        "manufacturer": "Boss",
+        "model": "DS-1",
+        "productName": "DS-1 Distortion",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "DS1 Distortion Mod",
+      "wikiName": "DS1 DISTORTION MOD",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Boss DS-1 Distortion",
+        "manufacturer": "Boss",
+        "model": "DS-1",
+        "productName": "DS-1 Distortion",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Esoteric ACB",
+      "wikiName": "ESOTERIC ACB",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Xotic AC",
+        "manufacturer": "Xotic",
+        "productName": "AC",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Xotic AC Booster",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Gain",
+          "Volume",
+          "Bass",
+          "Treble"
+        ],
+        "raw": "Gain, Volume, Bass and Treble",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Esoteric Bass RCB",
+      "wikiName": "ESOTERIC BASS RCB",
+      "categories": [
+        "Clean boost",
+        "Bass"
+      ],
+      "clipTypes": [
+        "LED"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Xotic Bass RC",
+        "manufacturer": "Xotic",
+        "productName": "Bass RC",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Xotic boost pedal for bass.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Esoteric RCB",
+      "wikiName": "ESOTERIC RCB",
+      "categories": [
+        "Clean boost"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Xotic RC v1",
+        "manufacturer": "Xotic",
+        "productName": "RC v1",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Xotic RC Booster",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Gain",
+          "Volume",
+          "Bass",
+          "Treble"
+        ],
+        "raw": "Gain, Volume, Bass and Treble",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Eternal Love",
+      "wikiName": "ETERNAL LOVE",
+      "categories": [
+        "Clean boost",
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Lovepedal Eternity",
+        "manufacturer": "Lovepedal",
+        "productName": "Eternity",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on a Lovepedal Eternity.",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Level",
+          "Drive",
+          "Glass"
+        ],
+        "raw": "Level, Drive and Glass  which sets the amount of presence",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Face Fuzz",
+      "wikiName": "FACE FUZZ",
+      "categories": [
+        "Fuzz"
+      ],
+      "clipTypes": [
+        "Germanium"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Dallas Arbiter Face",
+        "manufacturer": "Dallas Arbiter",
+        "productName": "Face",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on Dallas Arbiter Fuzz Face",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "FAS Boost",
+      "wikiName": "FAS BOOST",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "description": "Our own take on the boost pedal.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "FAS LED-Drive",
+      "wikiName": "FAS LED-DRIVE",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp",
+        "LED"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "description": "LED clipping design by Fractal Audio Systems",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Fat Rat",
+      "wikiName": "FAT RAT",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp",
+        "FET",
+        "LED"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Pro Co modded RAT LED clipping",
+        "manufacturer": "Pro Co",
+        "productName": "modded RAT LED clipping",
+        "source": "fractal-wiki"
+      },
+      "description": "A modified version of the Rat Distortion. Fuller and smoother.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "FET Boost",
+      "wikiName": "FET BOOST",
+      "categories": [
+        "Clean boost"
+      ],
+      "clipTypes": [
+        "FET"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "description": "A gentle, smooth clipping booster with tone controls.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "FET Preamp",
+      "wikiName": "FET PREAMP",
+      "categories": [
+        "Clean boost"
+      ],
+      "clipTypes": [
+        "FET"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Boss FA-1 FET",
+        "manufacturer": "Boss",
+        "model": "FA-1",
+        "productName": "FET",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on (surprise!) a FET preamp.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Full OD",
+      "wikiName": "FULL OD",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [
+        {
+          "text": "The Full OD model is based on a Fulltone Fulldrive 2.",
+          "url": "https://forum.fractalaudio.com/threads/ax8-drives.120062/post-1429331",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "Fulltone Full-Drive 2",
+        "manufacturer": "Fulltone",
+        "productName": "Full-Drive 2",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Fulltone Fulldrive OD Pedal.",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Volume",
+          "Tone",
+          "Overdrive",
+          "Boost"
+        ],
+        "raw": "Volume, Tone, Overdrive, Boost",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Gauss Drive",
+      "wikiName": "GAUSS DRIVE",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Mesa Flux-Drive",
+        "manufacturer": "Mesa",
+        "productName": "Flux-Drive",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Level",
+          "Gain",
+          "Bass",
+          "Treble"
+        ],
+        "raw": "Level, Gain, Bass, Treble",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Griddle Cake",
+      "wikiName": "GRIDDLE CAKE",
+      "categories": [
+        "Fuzz",
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Other"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Crowther Hot Cake",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Crowther Hot Cake.",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Level",
+          "Presence",
+          "Drive"
+        ],
+        "raw": "Level, Presence, Drive, and a XLF switch which extends low frequencies",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Guardian Photon Speed",
+      "wikiName": "GUARDIAN PHOTON SPEED",
+      "categories": [
+        "Clean boost",
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Greer Lightspeed",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Loudness",
+          "Drive",
+          "Freq"
+        ],
+        "raw": "Loudness , Drive, Freq",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Hard Fuzz",
+      "wikiName": "HARD FUZZ",
+      "categories": [
+        "Fuzz"
+      ],
+      "clipTypes": [
+        "Hard"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "description": "A hard-clipping, 60s-style fuzz.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Heartpedal 11",
+      "wikiName": "HEARTPEDAL 11",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Lovepedal OD11 / Eleven",
+        "manufacturer": "Lovepedal",
+        "model": "OD11",
+        "productName": "/ Eleven",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on Lovepedal OD11",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Level",
+          "Drive",
+          "Bass",
+          "Tone"
+        ],
+        "raw": "Level, Drive, Bass , Tone",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Hoodoo Drive",
+      "wikiName": "HOODOO DRIVE",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Voodoo Lab Overdrive",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Voodoo Labs Overdrive",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Horizon Precision Drive",
+      "wikiName": "HORIZON PRECISION DRIVE",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Horizon Devices Precision",
+        "manufacturer": "Horizon Devices",
+        "productName": "Precision",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Horizon Devices Precision Drive",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Integral Pre",
+      "wikiName": "INTEGRAL PRE",
+      "categories": [
+        "Clean boost"
+      ],
+      "clipTypes": [
+        "Other"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "TC Electronics Integrated Preamp",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Jam Ray",
+      "wikiName": "JAM RAY",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Venuram Jan Ray",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on Vemuram Jan Ray",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Volume",
+          "Bass",
+          "Treble",
+          "Gain"
+        ],
+        "raw": "Volume, Bass , Treble, Gain",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Klone Chiron",
+      "wikiName": "KLONE CHIRON",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Klon Centaur / KTR",
+        "manufacturer": "Klon",
+        "productName": "Centaur / KTR",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Klon Centaur",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Gain",
+          "Treble",
+          "Output"
+        ],
+        "raw": "Gain, Treble, Output",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "M-Zone Distortion",
+      "wikiName": "M-ZONE DISTORTION",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion",
+        "Metal"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Boss MT-2 Metal Zone",
+        "manufacturer": "Boss",
+        "model": "MT-2",
+        "productName": "Metal Zone",
+        "source": "fractal-wiki"
+      },
+      "description": "Simulates the Boss Metal Zone, popular for extreme gain settings.",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Level",
+          "3-band EQ",
+          "Distortion"
+        ],
+        "raw": "Level, 3-band EQ , active), Distortion: amount of distortion",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Master Fuzz",
+      "wikiName": "MASTER FUZZ",
+      "categories": [
+        "Fuzz"
+      ],
+      "clipTypes": [
+        "Germanium"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Maestro FZ-1A Gibson Fuzz-Tone",
+        "manufacturer": "Maestro",
+        "model": "FZ-1A",
+        "productName": "Gibson Fuzz-Tone",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Maestro Fuzztone, aka \"Satisfaction\" fuzz.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Maxoff 808",
+      "wikiName": "MAXOFF 808",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Maxon OD-808",
+        "manufacturer": "Maxon",
+        "model": "OD-808",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Maxon OD808",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "MCMLXXXI DRV",
+      "wikiName": "MCMLXXXI DRV",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ],
+      "basedOn": {
+        "primary": "1981 Inventions DRV",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Micro Boost",
+      "wikiName": "MICRO BOOST",
+      "categories": [
+        "Clean boost"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "MXR Micro",
+        "manufacturer": "MXR",
+        "productName": "Micro",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on MXR Micro Amp, an op amp-driven clean boost pedal.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Mid Boost",
+      "wikiName": "MID BOOST",
+      "categories": [
+        "Other"
+      ],
+      "clipTypes": [
+        "Silicon"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "description": "A custom mid-boost overdrive.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "MOSFET Distortion",
+      "wikiName": "MOSFET DISTORTION",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Ibanez MT10 Mostortion",
+        "manufacturer": "Ibanez",
+        "model": "MT10",
+        "productName": "Mostortion",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "NO-AMP BASS DI",
+      "wikiName": "NO-AMP BASS DI",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ],
+      "basedOn": {
+        "primary": "Tech 21 NYC Sansamp Bass Driver DI",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "NO-AMP BASS PRE",
+      "wikiName": "NO-AMP BASS PRE",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ],
+      "basedOn": {
+        "primary": "Tech 21 Sansamp SansAmp BassDriver DI",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "NOBELLIUM OVD-1",
+      "wikiName": "NOBELLIUM OVD-1",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ],
+      "basedOn": {
+        "primary": "ODR-1 Nobels BC Natural",
+        "model": "ODR-1",
+        "productName": "Nobels BC Natural",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Drive",
+          "Spectrum",
+          "Level",
+          "Bass Cut"
+        ],
+        "raw": "Drive, Spectrum , Level, Bass Cut",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Octave Distortion",
+      "wikiName": "OCTAVE DISTORTION",
+      "categories": [],
+      "clipTypes": [
+        "Other"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Tycobrahe Octavia",
+        "manufacturer": "Tycobrahe",
+        "productName": "Octavia",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Volume",
+          "Boost"
+        ],
+        "raw": "Volume and Boost )",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "OD 250",
+      "wikiName": "OD 250",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "DOD 250:",
+        "manufacturer": "DOD",
+        "productName": "250:",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the DOD OD 250, yellow version",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Gain",
+          "Level"
+        ],
+        "raw": "Gain  and Level",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "OD 250 Gray",
+      "wikiName": "OD 250 GRAY",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "DOD 250:",
+        "manufacturer": "DOD",
+        "productName": "250:",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the DOD OD 250 gray version",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "OD-One Overdrive",
+      "wikiName": "OD-ONE OVERDRIVE",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Boss OD-1 Overdrive",
+        "manufacturer": "Boss",
+        "model": "OD-1",
+        "productName": "OD-1 Overdrive",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Boss OD-1",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Paradigm Shifter",
+      "wikiName": "PARADIGM SHIFTER",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Barber Electronics Gain Changer",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "PI Fuzz",
+      "wikiName": "PI FUZZ",
+      "categories": [
+        "Bass",
+        "Fuzz"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Electro-Harmonix Big Muff Pi current",
+        "manufacturer": "Electro-Harmonix",
+        "productName": "Big Muff Pi current",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Big Muff Pi fuzz.",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Volume",
+          "Tone",
+          "Sustain"
+        ],
+        "raw": "Volume, Tone and Sustain",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "PI Fuzz - Bass",
+      "wikiName": "PI FUZZ - BASS",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Electro-Harmonix Bass Big Muff",
+        "manufacturer": "Electro-Harmonix",
+        "productName": "Bass Big Muff",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "PI FUZZ - TRIANGLE",
+      "wikiName": "PI FUZZ - TRIANGLE",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ],
+      "basedOn": {
+        "primary": "Electro-Harmonix Big Muff Pi Triangle",
+        "manufacturer": "Electro-Harmonix",
+        "productName": "Big Muff Pi Triangle",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "PI FUZZ - RAM'S HEAD",
+      "wikiName": "PI FUZZ - RAM'S HEAD",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ],
+      "basedOn": {
+        "primary": "Electro-Harmonix 70s Big Muff Pi Rams Head",
+        "manufacturer": "Electro-Harmonix",
+        "productName": "70s Big Muff Pi Rams Head",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "PI FUZZ - RUSSIAN",
+      "wikiName": "PI FUZZ - RUSSIAN",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ],
+      "basedOn": {
+        "primary": "Electro-Harmonix Russian Big Muff Pi",
+        "manufacturer": "Electro-Harmonix",
+        "productName": "Russian Big Muff Pi",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Output",
+          "Distortion"
+        ],
+        "raw": "Output and Distortion",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Rat Distortion",
+      "wikiName": "RAT DISTORTION",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Pro Co RAT",
+        "manufacturer": "Pro Co",
+        "productName": "RAT",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Royal Bass DI",
+      "wikiName": "ROYAL BASS DI",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Noble Bass Preamp DI",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "SDD Preamp",
+      "wikiName": "SDD PREAMP",
+      "categories": [
+        "Clean boost",
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Korg SDD-3000",
+        "manufacturer": "Korg",
+        "model": "SDD-3000",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the preamp section of the famed SDD digital delay.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Shimmer Drive",
+      "wikiName": "SHIMMER DRIVE",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Silicon"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "description": "An original creation primarily intended as a boost for amps without master volume.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Shred Distortion",
+      "wikiName": "SHRED DISTORTION",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion",
+        "Metal"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Marshall Shredmaster",
+        "manufacturer": "Marshall",
+        "productName": "Shredmaster",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Gain",
+          "Bass",
+          "Treble",
+          "Contour",
+          "Volume"
+        ],
+        "raw": "Gain, Bass, Treble, Contour  and Volume",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Sonic Drive",
+      "wikiName": "SONIC DRIVE",
+      "categories": [
+        "Fuzz",
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Ibanez SD-9 Maxon/ Sonic",
+        "manufacturer": "Ibanez",
+        "model": "SD-9",
+        "productName": "Maxon/ Sonic",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on Ibanez SD9M Sonic Distortion",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Distortion",
+          "Level",
+          "Tone"
+        ],
+        "raw": "Distortion, Level, Tone  and three-way voicing switch",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Sunrise Splendor",
+      "wikiName": "SUNRISE SPLENDOR",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "JHS V4 Morning Glory",
+        "manufacturer": "JHS",
+        "model": "V4",
+        "productName": "Morning Glory",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Volume",
+          "Drive",
+          "Tone",
+          "Gain switch",
+          "High Cut switch"
+        ],
+        "raw": "Volume, Drive, Tone, Gain switch , High Cut switch",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "SUNRISE SPLENDOR HI-CUT",
+      "wikiName": "SUNRISE SPLENDOR HI-CUT",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ]
+    },
+    {
+      "am4Name": "Super Fuzz",
+      "wikiName": "SUPER FUZZ",
+      "categories": [
+        "Fuzz"
+      ],
+      "clipTypes": [
+        "Other"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Univox Super-Fuzz",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Balance",
+          "Expander"
+        ],
+        "raw": "Balance , Expander , two-position tone switch",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Super OD",
+      "wikiName": "SUPER OD",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Boss SD-1 Super Overdrive",
+        "manufacturer": "Boss",
+        "model": "SD-1",
+        "productName": "SD-1 Super Overdrive",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Boss Super Overdrive",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Swedish Metal",
+      "wikiName": "SWEDISH METAL",
+      "categories": [
+        "Metal"
+      ],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Boss HM-2W Waza Craft Heavy Metal",
+        "manufacturer": "Boss",
+        "model": "HM-2W",
+        "productName": "Waza Craft Heavy Metal",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "T808 OD",
+      "wikiName": "T808 OD",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Ibanez TS-808 Tube Screamer",
+        "manufacturer": "Ibanez",
+        "model": "TS-808",
+        "productName": "TS-808 Tube Screamer",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Ibanez TS-9 Tube Screamer overdrive.",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Drive",
+          "Tone",
+          "Level"
+        ],
+        "raw": "Drive, Tone  and Level",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "T808 Mod",
+      "wikiName": "T808 MOD",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Ibanez TS-808 Tube Screamer",
+        "manufacturer": "Ibanez",
+        "model": "TS-808",
+        "productName": "TS-808 Tube Screamer",
+        "source": "fractal-wiki"
+      },
+      "description": "Captures the most popular TS overdrive mods.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Tape Distortion",
+      "wikiName": "TAPE DISTORTION",
+      "categories": [
+        "Other"
+      ],
+      "clipTypes": [
+        "Silicon"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "tape distortion",
+        "source": "fractal-wiki"
+      },
+      "description": "Simulates the clipping of an overdriven reel-to-reel tape deck.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "TIMOTHY DOWN",
+      "wikiName": "TIMOTHY DOWN",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ],
+      "basedOn": {
+        "primary": "Paul Cochrane V4 Timmy",
+        "manufacturer": "Paul Cochrane",
+        "model": "V4",
+        "productName": "Timmy",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Bass",
+          "Gain",
+          "Volume",
+          "Treble"
+        ],
+        "raw": "Bass , Gain, Volume and Treble",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "TIMOTHY MID",
+      "wikiName": "TIMOTHY MID",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ],
+      "basedOn": {
+        "primary": "Paul Cochrane V4 Timmy",
+        "manufacturer": "Paul Cochrane",
+        "model": "V4",
+        "productName": "Timmy",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "TIMOTHY UP",
+      "wikiName": "TIMOTHY UP",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [
+        "VERIFY: no DRIVE_TYPES enum match"
+      ],
+      "basedOn": {
+        "primary": "Paul Cochrane V4 Timmy",
+        "manufacturer": "Paul Cochrane",
+        "model": "V4",
+        "productName": "Timmy",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Tone of Kings",
+      "wikiName": "TONE OF KINGS",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Analog Man King Tone",
+        "manufacturer": "Analog Man",
+        "productName": "King Tone",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the King of Tone by Analog Man, a sought-after variant Bluesbreaker pedal",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Drive",
+          "Volume",
+          "Tone"
+        ],
+        "raw": "Drive, Volume and Tone",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Treble Boost",
+      "wikiName": "TREBLE BOOST",
+      "categories": [
+        "Other"
+      ],
+      "clipTypes": [
+        "Silicon"
+      ],
+      "fractalQuotes": [
+        {
+          "text": "Boost was a switch and engaged the effect. Set was the amount of boost and is equivalent to Drive.",
+          "url": "https://forum.fractalaudio.com/threads/question-about-treble-boost.102850/post-1232043",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "silicon treble booster circuit",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on a classic treble booster.",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "TS9DX +",
+      "wikiName": "TS9DX +",
+      "categories": [],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Ibanez TS9DX Turbo Tube Screamer",
+        "manufacturer": "Ibanez",
+        "model": "TS9DX",
+        "productName": "Turbo Tube Screamer",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "TS9DX Hot",
+      "wikiName": "TS9DX HOT",
+      "categories": [],
+      "clipTypes": [
+        "LED"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Ibanez TS9DX Turbo Tube Screamer",
+        "manufacturer": "Ibanez",
+        "model": "TS9DX",
+        "productName": "Turbo Tube Screamer",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on the Ibanez TS9 Turbo Tube Screamer in hot mode",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Tube Drive 3-Knob",
+      "wikiName": "TUBE DRIVE 3-KNOB",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [
+        {
+          "text": "The 3-knob version sounds very different than the 4-knob version.",
+          "url": "https://forum.fractalaudio.com/threads/tube-drive.72784/post-912764",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Both of my actual pedals go silent with the Drive set to zero as would be expected looking at the design.",
+          "url": "https://forum.fractalaudio.com/threads/tube-driver-drive-block-issue.103122/post-1234847",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "flags": [],
+      "basedOn": {
+        "primary": "Butler Tube Driver",
+        "source": "fractal-wiki"
+      },
+      "controls": {
+        "values": [
+          "Out Level",
+          "EQ",
+          "Tube Drive"
+        ],
+        "raw": "Out Level, EQ and Tube Drive",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Tube Drive 4-Knob",
+      "wikiName": "TUBE DRIVE 4-KNOB",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Butler Tube Driver",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Tube Drive 5-Knob",
+      "wikiName": "TUBE DRIVE 5-KNOB",
+      "categories": [],
+      "clipTypes": [],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Butler Tube Driver / Dean Markley Overlord",
+        "source": "fractal-wiki"
+      }
+    },
+    {
+      "am4Name": "Valve Screamer VS9",
+      "wikiName": "VALVE SCREAMER VS9",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Ibanez TS9 TS-9 Tube Screamer",
+        "manufacturer": "Ibanez",
+        "model": "TS9",
+        "productName": "TS-9 Tube Screamer",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on Ibanez the TS9 Tube Screamer",
+      "descriptionSource": "fractal-blocks-guide"
+    },
+    {
+      "am4Name": "Zen Master",
+      "wikiName": "ZEN MASTER",
+      "categories": [
+        "Amp-in-a-box, overdrive, distortion"
+      ],
+      "clipTypes": [
+        "Diodes, Op-Amp"
+      ],
+      "fractalQuotes": [],
+      "flags": [],
+      "basedOn": {
+        "primary": "Hermida Zendrive",
+        "source": "fractal-wiki"
+      },
+      "description": "Based on Hermida Zen Drive.",
+      "descriptionSource": "fractal-blocks-guide",
+      "controls": {
+        "values": [
+          "Vol",
+          "Gain",
+          "Tone",
+          "Voice"
+        ],
+        "raw": "Vol, Gain , Tone  and Voice",
+        "source": "fractal-wiki"
+      }
+    }
+  ]
+}
