@@ -190,15 +190,24 @@ export interface BatchReadResult {
 }
 
 export interface WriteResult {
-  block: string;
-  name: string;
-  wire_value: number;
-  display_value: number | string;
+  /** What operation produced this result — 'set_param', 'switch_preset', etc.
+   *  Optional for back-compat with the param-only Session B chunk 1. */
+  op?: string;
+  /** Target of the op — e.g. 'amp.gain' for set_param, 'M03' for switch_preset.
+   *  Optional for back-compat. */
+  target?: string;
+  /** Operation acked on the wire. The semantics of "ack" vary per op —
+   *  set_param's echo, switch_preset's write-echo, save's command-ack. */
   acked: boolean;
-  /** Channel switched as part of this write, if any. */
-  channel?: string;
-  /** Device-side observation hint — e.g. "block not placed in active preset". */
+  /** Soft-warning when ack succeeded but the side effect may not have
+   *  landed (e.g. block not placed in active preset). */
   warning?: string;
+  // ── Param-write specific (only populated by set_param / set_params) ──
+  block?: string;
+  name?: string;
+  wire_value?: number;
+  display_value?: number | string;
+  channel?: string;
 }
 
 export interface BatchWriteResult {
@@ -265,6 +274,13 @@ export interface DeviceReader {
 }
 
 /**
+ * Rename target — either the working-buffer preset itself or one of
+ * its scenes. Scene targets use the `'scene:N'` form (1-indexed to
+ * match user-facing scene numbering).
+ */
+export type RenameTarget = 'preset' | `scene:${number}`;
+
+/**
  * Writer contract. Two layers:
  *
  *   - **Pure builders** (`build*`) return wire bytes without sending.
@@ -300,6 +316,7 @@ export interface DeviceWriter {
   switchPreset?(ctx: DispatchCtx, location: LocationRef): Promise<WriteResult>;
   savePreset?(ctx: DispatchCtx, location: LocationRef, name?: string): Promise<WriteResult>;
   switchScene?(ctx: DispatchCtx, scene: number): Promise<WriteResult>;
+  rename?(ctx: DispatchCtx, target: RenameTarget, name: string): Promise<WriteResult>;
 }
 
 // ── Top-level descriptor ────────────────────────────────────────────

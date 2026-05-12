@@ -29,8 +29,11 @@ import type {
   DispatchCtx,
   ParamSchema,
   ReadResult,
+  RenameTarget,
+  WriteOp,
   WriteResult,
 } from '@/protocol/generic/types.js';
+import { DispatchError } from '@/protocol/generic/types.js';
 
 import {
   KNOWN_PARAMS,
@@ -42,11 +45,29 @@ import {
   type ParamKey,
 } from '@/fractal/am4/params.js';
 import { BLOCK_TYPE_VALUES, BLOCK_NAMES_BY_VALUE } from '@/fractal/am4/blockTypes.js';
-import { buildSetParam, isWriteEcho } from '@/fractal/am4/setParam.js';
-import { TOTAL_LOCATIONS } from '@/fractal/am4/locations.js';
+import {
+  buildSaveToLocation,
+  buildSetParam,
+  buildSetPresetName,
+  buildSetSceneName,
+  buildSwitchPreset,
+  buildSwitchScene,
+  isCommandAck,
+  isWriteEcho,
+} from '@/fractal/am4/setParam.js';
+import {
+  parseLocationCode,
+  formatLocationCode,
+  TOTAL_LOCATIONS,
+} from '@/fractal/am4/locations.js';
 import { sendAndAwaitAck } from '@/server/shared/wireOps.js';
 import { sendReadAndParse } from '@/server/shared/readOps.js';
-import { switchBlockChannel, channelLetter, CHANNEL_BLOCKS } from '@/server/shared/channels.js';
+import {
+  switchBlockChannel,
+  channelLetter,
+  invalidateChannelCache,
+  CHANNEL_BLOCKS,
+} from '@/server/shared/channels.js';
 
 // ── Unit pass-through ───────────────────────────────────────────────
 //
@@ -180,10 +201,60 @@ function buildBlockTypes(): Record<string, BlockTypeMeta> {
 // `am4_set_param` itself is untouched; the legacy tool keeps working
 // in parallel through v0.1.0.
 
+function parseAm4Location(location: string | number): number {
+  if (typeof location === 'number') {
+    if (Number.isInteger(location) && location >= 0 && location < TOTAL_LOCATIONS) {
+      return location;
+    }
+    throw new DispatchError(
+      'bad_location',
+      'Fractal AM4',
+      `Location index ${location} is out of range on Fractal AM4 (valid: 0..${TOTAL_LOCATIONS - 1}).`,
+    );
+  }
+  const normalized = location.trim().toUpperCase();
+  try {
+    return parseLocationCode(normalized);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new DispatchError(
+      'bad_location',
+      'Fractal AM4',
+      `Location '${location}' is not valid on Fractal AM4 — ${msg}. AM4 locations are A01..Z04 (104 total, 26 banks × 4).`,
+      { retry_action: 'Pass a code like "A01" or "Z04".' },
+    );
+  }
+}
+
 const writer: DeviceWriter = {
   buildSetParam(block, name, displayValue): number[] {
     const key = `${block}.${name}` as ParamKey;
     return buildSetParam(key, displayValue);
+  },
+
+  buildSwitchPreset(location): number[] {
+    return buildSwitchPreset(parseAm4Location(location));
+  },
+
+  buildSavePreset(location, name): number[] {
+    // Pure-builder shape: returns ONLY the save bytes. Rename + save is
+    // a 2-message sequence the execute path handles; the pure builder
+    // is the canonical save step for goldens.
+    if (name !== undefined && name.length > 0) {
+      // No-op — the name argument is honored by the execute path.
+    }
+    return buildSaveToLocation(parseAm4Location(location));
+  },
+
+  buildSwitchScene(scene): number[] {
+    if (!Number.isInteger(scene) || scene < 1 || scene > 4) {
+      throw new DispatchError(
+        'bad_location',
+        'Fractal AM4',
+        `Scene index ${scene} out of range on Fractal AM4 (valid: 1..4).`,
+      );
+    }
+    return buildSwitchScene(scene - 1);
   },
 
   async setParam(
@@ -212,6 +283,8 @@ const writer: DeviceWriter = {
       ? channelLetter(channel)
       : (typeof channel === 'string' ? channel.toUpperCase() : undefined);
     return {
+      op: 'set_param',
+      target: `${block}.${name}`,
       block,
       name,
       wire_value: value,
@@ -221,6 +294,133 @@ const writer: DeviceWriter = {
       warning: result.acked
         ? undefined
         : `No ack within timeout — typically a stale MIDI handle or the block isn't placed. Try reconnect_midi or check the layout.`,
+    };
+  },
+
+  async setParams(ctx, ops): Promise<import('@/protocol/generic/types.js').BatchWriteResult> {
+    const writes: WriteResult[] = [];
+    let acked_count = 0;
+    let unacked_count = 0;
+    for (const op of ops) {
+      try {
+        const r = await writer.setParam!(ctx, op.block, op.name, op.value as number, op.channel);
+        writes.push(r);
+        if (r.acked) acked_count++;
+        else unacked_count++;
+      } catch (err) {
+        writes.push({
+          op: 'set_param',
+          target: `${op.block}.${op.name}`,
+          block: op.block,
+          name: op.name,
+          acked: false,
+          warning: err instanceof Error ? err.message : String(err),
+        });
+        unacked_count++;
+      }
+    }
+    return { writes, acked_count, unacked_count };
+  },
+
+  async switchPreset(ctx, location): Promise<WriteResult> {
+    const locationIndex = parseAm4Location(location);
+    const bytes = buildSwitchPreset(locationIndex);
+    const result = await sendAndAwaitAck(ctx.conn, bytes, isWriteEcho);
+    // New preset = new channel layout; existing cache is stale.
+    invalidateChannelCache();
+    return {
+      op: 'switch_preset',
+      target: formatLocationCode(locationIndex),
+      acked: result.acked,
+      warning: result.acked
+        ? 'Any unsaved working-buffer edits were discarded. Channel cache cleared.'
+        : 'No write-echo within timeout — verify on the AM4 display.',
+    };
+  },
+
+  async savePreset(ctx, location, name): Promise<WriteResult> {
+    const locationIndex = parseAm4Location(location);
+    if (name !== undefined && name.length > 0) {
+      // Composite rename + save (mirrors am4_save_preset).
+      const renameBytes = buildSetPresetName(locationIndex, name);
+      const renameResult = await sendAndAwaitAck(ctx.conn, renameBytes, isCommandAck);
+      if (!renameResult.acked) {
+        return {
+          op: 'save_preset',
+          target: formatLocationCode(locationIndex),
+          acked: false,
+          warning: `Rename to "${name}" didn't ack — save skipped to avoid persisting the old name.`,
+        };
+      }
+    }
+    const saveBytes = buildSaveToLocation(locationIndex);
+    const saveResult = await sendAndAwaitAck(ctx.conn, saveBytes, isCommandAck);
+    return {
+      op: 'save_preset',
+      target: formatLocationCode(locationIndex),
+      acked: saveResult.acked,
+      warning: saveResult.acked
+        ? (name ? `Saved "${name}" to ${formatLocationCode(locationIndex)}.` : `Working buffer saved to ${formatLocationCode(locationIndex)}.`)
+        : `Save to ${formatLocationCode(locationIndex)} sent but no ack — verify by loading another location and coming back.`,
+    };
+  },
+
+  async switchScene(ctx, scene): Promise<WriteResult> {
+    if (!Number.isInteger(scene) || scene < 1 || scene > 4) {
+      throw new DispatchError(
+        'bad_location',
+        'Fractal AM4',
+        `Scene index ${scene} out of range on Fractal AM4 (valid: 1..4).`,
+      );
+    }
+    const bytes = buildSwitchScene(scene - 1);
+    const result = await sendAndAwaitAck(ctx.conn, bytes, isWriteEcho);
+    invalidateChannelCache();
+    return {
+      op: 'switch_scene',
+      target: `scene:${scene}`,
+      acked: result.acked,
+      warning: result.acked
+        ? 'Channel cache cleared — the new scene may point each block at a different channel.'
+        : 'No write-echo within timeout — verify on the AM4 display.',
+    };
+  },
+
+  async rename(ctx, target: RenameTarget, name): Promise<WriteResult> {
+    if (target === 'preset') {
+      // AM4's set_preset_name requires a location to write to. The
+      // working-buffer rename in the legacy `am4_set_preset_name` tool
+      // is actually a "rename and save to this location" — the AM4
+      // doesn't expose a pure working-buffer rename without an address.
+      // For the unified rename(target='preset'), the caller must supply
+      // a name only; we throw here because there's no implicit location.
+      // Use save_preset(location, name) instead — the composite covers
+      // the rename + persist flow honestly.
+      throw new DispatchError(
+        'capability_not_supported',
+        'Fractal AM4',
+        'rename(target="preset") needs a location on Fractal AM4 — use save_preset(location, name) to rename + persist, or am4_set_preset_name with an explicit location.',
+        { retry_action: 'Call save_preset(port, location, name).' },
+      );
+    }
+    const m = /^scene:([1-4])$/.exec(target);
+    if (!m) {
+      throw new DispatchError(
+        'bad_location',
+        'Fractal AM4',
+        `rename target '${target}' is not valid on Fractal AM4. Valid: 'scene:1'..'scene:4'.`,
+      );
+    }
+    const sceneIdx = Number(m[1]) - 1;
+    const bytes = buildSetSceneName(sceneIdx, name);
+    const result = await sendAndAwaitAck(ctx.conn, bytes, isCommandAck);
+    return {
+      op: 'rename',
+      target,
+      acked: result.acked,
+      warning: result.acked
+        ? `Scene ${sceneIdx + 1} renamed to "${name}" in the working buffer. Call save_preset to persist.`
+        : `Scene rename sent but no ack — verify on the AM4 display.`,
     };
   },
 };

@@ -161,14 +161,23 @@ async function main(): Promise<void> {
     'axefx2_switch_scene',
     // BK-051 unified tool surface — port-dispatched, device-agnostic.
     // Session B chunk 1 (2026-05-11): describe_device, list_params,
-    // get_param, set_param. Subsequent chunks add the rest of the ~16
-    // unified tools. Routes through src/protocol/generic/dispatcher.ts
-    // against the registered device descriptors; AM4 is the only
-    // registered device until Wave 2.
+    // get_param, set_param.
+    // Session B chunk 2: set_params, get_params, switch_preset,
+    // save_preset, switch_scene, rename.
+    // Subsequent chunks add the rest of the ~16 unified tools. Routes
+    // through src/protocol/generic/dispatcher.ts against the registered
+    // device descriptors; AM4 is the only registered device until
+    // Wave 2.
     'describe_device',
     'get_param',
+    'get_params',
     'list_params',
+    'rename',
+    'save_preset',
     'set_param',
+    'set_params',
+    'switch_preset',
+    'switch_scene',
   ];
   for (const exp of expected) {
     if (!names.includes(exp)) throw new Error(`missing tool: ${exp}`);

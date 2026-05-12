@@ -20,7 +20,19 @@
  * verify-dispatcher.ts golden hardware-free.
  */
 
-import { DispatchError, type DeviceDescriptor, type DispatchCtx, type DispatchErrorDetails, type ReadResult, type WriteResult } from './types.js';
+import {
+  DispatchError,
+  type BatchReadResult,
+  type BatchWriteResult,
+  type DeviceDescriptor,
+  type DispatchCtx,
+  type DispatchErrorDetails,
+  type ParamQuery,
+  type ReadResult,
+  type RenameTarget,
+  type WriteOp,
+  type WriteResult,
+} from './types.js';
 import { listRegisteredDevices, resolveDevice } from './registry.js';
 import { ensureConnection } from '@/server/shared/connections.js';
 
@@ -395,6 +407,211 @@ export function describeDevice(port: string): {
     blocks: Object.keys(desc.blocks),
     block_types: desc.block_types ? Object.keys(desc.block_types) : [],
   };
+}
+
+/**
+ * Full lifecycle for `set_params` — batch write. Validates EVERY entry
+ * up-front before sending any MIDI, so a bad value at index 7 doesn't
+ * leave indices 0..6 half-sent. Same atomicity rule as the legacy
+ * `am4_set_params`.
+ */
+export async function executeSetParams(args: {
+  port: string;
+  ops: readonly { block: string; name: string; value: number | string; channel?: string | number }[];
+}): Promise<BatchWriteResult & { device: string }> {
+  const descriptor = requireDevice(args.port);
+  if (descriptor.writer.setParams === undefined) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `set_params is not implemented for ${descriptor.display_name}.`,
+    );
+  }
+  // Pre-validate every entry. Validation failure rejects the whole call.
+  const validated: WriteOp[] = [];
+  for (let i = 0; i < args.ops.length; i++) {
+    const op = args.ops[i];
+    try {
+      const block = resolveBlockName(descriptor, op.block);
+      const { name } = resolveParamName(descriptor, block, op.name);
+      const channel = resolveChannel(descriptor, block, op.channel);
+      const value = encodeValue(descriptor, block, name, op.value);
+      validated.push({ block, name, value, channel });
+    } catch (err) {
+      if (err instanceof DispatchError) {
+        throw new DispatchError(
+          err.code,
+          err.device,
+          `ops[${i}] (${op.block}.${op.name}): ${err.message}`,
+          err.details,
+        );
+      }
+      throw err;
+    }
+  }
+  const ctx = openCtx(descriptor);
+  const result = await descriptor.writer.setParams(ctx, validated);
+  return { ...result, device: descriptor.display_name };
+}
+
+/**
+ * Full lifecycle for `get_params` — batch read. Continues past
+ * individual failures (a failed read for op[3] doesn't abort op[4..N]).
+ * Returns per-op success/failure detail.
+ */
+export async function executeGetParams(args: {
+  port: string;
+  queries: readonly { block: string; name: string; channel?: string | number }[];
+}): Promise<BatchReadResult & { device: string }> {
+  const descriptor = requireDevice(args.port);
+  const validated: ParamQuery[] = [];
+  for (let i = 0; i < args.queries.length; i++) {
+    const q = args.queries[i];
+    try {
+      const block = resolveBlockName(descriptor, q.block);
+      const { name } = resolveParamName(descriptor, block, q.name);
+      const channel = resolveChannel(descriptor, block, q.channel);
+      validated.push({ block, name, channel });
+    } catch (err) {
+      if (err instanceof DispatchError) {
+        throw new DispatchError(
+          err.code,
+          err.device,
+          `queries[${i}] (${q.block}.${q.name}): ${err.message}`,
+          err.details,
+        );
+      }
+      throw err;
+    }
+  }
+  const ctx = openCtx(descriptor);
+  const result = await descriptor.reader.getParams(ctx, validated);
+  return { ...result, device: descriptor.display_name };
+}
+
+/**
+ * Full lifecycle for `switch_preset`.
+ */
+export async function executeSwitchPreset(args: { port: string; location: string | number }): Promise<WriteResult & { device: string }> {
+  const descriptor = requireDevice(args.port);
+  if (descriptor.writer.switchPreset === undefined) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `switch_preset is not implemented for ${descriptor.display_name}.`,
+    );
+  }
+  const ctx = openCtx(descriptor);
+  const result = await descriptor.writer.switchPreset(ctx, args.location);
+  return { ...result, device: descriptor.display_name };
+}
+
+/**
+ * Full lifecycle for `save_preset`. Schema capability gate first
+ * (some devices may not expose save).
+ */
+export async function executeSavePreset(args: { port: string; location: string | number; name?: string }): Promise<WriteResult & { device: string }> {
+  const descriptor = requireDevice(args.port);
+  if (!descriptor.capabilities.supports_save) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `save_preset is not a concept on ${descriptor.display_name}.`,
+    );
+  }
+  if (descriptor.writer.savePreset === undefined) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `save_preset is not implemented for ${descriptor.display_name} (descriptor missing writer.savePreset).`,
+    );
+  }
+  const ctx = openCtx(descriptor);
+  const result = await descriptor.writer.savePreset(ctx, args.location, args.name);
+  return { ...result, device: descriptor.display_name };
+}
+
+/**
+ * Full lifecycle for `switch_scene`. Capability gate: device must
+ * have scenes.
+ */
+export async function executeSwitchScene(args: { port: string; scene: number }): Promise<WriteResult & { device: string }> {
+  const descriptor = requireDevice(args.port);
+  if (!descriptor.capabilities.has_scenes) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `Scenes are not a concept on ${descriptor.display_name}.`,
+    );
+  }
+  if (descriptor.writer.switchScene === undefined) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `switch_scene is not implemented for ${descriptor.display_name}.`,
+    );
+  }
+  const max = descriptor.capabilities.scene_count ?? 0;
+  if (!Number.isInteger(args.scene) || args.scene < 1 || args.scene > max) {
+    throw new DispatchError(
+      'bad_location',
+      descriptor.display_name,
+      `Scene index ${args.scene} out of range on ${descriptor.display_name} (valid: 1..${max}).`,
+    );
+  }
+  const ctx = openCtx(descriptor);
+  const result = await descriptor.writer.switchScene(ctx, args.scene);
+  return { ...result, device: descriptor.display_name };
+}
+
+/**
+ * Full lifecycle for `rename`. Validates target shape against the
+ * device's capabilities — scene targets require has_scenes and a
+ * valid index.
+ */
+export async function executeRename(args: { port: string; target: string; name: string }): Promise<WriteResult & { device: string }> {
+  const descriptor = requireDevice(args.port);
+  if (descriptor.writer.rename === undefined) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `rename is not implemented for ${descriptor.display_name}.`,
+    );
+  }
+  if (args.target.startsWith('scene:')) {
+    if (!descriptor.capabilities.has_scenes) {
+      throw new DispatchError(
+        'capability_not_supported',
+        descriptor.display_name,
+        `rename target 'scene:N' requires a device with scenes; ${descriptor.display_name} has none.`,
+      );
+    }
+    const idx = Number(args.target.slice('scene:'.length));
+    const max = descriptor.capabilities.scene_count ?? 0;
+    if (!Number.isInteger(idx) || idx < 1 || idx > max) {
+      throw new DispatchError(
+        'bad_location',
+        descriptor.display_name,
+        `rename target '${args.target}' out of range on ${descriptor.display_name} (valid: scene:1..scene:${max}).`,
+      );
+    }
+  } else if (args.target !== 'preset') {
+    throw new DispatchError(
+      'bad_location',
+      descriptor.display_name,
+      `rename target '${args.target}' is not recognized. Valid: 'preset' or 'scene:N'.`,
+    );
+  }
+  if (args.name.length === 0 || args.name.length > 32) {
+    throw new DispatchError(
+      'value_out_of_range',
+      descriptor.display_name,
+      `rename name length ${args.name.length} out of range (must be 1..32).`,
+    );
+  }
+  const ctx = openCtx(descriptor);
+  const result = await descriptor.writer.rename(ctx, args.target as RenameTarget, args.name);
+  return { ...result, device: descriptor.display_name };
 }
 
 /**
