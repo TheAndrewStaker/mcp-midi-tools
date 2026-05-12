@@ -13,6 +13,7 @@
  */
 
 import { connect, connectAM4, type MidiConnection } from '@/fractal/am4/midi.js';
+import { connectAxeFxII } from '@/fractal/axe-fx-ii/midi.js';
 
 /**
  * Max time we wait for the device to echo a WRITE after we send it. The
@@ -24,6 +25,7 @@ import { connect, connectAM4, type MidiConnection } from '@/fractal/am4/midi.js'
 export const WRITE_ECHO_TIMEOUT_MS = 300;
 
 export const AM4_LABEL = 'am4';
+export const AXEFX2_LABEL = 'axe-fx-ii';
 
 /**
  * How many ack-less writes we tolerate before assuming the MIDI handle is
@@ -87,9 +89,18 @@ export function ensureConnection(
     const cachedErr = connectionErrors.get(label);
     if (cachedErr) throw cachedErr;
     try {
+        // BK-051 Wave 2: Axe-Fx II uses a dedicated port discovery path —
+        // the `axe-fx-ii` connection_label does NOT substring-match against
+        // OS port names like "Axe-Fx II Port 1" (dash vs. space), so the
+        // generic `connect({needles:[label]})` fallback would fail
+        // silently. Per Q5 answer in `docs/_private/axefx2-descriptor-
+        // plan.md` § 9 (Session 66): special-case Axe-Fx II to invoke its
+        // own port-discovery helper.
         const conn = label === AM4_LABEL
             ? connectAM4()
-            : connect({ needles: [label] });
+            : label === AXEFX2_LABEL
+                ? (connectAxeFxII() as unknown as MidiConnection)
+                : connect({ needles: [label] });
         connections.set(label, { conn, consecutiveTimeouts: 0 });
         return conn;
     } catch (err) {

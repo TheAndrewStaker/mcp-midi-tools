@@ -65,6 +65,8 @@ import { registerHydrasynthTools, describeHydrasynthPortStatus } from '@/asm/hyd
 import { registerDevice as registerMcpDevice } from '@/protocol/generic/registry.js';
 import { registerUnifiedTools } from '@/protocol/generic/tools.js';
 import { AM4_DESCRIPTOR } from '@/fractal/am4/descriptor.js';
+import { AXEFX2_DESCRIPTOR } from '@/fractal/axe-fx-ii/descriptor.js';
+import { HYDRASYNTH_DESCRIPTOR } from '@/asm/hydrasynth-explorer/descriptor.js';
 
 // -- Server setup -----------------------------------------------------------
 
@@ -101,7 +103,18 @@ registerHydrasynthTools(server);    // 12 hydra_* tools
 // surfaces, the legacy tools carry the long device-specific guidance
 // the LLM relies on, and the unified surface is the architectural seed
 // for Wave 2 (Axe-Fx II + Hydrasynth descriptors).
+// Order matters — Axe-Fx II registers BEFORE AM4 so the more-specific
+// `/axe-?fx/i` regex fires first against port names like "Fractal Axe-Fx
+// II Port 1". AM4's `/Fractal/i` regex stays as a catch-all. Per Q4
+// answer in `docs/_private/axefx2-descriptor-plan.md` § 9 (Session 66).
+registerMcpDevice(AXEFX2_DESCRIPTOR);
 registerMcpDevice(AM4_DESCRIPTOR);
+// Hydrasynth registers after the Fractal devices — its port_match
+// regex (/hydrasynth|asm.*hydra/i) can't collide with the Fractal
+// patterns, so ordering doesn't matter for correctness. BK-031
+// (Session 68) shipped this descriptor as the third device on the
+// unified surface; legacy hydra_* tools still register in parallel.
+registerMcpDevice(HYDRASYNTH_DESCRIPTOR);
 registerUnifiedTools(server);
 
 // -- Start ------------------------------------------------------------------

@@ -17,8 +17,8 @@
  *   3. **Lookup / alias** — already in `nrpn.ts`'s `findHydraNrpn`,
  *      re-exported here for convenience.
  */
-import { HYDRASYNTH_NRPNS, type HydrasynthNrpn } from './nrpn.js';
-import { HYDRASYNTH_ENUMS, resolveHydraEnum } from './enums.js';
+import { findHydraNrpn, HYDRASYNTH_NRPNS, type HydrasynthNrpn } from './nrpn.js';
+import { HYDRASYNTH_ENUMS, resolveHydraEnum, type HydrasynthEnum } from './enums.js';
 
 /** Lowercase, drop non-alphanumerics — for relaxed matching. */
 function normalize(s: string): string {
@@ -308,6 +308,267 @@ export function resolveNrpnValue(entry: HydrasynthNrpn, input: number | string):
     return { wire, scaled: true, bipolar: false };
   }
   return { wire: input, scaled: false, bipolar: false };
+}
+
+// ─── Per-FX-type sub-param resolver ─────────────────────────────────
+//
+// Hydrasynth's `prefxparam1..5` / `postfxparam1..5` mean entirely
+// different things depending on `prefxtype` / `postfxtype`. When
+// prefxtype=Lo-Fi, param1=Cutoff Hz / param4=Output dB /
+// param5=Sampling Hz; when prefxtype=Chorus, param1=Rate Hz / etc.
+// The NRPN table carries this in parallel `fx{0..9}param{1..5}`
+// entries (separate from the generic `prefxparam1..5`), but
+// `findHydraNrpn("prefxparam1")` always returns the generic entry —
+// which has no wireMax / display range / enum table.
+//
+// Result before this layer: agent sends `prefxparam1=88` thinking
+// "halfway"; encoder falls through to raw pass-through (wire=88);
+// device interprets at fx5param1 scale → 170 Hz Lo-Fi cutoff,
+// killing audible volume on anything above the fundamental. Yungatita
+// lo-fi test, 2026-05-12.
+//
+// This resolver picks the type-specific entry when the caller knows
+// which FX type is in play (either pre-scanned from the same batch
+// or pinned by the user).
+
+/** FX_TYPES enum order. Mirrors src/asm/hydrasynth-explorer/enums.ts. */
+const FX_TYPE_NAMES = [
+  'Bypass', 'Chorus', 'Flanger', 'Rotary', 'Phaser',
+  'Lo-Fi', 'Tremolo', 'EQ', 'Compressor', 'Distortion',
+] as const;
+
+// Per-FX-type sub-param enum patches.
+//
+// Several fxNparamM entries in the auto-generated NRPN table list
+// their display values in `notes:` prose but lack a usable `enumTable`
+// linkage. We register the missing tables in HYDRASYNTH_ENUMS at
+// module load and overlay an `enumTable` reference on the entry at
+// lookup time. The auto-generated file stays untouched (regenerating
+// from CSV is the project-discipline path to make these permanent —
+// see docs/devices/hydrasynth-explorer/references/nrpn.csv).
+
+/** Lo-Fi Sampling Rate, descending (per fx5param5 notes). */
+const LOFI_SAMPLING_RATES: HydrasynthEnum = {
+  0: '44100', 1: '22050', 2: '14700', 3: '11025',
+  4: '8820', 5: '7350', 6: '6300', 7: '5513',
+  8: '4900', 9: '4410', 10: '4009', 11: '3675',
+  12: '3392', 13: '3150', 14: '2940', 15: '2756',
+};
+
+/** Lo-Fi internal filter type (per fx5param3 notes). */
+const LOFI_FILTER_TYPES: HydrasynthEnum = {
+  0: 'Thru', 1: 'PWBass', 2: 'Radio', 3: 'Tele', 4: 'Clean', 5: 'Low',
+};
+
+/** Tremolo LFO shape (per fx6param3 notes). */
+const TREMOLO_LFO_SHAPES: HydrasynthEnum = {
+  0: 'Sine', 1: 'Square',
+};
+
+/** Chorus/Flanger Mono/Stereo (per fx1param5 / fx2param5 notes). */
+const CHORUS_MONO_STEREO: HydrasynthEnum = {
+  0: 'Mono', 1: 'Stereo',
+};
+
+/**
+ * fxNparamM entry name → (enumTable label, scale). The label is the
+ * key we add to HYDRASYNTH_ENUMS at module load; the scale is
+ * `enumValueScale` (almost always 8 because the device emits in
+ * multiples of 8 per the spec).
+ */
+const FX_ENUM_PATCHES: ReadonlyArray<{
+  readonly entryNamePrefix: string;
+  readonly tableLabel: string;
+  readonly table: HydrasynthEnum;
+  readonly enumValueScale: number;
+}> = [
+  { entryNamePrefix: 'fx5param3', tableLabel: 'LOFI_FILTER_TYPES',     table: LOFI_FILTER_TYPES,     enumValueScale: 8 },
+  { entryNamePrefix: 'fx5param5', tableLabel: 'LOFI_SAMPLING_RATES',   table: LOFI_SAMPLING_RATES,   enumValueScale: 8 },
+  { entryNamePrefix: 'fx6param3', tableLabel: 'TREMOLO_LFO_SHAPES',    table: TREMOLO_LFO_SHAPES,    enumValueScale: 8 },
+  { entryNamePrefix: 'fx1param5', tableLabel: 'CHORUS_MONO_STEREO',    table: CHORUS_MONO_STEREO,    enumValueScale: 8 },
+  { entryNamePrefix: 'fx2param5', tableLabel: 'CHORUS_MONO_STEREO',    table: CHORUS_MONO_STEREO,    enumValueScale: 8 },
+];
+
+// Register the patch tables in HYDRASYNTH_ENUMS so resolveHydraEnum
+// and downstream lookups see them. Idempotent — re-importing the
+// module is a no-op.
+for (const patch of FX_ENUM_PATCHES) {
+  if (!(patch.tableLabel in HYDRASYNTH_ENUMS)) {
+    // HYDRASYNTH_ENUMS is `Readonly<Record<string, HydrasynthEnum>>`
+    // by signature, but the underlying object is mutable. We extend
+    // it once at module load; nrpn.ts entries that reference the
+    // table by string label then resolve correctly.
+    (HYDRASYNTH_ENUMS as Record<string, HydrasynthEnum>)[patch.tableLabel] = patch.table;
+  }
+}
+
+/**
+ * Apply an FX_ENUM_PATCHES overlay to an entry if its name matches.
+ * Returns a copy with `enumTable` + `enumValueScale` populated; the
+ * original entry is returned untouched when no patch applies.
+ */
+function applyFxEnumPatch(entry: HydrasynthNrpn): HydrasynthNrpn {
+  if (entry.enumTable !== undefined) return entry; // already linked
+  for (const patch of FX_ENUM_PATCHES) {
+    if (entry.name.startsWith(patch.entryNamePrefix)) {
+      return {
+        ...entry,
+        enumTable: patch.tableLabel,
+        enumValueScale: patch.enumValueScale,
+      };
+    }
+  }
+  return entry;
+}
+
+/** Display name for an FX type index, for error/response messages. */
+export function fxTypeName(idx: number): string {
+  return FX_TYPE_NAMES[idx] ?? `unknown(${idx})`;
+}
+
+/**
+ * Build a lookup of `(fxTypeIdx, paramIdx)` → entry, scanning
+ * HYDRASYNTH_NRPNS for entries whose name starts with `fx{N}param{M}`.
+ * Run once at module load. The NRPN names carry trailing parentheticals
+ * (e.g. `"fx5param1 (Cutoff)"`) so we match on prefix.
+ */
+const FX_SUB_PARAM_INDEX: Map<string, HydrasynthNrpn> = (() => {
+  const m = new Map<string, HydrasynthNrpn>();
+  for (const entry of HYDRASYNTH_NRPNS) {
+    const match = /^fx(\d)param([1-5])\b/.exec(entry.name);
+    if (!match) continue;
+    const fxIdx = Number(match[1]);
+    const paramIdx = Number(match[2]);
+    const key = `${fxIdx}.${paramIdx}`;
+    // Apply enum-table overlay for entries the auto-gen pipeline
+    // didn't link (Lo-Fi sampling/filter type, Tremolo LFO shape,
+    // Chorus/Flanger mono-stereo).
+    if (!m.has(key)) m.set(key, applyFxEnumPatch(entry));
+  }
+  return m;
+})();
+
+/** Lookup a per-FX-type sub-param entry by FX type index (0..9) + param index (1..5). */
+export function fxSubParamEntry(fxTypeIdx: number, paramIdx: number): HydrasynthNrpn | undefined {
+  return FX_SUB_PARAM_INDEX.get(`${fxTypeIdx}.${paramIdx}`);
+}
+
+/**
+ * Parse a generic FX sub-param name (e.g. `"prefxparam1"`, `"postfxparam5"`)
+ * into `{ surface: "pre" | "post", paramIdx: 1..5 }`. Returns undefined
+ * for any name that isn't a generic FX sub-param.
+ */
+export function parseFxSubParamName(name: string): { surface: 'pre' | 'post'; paramIdx: number } | undefined {
+  const m = /^(pre|post)fxparam([1-5])$/.exec(name);
+  if (!m) return undefined;
+  return { surface: m[1] as 'pre' | 'post', paramIdx: Number(m[2]) };
+}
+
+/**
+ * Resolve `prefxtype` / `postfxtype` from a user-supplied value
+ * (number index or display-name string). Returns the 0..9 index, or
+ * undefined when the value isn't a valid FX type.
+ */
+export function resolveFxTypeIdx(value: number | string): number | undefined {
+  if (typeof value === 'string') {
+    const idx = resolveHydraEnum('FX_TYPES', value);
+    return idx;
+  }
+  if (Number.isInteger(value) && value >= 0 && value < FX_TYPE_NAMES.length) {
+    return value;
+  }
+  return undefined;
+}
+
+/**
+ * Resolve a value for a (possibly FX-type-aware) param. For names
+ * matching `prefxparam{1..5}` / `postfxparam{1..5}`, route to the
+ * per-FX-type entry when `prefxTypeIdx` / `postfxTypeIdx` is known.
+ * For all other names, delegate to `resolveNrpnValue` with the entry
+ * from `findHydraNrpn`.
+ *
+ * Returns the resolved wire value plus the entry that was used (so
+ * callers can surface the FX-type-specific display name like
+ * "Lo-Fi Cutoff" instead of the generic "prefxparam1").
+ */
+export interface FxAwareResolution extends ResolvedNrpnValue {
+  /** Entry that was actually used for encoding (may be a fxNparamM entry). */
+  readonly entry: HydrasynthNrpn;
+  /** When the FX-type-aware route fired, the FX type index 0..9. */
+  readonly fxTypeIdx?: number;
+}
+
+/**
+ * Per-entry custom wire transforms. The auto-gen NRPN table can't
+ * express offsets like "wire = 464 + (display + 6) × 8" (Lo-Fi
+ * Output dB). Returning a wire override here short-circuits
+ * resolveNrpnValue. Throw on out-of-range so callers can't silently
+ * produce garbage.
+ */
+const FX_ENTRY_TRANSFORMS: Record<
+  string,
+  (value: number | string) => ResolvedNrpnValue
+> = {
+  // Lo-Fi Output: -6..+36 dB → wire 464..800 (step 8).
+  // Patch buffer stores wire/8 → patch byte 58..100 = display + 64.
+  'fx5param4': (value) => {
+    const display = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(display) || display < -6 || display > 36) {
+      throw new Error(
+        `Lo-Fi Output (fx5param4) expects -6..+36 dB; got ${value}.`,
+      );
+    }
+    const wire = 464 + Math.round((display - -6) * 8);
+    return { wire, scaled: true, bipolar: false };
+  },
+};
+
+export function resolveFxAwareValue(
+  paramName: string,
+  value: number | string,
+  context: { prefxTypeIdx?: number; postfxTypeIdx?: number },
+): FxAwareResolution {
+  const sub = parseFxSubParamName(paramName);
+  if (sub) {
+    const typeIdx = sub.surface === 'pre' ? context.prefxTypeIdx : context.postfxTypeIdx;
+    if (typeIdx !== undefined) {
+      const fxEntry = fxSubParamEntry(typeIdx, sub.paramIdx);
+      if (fxEntry) {
+        // Custom-transform entries (Lo-Fi Output etc.) bypass
+        // resolveNrpnValue because their wire encoding has an offset
+        // that the standard linear remap can't express. We match on
+        // entry NAME PREFIX (auto-gen names include parentheticals
+        // like "fx5param4  (Output)").
+        for (const key of Object.keys(FX_ENTRY_TRANSFORMS)) {
+          if (fxEntry.name.startsWith(key)) {
+            const resolved = FX_ENTRY_TRANSFORMS[key]!(value);
+            return { ...resolved, entry: fxEntry, fxTypeIdx: typeIdx };
+          }
+        }
+        const resolved = resolveNrpnValue(fxEntry, value);
+        return { ...resolved, entry: fxEntry, fxTypeIdx: typeIdx };
+      }
+      // Type known but no fxN entry — Bypass (fx0) has none, callers
+      // shouldn't be setting sub-params on a bypassed surface anyway.
+      // Fall through to generic.
+    }
+  }
+  const entry = findHydraNrpn(paramName);
+  if (!entry) {
+    throw new Error(`resolveFxAwareValue: unknown param "${paramName}".`);
+  }
+  const resolved = resolveNrpnValue(entry, value);
+  return { ...resolved, entry };
+}
+
+/**
+ * Extract a friendly per-FX-type label from an entry name like
+ * `"fx5param1 (Cutoff)"` → `"Cutoff"`. Returns undefined when the
+ * entry has no parenthetical (the generic prefxparam1..5 entries).
+ */
+export function fxSubParamLabel(entry: HydrasynthNrpn): string | undefined {
+  const m = /\(([^)]+)\)/.exec(entry.name);
+  return m ? m[1].trim() : undefined;
 }
 
 /**

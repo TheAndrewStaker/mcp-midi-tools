@@ -11,6 +11,7 @@ import * as z from 'zod/v4';
 import { type AxeFxIIBlock } from '@/fractal/axe-fx-ii/blockTypes.js';
 import {
   buildGetGridLayout,
+  buildGetPresetNumber,
   buildSetBlockBypass as buildSetBlockBypassEnvelope,
   buildSetBlockChannel,
   buildSetBlockParameterValue,
@@ -21,9 +22,11 @@ import {
   buildSwitchPreset,
   displayToWire,
   isGetGridLayoutResponse,
+  isGetPresetNumberResponse,
   isSetGridCellResponse,
   isStorePresetResponse,
   parseGetGridLayoutResponse,
+  parseGetPresetNumberResponse,
   parseSetGridCellResponse,
   parseStorePresetResponse,
   type AxeFxIIChannel,
@@ -33,9 +36,13 @@ import { buildApplyPresetAtOps, runApplyPresetAtOps, type ApplyPresetAtInput, ty
 import {
   GET_RESPONSE_TIMEOUT_MS,
   NO_ACK_NOTE,
+  ON_EDITED_DESCRIPTION,
+  ON_EDITED_SCHEMA,
   ensureConn,
   findBlock,
   findParam,
+  guardActiveBufferOrSave,
+  type OnEditedMode,
 } from './shared.js';
 
 export function registerAxeFxIIPresetTools(server: McpServer): void {
@@ -355,19 +362,31 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
       'slot 700, name it \'Vox Light\'." For setlist-style multi-preset',
       'batches, prefer `axefx2_apply_setlist` which iterates this tool.',
       '',
-      'GRID LAYOUT — row 2 only (current limitation):',
+      'GRID LAYOUT — row-2 linear chain:',
       '  Blocks are placed on row 2 in declared order: blocks[0] → col 1,',
-      '  blocks[1] → col 2, ..., blocks[N-1] → col N. Cells N+1 through',
-      '  12 are CLEARED. Row 2 placements auto-route (each cell reads',
-      '  from row 2 of prev col, forming a linear chain). Multi-row /',
-      '  parallel routing requires explicit routing-mask control which',
-      '  is undecoded — see axefx2_set_block_at_cell docstring.',
+      '  blocks[1] → col 2, ..., blocks[N-1] → col N. Row-2 placements',
+      '  auto-route (each block reads from row 2 of prev col, forming a',
+      '  linear chain). Cells beyond the chain on row 2 (cols N+1..12)',
+      '  AND rows 1, 3, 4 are cleared.',
       '',
-      'OVERWRITE WARNING — DESTRUCTIVE:',
-      '  This tool calls STORE_PRESET at the end, which overwrites',
-      '  whatever was at the target slot. Per Axe-Fx II save convention',
-      '  the user MUST have explicitly confirmed the target slot before',
-      '  you call this tool. For unknown target slots, run',
+      'KNOWN GAP — saved-preset OUTPUT routing:',
+      '  Whether the saved preset is audible end-to-end depends on what',
+      '  the device\'s implicit OUTPUT cell pulls from. Pre-existing slots',
+      '  with prior OUTPUT routing may inherit it; freshly-empty slots',
+      '  may save silent. The fix requires decoding AxeEdit\'s outbound',
+      '  routing-write envelope (HW-NEW "Click to connect" capture is',
+      '  the next probe target). For now: audition the saved preset and',
+      '  re-route on the device if silent.',
+      '',
+      'SAVE AUTHORIZATION REQUIRED — DESTRUCTIVE:',
+      '  This tool calls STORE_PRESET at the end, which overwrites the',
+      '  target slot. The tool refuses by default; you MUST pass',
+      '  `save_authorized: true` AND that should only happen when the',
+      '  user used save-intent language (save/store/keep/put-on/persist).',
+      '  For "build a tone" / "design a preset" without save language,',
+      '  use `axefx2_apply_preset` (working-buffer-only) instead, let',
+      '  the user audition, then ASK before calling this tool with',
+      '  save_authorized: true. For unknown target slots, run',
       '  `axefx2_scan_preset_range` first to surface what would be lost.',
       '',
       'CHANNELS: Axe-Fx II has 2 channels per block (X / Y), not 4.',
@@ -376,8 +395,18 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
       '(use `axefx2_apply_preset` separately if needed).',
       '',
       'DISPLAY-FIRST PARAMS: pass display values for calibrated params',
-      '(`gain: 5.0`, `mix: 30`, `low_cut: 200`). Tool auto-detects',
+      '(`input_drive: 5.0`, `mix: 30`, `low_cut: 200`). Tool auto-detects',
       'display vs wire-int mode same as `axefx2_set_param`.',
+      '',
+      'AMP PARAM NAMES: the Axe-Fx II amp block uses the wire names',
+      '`input_drive` (the gain knob, 0..10) and `master_volume` (master,',
+      '0..10) — NOT `gain` and `master` (those are AM4 names). The',
+      'common English aliases `gain` / `master` / `mid` ARE accepted',
+      'as shortcuts (auto-resolved to input_drive / master_volume /',
+      'middle), but prefer the canonical names in tool calls — they',
+      'render correctly in error messages and match `axefx2_list_params`',
+      'output. Other amp params: bass, middle, treble, presence,',
+      'depth, sag, bias, master_volume, effect_type (the amp model).',
       '',
       'PERFORMANCE: ~12 clear writes + N place writes + ~20 param writes',
       '+ 3 misc (scene, name, save) = ~40-50 wire ops, ~1.5-2.5 s per',
@@ -396,12 +425,12 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
       'End-to-end round-trip against Q8.02 pending.',
     ].join('\n'),
     inputSchema: {
-      preset_number: z.number().int().min(0).max(16383).describe(
-        'Target user-preset slot to SAVE the built preset into (0-indexed wire; front-panel display = preset_number + 1). DESTRUCTIVE — overwrites whatever is at this slot.',
+      slot: z.number().int().min(1).max(16384).describe(
+        'Target user-preset SLOT to save the built preset into (1-indexed display slot, 1..16384 — matches the device front panel and AxeEdit). DESTRUCTIVE — overwrites whatever is at this slot.',
       ),
       blocks: z.array(z.object({
         block: z.union([z.string(), z.number()]).describe(
-          'Block to place — display name ("Amp 1") or numeric effectId. Order matters: blocks[0] lands at row 2 col 1, blocks[1] at col 2, etc.',
+          'Block to place — display name ("Amp 1") or numeric effectId. Order matters: blocks[0] lands at col 1, blocks[1] at col 2, etc.',
         ),
         bypass: z.boolean().optional().describe(
           'Optional bypass toggle for this block. true = bypassed, false = engaged. Omitted = leave default (engaged after fresh placement).',
@@ -413,20 +442,80 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
           'Map of param-name → value. Display values for calibrated params, wire 0..65534 for uncalibrated.',
         ),
       })).min(1).max(12).describe(
-        'Ordered list of blocks for the row-2 chain. Up to 12 blocks (1 per column). Each block lands at row 2, col = (index + 1).',
+        'Ordered list of blocks for the linear chain. Up to 12 blocks (1 per column). Each block lands at row 2, col = (index + 1). The executor wipes ALL 48 grid cells before placement, so the previous occupant\'s blocks are NOT preserved.',
       ),
       scene: z.number().int().min(0).max(7).optional().describe(
-        'Optional scene 0..7 to switch to before writing block params (display: scene + 1).',
+        'Optional scene 0..7 to switch to before writing block params (display: scene + 1). Single-scene shortcut — for multi-scene authoring use `scenes` instead.',
+      ),
+      scenes: z.array(z.object({
+        index: z.number().int().min(1).max(8).describe(
+          'Scene number 1..8 (matches Axe-Fx II front-panel display and AxeEdit). 1-indexed.',
+        ),
+        bypass: z.record(z.string(), z.boolean()).optional().describe(
+          'Map of block-slug → bypass flag for this scene. true = silence the block on this scene (block stays placed, just passes input through); false = active. Example: { drive: true, reverb: false }.',
+        ),
+        channels: z.record(z.string(), z.enum(['X', 'Y'])).optional().describe(
+          'Map of block-slug → channel letter (X / Y) for this scene. Axe-Fx II has 2 channels per block (X/Y), not 4 like AM4. Example: { amp: "Y" } makes this scene use amp\'s channel Y.',
+        ),
+      })).max(8).optional().describe(
+        'Per-scene authoring (HW-106 closure, Session 68). Walks each scene\'s bypass + channel state by switching to that scene before writing — matches Fractal\'s family-wide constraint that writes always target the active scene. Use this to build a setlist preset with distinct verse/chorus/solo tones in a single call. Scenes you DON\'T list keep the preset\'s default state (no overrides). Scene names are NOT yet supported — the SET envelope for scene names isn\'t decoded in any OSS corpus for Axe-Fx II.',
+      ),
+      landingScene: z.number().int().min(1).max(8).optional().describe(
+        'Scene the device lands on AFTER the build (1..8, display). Default 1 — user can immediately audition the song\'s opening scene. Override for previewing a specific scene-section (e.g. land on solo scene for an immediate lead test).',
       ),
       name: z.string().max(32).optional().describe(
         'Optional preset name (≤32 ASCII-printable chars). Written before save.',
       ),
+      save_authorized: z.boolean().optional().describe(
+        'EXPLICIT save authorization. Default false — this tool is DESTRUCTIVE (overwrites the target slot) and requires the user to have used save/store/keep/put-on language about the target. If the user said "build a tone for X" without naming a save action, use axefx2_apply_preset (working-buffer-only) FIRST so they can audition, then ASK before calling this tool with save_authorized: true. "Build a setlist" / "build presets in slots 700-702" / "save this as Glassy" all count as authorized; "build a clean tone at slot 666" without save/store/keep language does NOT.',
+      ),
+      on_active_preset_edited: ON_EDITED_SCHEMA.describe(ON_EDITED_DESCRIPTION),
     },
-  }, async ({ preset_number, blocks, scene, name }) => {
+  }, async ({ slot, blocks, scene, scenes, landingScene, name, save_authorized, on_active_preset_edited }) => {
+    const presetNumber = slot - 1;
+
+    // Save-intent guard. apply_preset_at is destructive (it STORE_PRESETs
+    // at the end), and the user's "build a tone at slot N" language is
+    // ambiguous about save intent — "at slot N" names a TARGET, not an
+    // AUTHORIZATION. Per CLAUDE.md's existing AM4 rule: "Do NOT auto-save
+    // after apply_preset — saves require an explicit save phrase from the
+    // user." This guard enforces the same discipline on Axe-Fx II.
+    if (save_authorized !== true) {
+      return {
+        content: [{
+          type: 'text',
+          text:
+            `REFUSING TO SAVE: this tool persists the built preset to slot ${slot}, which overwrites whatever is there. ` +
+            `The default policy refuses unless save_authorized: true is explicitly passed.\n` +
+            `\n` +
+            `If the user said something like "build a clean tone" / "design a tone for X" without naming a save action (save, store, keep, put on, persist to slot N), the right tool is axefx2_apply_preset (WORKING-BUFFER-ONLY) — let them audition the tone first, then ASK "want me to save it to slot ${slot}?" before calling axefx2_apply_preset_at again with save_authorized: true.\n` +
+            `\n` +
+            `User phrases that DO authorize saving here: "save this to slot N", "store as N", "build and save", "put it on N", "keep it at N", or "build a setlist into slots A/B/C" (multi-preset intent implies save).\n` +
+            `\n` +
+            `User phrases that DO NOT authorize saving (use apply_preset first): "build a tone for X", "design a clean preset", "make me a Marshall sound", "build a tone at slot 666" (the "at slot 666" names a target but doesn't authorize a save — the user might just want to audition there).`,
+        }],
+        isError: true,
+      };
+    }
+
+    // Edited-buffer guard. This tool will switch_preset to the target,
+    // which discards the active preset's unsaved edits. Refuse / save-
+    // first / discard per the caller's mode.
+    const mode: OnEditedMode = on_active_preset_edited ?? 'warn';
+    const guard = await guardActiveBufferOrSave(mode);
+    if (!guard.proceed) {
+      return {
+        content: [{ type: 'text', text: guard.warningText ?? 'navigation refused' }],
+        isError: true,
+      };
+    }
+
     const input: ApplyPresetAtInput = {
-      preset_number,
+      preset_number: presetNumber,
       blocks: blocks as ApplyPresetAtInput['blocks'],
       scene,
+      scenes: scenes as ApplyPresetAtInput['scenes'],
+      landingScene,
       name,
     };
 
@@ -443,9 +532,11 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
     const conn = ensureConn();
     const result = await runApplyPresetAtOps(conn, ops);
 
+    const savedLine = guard.savedDetail ? `${guard.savedDetail}\n\n` : '';
     const header =
-      `axefx2_apply_preset_at: built preset → slot ${preset_number} ` +
-      `(display: slot ${preset_number + 1})` +
+      savedLine +
+      `axefx2_apply_preset_at: built preset → display slot ${slot} ` +
+      `(wire ${presetNumber})` +
       (name !== undefined ? ` named "${name}"` : '') +
       ` in ${result.elapsedMs}ms (${ops.length} wire ops, ${result.totalBytes} bytes, ${result.acks} ACKs).`;
 
@@ -456,7 +547,7 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
       : '';
 
     const verifyHint =
-      `\n\nVerify with axefx2_switch_preset({ preset_number: ${preset_number} }) ` +
+      `\n\nVerify with axefx2_switch_preset({ slot: ${slot} }) ` +
       `+ axefx2_get_preset_name + axefx2_get_grid_layout — those should show ` +
       `the saved preset` + (name !== undefined ? ` named "${name}"` : '') + `.`;
 
@@ -489,11 +580,12 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
       'where any single entry\'s validation error fails all of them.',
       '',
       'DISPLAY-DRIFT CAVEAT: while the batch runs, the device\'s active',
-      'preset moves through the setlist as each preset is built and',
-      'saved. The user will see the front-panel preset number cycle.',
-      'Post-batch the device sits on the last preset built. To return to',
-      'their pre-batch state, the user can switch presets manually or',
-      'the agent can call `axefx2_switch_preset` after the batch.',
+      'preset cycles through each target as it\'s loaded, written, and',
+      'saved. The whole 3-preset batch takes ~2.5 seconds, so the front-',
+      'panel cycle is brief but visible. Post-batch the device lands on',
+      'the LAST preset built (default) — the user can audition that',
+      'preset immediately. Pass restore_active: true to instead bounce',
+      'back to whichever preset was active before the batch started.',
       '',
       'PRE-FLIGHT SCAN: before calling on a target range that may contain',
       'non-empty user presets, run `axefx2_scan_preset_range` over the',
@@ -526,8 +618,8 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
     ].join('\n'),
     inputSchema: {
       presets: z.array(z.object({
-        preset_number: z.number().int().min(0).max(16383).describe(
-          'Target user-preset slot to save THIS entry to (0-indexed wire).',
+        slot: z.number().int().min(1).max(16384).describe(
+          'Target user-preset SLOT (1-indexed display slot, 1..16384, matches device front panel + AxeEdit).',
         ),
         blocks: z.array(z.object({
           block: z.union([z.string(), z.number()]),
@@ -536,9 +628,15 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
           params: z.record(z.string(), z.number()).optional(),
         })).min(1).max(12),
         scene: z.number().int().min(0).max(7).optional(),
+        scenes: z.array(z.object({
+          index: z.number().int().min(1).max(8),
+          bypass: z.record(z.string(), z.boolean()).optional(),
+          channels: z.record(z.string(), z.enum(['X', 'Y'])).optional(),
+        })).max(8).optional(),
+        landingScene: z.number().int().min(1).max(8).optional(),
         name: z.string().max(32).optional(),
       })).min(1).max(26).describe(
-        '1..26 setlist entries. Each has the same shape as axefx2_apply_preset_at\'s input. preset_numbers must be unique within the batch.',
+        '1..26 setlist entries. Each has the same shape as axefx2_apply_preset_at\'s input. slots must be unique within the batch.',
       ),
       on_error: z.enum(['stop', 'continue']).optional().describe(
         'Failure handling. "stop" (default) halts on first error; "continue" logs the error and proceeds.',
@@ -546,39 +644,47 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
       dry_run: z.boolean().optional().describe(
         'Validate every entry without sending any wire bytes. Returns { ok, total, validated, message }. Default false.',
       ),
+      restore_active: z.boolean().optional().describe(
+        'After the batch completes, switch back to whichever preset was active BEFORE the batch started. Default FALSE — the device is left on the last preset built so the user can audition it immediately. Pass true only when the user explicitly says "leave me where I was" or the agent is running a batch as a side-quest from a different conversational task.',
+      ),
+      on_active_preset_edited: ON_EDITED_SCHEMA.describe(ON_EDITED_DESCRIPTION),
     },
-  }, async ({ presets, on_error, dry_run }) => {
+  }, async ({ presets, on_error, dry_run, restore_active, on_active_preset_edited }) => {
     const onError: 'stop' | 'continue' = on_error ?? 'stop';
     const dryRun = dry_run ?? false;
+    const restoreActive = restore_active ?? false;
+    const editedMode: OnEditedMode = on_active_preset_edited ?? 'warn';
 
     // Validation pass.
-    const seenPresets = new Set<number>();
-    const validatedEntries: { input: ApplyPresetAtInput; ops: ApplyPresetAtOp[] }[] = [];
+    const seenSlots = new Set<number>();
+    const validatedEntries: { input: ApplyPresetAtInput; ops: ApplyPresetAtOp[]; slot: number }[] = [];
     for (let i = 0; i < presets.length; i++) {
       const entry = presets[i];
-      if (seenPresets.has(entry.preset_number)) {
+      if (seenSlots.has(entry.slot)) {
         return {
           content: [{
             type: 'text',
             text: JSON.stringify({
               ok: false,
               step: 'validate',
-              error: `presets[${i}]: preset_number ${entry.preset_number} appears more than once in the batch; each slot may appear at most once per call`,
+              error: `presets[${i}]: slot ${entry.slot} appears more than once in the batch; each slot may appear at most once per call`,
             }, null, 2),
           }],
           isError: true,
         };
       }
-      seenPresets.add(entry.preset_number);
+      seenSlots.add(entry.slot);
       const input: ApplyPresetAtInput = {
-        preset_number: entry.preset_number,
+        preset_number: entry.slot - 1,
         blocks: entry.blocks as ApplyPresetAtInput['blocks'],
         scene: entry.scene,
+        scenes: entry.scenes as ApplyPresetAtInput['scenes'],
+        landingScene: entry.landingScene,
         name: entry.name,
       };
       try {
         const ops = buildApplyPresetAtOps(input);
-        validatedEntries.push({ input, ops });
+        validatedEntries.push({ input, ops, slot: entry.slot });
       } catch (err) {
         const reason = err instanceof Error ? err.message : String(err);
         return {
@@ -587,7 +693,7 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
             text: JSON.stringify({
               ok: false,
               step: 'validate',
-              error: `presets[${i}] (preset_number ${entry.preset_number}): ${reason}`,
+              error: `presets[${i}] (slot ${entry.slot}): ${reason}`,
             }, null, 2),
           }],
           isError: true,
@@ -611,25 +717,57 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
       };
     }
 
+    // Edited-buffer guard — apply_setlist will switch presets repeatedly
+    // through the batch, which discards the active preset's unsaved edits
+    // on the very first switch. Refuse / save-first / discard per the
+    // caller's mode BEFORE we start any wire activity.
+    const editedGuard = await guardActiveBufferOrSave(editedMode);
+    if (!editedGuard.proceed) {
+      return {
+        content: [{ type: 'text', text: editedGuard.warningText ?? 'navigation refused' }],
+        isError: true,
+      };
+    }
+
     // Live execution.
     const conn = ensureConn();
     const startMs = Date.now();
-    const perEntryResults: { preset_number: number; status: 'ok' | 'error'; error?: string; wallTimeMs: number }[] = [];
+    const perEntryResults: { slot: number; status: 'ok' | 'error'; error?: string; wallTimeMs: number }[] = [];
     let applied = 0;
     let failed = 0;
     let stopIndex: number | undefined;
-    let finalActivePreset = validatedEntries[0].input.preset_number;
+    let finalActiveSlot = validatedEntries[0].slot;
+
+    // Capture the originally-active preset so we can restore it at the
+    // end. The batch loads/saves into each target slot, which cycles the
+    // working buffer — the founder asked to land on whatever preset was
+    // active before the batch started.
+    let originalActiveWire: number | undefined;
+    if (restoreActive) {
+      try {
+        const reqBytes = buildGetPresetNumber();
+        const respP = conn.receiveSysExMatching(
+          isGetPresetNumberResponse,
+          GET_RESPONSE_TIMEOUT_MS,
+        );
+        conn.send(reqBytes);
+        const resp = await respP;
+        originalActiveWire = parseGetPresetNumberResponse(resp).presetNumber;
+      } catch {
+        originalActiveWire = undefined; // best-effort — proceed without restore
+      }
+    }
 
     for (let i = 0; i < validatedEntries.length; i++) {
-      const { input, ops } = validatedEntries[i];
+      const { ops, slot } = validatedEntries[i];
       const entryStart = Date.now();
       try {
         const result = await runApplyPresetAtOps(conn, ops);
-        finalActivePreset = input.preset_number;
+        finalActiveSlot = slot;
         if (!result.ok) {
           failed++;
           perEntryResults.push({
-            preset_number: input.preset_number,
+            slot,
             status: 'error',
             error: result.lastNack
               ? `${result.lastNack.summary} → result=0x${result.lastNack.resultCode.toString(16)}`
@@ -644,7 +782,7 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
         }
         applied++;
         perEntryResults.push({
-          preset_number: input.preset_number,
+          slot,
           status: 'ok',
           wallTimeMs: Date.now() - entryStart,
         });
@@ -652,7 +790,7 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
         const msg = err instanceof Error ? err.message : String(err);
         failed++;
         perEntryResults.push({
-          preset_number: input.preset_number,
+          slot,
           status: 'error',
           error: msg,
           wallTimeMs: Date.now() - entryStart,
@@ -664,9 +802,22 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
       }
     }
 
+    // Restore active preset (best-effort) — done OUTSIDE the per-entry
+    // loop so a mid-batch failure still tries to bounce the device back.
+    let restoreNote: string | undefined;
+    if (restoreActive && originalActiveWire !== undefined) {
+      try {
+        conn.send(buildSwitchPreset(originalActiveWire));
+        finalActiveSlot = originalActiveWire + 1;
+        restoreNote = `Restored active preset to display slot ${originalActiveWire + 1} (wire ${originalActiveWire}) after batch.`;
+      } catch (err) {
+        restoreNote = `WARNING: failed to restore active preset: ${err instanceof Error ? err.message : String(err)}.`;
+      }
+    }
+
     const totalWallTimeMs = Date.now() - startMs;
     const remaining = stopIndex !== undefined
-      ? validatedEntries.slice(stopIndex + 1).map((e) => e.input.preset_number)
+      ? validatedEntries.slice(stopIndex + 1).map((e) => e.slot)
       : [];
 
     return {
@@ -680,7 +831,9 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
           remaining,
           results: perEntryResults,
           totalWallTimeMs,
-          finalActivePreset,
+          finalActiveSlot,
+          restoreNote,
+          savedActiveBeforeBatch: editedGuard.savedDetail,
         }, null, 2),
       }],
     };

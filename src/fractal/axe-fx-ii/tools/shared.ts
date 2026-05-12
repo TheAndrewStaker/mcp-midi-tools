@@ -18,6 +18,22 @@ import {
 } from '@/fractal/axe-fx-ii/blockTypes.js';
 import { KNOWN_PARAMS, type AxeFxIIParam } from '@/fractal/axe-fx-ii/params.js';
 import { connectAxeFxII, listAxeFxIIOutputs, type AxeFxIIConnection } from '@/fractal/axe-fx-ii/midi.js';
+import { findParamFuzzy } from '@/fractal/axe-fx-ii/paramAliases.js';
+import {
+  buildGetPresetName,
+  buildGetPresetNumber,
+  buildSetPresetName,
+  buildStorePreset,
+  isGetPresetNameResponse,
+  isGetPresetNumberResponse,
+  isStorePresetResponse,
+  parseGetPresetNameResponse,
+  parseGetPresetNumberResponse,
+  parseStorePresetResponse,
+} from '@/fractal/axe-fx-ii/setParam.js';
+import { isDirty } from '@/server/shared/bufferDirty.js';
+
+export const AXEFX_DIRTY_LABEL = 'axe-fx-ii';
 
 /**
  * Default response-await window for GET tools. The Axe-Fx II responds
@@ -96,12 +112,7 @@ export const NO_ACK_NOTE = 'Note: SET tools on Axe-Fx II are fire-and-forget —
  * e.g. VOL/volpan, CPR/compressor, CHO/chorus, DLY/delay, REV/reverb.
  */
 export function findParam(target: AxeFxIIBlock, name: string): AxeFxIIParam | undefined {
-  const lower = name.trim().toLowerCase();
-  const groupUpper = target.groupCode.toUpperCase();
-  for (const p of Object.values(KNOWN_PARAMS) as readonly AxeFxIIParam[]) {
-    if (p.groupCode === groupUpper && p.name === lower) return p;
-  }
-  return undefined;
+  return findParamFuzzy(target, name);
 }
 
 export function findBlock(input: string | number): AxeFxIIBlock {
@@ -119,3 +130,139 @@ export function findBlock(input: string | number): AxeFxIIBlock {
 export function toHex(bytes: number[]): string {
   return bytes.map((b) => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
 }
+
+// ── Working-buffer dirty handling ─────────────────────────────────────
+//
+// Shared by axefx2_switch_preset / axefx2_apply_preset_at /
+// axefx2_apply_setlist. Every Fractal device (II/III/AM4) has the same
+// constraint: writes target the working buffer, navigation discards
+// unsaved edits. Before any tool navigates away from the active preset,
+// it consults `isDirty('axe-fx-ii')` and respects the caller's
+// `on_active_preset_edited` mode.
+
+export type OnEditedMode = 'warn' | 'discard' | 'save_active_first';
+
+export const ON_EDITED_DESCRIPTION =
+  'What to do if the active preset has UNSAVED working-buffer edits ' +
+  'when this tool needs to navigate away from it. "warn" (default) ' +
+  'refuses to navigate and returns a structured warning — the agent ' +
+  'should surface this to the user and ask whether to save first or ' +
+  'discard the edits, then call again with on_active_preset_edited set. ' +
+  '"discard" navigates immediately and silently throws away the edits. ' +
+  '"save_active_first" saves the working buffer to whichever preset is ' +
+  'currently loaded BEFORE navigating, preserving the user\'s in-progress ' +
+  'edits.';
+
+export interface DirtyGuardResult {
+  /** Whether the caller may proceed with the navigation. */
+  proceed: boolean;
+  /** Tool-result text when proceed=false (the warning to surface). */
+  warningText?: string;
+  /** Human-readable detail for the proceed=true case (after save_active_first). */
+  savedDetail?: string;
+  /** When proceed=true after save_active_first, the slot the buffer was saved to. */
+  savedSlot?: number;
+}
+
+/**
+ * Pre-navigation dirty check + optional save-first behavior.
+ *
+ * - `mode='warn'` + dirty: returns proceed=false with a warning text the
+ *   tool should bubble up unchanged. Includes the active preset's name
+ *   so the agent can describe what would be lost.
+ * - `mode='discard'` + dirty: returns proceed=true without saving.
+ * - `mode='save_active_first'` + dirty: saves working buffer to the
+ *   currently-active slot, then returns proceed=true. Returns
+ *   proceed=false (with a warning) if the save fails.
+ * - Clean buffer: returns proceed=true regardless of mode.
+ */
+export async function guardActiveBufferOrSave(
+  mode: OnEditedMode,
+): Promise<DirtyGuardResult> {
+  if (!isDirty(AXEFX_DIRTY_LABEL)) {
+    return { proceed: true };
+  }
+  if (mode === 'discard') {
+    return { proceed: true };
+  }
+  const c = ensureConn();
+  // Read the active preset's number + name so the warning is concrete.
+  let activeWire: number | undefined;
+  let activeName: string | undefined;
+  try {
+    const numP = c.receiveSysExMatching(isGetPresetNumberResponse, GET_RESPONSE_TIMEOUT_MS);
+    c.send(buildGetPresetNumber());
+    const numResp = await numP;
+    activeWire = parseGetPresetNumberResponse(numResp).presetNumber;
+  } catch {
+    activeWire = undefined;
+  }
+  try {
+    const nameP = c.receiveSysExMatching(isGetPresetNameResponse, GET_RESPONSE_TIMEOUT_MS);
+    c.send(buildGetPresetName());
+    const nameResp = await nameP;
+    activeName = parseGetPresetNameResponse(nameResp).trimEnd() || undefined;
+  } catch {
+    activeName = undefined;
+  }
+  const activeDescriptor = activeWire !== undefined
+    ? `display slot ${activeWire + 1}${activeName ? ` ("${activeName}")` : ''}`
+    : 'the currently active preset';
+
+  if (mode === 'warn') {
+    return {
+      proceed: false,
+      warningText:
+        `REFUSING TO NAVIGATE: ${activeDescriptor} has unsaved working-buffer edits.\n` +
+        `\n` +
+        `Navigating away would DISCARD those edits silently. Ask the user how to proceed:\n` +
+        `  • "save first" → call this tool again with on_active_preset_edited="save_active_first" ` +
+        `(saves the working buffer to ${activeDescriptor}, then navigates).\n` +
+        `  • "discard" → call this tool again with on_active_preset_edited="discard" ` +
+        `(silently loses the edits).\n` +
+        `\n` +
+        `If the user wants to save to a DIFFERENT slot than ${activeDescriptor}, ` +
+        `call axefx2_save_preset({ slot: <slot> }) directly first, then retry this tool.`,
+    };
+  }
+
+  // save_active_first path.
+  if (activeWire === undefined) {
+    return {
+      proceed: false,
+      warningText:
+        `Could not read the active preset number — refusing to navigate to avoid losing edits silently.\n` +
+        `Try axefx2_reconnect_midi, then retry. If the device is in an unusual state, ` +
+        `the user can save manually on the front panel before this tool retries.`,
+    };
+  }
+  try {
+    const storeAck = c.receiveSysExMatching(isStorePresetResponse, GET_RESPONSE_TIMEOUT_MS);
+    c.send(buildStorePreset(activeWire));
+    const ack = await storeAck;
+    const parsed = parseStorePresetResponse(ack);
+    if (!parsed.ok) {
+      return {
+        proceed: false,
+        warningText:
+          `Save failed: STORE_PRESET to ${activeDescriptor} returned ` +
+          `result_code=0x${parsed.resultCode.toString(16)}. Edits NOT saved; refusing to ` +
+          `navigate. Pass on_active_preset_edited="discard" if you want to lose them anyway.`,
+      };
+    }
+    return {
+      proceed: true,
+      savedSlot: activeWire + 1,
+      savedDetail: `Saved working buffer to ${activeDescriptor} before navigating.`,
+    };
+  } catch (err) {
+    return {
+      proceed: false,
+      warningText:
+        `Save attempt failed: ${err instanceof Error ? err.message : String(err)}. ` +
+        `Refusing to navigate. Pass on_active_preset_edited="discard" to proceed without saving.`,
+    };
+  }
+}
+
+export const ON_EDITED_SCHEMA = z.enum(['warn', 'discard', 'save_active_first']).optional();

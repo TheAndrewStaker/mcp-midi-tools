@@ -14,7 +14,17 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import * as z from 'zod/v4';
 
 import { findHydraNrpn } from '../nrpn.js';
-import { findMatchingNrpns, resolveNrpnValue } from '../encoding.js';
+import {
+  findMatchingNrpns,
+  fxSubParamLabel,
+  fxTypeName,
+  parseFxSubParamName,
+  resolveFxAwareValue,
+  resolveFxTypeIdx,
+  resolveNrpnValue,
+} from '../encoding.js';
+import { decodeFxNrpnDisplay, decodeNrpnDisplay } from '../nrpnDisplay.js';
+import { HYDRASYNTH_ENUMS } from '../enums.js';
 import { wrapSysex, unwrapSysex } from '../sysexEnvelope.js';
 import { encodePatch, splitIntoChunks, PATCH_CHUNK_COUNT } from '../patchEncoder.js';
 import { INIT_PATCH_BUFFER } from '../initPatchBuffer.js';
@@ -426,6 +436,48 @@ server.registerTool('hydra_apply_patch', {
     'so the patch becomes audible (per spec NOTE 2 — confirmed by HW-040',
     'test 1 on 2026-04-28).',
     '',
+    'FX SUB-PARAMS ARE TYPE-DEPENDENT — `prefxparam1..5` and',
+    '`postfxparam1..5` mean different things based on `prefxtype` /',
+    '`postfxtype`. Always include the type in the SAME `apply_patch`',
+    'call. The tool auto-routes to the correct per-type encoder; if',
+    'the type is omitted, the generic entry is used (no range check,',
+    'often wrong by a wide margin — Lo-Fi cutoff bug from 2026-05-12).',
+    '',
+    '  Lo-Fi (prefxtype="Lo-Fi"):',
+    '    param1 = Cutoff Hz (160..20000). Pass 0..128 ⇒ device picks Hz',
+    '            from a piecewise table (88 ≈ ~5 kHz).',
+    '    param2 = Resonance (1.0..12.0).',
+    '    param3 = Filter Type ("Thru" / "PWBass" / "Radio" / "Tele" /',
+    '            "Clean" / "Low") — pass the name.',
+    '    param4 = Output dB (-6..+36, makeup gain).',
+    '    param5 = Sampling Hz — pass the rate as a string ("22050",',
+    '            "11025", "5513" etc.) OR the index 0..15 (0=44100,',
+    '            1=22050, ..., 15=2756). LOWER value = lower-fi crunch.',
+    '',
+    '  Chorus / Flanger (prefxtype="Chorus" or "Flanger"):',
+    '    param1 = Rate Hz, param2 = Depth, param3 = Offset (-180..180°),',
+    '    param4 = Feedback (-63..63), param5 = Mono/Stereo.',
+    '',
+    '  Phaser (prefxtype="Phaser"): param1 = Rate, param2 = Feedback',
+    '    (-64..+64), param3 = Depth, param4 = Phase, param5 = Offset (-180..180°).',
+    '',
+    '  Rotary (prefxtype="Rotary"): param1 = Rate, param2 = LFO-ish param,',
+    '    param3 = Lo-Depth, param4 = Hi-Depth, param5 = Low/High mix (-63..63).',
+    '',
+    '  Tremolo (prefxtype="Tremolo"): param1 = Rate, param2 = Depth,',
+    '    param3 = LFO Shape ("Sine" / "Square"), param4 = Phase, param5 = Pitch Mod.',
+    '',
+    '  EQ (prefxtype="EQ"): param1 = Low Gain dB, param2 = High Gain dB',
+    '    (-36..+24), param3 = Mid Gain dB, param4 = Xover Low Hz, param5 = Xover High Hz.',
+    '',
+    '  Compressor (prefxtype="Compressor"): param1 = Threshold-ish,',
+    '    param2 = Ratio (1.0..20.0:1), param3 = Attack ms, param4 = Release ms,',
+    '    param5 = Output dB.',
+    '',
+    '  Distortion (prefxtype="Distortion"): param1 = Drive 0..128,',
+    '    param2 = Tone (-64..+64), param3 = Asym 0..128, param4 = Curve,',
+    '    param5 = Output dB (-36..+24).',
+    '',
     '⚠ IF YOU ARE NOT 100% SURE A PARAM NAME EXISTS, CALL',
     '  `hydra_param_catalog({ search: "<keyword>" })` FIRST — e.g.',
     '  `search: "lfo"`, `search: "env2"`, `search: "amp"`. The catalog',
@@ -520,6 +572,30 @@ server.registerTool('hydra_apply_patch', {
     'agent thinks "I want 10 seconds of attack" it should pass ~110,',
     'not 10000. Out-of-range indices throw with the canonical range.',
     '',
+    'GAIN STAGING — the patch is quiet, what knob do I push?',
+    '  The signal chain is:',
+    '    osc[1-3] → mixer[oscNvol] → filter1 → filter1.drive → amp[level]',
+    '       → prefx (incl. lo-fi makeup) → delay/reverb → postfx → master CC 7',
+    '',
+    '  Levers (from cheapest to most-likely-to-help):',
+    '    • `amplevel` — post-amp output knob. Default INIT = ~100/128. Raise',
+    '      to 120-128 if the patch sounds quiet across the board.',
+    '    • `mixerosc1vol` / `mixerosc2vol` / `mixerosc3vol` — per-osc into',
+    '      the filter (0..128). If only one osc is loud, balance here.',
+    '    • For Lo-Fi pre-FX: `prefxparam4` is MAKEUP GAIN in dB (-6..+36).',
+    '      The internal lo-fi filter (`prefxparam1` Cutoff Hz) is downstream',
+    '      of the synth filter — setting it BELOW the playing fundamental',
+    '      kills the signal. **C4 = 262 Hz, C5 = 523 Hz; keep Lo-Fi cutoff',
+    '      well above the highest note**, then add makeup with prefxparam4.',
+    '    • `system.master_volume` (hydra_set_param) — global CC 7. Use as',
+    '      last resort; affects everything including other patches.',
+    '',
+    '  Common quiet-patch culprits:',
+    '    • Lo-Fi cutoff at low Hz (this killed the yungatita test — 170 Hz',
+    '      cutoff vs C5 fundamental at 523 Hz).',
+    '    • amplevel left at INIT default while pre/post FX wets are high.',
+    '    • Mixer osc vols at 0 (init mixerosc2vol/osc3vol are 0).',
+    '',
     'DELAY TEMPO-SYNC DISCIPLINE — IMPORTANT for rhythmic delays:',
     'tempo-synced repeats are the PROFESSIONAL DEFAULT in modern',
     'guitar / synth music. Same rule the AM4\'s apply_preset uses.',
@@ -591,8 +667,32 @@ server.registerTool('hydra_apply_patch', {
   // values / enum strings, never wire/protocol numbers. The encoder
   // expects wire NRPN values and applies its /8 patch-buffer scaling
   // internally for u16le params.
+  //
+  // PASS 1 — pre-scan for prefxtype / postfxtype so FX sub-params
+  // (prefxparam1..5 / postfxparam1..5) can be routed to the correct
+  // per-type entry (fx5param1 = Lo-Fi Cutoff Hz, fx1param1 = Chorus
+  // Rate Hz, etc.). Without this, the generic prefxparam1 entry has
+  // no wireMax / display range and value=88 silently became raw wire
+  // 88 → 170 Hz Lo-Fi cutoff → killed audible volume.
+  let prefxTypeIdx: number | undefined;
+  let postfxTypeIdx: number | undefined;
+  for (const { name: pname, value: pval } of params) {
+    if (pname === 'prefxtype')  prefxTypeIdx  = resolveFxTypeIdx(pval);
+    if (pname === 'postfxtype') postfxTypeIdx = resolveFxTypeIdx(pval);
+  }
+
   const overrides = new Map<string, number>();
-  const resolutions: Array<{ name: string; raw: number | string; wire: number; scaled: boolean; bipolar: boolean }> = [];
+  const resolutions: Array<{
+    name: string;
+    raw: number | string;
+    wire: number;
+    scaled: boolean;
+    bipolar: boolean;
+    /** Per-FX-type label like "Lo-Fi Cutoff" when the FX-aware route fired. */
+    fxLabel?: string;
+    /** Auto-gen NRPN name actually used to encode (e.g. "fx5param1 (Cutoff)"). */
+    encodingEntryName?: string;
+  }> = [];
   // Capture raw-input signature BEFORE NRPN resolution so we detect
   // identical user-facing recipes (different display values resolve to
   // different wire values, but two calls with the same inputs share a
@@ -601,10 +701,68 @@ server.registerTool('hydra_apply_patch', {
     .map(({ name: n, value: v }) => `${n}=${typeof v === 'string' ? `"${v}"` : v}`)
     .sort();
   const dupSignature = `${name ?? ''}|${save ? '1' : '0'}|${dupSignatureParts.join(';')}`;
+
+  // PASS 2 — resolve each value.
   for (const { name, value } of params) {
     if (typeof value === 'number' && !Number.isFinite(value)) {
       throw new Error(`hydra_apply_patch: param "${name}" has non-finite value ${value}.`);
     }
+    const sub = parseFxSubParamName(name);
+    if (sub) {
+      // Per-FX-type route. If the user didn't set prefxtype/postfxtype
+      // in the same call, we can't know which FX type's sub-params
+      // they want — fall through to the generic entry, but flag the
+      // ambiguity in the response so the agent learns to include the
+      // type next time.
+      const typeIdx = sub.surface === 'pre' ? prefxTypeIdx : postfxTypeIdx;
+      if (typeIdx === undefined) {
+        // No type context — likely a tweak-on-top of an already-loaded
+        // FX type. Use the generic entry but note the imprecision.
+        const entry = findHydraNrpn(name);
+        if (!entry) {
+          throw new Error(`hydra_apply_patch: unknown param "${name}".`);
+        }
+        let resolved;
+        try {
+          resolved = resolveNrpnValue(entry, value);
+        } catch (err) {
+          throw new Error(`hydra_apply_patch: param "${name}" — ${err instanceof Error ? err.message : String(err)}`);
+        }
+        overrides.set(name, resolved.wire);
+        resolutions.push({
+          name,
+          raw: value,
+          wire: resolved.wire,
+          scaled: resolved.scaled,
+          bipolar: resolved.bipolar,
+          fxLabel: `${sub.surface}fx (type not in batch — using generic encoding; pass ${sub.surface}fxtype for accurate scaling)`,
+        });
+        continue;
+      }
+      let resolved;
+      try {
+        resolved = resolveFxAwareValue(name, value, { prefxTypeIdx, postfxTypeIdx });
+      } catch (err) {
+        throw new Error(`hydra_apply_patch: param "${name}" — ${err instanceof Error ? err.message : String(err)}`);
+      }
+      // Write under the GENERIC name so the patch-buffer encoder
+      // finds the right byte offset (PATCH_OFFSETS keys are
+      // "prefxparam1", not "fx5param1"). The wire value is the
+      // per-type-resolved one.
+      overrides.set(name, resolved.wire);
+      const fxLabel = `${fxTypeName(typeIdx)} ${fxSubParamLabel(resolved.entry) ?? `param${sub.paramIdx}`}`;
+      resolutions.push({
+        name,
+        raw: value,
+        wire: resolved.wire,
+        scaled: resolved.scaled,
+        bipolar: resolved.bipolar,
+        fxLabel,
+        encodingEntryName: resolved.entry.name,
+      });
+      continue;
+    }
+
     const entry = findHydraNrpn(name);
     if (!entry) {
       const hits = findMatchingNrpns(name, 4);
@@ -734,25 +892,50 @@ server.registerTool('hydra_apply_patch', {
     lines.push(`(Note: this is the same patch you applied ${dupAgeSec}s ago. It re-landed cleanly, but if you're checking because the previous call looked like it failed, it didn't — the Hydrasynth doesn't ack chunk dumps reliably. No further action is needed.)`);
   }
   lines.push('');
-  lines.push('Overrides applied:');
+  lines.push('Overrides applied (values are what the device will display):');
   for (const r of resolutions) {
     const rawDisplay = typeof r.raw === 'string' ? `"${r.raw}"` : String(r.raw);
-    let suffix = '';
-    if (r.bipolar) {
-      const entry = findHydraNrpn(r.name);
-      const range = entry?.displayMin !== undefined && entry?.displayMax !== undefined
-        ? ` ${entry.displayMin}..+${entry.displayMax}`
-        : '';
-      suffix = ` → wire ${r.wire} (bipolar${range})`;
-    } else if (r.scaled) {
-      const entry = findHydraNrpn(r.name);
-      if (entry?.displayMin === 0 && entry?.displayMax !== undefined && entry.displayMax !== 128) {
-        suffix = ` → wire ${r.wire} (auto-scaled 0..${entry.displayMax})`;
-      } else {
-        suffix = ` → wire ${r.wire} (auto-scaled 0..128)`;
+    // Resolve the device-display label. Preference order:
+    //   1. FX-routed: try the per-FX-type formula by encoding entry name
+    //   2. Curated per-canonical-name formula in NRPN_DISPLAY
+    //   3. Enum table (when the entry references one)
+    //   4. None — fall back to wire passthrough
+    let deviceLabel: string | undefined;
+    if (r.encodingEntryName) {
+      deviceLabel = decodeFxNrpnDisplay(r.encodingEntryName, r.wire);
+      if (deviceLabel === undefined) {
+        // Try enum decoding via the entry's enumTable (for fx5param3/5 etc.)
+        const fxEntry = findHydraNrpn(r.name); // generic name still useful for fallback
+        if (fxEntry?.enumTable) {
+          // Already decoded by the resolver path; skip.
+        }
       }
-    } else if (rawDisplay !== String(r.wire)) suffix = ` → wire ${r.wire}`;
-    lines.push(`  ${r.name} = ${rawDisplay}${suffix}`);
+    }
+    if (deviceLabel === undefined) {
+      deviceLabel = decodeNrpnDisplay(r.name, r.wire);
+    }
+    if (deviceLabel === undefined) {
+      const entry = findHydraNrpn(r.name);
+      if (entry?.enumTable) {
+        const table = HYDRASYNTH_ENUMS[entry.enumTable];
+        // enumValueScale: device emits in multiples of N → table index = wire/N
+        const idx = entry.enumValueScale ? Math.round(r.wire / entry.enumValueScale) : r.wire;
+        const label = table?.[idx];
+        if (label !== undefined) deviceLabel = String(label);
+      }
+    }
+    if (deviceLabel === undefined && r.bipolar) {
+      const entry = findHydraNrpn(r.name);
+      if (entry?.displayMin !== undefined && entry?.displayMax !== undefined && entry.wireMax) {
+        const span = entry.displayMax - entry.displayMin;
+        const display = Math.round((r.wire / entry.wireMax) * span * 10) / 10 + entry.displayMin;
+        deviceLabel = `${display >= 0 ? '+' : ''}${display.toFixed(1)}`;
+      }
+    }
+
+    const fxBadge = r.fxLabel ? ` [${r.fxLabel}]` : '';
+    const deviceClause = deviceLabel !== undefined ? ` → device shows: ${deviceLabel}` : ` → wire ${r.wire}`;
+    lines.push(`  ${r.name}${fxBadge} = ${rawDisplay}${deviceClause}`);
   }
   lines.push('');
   lines.push(`Press a key. The active patch reflects your overrides on top of an INIT base.`);

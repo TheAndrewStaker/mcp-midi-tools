@@ -22,20 +22,22 @@ pedals, and other gear are reachable from day one.
 ## Status
 
 v0.1.0 — first public release. The protocol layer is hardware-verified
-across Fractal AM4, Axe-Fx II XL+, and ASM Hydrasynth Explorer; 80 MCP
+across Fractal AM4, Axe-Fx II XL+, and ASM Hydrasynth Explorer; 83 MCP
 tools are live; every wire-level tool ships with byte-exact goldens
 against real captures.
 
 Tools split across two surfaces:
 
-- **Unified surface** (14 tools) — port-dispatched, device-agnostic.
+- **Unified surface** (17 tools) — port-dispatched, device-agnostic.
   `set_param(port, block, name, value)`, `get_param`, `apply_preset`,
-  `switch_preset`, `save_preset`, `switch_scene`, `set_block`,
-  `set_bypass`, `set_params`, `get_params`, `list_params`,
-  `describe_device`, `rename`, `scan_locations`, `lookup_lineage`. Same
-  tool name works against any registered device — the `port` argument
-  picks the device. Adding a new device means registering a schema
-  descriptor; no new tools.
+  `apply_setlist`, `switch_preset`, `save_preset`, `switch_scene`,
+  `set_block`, `set_bypass`, `set_params`, `get_params`, `list_params`,
+  `describe_device`, `rename`, `scan_locations`, `lookup_lineage`,
+  `restore_defaults`. Same tool name works against any registered device
+  — the `port` argument picks the device. Adding a new device means
+  registering a schema descriptor; no new tools. AM4 and Axe-Fx II both
+  ship as descriptors today (BK-051 Wave 2); Hydrasynth descriptor lands
+  next session.
 - **Device-namespaced surface** (`am4_*`, `axefx2_*`, `hydra_*` — ~65
   tools) — first-generation tool pattern, kept in parallel through
   v0.1. Carries device-specific behavioral guidance in tool
@@ -74,7 +76,7 @@ Once connected, Claude can:
   Klon?"* / *"Which amp on the AM4 is inspired by a Matchless DC-30?"*
 - **Switch presets.** *"Load A01."*
 
-Under the hood Claude picks one of 80 tools and sends SysEx (or CC /
+Under the hood Claude picks one of 83 tools and sends SysEx (or CC /
 NRPN / etc.) to the device. Tool round-trips land in roughly 30–60 ms;
 whole-preset builds take under a second.
 
@@ -334,9 +336,9 @@ If step 3 works, you're done. Move on to building full presets.
 
 ---
 
-## The 80 tools at a glance
+## The 83 tools at a glance
 
-### Unified surface (14) — port-dispatched, device-agnostic
+### Unified surface (17) — port-dispatched, device-agnostic
 
 Same tool name works against every registered device. Pass `port` to
 select which device (id, display_name, or any MIDI port-name substring
@@ -353,17 +355,15 @@ adapter; no new tools.
 | `set_params(port, ops[])` | Atomic batch write — validates every entry up-front. |
 | `set_block(port, slot, block_type)` | Place/clear a block at a slot. |
 | `set_bypass(port, block, bypassed)` | Silence/activate a block on the active scene. |
+| `apply_preset(port, spec, target_location?)` | Build a whole preset in one call (blocks + params + scenes + name). Without `target_location`, writes to the working buffer only; with it, switches to the target slot and saves. |
+| `apply_setlist(port, entries[])` | Batch preset write across N entries. Each entry has the same shape as `apply_preset`. |
 | `switch_preset(port, location)` | Load a stored preset into the working buffer. |
 | `save_preset(port, location, name?)` | Persist working buffer (optional rename first). Only on explicit user save phrase — apply_preset is reversible, save_preset is not. |
 | `switch_scene(port, scene)` | Switch scene. Capability-gated (devices without scenes reject). |
 | `rename(port, target, name)` | Rename `'preset'` or `'scene:N'`. Working-buffer scope; pair with `save_preset` to persist. |
 | `scan_locations(port, from, to)` | Bulk-scan stored preset names across a location range. Setlist-load opener. |
 | `lookup_lineage(port, block_type, query)` | Authored lineage data — real-hardware inspiration, manufacturer/model, developer quotes. AM4 + Axe-Fx II ship lineage corpora. |
-
-> The unified `apply_preset`, `apply_setlist`, and `restore_defaults`
-> are post-v0.1.0 work (deferred from Session B). The device-namespaced
-> `am4_apply_preset` / `am4_apply_setlist` / `am4_restore_factory_range`
-> still ship and cover the v0.1.0 user need.
+| `restore_defaults(port, from, to?)` | Reset a single location or inclusive range to factory state. Capability-gated; only devices with `supports_factory_restore=true` (currently AM4) honor it. |
 
 ### Device-namespaced — AM4 (30, slated for v0.3 removal)
 
@@ -398,14 +398,19 @@ adapter; no new tools.
 
 Same shape as the AM4 surface. Wire-format-verified end-to-end as of
 Session 62; setlist build round-trip lands in ~6–10s for a 3-preset
-batch. The unified surface dispatches through these for v0.1.0.
+batch. The unified surface ALSO dispatches against the Axe-Fx II via
+its own `DeviceDescriptor` (Session 67, BK-051 Wave 2) — call
+`set_param(port='axe-fx-ii', block='amp', name='bass', value=6.0)`
+to route through the unified path.
 
 ### Device-namespaced — ASM Hydrasynth Explorer (14, slated for v0.3 removal)
 
 Patch-based architecture (no scenes). `hydra_apply_patch`,
 `hydra_set_param`, `hydra_set_engine_params`, `hydra_set_macro`, etc.
-NRPN-driven engine. The unified `set_param` / `get_param` / etc. work
-against the Hydrasynth in v0.1.0 with `port="hydra"`.
+NRPN-driven engine. The Hydrasynth `DeviceDescriptor` (BK-031, post-
+Session 67) is the next item on the BK-051 Wave 2 roadmap; until it
+ships, the unified surface routes Hydrasynth calls through the
+namespaced tools.
 
 ### Generic MIDI primitives (13)
 

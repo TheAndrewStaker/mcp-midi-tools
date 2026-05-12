@@ -678,10 +678,16 @@ check('AXE_FX_II_XL_PLUS_MODEL_ID === 0x07', AXE_FX_II_XL_PLUS_MODEL_ID === 0x07
         `got "${parseGetBlockChannelResponse(captureYtoX)}"`);
 }
 
-// ── SWITCH_PRESET (function 0x3C) — wiki-documented ───────────────────
+// ── SWITCH_PRESET (function 0x3C) — MSB-first (HW-103 closed Session 68) ──
+//
+// Wiki documents LSB-first ordering for this envelope, but Q8.02
+// hardware testing showed switch_preset silently fails for any wire
+// preset >= 128 with LSB-first encoding. Flipped to MSB-first to match
+// STORE_PRESET (0x1D) and the device's own GET_PRESET_NUMBER (0x14)
+// response — both of which are MSB-first AND hardware-verified.
 
 {
-    // Wiki shape: F0 00 01 74 07 3C [pn_lo] [pn_hi] [cs] F7. Preset 0.
+    // Preset 0 — encodes identically in both orderings.
     {
         const expectedHead = [0xf0, 0x00, 0x01, 0x74, 0x07, 0x3c, 0x00, 0x00];
         const cs = fractalChecksum(expectedHead);
@@ -694,14 +700,30 @@ check('AXE_FX_II_XL_PLUS_MODEL_ID === 0x07', AXE_FX_II_XL_PLUS_MODEL_ID === 0x07
         );
     }
 
-    // Preset 128 — exercises the 14-bit septet pair boundary.
+    // Preset 128 — exercises the 14-bit septet pair boundary. MSB-first:
+    // high byte = 1, low byte = 0.
     {
-        const expectedHead = [0xf0, 0x00, 0x01, 0x74, 0x07, 0x3c, 0x00, 0x01];
+        const expectedHead = [0xf0, 0x00, 0x01, 0x74, 0x07, 0x3c, 0x01, 0x00];
         const cs = fractalChecksum(expectedHead);
         const expected = [...expectedHead, cs, 0xf7];
         const built = buildSwitchPreset(128);
         check(
-            'buildSwitchPreset(128) envelope',
+            'buildSwitchPreset(128) MSB-first envelope (HW-103)',
+            eqBytes(built, expected),
+            `got [${hex(built)}], expected [${hex(expected)}]`,
+        );
+    }
+
+    // Preset 699 (display slot 700) — the slot the founder used for
+    // HW-105 testing. MSB-first: high=5 (699>>7), low=59 (699&0x7f).
+    // Should match the byte layout STORE_PRESET uses for the same slot.
+    {
+        const expectedHead = [0xf0, 0x00, 0x01, 0x74, 0x07, 0x3c, 0x05, 0x3b];
+        const cs = fractalChecksum(expectedHead);
+        const expected = [...expectedHead, cs, 0xf7];
+        const built = buildSwitchPreset(699);
+        check(
+            'buildSwitchPreset(699 = display slot 700) MSB-first envelope',
             eqBytes(built, expected),
             `got [${hex(built)}], expected [${hex(expected)}]`,
         );

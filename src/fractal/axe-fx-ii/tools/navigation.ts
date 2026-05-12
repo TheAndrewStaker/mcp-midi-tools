@@ -31,9 +31,13 @@ import {
 import {
   GET_RESPONSE_TIMEOUT_MS,
   NO_ACK_NOTE,
+  ON_EDITED_DESCRIPTION,
+  ON_EDITED_SCHEMA,
   ensureConn,
   findBlock,
+  guardActiveBufferOrSave,
   toHex,
+  type OnEditedMode,
 } from './shared.js';
 
 export function registerAxeFxIINavigationTools(server: McpServer): void {
@@ -95,11 +99,12 @@ export function registerAxeFxIINavigationTools(server: McpServer): void {
 
   server.registerTool('axefx2_get_active_preset_number', {
     description: [
-      'Read the active preset NUMBER (slot index) on the Axe-Fx II.',
-      'Returns both the 0-indexed wire value AND the 1-indexed front-',
-      'panel display slot. Useful when the agent needs to anchor the',
-      'user\'s mental state ("you\'re on slot 47") or detect a preset',
-      'switch the user made on the device without telling the agent.',
+      'Read the active preset slot on the Axe-Fx II. Returns the',
+      '1-indexed display slot (1..16384) — the same number that appears',
+      'on the device front panel and in AxeEdit. Useful when the agent',
+      'needs to anchor the user\'s mental state ("you\'re on slot 47") or',
+      'detect a preset switch the user made on the device without',
+      'telling the agent.',
       '',
       'Common phrasings this tool answers:',
       '  - "what slot am I on?" / "which preset is active?"',
@@ -143,7 +148,7 @@ export function registerAxeFxIINavigationTools(server: McpServer): void {
       content: [{
         type: 'text',
         text:
-          `Active preset: wire ${presetNumber} (front-panel display: slot ${displaySlot}).\n` +
+          `Active preset: display slot ${displaySlot} (wire ${presetNumber}).\n` +
           `Sent (${reqBytes.length}B): ${toHex(reqBytes)}\n` +
           `Recv (${response.length}B): ${toHex(response)}\n`,
       }],
@@ -319,41 +324,59 @@ export function registerAxeFxIINavigationTools(server: McpServer): void {
 
   server.registerTool('axefx2_switch_preset', {
     description: [
-      'Use this tool to load a preset by number into the user\'s Axe-Fx II',
-      'working buffer. Sends LOAD_PRESET (function 0x3C) with the preset',
-      'number as a 14-bit septet pair.',
+      'Use this tool to load a preset by slot number into the user\'s',
+      'Axe-Fx II working buffer. Sends LOAD_PRESET (function 0x3C) with',
+      'the preset number as a 14-bit septet pair.',
       '',
-      'Preset numbering: 0-based linear index. Axe-Fx II XL+ has many',
-      'banks; banks A..H plus user banks. The preset number is the full',
-      'linear index, not a within-bank position. To find a preset\'s',
-      'number, call `axefx2_list_block_types` is not the right tool —',
-      'use the device\'s front-panel display, AxeEdit\'s preset browser,',
-      'or `axefx2_get_active_preset` once that ships (function 0x14).',
+      'SLOT NUMBERING — 1-indexed display slot (1..16384). This matches',
+      'what the user sees on the device front panel and in AxeEdit\'s',
+      'preset list. When the user says "load preset 700", pass',
+      'slot: 700 (the tool translates to wire 699 internally). Slot 1',
+      'is the very first preset (factory bank A on Q8.02).',
       '',
       'AFTER LOADING — the working buffer reflects the loaded preset.',
       'Use `axefx2_get_preset_name` to confirm the load landed.',
       '',
-      'Status: 🟢 hardware-verified on Q8.02 (2026-05-11, HW-100).',
-      'preset_number is 0-based — the device front-panel display shows',
-      'slot N+1 for MIDI preset N (e.g. preset_number: 0 = front-panel',
-      '"preset 1"). Worth keeping in mind when the user says "load',
-      'preset 5" — they almost certainly mean the front-panel slot 5,',
-      'which is preset_number: 4 on the wire.',
+      'Status: 🟢 hardware-verified on Q8.02 (2026-05-11, HW-100). The',
+      '1-indexed display-slot contract landed Session 68 after a setlist',
+      'test exposed an off-by-one in the previous 0-indexed wire schema',
+      '— founder said "save to 700/701/702", tool wrote to display',
+      '701/702/703.',
+      '',
+      'EDITED-BUFFER GUARD: if the working buffer has unsaved edits from',
+      'prior writes in this conversation, the tool refuses to navigate by',
+      'default (preset switch reloads the slot, discarding all edits).',
+      'Use on_active_preset_edited to control: "warn" (default) returns a',
+      'warning so the agent can ask the user; "save_active_first" saves',
+      'the buffer to its currently-loaded slot before navigating; "discard"',
+      'silently loses the edits. See on_active_preset_edited description.',
     ].join('\n'),
     inputSchema: {
-      preset_number: z.number().int().min(0).max(16383).describe(
-        '0-based linear preset number (0..16383). For factory bank A on Q8.02, preset 0 = first preset, etc.',
+      slot: z.number().int().min(1).max(16384).describe(
+        '1-indexed display slot (1..16384) matching the device front panel and AxeEdit. Slot 700 = the preset at front-panel slot 700.',
       ),
+      on_active_preset_edited: ON_EDITED_SCHEMA.describe(ON_EDITED_DESCRIPTION),
     },
-  }, async ({ preset_number }) => {
-    const bytes = buildSwitchPreset(preset_number);
+  }, async ({ slot, on_active_preset_edited }) => {
+    const mode: OnEditedMode = on_active_preset_edited ?? 'warn';
+    const guard = await guardActiveBufferOrSave(mode);
+    if (!guard.proceed) {
+      return {
+        content: [{ type: 'text', text: guard.warningText ?? 'navigation refused' }],
+        isError: true,
+      };
+    }
+    const wire = slot - 1;
+    const bytes = buildSwitchPreset(wire);
     const c = ensureConn();
     c.send(bytes);
+    const savedLine = guard.savedDetail ? `${guard.savedDetail}\n` : '';
     return {
       content: [{
         type: 'text',
         text:
-          `Sent LOAD_PRESET → preset ${preset_number}.\n` +
+          savedLine +
+          `Sent LOAD_PRESET → display slot ${slot} (wire ${wire}).\n` +
           `Wrote ${bytes.length} bytes: ${toHex(bytes)}\n` +
           `Call axefx2_get_preset_name to confirm which preset is now in the working buffer.\n` +
           `\n${NO_ACK_NOTE}`,
@@ -422,63 +445,81 @@ export function registerAxeFxIINavigationTools(server: McpServer): void {
       'edits are GONE. If the user has unsaved tweaks, save first or',
       'skip the scan.',
       '',
-      'PERFORMANCE: each slot is one switch + one name-read round-trip,',
-      '~50-80 ms per slot. A 16-slot scan finishes in ~1 s. The tool',
-      'caps the range at 64 slots per call to keep wall time predictable',
-      '(longer ranges should be paginated by the agent).',
+      'PERFORMANCE: each slot is one switch + 150ms load-settle + one',
+      'name-read round-trip, ~200 ms per slot. A 16-slot scan finishes in',
+      '~3.2 s. The tool caps the range at 64 slots per call.',
       '',
-      'INPUT: 0-indexed wire range, inclusive on both ends. Examples:',
-      '  { from: 0, to: 7 }       — first 8 user slots (front panel 1..8)',
-      '  { from: 699, to: 715 }   — scratch range used in session-61',
-      '  { from: 0, to: 0 }       — single-slot scan (rarely useful;',
-      '                             prefer axefx2_switch_preset + name read)',
+      'INPUT: 1-indexed display slots (1..16384), inclusive on both ends.',
+      '  { from_slot: 1, to_slot: 8 }       — first 8 user slots',
+      '  { from_slot: 700, to_slot: 716 }   — scratch range, 17 slots',
+      '  { from_slot: 700, to_slot: 700 }   — single-slot scan',
       '',
       'FAILURE: on a mid-scan timeout, the tool aborts and surfaces partial',
       'results plus the failure slot. Agent can decide whether to retry,',
       'narrow the range, or call axefx2_reconnect_midi if the handle is',
       'stale.',
       '',
-      'Status: 🟡 wire-sequence is composed of two 🟢-validated tools',
-      '(axefx2_switch_preset and axefx2_get_preset_name); will flip to',
-      '🟢 once the first end-to-end multi-slot scan lands.',
+      'Status: 🟢 hardware-verified on Q8.02 after Session 68 fix to the',
+      'switch-preset settle window (was 20ms, raced the name read; now',
+      '150ms which lets Q8.02 finish loading the new preset before',
+      'GET_PRESET_NAME runs).',
     ].join('\n'),
     inputSchema: {
-      from: z.number().int().min(0).max(16383).describe(
-        'Inclusive start of the scan range, 0-indexed wire preset (0..16383). Front-panel display = from + 1.',
+      from_slot: z.number().int().min(1).max(16384).describe(
+        'Inclusive start of the scan range, 1-indexed display slot (1..16384) matching the device front panel and AxeEdit.',
       ),
-      to: z.number().int().min(0).max(16383).describe(
-        'Inclusive end of the scan range, 0-indexed wire preset (0..16383). Must be >= from. Range size (to - from + 1) is capped at 64.',
+      to_slot: z.number().int().min(1).max(16384).describe(
+        'Inclusive end of the scan range, 1-indexed display slot (1..16384). Must be >= from_slot. Range size capped at 64.',
       ),
       restore_active: z.boolean().optional().describe(
-        'After scanning, switch back to whichever preset was active before the scan started. Default true. Pass false only if you are about to call apply_setlist or apply_preset_at next (since those will switch presets anyway).',
+        'After scanning, switch back to whichever preset was active before the scan started. Default true. Pass false only if you are about to call apply_setlist or apply_preset_at next.',
       ),
+      on_active_preset_edited: ON_EDITED_SCHEMA.describe(ON_EDITED_DESCRIPTION),
     },
-  }, async ({ from, to, restore_active }) => {
-    if (to < from) {
+  }, async ({ from_slot, to_slot, restore_active, on_active_preset_edited }) => {
+    // Edited-buffer guard. The scan loop issues SWITCH_PRESET for every
+    // scanned slot, which destroys the active preset's unsaved working-
+    // buffer edits. Refuse / save-first / discard BEFORE the first
+    // switch — otherwise edits are silently lost between the dirty knob
+    // turn and the apply_setlist that wanted to warn about them.
+    const editedMode: OnEditedMode = on_active_preset_edited ?? 'warn';
+    const editedGuard = await guardActiveBufferOrSave(editedMode);
+    if (!editedGuard.proceed) {
+      return {
+        content: [{ type: 'text', text: editedGuard.warningText ?? 'scan refused' }],
+        isError: true,
+      };
+    }
+    if (to_slot < from_slot) {
       return {
         content: [{
           type: 'text',
           text:
-            `Invalid range: from=${from} > to=${to}. ` +
-            `Pass from <= to (e.g. { from: 700, to: 715 } for a 16-slot scan).`,
+            `Invalid range: from_slot=${from_slot} > to_slot=${to_slot}. ` +
+            `Pass from_slot <= to_slot (e.g. { from_slot: 700, to_slot: 715 } for a 16-slot scan).`,
         }],
         isError: true,
       };
     }
-    const rangeSize = to - from + 1;
+    const rangeSize = to_slot - from_slot + 1;
     if (rangeSize > 64) {
       return {
         content: [{
           type: 'text',
           text:
             `Range too wide: ${rangeSize} slots (cap is 64). ` +
-            `Split into smaller scans, e.g. { from: ${from}, to: ${from + 63} } first.`,
+            `Split into smaller scans, e.g. { from_slot: ${from_slot}, to_slot: ${from_slot + 63} } first.`,
         }],
         isError: true,
       };
     }
     const restore = restore_active ?? true;
     const c = ensureConn();
+
+    // Display slots are 1-indexed; wire is 0-indexed. Translate at the
+    // tool boundary; everything below operates on wire integers.
+    const fromWire = from_slot - 1;
+    const toWire = to_slot - 1;
 
     // Capture the originally-active preset so we can restore it at the
     // end. If the device is in an unusual state (e.g. no presets in the
@@ -504,9 +545,15 @@ export function registerAxeFxIINavigationTools(server: McpServer): void {
     let failureSlot: number | undefined;
     let failureReason: string | undefined;
 
-    for (let n = from; n <= to; n++) {
+    for (let n = fromWire; n <= toWire; n++) {
       try {
         c.send(buildSwitchPreset(n));
+        // 150ms — Q8.02 needs roughly this long to finish loading the
+        // new preset before its working-buffer name reflects the new
+        // value. The original 20ms raced the load and returned the
+        // previous preset's name for every iteration (HW-105 attempt,
+        // 2026-05-12).
+        await new Promise((res) => setTimeout(res, 150));
         const namePromise = c.receiveSysExMatching(
           isGetPresetNameResponse,
           GET_RESPONSE_TIMEOUT_MS,
@@ -533,19 +580,19 @@ export function registerAxeFxIINavigationTools(server: McpServer): void {
     if (restore && originalActive !== undefined) {
       try {
         c.send(buildSwitchPreset(originalActive));
-        restoredText = `\nRestored active preset to wire ${originalActive} (front-panel display: slot ${originalActive + 1}).`;
+        restoredText = `\nRestored active preset to display slot ${originalActive + 1} (wire ${originalActive}).`;
       } catch (err) {
         const reason = err instanceof Error ? err.message : String(err);
-        restoredText = `\nWARNING: failed to restore original active preset (wire ${originalActive}): ${reason}`;
+        restoredText = `\nWARNING: failed to restore original active preset (display slot ${originalActive + 1}): ${reason}`;
       }
     } else if (restore && originalActive === undefined) {
-      restoredText = `\nNOTE: could not read original active preset before the scan, so no restore attempted. Device is on whichever slot the scan left it (wire ${results[results.length - 1]?.preset_number ?? from}).`;
+      restoredText = `\nNOTE: could not read original active preset before the scan, so no restore attempted. Device is on whichever slot the scan left it (display slot ${(results[results.length - 1]?.preset_number ?? fromWire) + 1}).`;
     } else {
-      restoredText = `\nNOTE: restore_active=false; device left on the last scanned slot (wire ${results[results.length - 1]?.preset_number ?? from}).`;
+      restoredText = `\nNOTE: restore_active=false; device left on the last scanned slot (display slot ${(results[results.length - 1]?.preset_number ?? fromWire) + 1}).`;
     }
 
     const lines = results.map((r) =>
-      `  wire ${r.preset_number} (slot ${r.display_slot}): ${r.is_empty ? '<EMPTY>' : `"${r.name}"`}`,
+      `  slot ${r.display_slot} (wire ${r.preset_number}): ${r.is_empty ? '<EMPTY>' : `"${r.name}"`}`,
     );
 
     if (failureSlot !== undefined) {
@@ -553,7 +600,7 @@ export function registerAxeFxIINavigationTools(server: McpServer): void {
         content: [{
           type: 'text',
           text:
-            `Scan aborted at wire ${failureSlot} (slot ${failureSlot + 1}): ${failureReason}.\n` +
+            `Scan aborted at slot ${failureSlot + 1} (wire ${failureSlot}): ${failureReason}.\n` +
             `Partial results (${results.length}/${rangeSize} scanned):\n` +
             (lines.length > 0 ? lines.join('\n') : '  (no slots scanned)') +
             restoredText +
@@ -568,8 +615,8 @@ export function registerAxeFxIINavigationTools(server: McpServer): void {
       content: [{
         type: 'text',
         text:
-          `Scanned ${results.length} slot${results.length === 1 ? '' : 's'} (wire ${from}..${to}, ` +
-          `display slots ${from + 1}..${to + 1}): ${populated} populated, ${results.length - populated} empty.\n` +
+          `Scanned ${results.length} slot${results.length === 1 ? '' : 's'} ` +
+          `(display slots ${from_slot}..${to_slot}): ${populated} populated, ${results.length - populated} empty.\n` +
           lines.join('\n') +
           restoredText,
       }],
@@ -598,10 +645,10 @@ export function registerAxeFxIINavigationTools(server: McpServer): void {
       '  2. If you have ANY doubt the target slot might already contain',
       '     a preset the user cares about, ASK BEFORE CALLING. Suggest a',
       '     designated scratch slot if the user doesn\'t care where.',
-      '  3. Pass `preset_number` 0-indexed on the wire (the device front',
-      '     panel displays slot N+1 for wire preset N — same convention',
-      '     as axefx2_switch_preset). Example: user says "save to slot',
-      '     700" → pass `preset_number: 699`.',
+      '  3. Pass `slot` as the 1-indexed display slot — the SAME number',
+      '     the user sees on the device front panel and in AxeEdit\'s',
+      '     preset list. Example: user says "save to slot 700" → pass',
+      '     `slot: 700`. The tool translates to wire 699 internally.',
       '  4. Pass an optional `name` (≤32 ASCII-printable chars) to also',
       '     set the preset name in one operation. If omitted, the tool',
       '     saves whatever name is currently in the working buffer.',
@@ -619,18 +666,19 @@ export function registerAxeFxIINavigationTools(server: McpServer): void {
       'format derived from bspaulding/axe-fx-midi + session-61 passive',
       'capture of AxeEdit\'s File → Save Preset operation.',
       '',
-      'preset_number range: 0..16383 on the wire (XL+ has 768 user slots',
-      'live; values above range may be rejected with `result_code=0x05`).',
+      'slot range: 1..16384 (1-indexed display slot; XL+ has 768 user',
+      'slots live — values beyond may be rejected with result_code=0x05).',
     ].join('\n'),
     inputSchema: {
-      preset_number: z.number().int().min(0).max(16383).describe(
-        '0-based wire preset number to save TO (0..16383). Device front-panel display shows slot N+1 — so user-spoken "slot 700" = preset_number 699.',
+      slot: z.number().int().min(1).max(16384).describe(
+        '1-indexed display slot (1..16384) matching the device front panel and AxeEdit. Slot 700 = the preset at front-panel slot 700.',
       ),
       name: z.string().max(32).optional().describe(
         'Optional preset name (≤32 ASCII-printable chars). If provided, the tool sends SET_PRESET_NAME (0x09) BEFORE the STORE so the saved preset carries the new name. If omitted, saves with whatever name is currently in the working buffer.',
       ),
     },
-  }, async ({ preset_number, name }) => {
+  }, async ({ slot, name }) => {
+    const preset_number = slot - 1;
     const c = ensureConn();
     const wireOps: string[] = [];
     let totalBytes = 0;
@@ -684,7 +732,7 @@ export function registerAxeFxIINavigationTools(server: McpServer): void {
         `Cause: ${msg}\n` +
         `The STORE bytes were sent successfully, but we can't confirm ` +
         `the device persisted the working buffer. Verify by:\n` +
-        `  1. axefx2_switch_preset({ preset_number: ${preset_number} }) — ` +
+        `  1. axefx2_switch_preset({ slot: ${slot} }) — ` +
         `loads the target slot.\n` +
         `  2. axefx2_get_preset_name — should echo what you just saved.\n` +
         `If the name doesn't match, the save didn't land; retry or ` +
@@ -695,8 +743,8 @@ export function registerAxeFxIINavigationTools(server: McpServer): void {
       content: [{
         type: 'text',
         text:
-          `Saved working buffer to preset ${preset_number} ` +
-          `(front-panel display: slot ${preset_number + 1})` +
+          `Saved working buffer to display slot ${slot} ` +
+          `(wire ${preset_number})` +
           (name !== undefined ? ` with name "${name}"` : '') +
           `.\n` +
           `Wire sequence (${totalBytes}B total):\n` +

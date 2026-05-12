@@ -1831,9 +1831,14 @@ export const KNOWN_PARAMS = {
     "amp.xformer_hi_freq": { groupCode: "AMP", block: "amp", paramId: 13, wikiName: "XFORMER HI FREQ", name: "xformer_hi_freq", controlType: "knob", parameterName: "DISTORT_XFLPF", xmlLabel: "XFormer Hi Freq" },
     "amp.tone_location": { groupCode: "AMP", block: "amp", paramId: 14, wikiName: "TONE LOCATION", name: "tone_location", controlType: "select", parameterName: "DISTORT_TONELOC", xmlLabel: "Tone Location", enumValues: AMP_TONE_LOCATION_VALUES },
     "amp.input_select": { groupCode: "AMP", block: "amp", paramId: 15, wikiName: "INPUT SELECT", name: "input_select", controlType: "select", parameterName: "DISTORT_INPUTSELECT", xmlLabel: "Input Select", enumValues: AMP_INPUT_SELECT_VALUES },
-    "amp.depth": { groupCode: "AMP", block: "amp", paramId: 16, wikiName: "DEPTH", name: "depth", controlType: "knob", parameterName: "DISTORT_DEPTH", xmlLabel: "Depth", gateOn: "DISTORT_DRIVETYPE", gateValues: "0,4,5" },
+    // Session 68 calibration: depth + presence are 0..10 knobs on the
+    // amp's front panel (same range as input_drive / bass / middle /
+    // treble / master_volume). Adding the explicit displayMin/Max
+    // unblocks apply_preset_at calls that pass display values like
+    // `presence: 6.5` — previously rejected as "wire out of range".
+    "amp.depth": { groupCode: "AMP", block: "amp", paramId: 16, wikiName: "DEPTH", name: "depth", controlType: "knob", parameterName: "DISTORT_DEPTH", xmlLabel: "Depth", gateOn: "DISTORT_DRIVETYPE", gateValues: "0,4,5", displayMin: 0, displayMax: 10 },
     "amp.supply_sag": { groupCode: "AMP", block: "amp", paramId: 19, wikiName: "SUPPLY SAG", name: "supply_sag", controlType: "knob", parameterName: "DISTORT_SUPPLYSAG", xmlLabel: "Supply Sag" },
-    "amp.presence": { groupCode: "AMP", block: "amp", paramId: 20, wikiName: "PRESENCE", name: "presence", controlType: "knob", parameterName: "DISTORT_PRESENCE", xmlLabel: "Presence", gateOn: "DISTORT_DRIVETYPE", gateValues: "0,4,5" },
+    "amp.presence": { groupCode: "AMP", block: "amp", paramId: 20, wikiName: "PRESENCE", name: "presence", controlType: "knob", parameterName: "DISTORT_PRESENCE", xmlLabel: "Presence", gateOn: "DISTORT_DRIVETYPE", gateValues: "0,4,5", displayMin: 0, displayMax: 10 },
     "amp.level": { groupCode: "AMP", block: "amp", paramId: 21, wikiName: "Level", name: "level", controlType: "knob", parameterName: "DISTORT_LEVEL", xmlLabel: "Level" },
     // HW-089 calibration (2026-05-11): wire 0..65534 ↔ -100..+100 bipolar linear (wire 32767 = 0.0).
     "amp.balance": { groupCode: "AMP", block: "amp", paramId: 22, wikiName: "Balance", name: "balance", controlType: "knob", parameterName: "DISTORT_PAN", xmlLabel: "Balance", modifierAssignable: true, displayMin: -100, displayMax: 100 },

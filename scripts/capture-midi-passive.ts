@@ -118,6 +118,26 @@ const absOut = path.isAbsolute(outPathArg)
     ? outPathArg
     : path.resolve(__dirname, '..', outPathArg);
 
+// Refuse a directory path early — without this guard, fs.createWriteStream
+// produces the cryptic "EISDIR: illegal operation on a directory, write"
+// error only after the first inbound MIDI message arrives. Common cause:
+// a space in the npm-run args splits the path into two argv entries
+// ("samples/captured/ foo.syx" → outPathArg="samples/captured/").
+if (fs.existsSync(absOut) && fs.statSync(absOut).isDirectory()) {
+    console.error(`❌ Output path "${outPathArg}" is a DIRECTORY, not a file path.`);
+    console.error('   You likely have a space in the path argument. Common slip:');
+    console.error('     npm run capture-axefx2 -- samples/captured/ foo.syx   ← BAD (space)');
+    console.error('     npm run capture-axefx2 -- samples/captured/foo.syx    ← GOOD');
+    console.error('   Or for Bash with a literal space, quote it:');
+    console.error('     npm run capture-axefx2 -- "samples/captured/foo.syx"');
+    process.exit(1);
+}
+if (outPathArg.endsWith('/') || outPathArg.endsWith('\\')) {
+    console.error(`❌ Output path "${outPathArg}" ends with a directory separator.`);
+    console.error('   Pass a full file path (e.g. samples/captured/foo.syx), not a directory.');
+    process.exit(1);
+}
+
 fs.mkdirSync(path.dirname(absOut), { recursive: true });
 
 const port = findPortBySubstring(portArg);

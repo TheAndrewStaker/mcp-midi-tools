@@ -13,6 +13,18 @@ import midi, { Input, Output } from 'midi';
 
 export interface MidiConnection {
   send: (bytes: number[]) => void;
+  /**
+   * Last error thrown by the underlying `output.sendMessage` call, or
+   * `undefined` if the most recent send succeeded. node-midi's WinMM
+   * backend prints `MidiOutWinMM::sendMessage: error sending sysex
+   * message` to stderr and silently fails on a stale handle, which
+   * leaves the tool reporting "success" while 0/22 chunks land. Tools
+   * doing multi-message dumps (Hydrasynth patch, AM4 apply_preset)
+   * read this after each send to bail loudly on the first failure
+   * instead of looping through 22 broken writes. The Hydrasynth
+   * yungatita test (2026-05-12) is the case that drove this.
+   */
+  lastSendError?: Error;
   /** Resolves with the next inbound SysEx message, or rejects on timeout. */
   receiveSysEx: (timeoutMs?: number) => Promise<number[]>;
   /**
@@ -201,8 +213,22 @@ export function connect(opts: ConnectOptions): MidiConnection {
   input.openPort(inputPort);
   output.openPort(outputPort);
 
-  return {
-    send: (bytes) => output.sendMessage(bytes),
+  // Track send errors on a separate cell so the `send` arrow can read /
+  // write without TS forward-reference issues; the conn object exposes
+  // the cell via a getter so callers see live state.
+  const sendErrCell: { value?: Error } = {};
+  const send = (bytes: number[]): void => {
+    try {
+      output.sendMessage(bytes);
+      sendErrCell.value = undefined;
+    } catch (err) {
+      sendErrCell.value = err instanceof Error ? err : new Error(String(err));
+      throw sendErrCell.value;
+    }
+  };
+  const conn: MidiConnection = {
+    send,
+    get lastSendError(): Error | undefined { return sendErrCell.value; },
     receiveSysEx: (timeoutMs = 1000) =>
       new Promise<number[]>((resolve, reject) => {
         const timer = setTimeout(() => {
@@ -248,6 +274,7 @@ export function connect(opts: ConnectOptions): MidiConnection {
       output.closePort();
     },
   };
+  return conn;
 }
 
 /**

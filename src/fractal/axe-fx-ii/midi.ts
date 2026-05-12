@@ -21,7 +21,66 @@
  */
 import midi, { Input, Output } from 'midi';
 
+import { markClean, markDirty } from '@/server/shared/bufferDirty.js';
+
 const AXE_FX_II_PORT_NEEDLES = ['axe-fx', 'axefx'];
+const AXEFX_DIRTY_LABEL = 'axe-fx-ii';
+
+// Fractal Axe-Fx II model byte (Q8.02 XL+). All envelopes targeted at /
+// emitted by the device carry this in byte[4]; foreign envelopes don't
+// affect our buffer-dirty state.
+const AXE_FX_II_XL_PLUS_MODEL_ID = 0x07;
+
+// ── Dirty-state classification — DEVICE-SOURCED (not heuristic) ───────
+//
+// Decoded from passive captures across 6 distinct device states
+// (Session 68 analysis of session-58 + session-61 captures):
+//
+//   - direct-sync (read-only)   → 0 state broadcasts
+//   - preset-change (switch)    → 0 state broadcasts
+//   - save-attempt (store)      → 0 state broadcasts
+//   - knob-turn (edit)          → 1 state broadcast triple
+//   - block-add (edit)          → 1 state broadcast triple
+//   - grid-move (edit)          → 1 state broadcast triple
+//
+// The device emits a 0x74/0x75/0x76 state-broadcast triple EXACTLY when
+// the working buffer is edited — whether by AxeEdit, by our MCP server,
+// or by the user touching a knob on the device front panel. It does
+// NOT emit on reads, preset switches, or saves. Receiving a 0x74 frame
+// is therefore an AUTHORITATIVE dirty signal from the device itself,
+// not a heuristic on our part.
+//
+// The clean signal stays code-sourced because the device doesn't
+// announce "I'm clean now" — but the OPERATIONS that produce a clean
+// state are unambiguous: switch_preset (0x3C) loads a stored slot;
+// store_preset (0x1D) commits the working buffer to a slot. We mark
+// clean when WE issue those envelopes. A SAVE pressed on the device's
+// own front panel won't be reflected (false-dirty on next check), but
+// that's a fail-safe degradation — the agent will warn the user, who
+// can confirm and discard.
+
+const CLEAN_FUNCTIONS = new Set<number>([
+  0x3c, // SWITCH_PRESET / LOAD_PRESET
+  0x1d, // STORE_PRESET
+]);
+
+function isCleanOutbound(bytes: readonly number[]): boolean {
+  if (bytes.length < 8) return false;
+  if (bytes[0] !== 0xf0) return false;
+  if (bytes[1] !== 0x00 || bytes[2] !== 0x01 || bytes[3] !== 0x74) return false;
+  if (bytes[4] !== AXE_FX_II_XL_PLUS_MODEL_ID) return false;
+  return CLEAN_FUNCTIONS.has(bytes[5]);
+}
+
+function isStateBroadcastInbound(bytes: readonly number[]): boolean {
+  if (bytes.length < 6) return false;
+  if (bytes[0] !== 0xf0) return false;
+  if (bytes[1] !== 0x00 || bytes[2] !== 0x01 || bytes[3] !== 0x74) return false;
+  if (bytes[4] !== AXE_FX_II_XL_PLUS_MODEL_ID) return false;
+  // The header byte 0x74 is sufficient — chunks (0x75) and footers
+  // (0x76) always follow a header, so we don't need to count all three.
+  return bytes[5] === 0x74;
+}
 
 export interface AxeFxIIConnection {
   send: (bytes: number[]) => void;
@@ -133,6 +192,13 @@ export function connectAxeFxII(): AxeFxIIConnection {
     // Wire the listener BEFORE openPort so we don't race the device.
     input.ignoreTypes(false, true, true);
     input.on('message', (_dt: number, bytes: number[]) => {
+      // Device-sourced dirty signal: every state-broadcast triple from
+      // the device means the working buffer was edited. No heuristic /
+      // no timing window — the captures prove the device only emits
+      // these on edits (not on reads/switches/saves).
+      if (isStateBroadcastInbound(bytes)) {
+        markDirty(AXEFX_DIRTY_LABEL);
+      }
       for (const h of handlers) {
         try { h(bytes); } catch { /* swallow handler errors so one bad subscriber can't break others */ }
       }
@@ -144,7 +210,15 @@ export function connectAxeFxII(): AxeFxIIConnection {
   }
 
   return {
-    send: (bytes) => out.sendMessage(bytes),
+    send: (bytes) => {
+      // The DIRTY signal comes from the device (inbound state-broadcast
+      // triples); we don't infer it from our outbound writes. We DO mark
+      // clean when we issue switch_preset / store_preset because those
+      // operations transition the buffer to a known-clean state (device
+      // doesn't announce that transition, so we record it here).
+      if (isCleanOutbound(bytes)) markClean(AXEFX_DIRTY_LABEL);
+      out.sendMessage(bytes);
+    },
     onMessage: (handler) => {
       handlers.add(handler);
       return () => { handlers.delete(handler); };

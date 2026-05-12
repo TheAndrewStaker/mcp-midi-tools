@@ -68,6 +68,18 @@ export function resolveParamName(
   if (aliased !== undefined && aliased in schema.params) {
     return { name: aliased, aliased_from: input };
   }
+  // Normalize user input (lowercase, collapse non-alphanumeric to "_")
+  // so "Input Drive" / "INPUT DRIVE" / "input-drive" all match the
+  // descriptor's auto-derived aliases for `input_drive`. This is the
+  // device-agnostic fuzzy layer; per-device descriptors still own the
+  // alias table.
+  const normalized = input.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  if (normalized !== input && normalized in schema.params) {
+    return { name: normalized, aliased_from: input };
+  }
+  if (schema.aliases?.[normalized] !== undefined && schema.aliases[normalized] in schema.params) {
+    return { name: schema.aliases[normalized], aliased_from: input };
+  }
   const suggestion = nearestParam(input, Object.keys(schema.params));
   const valid = Object.keys(schema.params);
   const details: DispatchErrorDetails = {

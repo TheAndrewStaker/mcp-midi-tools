@@ -585,9 +585,27 @@ export function buildSwitchPreset(
         throw new Error(`buildSwitchPreset: preset number out of range (0..16383): ${presetNumber}`);
     }
     const modelId = opts.modelId ?? AXE_FX_II_XL_PLUS_MODEL_ID;
+    // **MSB-first** byte ordering — matches `buildStorePreset` (0x1D) and
+    // the device's own `GET_PRESET_NUMBER` (0x14) response, both of
+    // which were hardware-verified on Q8.02 (HW-100/HW-102, session-61).
+    //
+    // The wiki documents this envelope as LSB-first, but Session 68
+    // hardware testing on Q8.02 showed that LSB-first encoding silently
+    // fails for any preset ≥ 128 — the device receives the bytes,
+    // doesn't ACK or NACK, and stays on the previously-active slot
+    // (founder slot-705 test 2026-05-12; agent's "RockOfAges" build
+    // appeared at slot 683 instead of slot 702 because the per-entry
+    // switch never landed and the writes hit whatever working buffer
+    // was active). For preset < 128 both orderings produce identical
+    // bytes, which is why HW-100 (test on wire 0) didn't catch this.
+    //
+    // Closes HW-103 (verify buildSwitchPreset byte ordering for preset ≥ 128).
+    const presetHigh = (presetNumber >> 7) & 0x7f;
+    const presetLow = presetNumber & 0x7f;
     return buildEnvelope(modelId, [
         FUNC_SWITCH_PRESET,
-        ...encode14(presetNumber),
+        presetHigh,
+        presetLow,
     ]);
 }
 

@@ -1,12 +1,16 @@
 /**
  * Axe-Fx II apply-preset executor — builds the wire-op sequence for a
  * single preset entry and runs it against a live connection. Shared by
- * axefx2_apply_preset, axefx2_apply_preset_at, and axefx2_apply_setlist.
+ * axefx2_apply_preset, axefx2_apply_preset_at, axefx2_apply_setlist, AND
+ * the BK-051 unified Axe-Fx II descriptor's `applyPreset` writer method
+ * (which wraps both the working-buffer-only path via
+ * `buildApplyPresetOps` and the slot-targeted path via
+ * `buildApplyPresetAtOps`).
  */
 
 import type { AxeFxIIBlock } from '@/fractal/axe-fx-ii/blockTypes.js';
-import type { AxeFxIIConnection } from '@/fractal/axe-fx-ii/midi.js';
 import {
+  buildGetGridLayout,
   buildSetBlockBypass as buildSetBlockBypassEnvelope,
   buildSetBlockChannel,
   buildSetBlockParameterValue,
@@ -16,14 +20,31 @@ import {
   buildStorePreset,
   buildSwitchPreset,
   displayToWire,
+  isGetGridLayoutResponse,
   isSetGridCellResponse,
   isStorePresetResponse,
+  parseGetGridLayoutResponse,
   parseSetGridCellResponse,
   parseStorePresetResponse,
   type AxeFxIIChannel,
 } from '@/fractal/axe-fx-ii/setParam.js';
 
 import { GET_RESPONSE_TIMEOUT_MS, findBlock, findParam } from './shared.js';
+
+/**
+ * Minimal connection contract used by the executor — both
+ * `AxeFxIIConnection` (legacy `ensureConn()` callers) and `MidiConnection`
+ * (BK-051 unified descriptor's `ctx.conn`) satisfy this. The executor only
+ * needs `send` + `receiveSysExMatching`, so a narrow interface lets both
+ * call sites pass their native connection type without casts.
+ */
+export interface ApplyConn {
+  send: (bytes: number[]) => void;
+  receiveSysExMatching: (
+    predicate: (bytes: number[]) => boolean,
+    timeoutMs?: number,
+  ) => Promise<number[]>;
+}
 
 // -- apply_preset_at + apply_setlist shared helpers ------------------------
 
@@ -40,7 +61,35 @@ export interface ApplyPresetAtInput {
     channel?: 'X' | 'Y';
     params?: Record<string, number>;
   }>;
+  /**
+   * Single-scene shortcut — switch to this scene (0..7) before writing
+   * block params. Kept for back-compat with pre-Session-68 callers.
+   * For full per-scene authoring, use `scenes` instead.
+   */
   scene?: number;
+  /**
+   * Per-scene state authoring (HW-106 closure, Session 68). The
+   * Axe-Fx II carries per-scene state inside the preset's stored bytes
+   * via the switch-write-switch-back pattern — there's no separate
+   * envelope for it. Each entry switches to its scene then writes the
+   * per-block bypass + channel state for that scene.
+   *
+   * Scene `index` is 1-indexed (1..8) matching the device front panel
+   * and AxeEdit display. Wire is 0-indexed; conversion happens at the
+   * executor boundary.
+   */
+  scenes?: Array<{
+    index: number;                              // 1..8 (display)
+    bypass?: Record<string, boolean>;           // block-slug → bypassed
+    channels?: Record<string, 'X' | 'Y'>;       // block-slug → channel
+  }>;
+  /**
+   * Scene the device lands on after the build (1..8, display). Default
+   * 1 — user can audition the song's opening scene immediately. Override
+   * for previewing a specific scene-section (e.g. land on solo scene
+   * for an immediate lead test).
+   */
+  landingScene?: number;
   name?: string;
 }
 
@@ -49,6 +98,24 @@ export interface ApplyPresetAtOp {
   bytes: number[];
   summary: string;
   awaitResponse?: 'set_grid_cell' | 'store_preset';
+  // For 'clear_cell' ops only — the (row, col) being cleared. The
+  // runtime uses this to skip clears for cells the device's GET_GRID_
+  // LAYOUT read confirms are already empty (no point emitting ~40
+  // grid writes when the target slot was an empty preset to begin with).
+  cellRef?: { row: number; col: number };
+}
+
+/**
+ * Pure-builder options. `wire: true` short-circuits the display/wire
+ * auto-detect path — every param value is treated as a pre-encoded
+ * wire integer (0..65534). The BK-051 unified descriptor's
+ * `applyPreset` always passes `wire: true` because the schema's
+ * `encode` closure is the canonical display→wire path; legacy
+ * `axefx2_apply_preset[_at]` omit the flag and keep the auto-detect
+ * behavior intact for back-compat.
+ */
+export interface BuildOptions {
+  wire?: boolean;
 }
 
 /**
@@ -56,8 +123,12 @@ export interface ApplyPresetAtOp {
  * no I/O, no connection required. Throws on validation errors (unknown
  * block name, unknown param, out-of-range value).
  */
-export function buildApplyPresetAtOps(input: ApplyPresetAtInput): ApplyPresetAtOp[] {
+export function buildApplyPresetAtOps(
+  input: ApplyPresetAtInput,
+  opts: BuildOptions = {},
+): ApplyPresetAtOp[] {
   const { preset_number, blocks, scene, name } = input;
+  const wireMode = opts.wire ?? false;
 
   // 1. Resolve blocks (catches typos before any op is built).
   type ResolvedEntry = {
@@ -94,29 +165,44 @@ export function buildApplyPresetAtOps(input: ApplyPresetAtInput): ApplyPresetAtO
       if (!param) {
         throw new Error(
           `unknown param "${paramName}" for ${r.target.name} ` +
-          `(group ${r.target.groupCode}). Call axefx2_list_params for the full set.`,
+          `(group ${r.target.groupCode}). ` +
+          (r.target.groupCode === 'AMP'
+            ? `Common amp param names: input_drive (the gain knob, 0..10), master_volume (the master knob, 0..10), bass, middle, treble, presence. "gain"/"master"/"mid" also accepted as aliases.`
+            : `Call axefx2_list_params for the full set.`),
         );
       }
-      const hasCalibration = param.displayMin !== undefined && param.displayMax !== undefined;
-      const useDisplay = hasCalibration && value <= (param.displayMax ?? 0);
       let wire: number;
       let modeNote: string;
-      if (useDisplay) {
-        wire = displayToWire(value, {
-          displayMin: param.displayMin as number,
-          displayMax: param.displayMax as number,
-          displayScale: param.displayScale,
-        });
-        modeNote = `${value} → wire ${wire}`;
-      } else {
+      if (wireMode) {
+        // Descriptor-supplied path: schema.encode already converted display → wire.
         if (!Number.isInteger(value) || value < 0 || value > 65534) {
           throw new Error(
             `wire value out of range for ${r.target.name}.${paramName}: ${value} ` +
-            `(valid 0..65534, or display value if param is calibrated).`,
+            `(wire mode expects 0..65534 integer).`,
           );
         }
         wire = value;
         modeNote = `wire ${wire}`;
+      } else {
+        const hasCalibration = param.displayMin !== undefined && param.displayMax !== undefined;
+        const useDisplay = hasCalibration && value <= (param.displayMax ?? 0);
+        if (useDisplay) {
+          wire = displayToWire(value, {
+            displayMin: param.displayMin as number,
+            displayMax: param.displayMax as number,
+            displayScale: param.displayScale,
+          });
+          modeNote = `${value} → wire ${wire}`;
+        } else {
+          if (!Number.isInteger(value) || value < 0 || value > 65534) {
+            throw new Error(
+              `wire value out of range for ${r.target.name}.${paramName}: ${value} ` +
+              `(valid 0..65534, or display value if param is calibrated).`,
+            );
+          }
+          wire = value;
+          modeNote = `wire ${wire}`;
+        }
       }
       pendingParams.push({ blockIdx: i, paramName, paramId: param.paramId, wire, modeNote });
     }
@@ -131,14 +217,32 @@ export function buildApplyPresetAtOps(input: ApplyPresetAtInput): ApplyPresetAtO
     summary: `LOAD_PRESET → ${preset_number} (target slot)`,
   });
 
-  // Clear cells beyond chain length, right-to-left.
-  for (let col = 12; col > blocks.length; col--) {
-    ops.push({
-      kind: 'clear_cell',
-      bytes: buildSetGridCell({ row: 2, col, blockId: 0 }),
-      summary: `CLEAR row 2 col ${col}`,
-      awaitResponse: 'set_grid_cell',
-    });
+  // Clear ALL 48 cells (4 rows × 12 cols) BEFORE placing the chain.
+  //
+  // Why all cells, not just row 2 beyond chain length:
+  //
+  // The previous occupant's blocks on rows 1/3/4 — or on row 2 beyond
+  // the chain end — would otherwise stay in the saved preset. HW-105
+  // attempt (2026-05-12) surfaced this: a target slot whose previous
+  // occupant had MultiDly + Chorus on a non-row-2 position kept those
+  // blocks in the saved "Test Clean" preset, even though the user's
+  // spec only mentioned Comp + Amp + Cab + Reverb. Wiping every cell
+  // first guarantees a fresh canvas; the placement loop then fills
+  // row 2 cols 1..N with the user's chain. ~48 grid-cell writes at
+  // ~30ms each = ~1.4s of extra wall time per preset — acceptable for
+  // the "load before the show" workflow that apply_preset_at is for.
+  for (let row = 1; row <= 4; row++) {
+    for (let col = 1; col <= 12; col++) {
+      // Skip cells we're about to place INTO — placement overwrites.
+      if (row === 2 && col >= 1 && col <= blocks.length) continue;
+      ops.push({
+        kind: 'clear_cell',
+        bytes: buildSetGridCell({ row, col, blockId: 0 }),
+        summary: `CLEAR row ${row} col ${col}`,
+        awaitResponse: 'set_grid_cell',
+        cellRef: { row, col },
+      });
+    }
   }
 
   // Place blocks left-to-right so each one auto-routes from upstream.
@@ -151,6 +255,26 @@ export function buildApplyPresetAtOps(input: ApplyPresetAtInput): ApplyPresetAtO
       awaitResponse: 'set_grid_cell',
     });
   }
+
+  // Silent-preset bridging — DEFERRED (Session 68 follow-up):
+  //
+  // Original plan was to place shunts (blockId 201, mask 0x02) at
+  // row 2 cols N+1..12 to bridge the chain to OUTPUT. Hardware test
+  // 2026-05-12 (Glassy Clean at slot 666) proved this DOESN'T work:
+  // shunts placed via buildSetGridCell get default mask 0 (no input),
+  // and the device's auto-route logic — which fires correctly for
+  // real-block placements (Comp→Amp→Cab→Reverb cable up automatically)
+  // — does NOT fire for shunts. The shunts end up isolated.
+  //
+  // To fix properly we need to decode AxeEdit's outbound routing-
+  // write envelope. The new HW-NEW "Click to connect" capture
+  // (single-click of AxeEdit's green + connect button) is the next
+  // probe target. Without that decode, placing shunts adds misleading
+  // noise — better to leave row 2 cols N+1..12 empty and let
+  // OUTPUT's existing routing pull from wherever it does by default.
+  //
+  // The clear_cell loop above already cleared cols N+1..12, so
+  // they remain empty after the chain is placed.
 
   if (scene !== undefined) {
     ops.push({
@@ -185,6 +309,88 @@ export function buildApplyPresetAtOps(input: ApplyPresetAtInput): ApplyPresetAtO
     }
   }
 
+  // ── Per-scene state authoring ────────────────────────────────────
+  //
+  // Closes HW-106 (Session 68): the Axe-Fx II carries per-scene state
+  // inside the preset's stored bytes. Writes always target the active
+  // scene only — there's no separate per-scene envelope. To author
+  // each scene's bypass + channel state, walk scenes one at a time:
+  //
+  //   for each scene:
+  //     switch_scene(scene.index - 1)   # 1-indexed → 0-indexed wire
+  //     for each block in bypass map:    setBlockBypass
+  //     for each block in channels map:  setBlockChannel
+  //
+  // This pattern is confirmed family-wide by Fractal's official Axe-Fx
+  // III MIDI spec: "all writes target the active scene only." The
+  // captured 0x29 echoes in session-68-scene-broadcast.syx confirm the
+  // device accepts back-to-back scene switches without ack delay.
+  //
+  // Scene-name writes are deferred — Q8.02 surfaces scene names in
+  // AxeEdit but the SET envelope isn't documented in any OSS corpus.
+  // Add later once decoded.
+
+  if (input.scenes !== undefined && input.scenes.length > 0) {
+    // Pre-validate scene indices to fail fast (rather than mid-wire).
+    for (const s of input.scenes) {
+      if (!Number.isInteger(s.index) || s.index < 1 || s.index > 8) {
+        throw new Error(
+          `scenes[].index must be 1..8 (display scene number), got ${s.index}`,
+        );
+      }
+    }
+    // Resolve all referenced block names up front — fail before any wire.
+    const sceneBlockResolutions = new Map<string, AxeFxIIBlock>();
+    for (const s of input.scenes) {
+      for (const blockKey of Object.keys({ ...(s.bypass ?? {}), ...(s.channels ?? {}) })) {
+        if (sceneBlockResolutions.has(blockKey)) continue;
+        sceneBlockResolutions.set(blockKey, findBlock(blockKey));
+      }
+    }
+    for (const s of input.scenes) {
+      const wireScene = s.index - 1;
+      ops.push({
+        kind: 'switch_scene',
+        bytes: buildSetSceneNumber(wireScene),
+        summary: `SET_SCENE → ${wireScene} (display: scene ${s.index}) — per-scene state walk`,
+      });
+      // Walk this scene's bypass map.
+      for (const [blockKey, bypassed] of Object.entries(s.bypass ?? {})) {
+        const target = sceneBlockResolutions.get(blockKey)!;
+        ops.push({
+          kind: 'bypass',
+          bytes: buildSetBlockBypassEnvelope(target.id, bypassed),
+          summary: `[scene ${s.index}] ${target.name}: bypass=${bypassed ? 'BYPASSED' : 'ENGAGED'}`,
+        });
+      }
+      // Walk this scene's channel map.
+      for (const [blockKey, channel] of Object.entries(s.channels ?? {})) {
+        const target = sceneBlockResolutions.get(blockKey)!;
+        if (!target.canBypass) {
+          throw new Error(
+            `scenes[${s.index}].channels: block '${blockKey}' does not expose X/Y channels on Axe-Fx II`,
+          );
+        }
+        ops.push({
+          kind: 'channel',
+          bytes: buildSetBlockChannel(target.id, channel),
+          summary: `[scene ${s.index}] ${target.name}: channel=${channel}`,
+        });
+      }
+    }
+    // Land on the requested landingScene (default: scene 1) so the
+    // user can audition the opening scene immediately after save.
+    const landing = input.landingScene ?? 1;
+    if (!Number.isInteger(landing) || landing < 1 || landing > 8) {
+      throw new Error(`landingScene must be 1..8 (display), got ${landing}`);
+    }
+    ops.push({
+      kind: 'switch_scene',
+      bytes: buildSetSceneNumber(landing - 1),
+      summary: `SET_SCENE → ${landing - 1} (display: scene ${landing}) — landing scene`,
+    });
+  }
+
   if (name !== undefined) {
     ops.push({
       kind: 'name',
@@ -200,6 +406,32 @@ export function buildApplyPresetAtOps(input: ApplyPresetAtInput): ApplyPresetAtO
   });
 
   return ops;
+}
+
+/**
+ * Working-buffer-only variant of {@link buildApplyPresetAtOps}. Same
+ * grid-place + per-block param / channel / bypass / scene / name shape,
+ * MINUS the leading switch_preset and the trailing STORE_PRESET. Used
+ * by the BK-051 unified descriptor's `applyPreset(spec)` path when no
+ * target location is supplied — i.e. the CLAUDE.md MVP "conversational
+ * preset, working buffer only" workflow.
+ *
+ * Re-uses {@link buildApplyPresetAtOps} by passing a stub preset_number
+ * and stripping the head + tail ops; the param-validation / wire-mode
+ * branch / channel-walk logic stays in one place.
+ */
+export type ApplyPresetInput = Omit<ApplyPresetAtInput, 'preset_number'>;
+
+export function buildApplyPresetOps(
+  input: ApplyPresetInput,
+  opts: BuildOptions = {},
+): ApplyPresetAtOp[] {
+  // Re-use the full builder, then strip the switch_preset head + save tail.
+  const full = buildApplyPresetAtOps(
+    { preset_number: 0, ...input },
+    opts,
+  );
+  return full.filter((op) => op.kind !== 'switch_preset' && op.kind !== 'save');
 }
 
 export interface RunOpsResult {
@@ -223,18 +455,97 @@ export interface RunOpsResult {
  * may report non-zero result codes but still leave the eventual save
  * functional.
  */
+// Post-switch settle window before reading grid layout. The Axe-Fx II
+// takes ~100-150ms to actually load a preset after switch_preset; reading
+// the grid sooner returns the OLD preset's layout (same race that hit
+// scan_preset_range in Session 67). 150ms matches the scan fix.
+const POST_SWITCH_SETTLE_MS = 150;
+const GRID_LAYOUT_TIMEOUT_MS = 800;
+
 export async function runApplyPresetAtOps(
-  conn: AxeFxIIConnection,
+  conn: ApplyConn,
   ops: ApplyPresetAtOp[],
 ): Promise<RunOpsResult> {
   const startMs = Date.now();
   let totalBytes = 0;
   let acks = 0;
   let lastNack: { summary: string; resultCode: number } | undefined;
-  let finalSaveOk = false;
+  // Working-buffer sequences (buildApplyPresetOps) have no `save` op —
+  // for those, `ok` reduces to "no non-recoverable failures along the
+  // way." When a `save` op IS in the sequence (apply_preset_at /
+  // apply_setlist), `ok` only flips true once STORE_PRESET acks 0x00.
+  const expectsSave = ops.some((o) => o.kind === 'save');
+  let finalSaveOk = !expectsSave;
   const summaries: string[] = [];
 
+  // After switch_preset (if present), read the grid layout once and
+  // build a "skip set" of already-empty cells. Clear_cell ops targeting
+  // those cells are no-ops on the device — skipping them is pure
+  // wall-time savings. An empty target preset goes from 42 writes →
+  // 0 writes (~1.3s saved); a fully-loaded slot pays only the one-time
+  // ~100ms grid read.
+  const emptyCells = new Set<string>(); // key: "row,col"
+  let gridReadDone = false;
+
+  async function readGridIntoSkipSet(afterSwitch: boolean): Promise<void> {
+    if (gridReadDone) return;
+    gridReadDone = true;
+    try {
+      if (afterSwitch) {
+        // Settle: switch_preset is async — must wait for load before read.
+        await new Promise((res) => setTimeout(res, POST_SWITCH_SETTLE_MS));
+      }
+      const ackP = conn.receiveSysExMatching(
+        isGetGridLayoutResponse,
+        GRID_LAYOUT_TIMEOUT_MS,
+      );
+      conn.send(buildGetGridLayout());
+      const ack = await ackP;
+      const cells = parseGetGridLayoutResponse(ack);
+      for (const c of cells) {
+        if (c.blockId === 0) emptyCells.add(`${c.row},${c.col}`);
+      }
+      summaries.push(
+        `  GRID_READ (skip-empty optimization): ${emptyCells.size}/48 cells already empty — those clears will be skipped`,
+      );
+    } catch (err) {
+      // Fall through; we'll emit all clears defensively.
+      summaries.push(
+        `  GRID_READ failed (${err instanceof Error ? err.message : String(err)}) — emitting all clears defensively`,
+      );
+    }
+  }
+
   for (const op of ops) {
+    // After the switch_preset op (if it ran), do a grid read so we can
+    // skip clear_cell ops that target already-empty cells. This is the
+    // "merge empty values" optimization — one ~100ms read replaces up
+    // to 42 wasted clear writes for a freshly-empty target slot.
+    if (op.kind === 'switch_preset' && !gridReadDone) {
+      // Fire the switch first (so the device starts loading), THEN read
+      // with a 150ms settle so we see the new preset's grid, not the old.
+      conn.send(op.bytes);
+      totalBytes += op.bytes.length;
+      summaries.push(`  ${op.summary}  (${op.bytes.length}B)`);
+      await readGridIntoSkipSet(/* afterSwitch */ true);
+      continue;
+    }
+    // For working-buffer-only sequences (no switch_preset op), still do
+    // the grid read once before the first clear_cell — no settle needed
+    // because the working buffer is already current.
+    if (op.kind === 'clear_cell' && !gridReadDone) {
+      await readGridIntoSkipSet(/* afterSwitch */ false);
+    }
+
+    if (op.kind === 'clear_cell' && op.cellRef !== undefined) {
+      const key = `${op.cellRef.row},${op.cellRef.col}`;
+      if (emptyCells.has(key)) {
+        // Cell is already empty in the loaded preset; skip the wire op.
+        summaries.push(`  ${op.summary}  ⊘ already empty (skipped)`);
+        continue;
+      }
+    }
+
     if (op.awaitResponse === 'set_grid_cell') {
       const ackPromise = conn.receiveSysExMatching(
         isSetGridCellResponse,
