@@ -32,8 +32,12 @@ import {
   describeDevice,
   executeGetParam,
   executeGetParams,
+  executeLookupLineage,
   executeRename,
   executeSavePreset,
+  executeScanLocations,
+  executeSetBlock,
+  executeSetBypass,
   executeSetParam,
   executeSetParams,
   executeSwitchPreset,
@@ -385,6 +389,138 @@ export function registerUnifiedTools(server: McpServer): void {
   }, async ({ port, target, name }) => {
     try {
       const result = await executeRename({ port, target, name });
+      return asText(result);
+    } catch (err) {
+      return asError(err);
+    }
+  });
+
+  // ── set_block ─────────────────────────────────────────────────────
+
+  server.registerTool('set_block', {
+    description: [
+      'Place (or clear) a block at a slot in the signal chain. Use this to',
+      'build up a preset\'s block layout before tuning per-block params via',
+      'set_param. Slot indexing is 1-based on linear devices (AM4: 1..4)',
+      'and {row, col} on grid devices (Axe-Fx II — Wave 2).',
+      'block_type accepts the device\'s registered block names ("amp",',
+      '"drive", "reverb", "delay", …) plus "none" to clear the slot.',
+      'See describe_device.block_types for the full list per device.',
+      'For bypass writes (silence an existing block without removing it),',
+      'use set_bypass instead — the AM4\'s bypass register is addressed',
+      'by block name, not by slot.',
+    ].join(' '),
+    inputSchema: {
+      port: z.string().describe(PORT_DESC),
+      slot: z.number().int().describe(
+        'Slot index (1-based) on linear devices. Grid-device support is Wave 2.',
+      ),
+      block_type: z.string().describe(
+        'Block type to place. Pass "none" to clear the slot. See describe_device.block_types.',
+      ),
+    },
+  }, async ({ port, slot, block_type }) => {
+    try {
+      const result = await executeSetBlock({ port, slot, change: { block_type } });
+      return asText(result);
+    } catch (err) {
+      return asError(err);
+    }
+  });
+
+  // ── set_bypass ────────────────────────────────────────────────────
+
+  server.registerTool('set_bypass', {
+    description: [
+      'Silence (bypass = true) or activate (bypass = false) a block on the',
+      'currently active scene. A bypassed block passes audio through',
+      'unchanged — its params stay intact, it just makes no sound. Common',
+      'use: "mute the drive on the clean scene" — switch to that scene',
+      'first, then set_bypass(block="drive", bypassed=true).',
+      'SCENE SCOPE: the write lands on whichever scene is active right now.',
+      'To configure bypass on a specific scene, switch_scene first and then',
+      'set_bypass.',
+    ].join(' '),
+    inputSchema: {
+      port: z.string().describe(PORT_DESC),
+      block: z.string().describe('Block name to bypass / activate (e.g. "amp", "drive", "reverb").'),
+      bypassed: z.boolean().describe('true = silence the block; false = activate.'),
+    },
+  }, async ({ port, block, bypassed }) => {
+    try {
+      const result = await executeSetBypass({ port, block, bypassed });
+      return asText(result);
+    } catch (err) {
+      return asError(err);
+    }
+  });
+
+  // ── scan_locations ────────────────────────────────────────────────
+
+  server.registerTool('scan_locations', {
+    description: [
+      'Bulk-scan a range of stored preset locations and return their',
+      'names. Non-destructive — working buffer and active location are',
+      'preserved. Iconic use: setlist-load opener. Before bulk-applying',
+      'patches into a target bank range, scan first to find which locations',
+      'already hold custom presets the user might want to back up, and',
+      'which are empty / safe to overwrite.',
+      'Empty locations come back with is_empty=true so you can preserve',
+      'that wording in chat ("M03 is empty; M04 holds your Texas Blues").',
+      'On a mid-loop failure, the scan aborts and surfaces partial results',
+      'plus the failure location so the caller can retry or back off.',
+    ].join(' '),
+    inputSchema: {
+      port: z.string().describe(PORT_DESC),
+      from: z.union([z.string(), z.number()]).describe(
+        'Inclusive start of the scan range. AM4: "A01"..."Z04"; Axe-Fx II: 0..383; etc.',
+      ),
+      to: z.union([z.string(), z.number()]).describe(
+        'Inclusive end of the scan range. Pass from <= to.',
+      ),
+    },
+  }, async ({ port, from, to }) => {
+    try {
+      const result = await executeScanLocations({ port, from, to });
+      return asText(result);
+    } catch (err) {
+      return asError(err);
+    }
+  });
+
+  // ── lookup_lineage ────────────────────────────────────────────────
+
+  server.registerTool('lookup_lineage', {
+    description: [
+      'Look up the registered device\'s authored lineage data for one of',
+      'its block types — what real hardware it\'s modeled after, the',
+      'device manufacturer\'s description, and developer/forum quotes.',
+      'Three call shapes (provide one):',
+      '  (a) forward — { block_type, name }: exact-match the canonical',
+      '      device model name (case-insensitive).',
+      '  (b) reverse — { block_type, real_gear }: substring search across',
+      '      basedOn / description / quotes. Use for fuzzy queries like',
+      '      "1176", "Tube Screamer", "Keith Urban tone".',
+      '  (c) structured — { block_type, manufacturer?, model? }: exact-',
+      '      match against structured fields. Most precise.',
+      'Devices without a registered lineage corpus reject with a capability',
+      'error — see describe_device.capabilities.supports_lineage.',
+      'Pure data lookup — no MIDI I/O.',
+    ].join(' '),
+    inputSchema: {
+      port: z.string().describe(PORT_DESC),
+      block_type: z.string().describe(
+        'Block type to query. See describe_device.block_types and the device\'s lineage coverage.',
+      ),
+      name: z.string().optional(),
+      real_gear: z.string().optional(),
+      manufacturer: z.string().optional(),
+      model: z.string().optional(),
+      include_quotes: z.boolean().optional().describe('Default true; pass false for a terser response.'),
+    },
+  }, async ({ port, block_type, name, real_gear, manufacturer, model, include_quotes }) => {
+    try {
+      const result = executeLookupLineage({ port, block_type, name, real_gear, manufacturer, model, include_quotes });
       return asText(result);
     } catch (err) {
       return asError(err);

@@ -47,6 +47,8 @@ import {
 import { BLOCK_TYPE_VALUES, BLOCK_NAMES_BY_VALUE } from '@/fractal/am4/blockTypes.js';
 import {
   buildSaveToLocation,
+  buildSetBlockBypass,
+  buildSetBlockType,
   buildSetParam,
   buildSetPresetName,
   buildSetSceneName,
@@ -55,6 +57,12 @@ import {
   isCommandAck,
   isWriteEcho,
 } from '@/fractal/am4/setParam.js';
+import { resolveBlockType } from '@/fractal/am4/blockTypes.js';
+import { readPresetName } from '@/server/shared/readOps.js';
+import {
+  formatLocationDisplay,
+} from '@/fractal/am4/locations.js';
+import { runLineageLookup, formatLineageRecord, LINEAGE_BLOCKS } from '@/fractal/shared/lineageLookup.js';
 import {
   parseLocationCode,
   formatLocationCode,
@@ -386,6 +394,67 @@ const writer: DeviceWriter = {
     };
   },
 
+  async setBlock(ctx, slot, change): Promise<WriteResult> {
+    if (typeof slot !== 'number' || !Number.isInteger(slot) || slot < 1 || slot > 4) {
+      throw new DispatchError(
+        'bad_location',
+        'Fractal AM4',
+        `Slot ${typeof slot === 'number' ? slot : JSON.stringify(slot)} is out of range on Fractal AM4 (linear slot_model, valid: 1..4).`,
+      );
+    }
+    if (change.block_type === undefined) {
+      throw new DispatchError(
+        'capability_not_supported',
+        'Fractal AM4',
+        `set_block on Fractal AM4 currently only handles block placement. Pass block_type to place/clear a block; use set_bypass for bypass writes.`,
+        { retry_action: 'Call set_bypass(port, block, bypassed) for the bypass write.' },
+      );
+    }
+    const wire = resolveBlockType(change.block_type);
+    if (wire === undefined) {
+      const known = Object.keys(BLOCK_TYPE_VALUES).join(', ');
+      throw new DispatchError(
+        'unknown_block',
+        'Fractal AM4',
+        `Block type '${change.block_type}' is not valid on Fractal AM4. Known: ${known}.`,
+      );
+    }
+    const bytes = buildSetBlockType(slot as 1 | 2 | 3 | 4, wire);
+    const result = await sendAndAwaitAck(ctx.conn, bytes, isWriteEcho);
+    const displayName = BLOCK_NAMES_BY_VALUE[wire] ?? `0x${wire.toString(16)}`;
+    return {
+      op: 'set_block',
+      target: `slot:${slot}=${displayName}`,
+      acked: result.acked,
+      warning: result.acked
+        ? `Placed ${displayName} in slot ${slot}.`
+        : `No write-echo within timeout — verify on the AM4 display.`,
+    };
+  },
+
+  async setBypass(ctx, block, bypassed): Promise<WriteResult> {
+    const wire = resolveBlockType(block);
+    if (wire === undefined || wire === BLOCK_TYPE_VALUES.none) {
+      const known = Object.keys(BLOCK_TYPE_VALUES).filter((n) => n !== 'none').join(', ');
+      throw new DispatchError(
+        'unknown_block',
+        'Fractal AM4',
+        `Block '${block}' is not valid on Fractal AM4 (cannot bypass 'none'). Known: ${known}.`,
+      );
+    }
+    const bytes = buildSetBlockBypass(wire, bypassed);
+    const result = await sendAndAwaitAck(ctx.conn, bytes, isWriteEcho);
+    const stateWord = bypassed ? 'bypassed' : 'active';
+    return {
+      op: 'set_bypass',
+      target: `${block}:${stateWord}`,
+      acked: result.acked,
+      warning: result.acked
+        ? `${block} set to ${stateWord} on the active scene. To change a different scene's bypass, switch_scene first and re-issue.`
+        : `No write-echo within timeout — verify on the AM4 display.`,
+    };
+  },
+
   async rename(ctx, target: RenameTarget, name): Promise<WriteResult> {
     if (target === 'preset') {
       // AM4's set_preset_name requires a location to write to. The
@@ -479,6 +548,76 @@ const reader: DeviceReader = {
       reads,
       failed_indices,
       errors: failed_indices.length > 0 ? errors : undefined,
+    };
+  },
+
+  async scanLocations(ctx, from, to) {
+    const fromIdx = parseAm4Location(from);
+    const toIdx = parseAm4Location(to);
+    if (fromIdx > toIdx) {
+      throw new DispatchError(
+        'bad_location',
+        'Fractal AM4',
+        `Scan range invalid: ${from} (idx ${fromIdx}) is after ${to} (idx ${toIdx}). Pass from <= to.`,
+      );
+    }
+    const scanned: import('@/protocol/generic/types.js').ScannedLocation[] = [];
+    let failed_at: string | undefined;
+    let failed_reason: string | undefined;
+    for (let i = fromIdx; i <= toIdx; i++) {
+      try {
+        const parsed = await readPresetName(ctx.conn, i);
+        scanned.push({
+          location: formatLocationDisplay(i),
+          name: parsed.name,
+          is_empty: parsed.isEmpty,
+        });
+      } catch (err) {
+        failed_at = formatLocationDisplay(i);
+        failed_reason = err instanceof Error ? err.message : String(err);
+        break;
+      }
+    }
+    return { scanned, failed_at, failed_reason };
+  },
+
+  lookupLineage(query) {
+    const blockType = query.block_type;
+    if (!LINEAGE_BLOCKS.includes(blockType as typeof LINEAGE_BLOCKS[number])) {
+      return {
+        ok: false,
+        text: `Block type '${blockType}' has no Fractal-authored lineage corpus. Valid: ${LINEAGE_BLOCKS.join(', ')}.`,
+      };
+    }
+    const result = runLineageLookup({
+      block_type: blockType as typeof LINEAGE_BLOCKS[number],
+      name: query.name,
+      real_gear: query.real_gear,
+      manufacturer: query.manufacturer,
+      model: query.model,
+    });
+    if (!result.found) {
+      const detail = result.shape === 'structured'
+        ? [
+            query.manufacturer && `manufacturer="${query.manufacturer}"`,
+            query.model && `model="${query.model}"`,
+          ].filter(Boolean).join(', ')
+        : (query.name ?? query.real_gear ?? '(unknown query)');
+      return {
+        ok: false,
+        text: `No ${blockType} lineage records match ${detail}. ${result.totalScanned} records scanned.`,
+      };
+    }
+    const withQuotes = query.include_quotes ?? true;
+    if (result.shape === 'forward') {
+      return { ok: true, text: formatLineageRecord(result.hits[0].record, withQuotes) };
+    }
+    const blocks = result.hits.map(
+      (h) => `── ${'am4Name' in h ? h.am4Name : '?'} ──\n${formatLineageRecord(h.record, withQuotes, 3)}`,
+    );
+    return {
+      ok: true,
+      text: `${result.hits.length} ${blockType} match(es)${result.hits.length > 10 ? ' (showing top 10)' : ''}:\n\n${blocks.join('\n\n')}`,
     };
   },
 };

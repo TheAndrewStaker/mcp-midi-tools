@@ -615,6 +615,110 @@ export async function executeRename(args: { port: string; target: string; name: 
 }
 
 /**
+ * Full lifecycle for `set_block(port, slot, { block_type?, bypassed?,
+ * channel? })`. v0.1.0 chunk 3 scope: block_type only (placement).
+ * Bypass-via-slot requires reading the slot's current block first; for
+ * now the dispatcher errors with a hint to use `set_bypass(port, block,
+ * bypassed)` instead.
+ */
+export async function executeSetBlock(args: {
+  port: string;
+  slot: number | { row: number; col: number };
+  change: import('./types.js').BlockChange;
+}): Promise<WriteResult & { device: string }> {
+  const descriptor = requireDevice(args.port);
+  if (descriptor.writer.setBlock === undefined) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `set_block is not implemented for ${descriptor.display_name}.`,
+    );
+  }
+  const ctx = openCtx(descriptor);
+  const result = await descriptor.writer.setBlock(ctx, args.slot, args.change);
+  return { ...result, device: descriptor.display_name };
+}
+
+/**
+ * Full lifecycle for `set_bypass(port, block, bypassed)`. Capability
+ * check: device must expose block-bypass writes (currently all
+ * registered devices do, but the hook lives for future devices).
+ */
+export async function executeSetBypass(args: {
+  port: string;
+  block: string;
+  bypassed: boolean;
+}): Promise<WriteResult & { device: string }> {
+  const descriptor = requireDevice(args.port);
+  if (descriptor.writer.setBypass === undefined) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `set_bypass is not implemented for ${descriptor.display_name}.`,
+    );
+  }
+  // Normalize block name through the schema's aliases.
+  const canonical_block = resolveBlockName(descriptor, args.block);
+  const ctx = openCtx(descriptor);
+  const result = await descriptor.writer.setBypass(ctx, canonical_block, args.bypassed);
+  return { ...result, device: descriptor.display_name };
+}
+
+/**
+ * Full lifecycle for `scan_locations(port, from, to)`. The reader
+ * adapter performs the iteration; this layer just routes.
+ */
+export async function executeScanLocations(args: {
+  port: string;
+  from: string | number;
+  to: string | number;
+}): Promise<{ device: string; scanned: readonly import('./types.js').ScannedLocation[]; failed_at?: string; failed_reason?: string }> {
+  const descriptor = requireDevice(args.port);
+  if (descriptor.reader.scanLocations === undefined) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `scan_locations is not implemented for ${descriptor.display_name}.`,
+    );
+  }
+  const ctx = openCtx(descriptor);
+  const result = await descriptor.reader.scanLocations(ctx, args.from, args.to);
+  return { ...result, device: descriptor.display_name };
+}
+
+/**
+ * Pure lookup for `lookup_lineage`. No MIDI I/O — purely a query
+ * against the descriptor's static lineage corpus.
+ */
+export function executeLookupLineage(args: {
+  port: string;
+  block_type: string;
+  name?: string;
+  real_gear?: string;
+  manufacturer?: string;
+  model?: string;
+  include_quotes?: boolean;
+}): { device: string; ok: boolean; text: string } {
+  const descriptor = requireDevice(args.port);
+  if (!descriptor.capabilities.supports_lineage) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `${descriptor.display_name} does not have a lineage corpus.`,
+    );
+  }
+  if (descriptor.reader.lookupLineage === undefined) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `lookup_lineage is not implemented for ${descriptor.display_name}.`,
+    );
+  }
+  const result = descriptor.reader.lookupLineage(args);
+  return { ...result, device: descriptor.display_name };
+}
+
+/**
  * Pure introspection for `list_params(port, block?, name?)`. When
  * `name` is supplied AND the param is an enum, the response carries
  * the full enum table — collapses the legacy `*_list_enum_values`

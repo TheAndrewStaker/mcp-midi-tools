@@ -268,9 +268,33 @@ export interface WriteOp extends ParamQuery {
  * setup. Inputs are pre-validated (block/name resolved to canonical,
  * channel resolved to the device's native form).
  */
+export interface ScannedLocation {
+  location: string;
+  name: string;
+  is_empty: boolean;
+}
+
+export interface LineageQuery {
+  block_type: string;
+  name?: string;
+  real_gear?: string;
+  manufacturer?: string;
+  model?: string;
+  include_quotes?: boolean;
+}
+
 export interface DeviceReader {
   getParam(ctx: DispatchCtx, block: string, name: string, channel?: string | number): Promise<ReadResult>;
   getParams(ctx: DispatchCtx, queries: readonly ParamQuery[]): Promise<BatchReadResult>;
+  /** Bulk-scan stored preset locations for their names. */
+  scanLocations?(ctx: DispatchCtx, from: string | number, to: string | number): Promise<{
+    scanned: readonly ScannedLocation[];
+    failed_at?: string;
+    failed_reason?: string;
+  }>;
+  /** Educational/discovery lookup (Fractal lineage corpus, manufacturer
+   *  catalog, etc.). Pure data lookup — no MIDI I/O. */
+  lookupLineage?(query: LineageQuery): { ok: boolean; text: string };
 }
 
 /**
@@ -312,6 +336,7 @@ export interface DeviceWriter {
   setParam?(ctx: DispatchCtx, block: string, name: string, wireValue: number, channel?: string | number): Promise<WriteResult>;
   setParams?(ctx: DispatchCtx, ops: readonly WriteOp[]): Promise<BatchWriteResult>;
   setBlock?(ctx: DispatchCtx, slot: SlotRef, change: BlockChange): Promise<WriteResult>;
+  setBypass?(ctx: DispatchCtx, block: string, bypassed: boolean): Promise<WriteResult>;
   applyPreset?(ctx: DispatchCtx, spec: PresetSpec, target?: LocationRef): Promise<ApplyResult>;
   switchPreset?(ctx: DispatchCtx, location: LocationRef): Promise<WriteResult>;
   savePreset?(ctx: DispatchCtx, location: LocationRef, name?: string): Promise<WriteResult>;

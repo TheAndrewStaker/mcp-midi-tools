@@ -164,16 +164,22 @@ async function main(): Promise<void> {
     // get_param, set_param.
     // Session B chunk 2: set_params, get_params, switch_preset,
     // save_preset, switch_scene, rename.
-    // Subsequent chunks add the rest of the ~16 unified tools. Routes
-    // through src/protocol/generic/dispatcher.ts against the registered
-    // device descriptors; AM4 is the only registered device until
-    // Wave 2.
+    // Session B chunk 3: set_block, set_bypass, scan_locations,
+    // lookup_lineage.
+    // Remaining (apply_preset, apply_setlist, restore_defaults) deferred
+    // to Session B-cont — they wrap the 1633-LOC apply.ts and add no
+    // new wire capability vs. the legacy am4_apply_preset / _setlist
+    // / restore_factory tools that already ship.
     'describe_device',
     'get_param',
     'get_params',
     'list_params',
+    'lookup_lineage',
     'rename',
     'save_preset',
+    'scan_locations',
+    'set_block',
+    'set_bypass',
     'set_param',
     'set_params',
     'switch_preset',
