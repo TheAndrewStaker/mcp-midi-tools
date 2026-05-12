@@ -501,19 +501,45 @@ no ambiguity about which device is being driven.
 
 ---
 
-## Safety defaults
+## Opinionated UX guarantees
 
-- **Z04 is the scratch location.** `save_to_location` and `save_preset`
-  refuse to write to any other preset location until factory-preset
-  safety classification (P1-008) ships. This keeps your A01–Z03
-  factory banks untouched during development.
-- **Every write is acknowledged.** `set_param` and friends wait for
-  the device's write echo (up to 300 ms) before returning success, so
-  "the tool succeeded" means "the AM4 actually took the write."
-- **Read-only probes stay read-only.** `scripts/probe.ts` never issues
-  any store/save SysEx — it's the designated safe introspection tool.
+This project takes opinionated stances about destructive operations
+on your hardware. Across **every** supported device (AM4, Axe-Fx II,
+Hydrasynth, and any device added later), the same rules apply:
 
-See [`CLAUDE.md`](./CLAUDE.md) for the full write-safety rules.
+**No silent saves.** When you ask Claude to "build a tone at slot 700"
+the tool builds it in the working buffer — you can audition immediately
+— but does **not** save to slot 700 unless you also said "save it" /
+"store it" / "put it on 700" / similar. The only exception is multi-
+preset requests ("build a setlist for 700/701/702"), where save intent
+is implicit because a setlist without persistence isn't a setlist.
+
+**No silent edit loss.** If you've been tweaking a preset and then ask
+Claude to do something that would navigate away from it (load another
+preset, build at a different slot), the tool refuses and asks "you
+have unsaved edits on slot Y — save first, discard, or cancel?" before
+it touches anything. The dirty-state detection is device-sourced where
+the hardware exposes it (Axe-Fx II via state-broadcast — confirmed) and
+heuristic-fallback where it doesn't (AM4 pending decode, Hydrasynth has
+no MIDI-exposed dirty signal — limitations are documented per-tool).
+
+**No silent overwrites.** Multi-preset requests pre-flight scan the
+target range before writing. If any target slot already holds a named
+preset, the tool surfaces what would be lost so Claude can ask you to
+confirm before proceeding.
+
+**Every write is acknowledged.** `set_param` and friends wait for the
+device's write echo (up to 300 ms on AM4, configurable on Axe-Fx II)
+before returning success. "The tool succeeded" means "the device
+actually took the write." No silent fail.
+
+**Read-only probes stay read-only.** `scripts/probe.ts` and the
+`axefx2_probe_sysex` diagnostic tool never issue store/save SysEx —
+they're the designated safe introspection paths for protocol RE.
+
+See [`docs/SAFE-EDIT-WORKFLOW.md`](./docs/SAFE-EDIT-WORKFLOW.md) for
+the full contract, including the per-device implementation table and
+the test scenarios every device must pass.
 
 ---
 

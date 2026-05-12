@@ -123,6 +123,46 @@ Anti-patterns to avoid:
 - "effect in slot 3" is correct; "effect in position 3" is also OK but
   "slot" matches Fractal's wording
 
+## Safe-edit workflow (cross-device contract)
+
+Every MCP tool that navigates or persists must enforce three gates,
+applied consistently across AM4, Axe-Fx II, Hydrasynth, and any future
+device:
+
+1. **Buffer-dirty gate** (`on_active_preset_edited`). Before navigating
+   away from the active preset, check `isDirty(device)`. If dirty and
+   the caller didn't pass `'discard'` or `'save_active_first'`, refuse
+   with a structured warning naming the active preset. Reference impl:
+   `src/fractal/axe-fx-ii/tools/shared.ts:guardActiveBufferOrSave`.
+
+2. **Save-authorization gate** (`save_authorized`). Tools that apply
+   AND persist in one call (`*_apply_preset_at`, `hydra_apply_patch`
+   with target slot) default to `save_authorized: false` and refuse
+   unless the caller passed `true`. The agent should only pass `true`
+   when the user used save-intent language (save / store / keep /
+   put-on / persist).
+
+3. **Multi-preset overwrite gate.** Multi-preset tools (`*_apply_setlist`)
+   do NOT need `save_authorized` (multi-preset intent implies save),
+   but MUST pre-flight scan the target range and surface what would be
+   overwritten before writing.
+
+Full contract + per-device implementation status in
+`docs/SAFE-EDIT-WORKFLOW.md`. When adding a new device, port these
+three gates before considering the device "production-ready."
+
+Per-device fallback rules when a device's MIDI surface doesn't expose
+a dirty-state signal:
+
+- **Hydrasynth has no MIDI-exposed dirty signal.** Hydra tools omit
+  `on_active_preset_edited` entirely. The `save_authorized` gate still
+  applies. Document the limitation in tool descriptions so the agent
+  asks the user before navigating instead of relying on the API gate.
+- **AM4's device-sourced dirty signal is pending HW-107 capture.**
+  Until that lands, AM4 uses a code-side send-classifier heuristic
+  (mark dirty on outbound write-class messages, clean on switch/save).
+  Drift-prone — temporary measure documented as such.
+
 ## Tool surface architecture
 
 **Two surfaces ship in parallel through v0.1.0.**
