@@ -1,6 +1,6 @@
 {
   "_source": "Re-keyed from src/fractal/shared/lineage/drive-lineage.json against AMP_EFFECT_TYPE_VALUES from src/fractal/axe-fx-ii/params.ts",
-  "_extractedAt": "2026-05-10T19:48:27.101Z",
+  "_extractedAt": "2026-05-12T06:21:50.153Z",
   "_enumSize": 36,
   "_matched": 34,
   "_unmatched": 2,
@@ -36,13 +36,13 @@
       "flags": [],
       "am4Name": "PI Fuzz",
       "wikiName": "PI FUZZ",
-      "description": "Based on the Big Muff Pi fuzz.",
       "basedOn": {
         "primary": "Electro-Harmonix Big Muff Pi current",
         "manufacturer": "Electro-Harmonix",
         "productName": "Big Muff Pi current",
         "source": "fractal-wiki"
       },
+      "description": "Based on the Big Muff Pi fuzz.",
       "fractalQuotes": []
     },
     {
@@ -78,7 +78,6 @@
       "flags": [],
       "am4Name": "Super OD",
       "wikiName": "SUPER OD",
-      "description": "Based on the Boss Super Overdrive",
       "basedOn": {
         "primary": "Boss SD-1 Super Overdrive",
         "manufacturer": "Boss",
@@ -86,6 +85,7 @@
         "productName": "SD-1 Super Overdrive",
         "source": "fractal-wiki"
       },
+      "description": "Based on the Boss Super Overdrive",
       "fractalQuotes": []
     },
     {
@@ -95,11 +95,11 @@
       "flags": [],
       "am4Name": "Treble Boost",
       "wikiName": "TREBLE BOOST",
-      "description": "Based on a classic treble booster.",
       "basedOn": {
         "primary": "silicon treble booster circuit",
         "source": "fractal-wiki"
       },
+      "description": "Based on a classic treble booster.",
       "fractalQuotes": [
         {
           "text": "Boost was a switch and engaged the effect. Set was the amount of boost and is equivalent to Drive.",
@@ -125,7 +125,6 @@
       "flags": [],
       "am4Name": "T808 OD",
       "wikiName": "T808 OD",
-      "description": "Based on the Ibanez TS-9 Tube Screamer overdrive.",
       "basedOn": {
         "primary": "Ibanez TS-808 Tube Screamer",
         "manufacturer": "Ibanez",
@@ -133,6 +132,7 @@
         "productName": "TS-808 Tube Screamer",
         "source": "fractal-wiki"
       },
+      "description": "Based on the Ibanez TS-9 Tube Screamer overdrive.",
       "fractalQuotes": []
     },
     {
@@ -142,13 +142,13 @@
       "flags": [],
       "am4Name": "Fat Rat",
       "wikiName": "FAT RAT",
-      "description": "A modified version of the Rat Distortion. Fuller and smoother.",
       "basedOn": {
         "primary": "Pro Co modded RAT LED clipping",
         "manufacturer": "Pro Co",
         "productName": "modded RAT LED clipping",
         "source": "fractal-wiki"
       },
+      "description": "A modified version of the Rat Distortion. Fuller and smoother.",
       "fractalQuotes": []
     },
     {
@@ -158,7 +158,6 @@
       "flags": [],
       "am4Name": "T808 Mod",
       "wikiName": "T808 MOD",
-      "description": "Captures the most popular TS overdrive mods.",
       "basedOn": {
         "primary": "Ibanez TS-808 Tube Screamer",
         "manufacturer": "Ibanez",
@@ -166,6 +165,7 @@
         "productName": "TS-808 Tube Screamer",
         "source": "fractal-wiki"
       },
+      "description": "Captures the most popular TS overdrive mods.",
       "fractalQuotes": []
     },
     {
@@ -222,11 +222,11 @@
       ],
       "am4Name": "Tape Distortion",
       "wikiName": "TAPE DISTORTION",
-      "description": "Simulates the clipping of an overdriven reel-to-reel tape deck.",
       "basedOn": {
         "primary": "tape distortion",
         "source": "fractal-wiki"
       },
+      "description": "Simulates the clipping of an overdriven reel-to-reel tape deck.",
       "fractalQuotes": []
     },
     {
@@ -236,13 +236,13 @@
       "flags": [],
       "am4Name": "Full OD",
       "wikiName": "FULL OD",
-      "description": "Based on the Fulltone Fulldrive OD Pedal.",
       "basedOn": {
         "primary": "Fulltone Full-Drive 2",
         "manufacturer": "Fulltone",
         "productName": "Full-Drive 2",
         "source": "fractal-wiki"
       },
+      "description": "Based on the Fulltone Fulldrive OD Pedal.",
       "fractalQuotes": [
         {
           "text": "The Full OD model is based on a Fulltone Fulldrive 2.",
@@ -258,13 +258,13 @@
       "flags": [],
       "am4Name": "Blues OD",
       "wikiName": "BLUES OD",
-      "description": "Based on the Marshall Bluesbreaker.",
       "basedOn": {
         "primary": "Marshall Bluesbreaker Mk1",
         "manufacturer": "Marshall",
         "productName": "Bluesbreaker Mk1",
         "source": "fractal-wiki"
       },
+      "description": "Based on the Marshall Bluesbreaker.",
       "fractalQuotes": []
     },
     {
@@ -293,7 +293,6 @@
       ],
       "am4Name": "M-Zone Distortion",
       "wikiName": "M-ZONE DISTORTION",
-      "description": "Simulates the Boss Metal Zone, popular for extreme gain settings.",
       "basedOn": {
         "primary": "Boss MT-2 Metal Zone",
         "manufacturer": "Boss",
@@ -301,6 +300,7 @@
         "productName": "Metal Zone",
         "source": "fractal-wiki"
       },
+      "description": "Simulates the Boss Metal Zone, popular for extreme gain settings.",
       "fractalQuotes": []
     },
     {
@@ -310,13 +310,13 @@
       "flags": [],
       "am4Name": "Bender Fuzz",
       "wikiName": "BENDER FUZZ",
-      "description": "Based on the classic Tone Bender circuit.",
       "basedOn": {
         "primary": "Sola Sound / Vox Tone Bender",
         "manufacturer": "Sola Sound",
         "productName": "/ Vox Tone Bender",
         "source": "fractal-wiki"
       },
+      "description": "Based on the classic Tone Bender circuit.",
       "fractalQuotes": []
     },
     {
@@ -326,13 +326,13 @@
       "flags": [],
       "am4Name": "BB Pre",
       "wikiName": "BB PRE",
-      "description": "Based on the Xotic BB preamp standard (v1.5)",
       "basedOn": {
         "primary": "Xotic BB",
         "manufacturer": "Xotic",
         "productName": "BB",
         "source": "fractal-wiki"
       },
+      "description": "Based on the Xotic BB preamp standard (v1.5)",
       "fractalQuotes": [
         {
           "text": "The BB is more of a clean boost it's just pushing the amp (model).",
@@ -348,7 +348,6 @@
       "flags": [],
       "am4Name": "Master Fuzz",
       "wikiName": "MASTER FUZZ",
-      "description": "Based on the Maestro Fuzztone, aka \"Satisfaction\" fuzz.",
       "basedOn": {
         "primary": "Maestro FZ-1A Gibson Fuzz-Tone",
         "manufacturer": "Maestro",
@@ -356,6 +355,7 @@
         "productName": "Gibson Fuzz-Tone",
         "source": "fractal-wiki"
       },
+      "description": "Based on the Maestro Fuzztone, aka \"Satisfaction\" fuzz.",
       "fractalQuotes": []
     },
     {
@@ -365,13 +365,13 @@
       "flags": [],
       "am4Name": "Face Fuzz",
       "wikiName": "FACE FUZZ",
-      "description": "Based on Dallas Arbiter Fuzz Face",
       "basedOn": {
         "primary": "Dallas Arbiter Face",
         "manufacturer": "Dallas Arbiter",
         "productName": "Face",
         "source": "fractal-wiki"
       },
+      "description": "Based on Dallas Arbiter Fuzz Face",
       "fractalQuotes": []
     },
     {
@@ -381,11 +381,11 @@
       "flags": [],
       "am4Name": "Bit Crusher",
       "wikiName": "BIT CRUSHER",
-      "description": "Based on a black box we found in the dumpster outside Studio Harshclip.",
       "basedOn": {
         "primary": "black box we found in the dumpster outside Studio Harshclip",
         "source": "fractal-blocks-guide"
       },
+      "description": "Based on a black box we found in the dumpster outside Studio Harshclip.",
       "fractalQuotes": []
     },
     {
@@ -395,13 +395,13 @@
       "flags": [],
       "am4Name": "Eternal Love",
       "wikiName": "ETERNAL LOVE",
-      "description": "Based on a Lovepedal Eternity.",
       "basedOn": {
         "primary": "Lovepedal Eternity",
         "manufacturer": "Lovepedal",
         "productName": "Eternity",
         "source": "fractal-wiki"
       },
+      "description": "Based on a Lovepedal Eternity.",
       "fractalQuotes": []
     },
     {
@@ -411,13 +411,13 @@
       "flags": [],
       "am4Name": "Esoteric ACB",
       "wikiName": "ESOTERIC ACB",
-      "description": "Based on the Xotic AC Booster",
       "basedOn": {
         "primary": "Xotic AC",
         "manufacturer": "Xotic",
         "productName": "AC",
         "source": "fractal-wiki"
       },
+      "description": "Based on the Xotic AC Booster",
       "fractalQuotes": []
     },
     {
@@ -427,13 +427,13 @@
       "flags": [],
       "am4Name": "Esoteric RCB",
       "wikiName": "ESOTERIC RCB",
-      "description": "Based on the Xotic RC Booster",
       "basedOn": {
         "primary": "Xotic RC v1",
         "manufacturer": "Xotic",
         "productName": "RC v1",
         "source": "fractal-wiki"
       },
+      "description": "Based on the Xotic RC Booster",
       "fractalQuotes": []
     },
     {
@@ -443,11 +443,11 @@
       "flags": [],
       "am4Name": "Zen Master",
       "wikiName": "ZEN MASTER",
-      "description": "Based on Hermida Zen Drive.",
       "basedOn": {
         "primary": "Hermida Zendrive",
         "source": "fractal-wiki"
       },
+      "description": "Based on Hermida Zen Drive.",
       "fractalQuotes": []
     },
     {
@@ -482,13 +482,13 @@
       "flags": [],
       "am4Name": "SDD Preamp",
       "wikiName": "SDD PREAMP",
-      "description": "Based on the preamp section of the famed SDD digital delay.",
       "basedOn": {
         "primary": "Korg SDD-3000",
         "manufacturer": "Korg",
         "model": "SDD-3000",
         "source": "fractal-wiki"
       },
+      "description": "Based on the preamp section of the famed SDD digital delay.",
       "fractalQuotes": []
     },
     {
@@ -498,7 +498,6 @@
       "flags": [],
       "am4Name": "FET Preamp",
       "wikiName": "FET PREAMP",
-      "description": "Based on (surprise!) a FET preamp.",
       "basedOn": {
         "primary": "Boss FA-1 FET",
         "manufacturer": "Boss",
@@ -506,6 +505,7 @@
         "productName": "FET",
         "source": "fractal-wiki"
       },
+      "description": "Based on (surprise!) a FET preamp.",
       "fractalQuotes": []
     },
     {
@@ -523,13 +523,13 @@
       "flags": [],
       "am4Name": "Micro Boost",
       "wikiName": "MICRO BOOST",
-      "description": "Based on MXR Micro Amp, an op amp-driven clean boost pedal.",
       "basedOn": {
         "primary": "MXR Micro",
         "manufacturer": "MXR",
         "productName": "Micro",
         "source": "fractal-wiki"
       },
+      "description": "Based on MXR Micro Amp, an op amp-driven clean boost pedal.",
       "fractalQuotes": []
     },
     {

@@ -1,6 +1,6 @@
 {
   "_source": "Re-keyed from src/fractal/shared/lineage/delay-lineage.json against AMP_EFFECT_TYPE_VALUES from src/fractal/axe-fx-ii/params.ts",
-  "_extractedAt": "2026-05-10T19:48:27.105Z",
+  "_extractedAt": "2026-05-12T06:21:50.157Z",
   "_enumSize": 18,
   "_matched": 17,
   "_unmatched": 1,
@@ -188,11 +188,11 @@
       "matchVia": "direct",
       "flags": [],
       "am4Name": "Deluxe Mind Guy",
-      "description": "Recreates the sound of a classic memory guy delay pedal.",
       "basedOn": {
         "primary": "classic memory guy delay pedal",
         "source": "fractal-blocks-guide"
       },
+      "description": "Recreates the sound of a classic memory guy delay pedal.",
       "fractalQuotes": []
     },
     {

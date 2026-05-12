@@ -1,14 +1,14 @@
 {
   "_source": "Re-keyed from src/fractal/shared/lineage/amp-lineage.json against AMP_EFFECT_TYPE_VALUES from src/fractal/axe-fx-ii/params.ts",
-  "_extractedAt": "2026-05-10T19:48:27.093Z",
+  "_extractedAt": "2026-05-12T06:21:50.147Z",
   "_enumSize": 259,
-  "_matched": 196,
-  "_unmatched": 63,
+  "_matched": 203,
+  "_unmatched": 56,
   "_matchedVia": {
     "prefix": 8,
-    "abbrev-expand": 48,
+    "abbrev-expand": 55,
     "direct": 140,
-    "unmatched": 63
+    "unmatched": 56
   },
   "_note": "Status: wiki-documented (🟡), not yet hardware-verified on Q8.02. Records inherit lineage prose from the AM4 wiki entry; the matchVia field surfaces match-strategy confidence — `direct` is name-exact, `reverb-swap` / `abbrev-expand` / `prefix` should be spot-checked. Unmatched entries carry no lineage data; manual fill or a future hardware-aware extractor can promote them.",
   "records": [
@@ -29,11 +29,11 @@
         "productName": "59 Bassman LTD",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Fender 4x10 with Jensen Alnico 25W P10R or 40W P10Q",
       "matchingDynaCab": "4x10 Bassguy RI",
-      "powerTubes": "6L6"
+      "powerTubes": "6L6",
+      "fractalQuotes": [],
+      "artistNotes": []
     },
     {
       "axefx2Name": "65 BASSGUY NRML",
@@ -41,6 +41,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"65 Bassguy Bass\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "65 Bassguy Normal",
@@ -53,41 +54,6 @@
         "productName": "Bassman head",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "One of the first mods people make to real 'Plexi' Marshalls is to",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "It's the way a Plexi is supposed to sound. That's due to the cathode follower. That raspiness helps it cut through in a mix. I own three of them and they are that fizzy.",
-          "url": "https://forum.fractalaudio.com/posts/576475",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Don't be afraid to turn the bass all the way down or the treble all the way up. Just like with the actual amp. For example, on the Normal channel of a Plexi most people turn the bass way down. Otherwise it's too flubby.",
-          "url": "https://forum.fractalaudio.com/posts/577248",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "My settings for a",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "What you are hearing is output transformer high frequency resonance. Old Plexis didn't do this because they had good transformers. New transformers are crappy and resonate at the cutoff frequency because they are underdamped. This causes a raspy, fizzy texture to the distortion. The transformer resonance is adjustable but the parameter isn't exposed to the user. When you turn it up you get that same squishy rasp that you are hearing. For the Plexis I have the damping set to flat with no resonance because that's how our vintage Plexis measure. Our 50W is a little underdamped but people complain about raspy high frequencies so I erred on the safe side.",
-          "url": "https://forum.fractalaudio.com/threads/dimed-real-plexi-vs-dimed-simulation-q8-01.127161/page-2#post-1513888",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "When modding Marshalls for higher gain sometimes the modder will decrease the input frequency response to reduce noise and fizziness. You can do this by reducing the high-cut frequency in the input EQ. Or you can use a high-shelf filter which is a little more subtle. Another technique is to put a capacitor across the second-to-last triode stage. This is the",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "All the distortion comes from the power amp so the tone controls don't do much.",
-          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-16-00-beta-4-cygnus-firmware-public-beta.170253/post-2052743",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "originalCab": "Fender 2x12 (Oxford)",
       "matchingDynaCab": "2x12 65 Bassguy",
       "powerTubes": "6L6"
@@ -101,7 +67,6 @@
       ],
       "am4Name": "VIBRATO VERB",
       "wikiName": "VIBRATO VERB",
-      "description": "old model ported from the Axe-Fx Ultra (not included on the AM4)",
       "family": "FENDER",
       "basedOn": {
         "primary": "Fender Vibroverb",
@@ -109,6 +74,9 @@
         "productName": "Vibroverb",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 1x15 (Jensen C15N, JBL D130, Eminence)",
+      "powerTubes": "6L6",
+      "description": "old model ported from the Axe-Fx Ultra (not included on the AM4)",
       "fractalQuotes": [
         {
           "text": "The Transformer Matching value for the CS model is based on the output transformer in the actual amp. Legend has it that SRV used a Bassman transformer which would lead to significant overmatching. To replicate this increase Xfrmr Match to around 1.8.",
@@ -125,9 +93,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 1x15 (Jensen C15N, JBL D130, Eminence)",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "DELUXE VERB VIB",
@@ -135,11 +101,11 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Deluxe Verb Normal\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Deluxe Verb Vibrato",
       "wikiName": "DELUXE VERB VIBRATO",
-      "description": "based on the Vibrato channel of the same amp",
       "family": "FENDER",
       "basedOn": {
         "primary": "Fender AB763",
@@ -147,8 +113,6 @@
         "model": "AB763",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Fender 1x12 with a Jensen C12(K), EVM 12L, or JBL D120. Or Fender 2x10 with Jensen C10N or C10Q, or a Jensen 25W Alnico P10R",
       "matchingDynaCab": "1x12 Deluxe Verb",
       "powerTubes": "6V6"
@@ -159,6 +123,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Double Verb Normal\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Double Verb Vibrato",
@@ -170,8 +135,6 @@
         "productName": "Twin",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Fender 2x12 with original speakers",
       "matchingDynaCab": "2x12 Double Verb",
       "powerTubes": "6L6"
@@ -190,6 +153,8 @@
         "productName": "Blues Junior",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 1x12 (Eminence, Jensen C12N, P12R)",
+      "powerTubes": "EL84",
       "fractalQuotes": [
         {
           "text": "The Blues Jr. amp has a fixed presence circuit.",
@@ -212,9 +177,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 1x12 (Eminence, Jensen C12N, P12R)",
-      "powerTubes": "EL84"
+      "artistNotes": []
     },
     {
       "axefx2Name": "CLASS-A 15W TB",
@@ -230,11 +193,11 @@
         "productName": "Top",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Vox 1x12 (G12M, Alnico)",
       "matchingDynaCab": "1x12 AC20",
-      "powerTubes": "EL84"
+      "powerTubes": "EL84",
+      "fractalQuotes": [],
+      "artistNotes": []
     },
     {
       "axefx2Name": "CLASS-A 30W",
@@ -249,6 +212,9 @@
         "model": "AC30",
         "source": "fractal-wiki"
       },
+      "originalCab": "Vox 2x12 (Alnico, G12M)",
+      "matchingDynaCab": "2x12 Class-A 30W",
+      "powerTubes": "EL84",
       "fractalQuotes": [
         {
           "text": "An AC30 has no power amp feedback so it doesn't have presence or depth controls. It has a",
@@ -307,17 +273,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Vox 2x12 (Alnico, G12M)",
-      "matchingDynaCab": "2x12 Class-A 30W",
-      "powerTubes": "EL84"
+      "artistNotes": []
     },
     {
       "axefx2Name": "CLASS-A 30W TB",
       "wireIndex": 8,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Class-A 30W\""
+        "INHERITED: lineage from sibling \"Class-A 30W\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Class-A 30W TB",
       "wikiName": "CLASS-A 30W TB",
@@ -327,8 +291,6 @@
         "model": "AC30",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Vox 2x12 (Alnico, G12M)",
       "matchingDynaCab": "2x12 Class-A 30W",
       "powerTubes": "EL84"
@@ -347,6 +309,9 @@
         "productName": "JTM 45",
         "source": "fractal-wiki"
       },
+      "originalCab": "Marshall 4x12 (G12M, G12H)",
+      "matchingDynaCab": "4x12 1960TV",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "They had no Master Volumes so people rarely got the Drive past 3.00 since it would melt your face. Without the specter of having your skin flayed off as is afforded by a model of the amp, the temptation is to turn the Drive way up. When you do this the low notes get very muddy. Single notes can form an almost perfect square wave which will sound like a synthesizer.",
@@ -368,10 +333,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Marshall 4x12 (G12M, G12H)",
-      "matchingDynaCab": "4x12 1960TV",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "PLEXI 50W NRML",
@@ -379,6 +341,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Plexi 50W 6550\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Plexi 50W Normal",
@@ -390,19 +353,6 @@
         "productName": "50W Plexi",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "There's a 0.68uF cap on the second triode.",
-          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-version-20-05-public-beta-beta-1.187133/post-2317922",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The topology of that model does not support a bright cap and the actual amp has no bright cap.",
-          "url": "https://forum.fractalaudio.com/threads/q2-01-plexi-50w-nrml-bright-cap-doesnt-work.111836/#post-1337410",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "6550"
     },
     {
@@ -411,6 +361,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Plexi 50W 6550\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Plexi 50W High 1",
@@ -422,8 +373,6 @@
         "productName": "50W Plexi",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -431,7 +380,8 @@
       "wireIndex": 12,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"1987X Jumped\""
+        "INHERITED: lineage from sibling \"1987X Jumped\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "1987X Normal",
       "wikiName": "1987X NORMAL",
@@ -442,8 +392,6 @@
         "productName": "50W 1987X",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (G12M, G12H)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -453,7 +401,8 @@
       "wireIndex": 13,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"1987X Jumped\""
+        "INHERITED: lineage from sibling \"1987X Jumped\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "1987X Treble",
       "wikiName": "1987X TREBLE",
@@ -464,8 +413,6 @@
         "productName": "50W 1987X",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (G12M, G12H)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -487,6 +434,9 @@
         "productName": "50W JCM 800",
         "source": "fractal-wiki"
       },
+      "originalCab": "Marshall 4x12 (G12M, G12H, G12-75, V30)",
+      "matchingDynaCab": "4x12 1960TV",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "It's a vertical input Canada export version. I went through several before settling on this one as it was the best sounding by far.",
@@ -517,17 +467,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Marshall 4x12 (G12M, G12H, G12-75, V30)",
-      "matchingDynaCab": "4x12 1960TV",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "BRIT SUPER",
       "wireIndex": 15,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Brit 800 2204 High\""
+        "INHERITED: lineage from sibling \"Brit 800 2204 High\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Brit Super",
       "wikiName": "BRIT SUPER",
@@ -538,14 +486,6 @@
         "productName": "schematics",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "Brit Super model is based on the Marshall AFD100.",
-          "url": "https://forum.fractalaudio.com/threads/great-sound-with-my-splawn-nitro-4cm-im-blown-away.55549/#post-700713",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (G12M, G12H, G12-75, V30)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -555,7 +495,8 @@
       "wireIndex": 16,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Hipower Brilliant\""
+        "INHERITED: lineage from sibling \"Hipower Brilliant\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Hipower Normal",
       "wikiName": "HIPOWER NORMAL",
@@ -565,8 +506,6 @@
         "model": "DR103",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Hiwatt 4x12 (Fane)",
       "powerTubes": "EL34"
     },
@@ -591,7 +530,8 @@
       "wireIndex": 19,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"USA BASS 400 1\""
+        "INHERITED: lineage from sibling \"USA BASS 400 1\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "USA Pre Clean",
       "wikiName": "USA PRE CLEAN",
@@ -602,73 +542,6 @@
         "productName": "TriAxis",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "I used a Triaxis for, shoot, I dunno, over a decade before designing the Axe-Fx. I have two of them. So I'd say I'm pretty familiar with the tones. To my ears (and my measurement equipment), the Axe-Fx models are spot-on.",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "I can nail the sound of my Triaxis now by setting it (Bright) around 9:00 - 10:00.",
-          "url": "https://forum.fractalaudio.com/posts/1001906",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "I have a Mark IIC+, a Mark IV, a Mark V and a Triaxis. They're all completely different. Mesa always says things like",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The key to a good Boogie sound, IMO, is the Fat Switch. This is the treble Pull Shift on the IIC+ and the Pull Fat on the Mark IV. Mesa knew this and the Lead 2 modes on the Triaxis all had the treble shift engaged by default.",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Mesa claims it's based on the IIC+ but it's different. The bright cap is different, the mid resistor is much greater, the source impedance of the drive",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "I gigged with a Triaxis for years. I never put Dynamic Voice above 1.0. Despite it's name, DV is just an EQ. It's the 5-band graphic EQ from the mark series with the potentiometers replaced by LDRs. It's really just a bunch of EQ presets and it interpolates between them as you increase the value.",
-          "url": "https://forum.fractalaudio.com/threads/triaxis-model-live-use.147163/#post-1740122",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "I have two of them. Both with the Lead 1 Red board.",
-          "url": "https://forum.fractalaudio.com/threads/the-triaxis-is-spot-on.151673/post-1804830",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "On our reference Triaxis (both of them) the Presence control doesn't do anything for the Clean and LD1 modes. The model's Presence knob is therefore the Power Amp Presence.",
-          "url": "https://forum.fractalaudio.com/threads/triaxis-usa-pre-models-inconsistencies-in-controls.156431/post-1862912",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "That's how our reference amps work. They are the later models with the TX4 board (different LD2 Red). When using the LD1 modes the Presence control doesn't do anything and is as if the control were at 10.",
-          "url": "https://forum.fractalaudio.com/threads/triaxis-usa-pre-models-inconsistencies-in-controls.156431/post-1865080",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The tone stack on a Boogie is pre-distortion. As you increase gain you want less bass into the distortion stages so the idea is you turn the bass down. In later versions of the Boogies (TriAxis for example) they changed the taper so that noon was equivalent to 1 on earlier models because people are reticent to move controls very far from noon for some weird reason.",
-          "url": "https://forum.fractalaudio.com/threads/highly-compressed-sound-on-high-gain-amps.169132/post-2032825",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Based on the Lead 1 Red mode of a Mesa Triaxis preamp with the TX-4 board.",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "I gigged a Triaxis for years and I would have the knobs pretty much at noon (5.0). The Triaxis is a Mark IV preamp under the hood but with very different tapers on the",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The Triaxis used LDRs as variable resistance elements. There were resistor strings that were used to set the LDRs but those resistors weren't in the signal path.",
-          "url": "https://forum.fractalaudio.com/threads/5150-presence-knob.199908/page-17#post-2494019",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The circuit didn't change in the new ones, they just changed the taper of the bass pot. The Triaxis is like this too. With the control at noon it's like the old ones with the control around 9 o'clock or so.",
-          "url": "https://thegearforum.com/threads/fractal-talk.2745/page-496#post-296429",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "originalCab": "Mesa bass speaker cabinet",
       "powerTubes": "same as USA Lead model (6L6)"
     },
@@ -683,18 +556,86 @@
     {
       "axefx2Name": "USA IIC+",
       "wireIndex": 21,
-      "matchVia": "unmatched",
+      "matchVia": "abbrev-expand",
       "flags": [
-        "VERIFY: no wiki match — Axe-Fx II enum entry has no AM4-lineage counterpart"
-      ]
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "USA MK IIC+",
+      "wikiName": "USA MK IIC+",
+      "family": "MESA",
+      "basedOn": {
+        "primary": "Mesa/Boogie Mark IIC+",
+        "manufacturer": "Mesa/Boogie",
+        "productName": "Mark IIC+",
+        "source": "fractal-wiki"
+      },
+      "originalCab": "Mesa 1x12 (C90, EVM)",
+      "powerTubes": "6L6",
+      "fractalQuotes": [
+        {
+          "text": "The model was based on an early non-SimulClass version. I updated the model to be consistent with the later SimulClass version which most people prefer. The mode in the Mark V is based on the later SimulClass version.",
+          "url": "https://forum.fractalaudio.com/threads/fw11-iic-vs-mark-v-iic-not-getting-good-results-solved.74069/page-5#post-910018",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "If you want the sound of the non-SimulClass version set Triode 1 Plate Freq to 1350 Hz.",
+          "url": "https://forum.fractalaudio.com/posts/910386",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The Pull Bright on the Volume knob is the classic",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The IIC+ does not have a gain boost and doesn't need one. There is plenty of gain. The Pull Deep switch engages a large cathode cap on the final triode stage. With Pull Deep off there is actually a shelving response into the power amp (bass is reduced).",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "I always used the Fat switch with the real amp.",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The IIC++ amp model is the same as the IIC+ with different tapers.",
+          "url": "https://forum.fractalaudio.com/threads/question-about-the-mark-series-graphic-eq-modeling.149223/post-1770773",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Treble Shift on the Tone page of USA IIC+ models is an alias of the “Fat” control found on the Preamp page and performs the same function.",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Bright is the Pull Bright on the Lead Master. Deep is the Pull Deep on the Master.",
+          "url": "https://forum.fractalaudio.com/threads/bright-differences-between-usa-mk-iic-deep-bright-and-usa-mk-iic-bright.218847/#post-2755554",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "artistNotes": []
     },
     {
       "axefx2Name": "USA IIC+ BRight",
       "wireIndex": 22,
-      "matchVia": "unmatched",
+      "matchVia": "abbrev-expand",
       "flags": [
-        "VERIFY: no wiki match — Axe-Fx II enum entry has no AM4-lineage counterpart"
-      ]
+        "VERIFY: no AMP_TYPES enum match",
+        "INHERITED: lineage from sibling \"USA MK IIC+\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "USA MK IIC+ BRIGHT",
+      "wikiName": "USA MK IIC+ BRIGHT",
+      "family": "MESA",
+      "basedOn": {
+        "primary": "Mesa/Boogie Mark IIC+",
+        "manufacturer": "Mesa/Boogie",
+        "productName": "Mark IIC+",
+        "source": "fractal-wiki"
+      },
+      "originalCab": "Mesa 1x12 (C90, EVM)",
+      "powerTubes": "6L6"
     },
     {
       "axefx2Name": "USA LEAD",
@@ -715,18 +656,38 @@
     {
       "axefx2Name": "RECTO2 ORG VNTG",
       "wireIndex": 25,
-      "matchVia": "unmatched",
+      "matchVia": "abbrev-expand",
       "flags": [
-        "VERIFY: no wiki match — Axe-Fx II enum entry has no AM4-lineage counterpart"
-      ]
+        "INHERITED: lineage from sibling \"Recto2 Orange Modern\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "Recto2 Orange Vintage",
+      "wikiName": "RECTO2 ORANGE VINTAGE",
+      "basedOn": {
+        "primary": "Mesa Dual Rectifier 3 channels",
+        "manufacturer": "Mesa",
+        "productName": "Dual Rectifier 3 channels",
+        "source": "fractal-wiki"
+      }
     },
     {
       "axefx2Name": "RECTO2 ORG MDRN",
       "wireIndex": 26,
-      "matchVia": "unmatched",
+      "matchVia": "abbrev-expand",
       "flags": [
-        "VERIFY: no wiki match — Axe-Fx II enum entry has no AM4-lineage counterpart"
-      ]
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "Recto2 Orange Modern",
+      "wikiName": "RECTO2 ORANGE MODERN",
+      "basedOn": {
+        "primary": "Mesa Dual Rectifier 3 channels",
+        "manufacturer": "Mesa",
+        "productName": "Dual Rectifier 3 channels",
+        "source": "fractal-wiki"
+      },
+      "fractalQuotes": [],
+      "artistNotes": []
     },
     {
       "axefx2Name": "RECTO2 RED VNTG",
@@ -734,6 +695,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Recto2 Orange Modern\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Recto2 Red Vintage",
@@ -743,9 +705,7 @@
         "manufacturer": "Mesa",
         "productName": "Dual Rectifier 3 channels",
         "source": "fractal-wiki"
-      },
-      "fractalQuotes": [],
-      "artistNotes": []
+      }
     },
     {
       "axefx2Name": "RECTO2 RED MDRN",
@@ -753,6 +713,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Recto2 Orange Modern\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Recto2 Red Modern",
@@ -762,9 +723,7 @@
         "manufacturer": "Mesa",
         "productName": "Dual Rectifier 3 channels",
         "source": "fractal-wiki"
-      },
-      "fractalQuotes": [],
-      "artistNotes": []
+      }
     },
     {
       "axefx2Name": "EURO BLUE",
@@ -780,6 +739,9 @@
         "productName": "Ecstasy 20th Anniversary",
         "source": "fractal-wiki"
       },
+      "originalCab": "Bogner 2x12 or 4x12 (V30)",
+      "matchingDynaCab": "4x12 Friedman V30",
+      "powerTubes": "EL34 (earlier models were based on the 6L6 version)",
       "fractalQuotes": [
         {
           "text": "My actual XTC has a Log10 pot for the treble which is an odd choice. The problem with a log-taper pot is that the treble does almost nothing for the first 50%. So you can't use your eyes if you want to copy the tone.",
@@ -812,17 +774,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Bogner 2x12 or 4x12 (V30)",
-      "matchingDynaCab": "4x12 Friedman V30",
-      "powerTubes": "EL34 (earlier models were based on the 6L6 version)"
+      "artistNotes": []
     },
     {
       "axefx2Name": "EURO RED",
       "wireIndex": 30,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Euro Blue\""
+        "INHERITED: lineage from sibling \"Euro Blue\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Euro Red",
       "wikiName": "EURO RED",
@@ -832,8 +792,6 @@
         "productName": "Ecstasy 20th Anniversary",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Bogner 2x12 or 4x12 (V30)",
       "matchingDynaCab": "4x12 Friedman V30",
       "powerTubes": "EL34 (earlier models were based on the 6L6 version)"
@@ -852,6 +810,8 @@
         "productName": "Shiva 20th Anniversary",
         "source": "fractal-wiki"
       },
+      "originalCab": "Bogner 1x12 or 2x12 (Classic 80, V30)",
+      "powerTubes": "KT88",
       "fractalQuotes": [
         {
           "text": "People think Bogners are dark but they really aren't. The reason they seem that way is the pot tapers. Most people assume knobs should be set somewhere around noon. If you do this on a Bogner it's like turning the treble way down on a Marshall. Close your eyes and adjust the tone controls with your ears. Don't be afraid to turn them way up or way down.",
@@ -877,16 +837,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Bogner 1x12 or 2x12 (Classic 80, V30)",
-      "powerTubes": "KT88"
+      "artistNotes": []
     },
     {
       "axefx2Name": "SHIVER LEAD",
       "wireIndex": 32,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Shiver Clean\""
+        "INHERITED: lineage from sibling \"Shiver Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Shiver Lead",
       "wikiName": "SHIVER LEAD",
@@ -897,8 +856,6 @@
         "productName": "Shiva 20th Anniversary",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Bogner 1x12 or 2x12 (Classic 80, V30)",
       "powerTubes": "KT88"
     },
@@ -916,6 +873,9 @@
         "productName": "Uberschall",
         "source": "fractal-wiki"
       },
+      "originalCab": "Bogner 4x12 Uberkab (G12-T75 and V30)",
+      "matchingDynaCab": "4x12 Recto Straight",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "The feedback circuit is responsible for the behavior of the Presence and Depth controls. Certain Bogners and Diezels have a unique type of feedback circuit. There are no new parameters and nothing to do except twist the Presence and Depth knobs to your desired tone. Note that an Uberschall doesn't have a Depth knob. The default Depth value when you select the Euro Uber model is equivalent to the amp's fixed depth circuit.",
@@ -933,17 +893,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Bogner 4x12 Uberkab (G12-T75 and V30)",
-      "matchingDynaCab": "4x12 Recto Straight",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "SOLO 99 CLEAN",
       "wireIndex": 34,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Solo 88 Clean\""
+        "INHERITED: lineage from sibling \"Solo 88 Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Solo 99 Clean",
       "wikiName": "SOLO 99 CLEAN",
@@ -954,23 +912,6 @@
         "productName": "/Caswell",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "The rhythm channel of an X99 is identical to a SLO 100.",
-          "url": "https://forum.fractalaudio.com/posts/718846",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Power amp: same as SLO100.",
-          "url": "https://forum.fractalaudio.com/posts/1250203",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The bright cap on the X99 Clean is not across the Drive pot. The exposed",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "same as SLO-100 model (6L6)"
     },
     {
@@ -979,6 +920,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Solo 100 Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Solo 100 Rhythm",
@@ -989,8 +931,6 @@
         "model": "SLO-100",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Soldano 4x12 (Eminence)",
       "powerTubes": "6L6"
     },
@@ -999,7 +939,8 @@
       "wireIndex": 36,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Solo 100 Clean\""
+        "INHERITED: lineage from sibling \"Solo 100 Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Solo 100 Lead",
       "wikiName": "SOLO 100 LEAD",
@@ -1009,8 +950,6 @@
         "model": "SLO-100",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Soldano 4x12 (Eminence)",
       "powerTubes": "6L6"
     },
@@ -1020,11 +959,11 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"FRIEDMAN BE 2010\""
+        "INHERITED: lineage from sibling \"FRIEDMAN BE 2010\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FRIEDMAN BE V1",
       "wikiName": "FRIEDMAN BE V1",
-      "description": "later BE-100, voice: left",
       "family": "FRIEDMAN",
       "basedOn": {
         "primary": "Friedman BE",
@@ -1032,8 +971,6 @@
         "productName": "BE",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Friedman 4x12 (V30 and/or G12M)",
       "matchingDynaCab": "4x12 Friedman V30",
       "powerTubes": "EL34"
@@ -1044,11 +981,11 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"FRIEDMAN BE 2010\""
+        "INHERITED: lineage from sibling \"FRIEDMAN BE 2010\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FRIEDMAN HBE V1",
       "wikiName": "FRIEDMAN HBE V1",
-      "description": "later BE-100, voice: left",
       "family": "FRIEDMAN",
       "basedOn": {
         "primary": "Friedman BE",
@@ -1056,8 +993,6 @@
         "productName": "BE",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Friedman 4x12 (V30 and/or G12M)",
       "matchingDynaCab": "4x12 Friedman V30",
       "powerTubes": "EL34"
@@ -1078,6 +1013,8 @@
         "productName": "5150",
         "source": "fractal-wiki"
       },
+      "originalCab": "Peavey 4x12 (Sheffield 1200)",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "I have a",
@@ -1089,9 +1026,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Peavey 4x12 (Sheffield 1200)",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "MR Z MZ-38",
@@ -1106,6 +1041,8 @@
         "productName": "Maz 38 SR",
         "source": "fractal-wiki"
       },
+      "originalCab": "Dr. Z 1x12 (G12H)",
+      "powerTubes": "EL84",
       "fractalQuotes": [
         {
           "text": "Dr. Z is the quintessential country amp.",
@@ -1117,9 +1054,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Dr. Z 1x12 (G12H)",
-      "powerTubes": "EL84"
+      "artistNotes": []
     },
     {
       "axefx2Name": "CA3+ RHY",
@@ -1127,12 +1062,11 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"CA3+ Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "CA3+ Rhythm",
       "wikiName": "CA3+ RHYTHM",
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -1140,12 +1074,11 @@
       "wireIndex": 42,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"CA3+ Clean\""
+        "INHERITED: lineage from sibling \"CA3+ Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "CA3+ Lead",
       "wikiName": "CA3+ LEAD",
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -1161,6 +1094,8 @@
         "productName": "Rocket",
         "source": "fractal-wiki"
       },
+      "originalCab": "Marshall 4x12 (G12-M25)",
+      "powerTubes": "EL84",
       "fractalQuotes": [
         {
           "text": "The Rocket has a different preamp (than the Express) with the tone stack before the PI. This reduces the signal level substantially and lessens the amount of blocking distortion.",
@@ -1168,9 +1103,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Marshall 4x12 (G12-M25)",
-      "powerTubes": "EL84"
+      "artistNotes": []
     },
     {
       "axefx2Name": "CORNCOB M50",
@@ -1209,7 +1142,8 @@
       "wireIndex": 48,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Brit 800 2204 High\""
+        "INHERITED: lineage from sibling \"Brit 800 2204 High\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Brit Brown",
       "wikiName": "BRIT BROWN",
@@ -1220,37 +1154,6 @@
         "productName": "50W JCM 800",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "The Brit Brown was built by ear.",
-          "url": "https://forum.fractalaudio.com/threads/evhs-original-plexi-and-the-fas-brit-brown-amp.81986/#post-995265",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Brit Brown is my personal take on what the ultimate",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The FAS models are idealized and have some of the",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "If I had my way there would be only FAS models but too many people demand reproductions of existing amps.",
-          "url": "https://forum.fractalaudio.com/threads/fas-class-a-is-even-better-than-the-real-thing.162257/post-1944014",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The FAS models typically remove or minimize the undesirable characteristics of those old amps. Guitar tube amp design was nascent in the 60s and 70s and designers didn't fully understand the impact of overdriving tubes. One of the biggest issues was blocking distortion which is excessive bias excursion. When the grid conducts it shifts the bias point and in those old amps it can shift so much that the tube goes into cutoff prematurely. More modern designs employ grid stoppers and smaller coupling capacitors to reduce bias excursion.",
-          "url": "https://forum.fractalaudio.com/threads/fas-class-a-is-even-better-than-the-real-thing.162257/post-1944071",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "There's a 0.68uF cap on the second triode.",
-          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-version-20-05-public-beta-beta-1.187133/post-2317922",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (G12M, G12H, G12-75, V30)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -1268,6 +1171,9 @@
         "productName": "Rockerverb 50 MK II",
         "source": "fractal-wiki"
       },
+      "originalCab": "Orange 4x12 (V30)",
+      "matchingDynaCab": "4x12 Citrus",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "The model is based on a MKII.",
@@ -1285,10 +1191,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Orange 4x12 (V30)",
-      "matchingDynaCab": "4x12 Citrus",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "JAZZ 120",
@@ -1301,6 +1204,8 @@
         "primary": "Roland Jazz Chorus 120",
         "source": "fractal-wiki"
       },
+      "originalCab": "Roland 2x12 (\"silver\" AlNiCo)",
+      "powerTubes": "transistor",
       "fractalQuotes": [
         {
           "text": "Since the power amp has a high damping factor the impedance curve is flattened.",
@@ -1308,9 +1213,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Roland 2x12 (\"silver\" AlNiCo)",
-      "powerTubes": "transistor"
+      "artistNotes": []
     },
     {
       "axefx2Name": "ENERGYBALL",
@@ -1325,6 +1228,9 @@
         "productName": "Powerball",
         "source": "fractal-wiki"
       },
+      "originalCab": "Engl 4x12 (V30, V60)",
+      "matchingDynaCab": "4x12 Recto Straight",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "People think Bogners are dark but they really aren't. The reason they seem that way is the pot tapers. Most people assume knobs should be set somewhere around noon. If you do this on a Bogner it's like turning the treble way down on a Marshall. Close your eyes and adjust the tone controls with your ears. Don't be afraid to turn them way up or way down.",
@@ -1345,10 +1251,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Engl 4x12 (V30, V60)",
-      "matchingDynaCab": "4x12 Recto Straight",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "ODS-100 CLEAN",
@@ -1363,6 +1266,8 @@
         "productName": "Special",
         "source": "fractal-wiki"
       },
+      "originalCab": "Dumble 2x12 or 4x12 (G12-65, EVM)",
+      "powerTubes": "EL34 (HRM), 6L6 (Ford)",
       "fractalQuotes": [
         {
           "text": "The ODS100 has two drive controls, one is right at the input, the other is in the lead boost section.",
@@ -1418,28 +1323,24 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Dumble 2x12 or 4x12 (G12-65, EVM)",
-      "powerTubes": "EL34 (HRM), 6L6 (Ford)"
+      "artistNotes": []
     },
     {
       "axefx2Name": "ODS-100 HRM",
       "wireIndex": 53,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"ODS-100 Clean\""
+        "INHERITED: lineage from sibling \"ODS-100 Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "ODS-100 HRM",
       "wikiName": "ODS-100 HRM",
-      "description": "based on HRM circuit, Overdrive channel, Mid switch (Deep): off",
       "basedOn": {
         "primary": "Dumble Special",
         "manufacturer": "Dumble",
         "productName": "Special",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Dumble 2x12 or 4x12 (G12-65, EVM)",
       "powerTubes": "EL34 (HRM), 6L6 (Ford)"
     },
@@ -1448,17 +1349,11 @@
       "wireIndex": 54,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS 6160\""
+        "INHERITED: lineage from sibling \"FAS 6160\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS Rhythm",
       "wikiName": "FAS RHYTHM",
-      "fractalQuotes": [
-        {
-          "text": "Combines the best features of the British (Marshall) and USA (Mesa) crunch models.",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "6L6"
     },
     {
@@ -1466,12 +1361,11 @@
       "wireIndex": 55,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS Lead 2\""
+        "INHERITED: lineage from sibling \"FAS Lead 2\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS Lead 1",
       "wikiName": "FAS LEAD 1",
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "6L6"
     },
     {
@@ -1479,12 +1373,11 @@
       "wireIndex": 56,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS Lead 1\""
+        "INHERITED: lineage from sibling \"FAS Lead 1\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS Lead 2",
       "wikiName": "FAS LEAD 2",
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -1492,23 +1385,11 @@
       "wireIndex": 57,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS 6160\""
+        "INHERITED: lineage from sibling \"FAS 6160\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS Modern",
       "wikiName": "FAS MODERN",
-      "fractalQuotes": [
-        {
-          "text": "This model is my interpretation of the ideal modern metal tone. In the digital realm we are not constrained by the limitations that face tube amp designers so we are free to implement designs that would be nearly impossible with a tube amp. The Axe-Fx II modeling includes a variety of general purpose filters that I can place anywhere in the signal path. So I put some second-order filters in there to tighten up the tone. Implementing second-order filters in a real tube amp is difficult and costly so is rarely seen.",
-          "url": "https://forum.fractalaudio.com/posts/715029",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "It's loosely based on a Recto but with tighter bass.",
-          "url": "https://forum.fractalaudio.com/threads/fw-6-0-rectifier-obsevation.51197/#post-658849",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "6L6"
     },
     {
@@ -1525,9 +1406,9 @@
         "productName": "schematics",
         "source": "fractal-wiki"
       },
+      "powerTubes": "6L6",
       "fractalQuotes": [],
-      "artistNotes": [],
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "BRIT PRE",
@@ -1535,7 +1416,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"Brit 800 2204 High\""
+        "INHERITED: lineage from sibling \"Brit 800 2204 High\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "BRIT PRE",
       "wikiName": "BRIT PRE",
@@ -1546,22 +1428,6 @@
         "model": "JMP-1",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "The two channels have preset tone stacks. Then there is a digitally controlled 4-band graphic EQ which is the B/M/T and Presence. This technique gets around the problem of trying to digitally control a tone stack. The Triaxis uses LDRs in place of potentiometers. The Soldano X-99 uses motorized pots. Both techniques being expensive. So the JMP-1 uses a fixed tone stack and then a digitally controlled graphic EQ. The Axe-Fx model of the JMP-1 is",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The JMP-1 tone controls have more range than the actual preamp. The preamp has about +/- 8 dB for each tone control while the model has the standard +/- 12 dB.",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Brit Pre is a legacy model from the original Axe-Fx. It's not as accurate but some people really liked it so we kept it and created new models for the Ares/Cygnus platform.",
-          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-firmware-release-version-19-02-public-beta.181521/post-2224791",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (G12M, G12H, G12-75, V30)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -1605,6 +1471,7 @@
         "model": "CCV-100",
         "source": "fractal-wiki"
       },
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "The amp was modeled with the Voicing switch in the middle position. The",
@@ -1651,8 +1518,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "CAMERON CCV 2A",
@@ -1660,7 +1526,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"CAMERON CCV 1A\""
+        "INHERITED: lineage from sibling \"CAMERON CCV 1A\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "CAMERON CCV 2A",
       "wikiName": "CAMERON CCV 2A",
@@ -1670,8 +1537,6 @@
         "model": "CCV-100",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -1689,10 +1554,10 @@
         "productName": "SVT bass",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "SVT 8x10",
-      "powerTubes": "6550"
+      "powerTubes": "6550",
+      "fractalQuotes": [],
+      "artistNotes": []
     },
     {
       "axefx2Name": "TUBE PRE",
@@ -1705,6 +1570,7 @@
         "primary": "generic tube preamp model",
         "source": "fractal-wiki"
       },
+      "powerTubes": "5881",
       "fractalQuotes": [
         {
           "text": "The Vintage tone stack is a passive EQ model but it has a flat response when the controls are at noon. If you want",
@@ -1719,20 +1585,18 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "powerTubes": "5881"
+      "artistNotes": []
     },
     {
       "axefx2Name": "FAS BROWN",
       "wireIndex": 67,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS 6160\""
+        "INHERITED: lineage from sibling \"FAS 6160\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS Brown",
       "wikiName": "FAS BROWN",
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -1742,6 +1606,7 @@
       "flags": [],
       "am4Name": "Big Hair",
       "wikiName": "BIG HAIR",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "It was a total guess. I just tuned it by ear. It's just my idea of what 80's hair metal might sound like.",
@@ -1763,15 +1628,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "SOLO 99 LEAD",
       "wireIndex": 69,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Solo 99 Clean\""
+        "INHERITED: lineage from sibling \"Solo 99 Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Solo 99 Lead",
       "wikiName": "SOLO 99 LEAD",
@@ -1782,8 +1647,6 @@
         "productName": "/Caswell",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "same as SLO-100 model (6L6)"
     },
     {
@@ -1793,9 +1656,9 @@
       "flags": [],
       "am4Name": "Supertweed",
       "wikiName": "SUPERTWEED",
+      "powerTubes": "6L6",
       "fractalQuotes": [],
-      "artistNotes": [],
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "TX STAR LEAD",
@@ -1803,6 +1666,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Texas Star Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Texas Star Lead",
@@ -1814,8 +1678,6 @@
         "productName": "Lone Star",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Mesa 2x12 (C90)",
       "powerTubes": "6L6"
     },
@@ -1824,22 +1686,11 @@
       "wireIndex": 72,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS 6160\""
+        "INHERITED: lineage from sibling \"FAS 6160\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS Wreck",
       "wikiName": "FAS WRECK",
-      "fractalQuotes": [
-        {
-          "text": "Based on the original WRECKER 1 model from the Axe-Fx Ultra.",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "FAS Wreck model is better than any Trainwreck or Wreck-style amp IMO. All the good bits without the bad stuff.",
-          "url": "https://forum.fractalaudio.com/threads/brad-paisley-z-wreck-with-blue-and-gold-2x12-cabinet.163617/post-1961880",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -1849,6 +1700,7 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"BRIT JVM OD1 GREEN\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "BRIT JVM OD1 ORANGE",
@@ -1860,8 +1712,6 @@
         "model": "JVM410H",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 G12T75 [link](https://thegearforum.com/threads/santiago-alvarez-electronics-engineer-jvm-yjm-afd.477/page-22#post-349437)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -1873,6 +1723,7 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"BRIT JVM OD1 GREEN\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "BRIT JVM OD2 ORANGE",
@@ -1884,8 +1735,6 @@
         "model": "JVM410H",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 G12T75 [link](https://thegearforum.com/threads/santiago-alvarez-electronics-engineer-jvm-yjm-afd.477/page-22#post-349437)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -1895,31 +1744,11 @@
       "wireIndex": 75,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS Bass\""
+        "INHERITED: lineage from sibling \"FAS Bass\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS 6160",
       "wikiName": "FAS 6160",
-      "fractalQuotes": [
-        {
-          "text": "Based on the PVH 6160 model but more open and less fizzy than the original amp. Also, a virtual choke has replaced the resistor found on the original’s power supply filter. This results in a bouncier feel.",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "If I had my way there would be only FAS models but too many people demand reproductions of existing amps.",
-          "url": "https://forum.fractalaudio.com/threads/fas-class-a-is-even-better-than-the-real-thing.162257/post-1944014",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The FAS models are idealized and have some of the",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The FAS models typically remove or minimize the undesirable characteristics of those old amps. Guitar tube amp design was nascent in the 60s and 70s and designers didn't fully understand the impact of overdriving tubes. One of the biggest issues was blocking distortion which is excessive bias excursion. When the grid conducts it shifts the bias point and in those old amps it can shift so much that the tube goes into cutoff prematurely. More modern designs employ grid stoppers and smaller coupling capacitors to reduce bias excursion.",
-          "url": "https://forum.fractalaudio.com/threads/fas-class-a-is-even-better-than-the-real-thing.162257/post-1944071",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "6L6"
     },
     {
@@ -1967,19 +1796,17 @@
       "wireIndex": 81,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"5153 100W Blue\""
+        "INHERITED: lineage from sibling \"5153 100W Blue\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "5153 100W Green",
       "wikiName": "5153 100W GREEN",
-      "description": "channel 1",
       "basedOn": {
         "primary": "EVH 5150-III",
         "manufacturer": "EVH",
         "productName": "5150-III",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "5150 4x12, 2x12 (G12H, G12EVH)",
       "matchingDynaCab": "4x12 5153, 2x12 5153 Stealth",
       "powerTubes": "6L6"
@@ -1997,6 +1824,9 @@
         "productName": "5150-III",
         "source": "fractal-wiki"
       },
+      "originalCab": "5150 4x12, 2x12 (G12H, G12EVH)",
+      "matchingDynaCab": "4x12 5153, 2x12 5153 Stealth",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "IMO, it's a very good amp. The build-quality is great and the design is very good. It is similar to the previous versions but voiced a bit different. Personally, I think all of the 5150's have more gain stages than necessary which just makes for unnecessary failure points but the",
@@ -2065,17 +1895,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "5150 4x12, 2x12 (G12H, G12EVH)",
-      "matchingDynaCab": "4x12 5153, 2x12 5153 Stealth",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "5153 100W RED",
       "wireIndex": 83,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"5153 100W Blue\""
+        "INHERITED: lineage from sibling \"5153 100W Blue\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "5153 100W Red",
       "wikiName": "5153 100W RED",
@@ -2085,8 +1913,6 @@
         "productName": "5150-III",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "5150 4x12, 2x12 (G12H, G12EVH)",
       "matchingDynaCab": "4x12 5153, 2x12 5153 Stealth",
       "powerTubes": "6L6"
@@ -2096,7 +1922,8 @@
       "wireIndex": 84,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Solo 88 Clean\""
+        "INHERITED: lineage from sibling \"Solo 88 Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Solo 88 Rhythm",
       "wikiName": "SOLO 88 RHYTHM",
@@ -2106,8 +1933,6 @@
         "model": "X88R",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "same as SLO-100 model (6L6)"
     },
     {
@@ -2123,6 +1948,9 @@
         "productName": "CJ 11",
         "source": "fractal-wiki"
       },
+      "originalCab": "Divided by 13 (G12M)",
+      "matchingDynaCab": "1x12 Div13 CJ11",
+      "powerTubes": "6V6",
       "fractalQuotes": [
         {
           "text": "It is a bassy amp. Works best with single coils.",
@@ -2135,17 +1963,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Divided by 13 (G12M)",
-      "matchingDynaCab": "1x12 Div13 CJ11",
-      "powerTubes": "6V6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "HERBIE CH2-",
       "wireIndex": 86,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Herbie CH2+\""
+        "INHERITED: lineage from sibling \"Herbie CH2+\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Herbie CH2-",
       "wikiName": "HERBIE CH2-",
@@ -2155,8 +1981,6 @@
         "productName": "Herbert",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Diezel 4x12 (V30, G12-K100)",
       "powerTubes": "KT77"
     },
@@ -2173,6 +1997,8 @@
         "productName": "Herbert",
         "source": "fractal-wiki"
       },
+      "originalCab": "Diezel 4x12 (V30, G12-K100)",
+      "powerTubes": "KT77",
       "fractalQuotes": [
         {
           "text": "The reason Diezels compress so much is due to the cathode follower design. You can reduce the compression in the models by lowering the Compression parameter in the Cathode Follower section.",
@@ -2185,16 +2011,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Diezel 4x12 (V30, G12-K100)",
-      "powerTubes": "KT77"
+      "artistNotes": []
     },
     {
       "axefx2Name": "HERBIE CH3",
       "wireIndex": 88,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Herbie CH2+\""
+        "INHERITED: lineage from sibling \"Herbie CH2+\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Herbie CH3",
       "wikiName": "HERBIE CH3",
@@ -2204,8 +2029,6 @@
         "productName": "Herbert",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Diezel 4x12 (V30, G12-K100)",
       "powerTubes": "KT77"
     },
@@ -2223,6 +2046,9 @@
         "productName": "40W Dirty Shirley",
         "source": "fractal-wiki"
       },
+      "originalCab": "Friedman 4x12 (V30, G12M, G12-65, G12H)",
+      "matchingDynaCab": "4x12 Friedman GB",
+      "powerTubes": "5881",
       "fractalQuotes": [
         {
           "text": "If you want more clarity in the low mids (...) reduce Negative Feedback. Friedman's designs are a bit odd in that he takes the feedback off the speaker jack rather than off a transformer tap. (...) The amp will sound tighter and clearer in the low mids.",
@@ -2269,10 +2095,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Friedman 4x12 (V30, G12M, G12-65, G12H)",
-      "matchingDynaCab": "4x12 Friedman GB",
-      "powerTubes": "5881"
+      "artistNotes": []
     },
     {
       "axefx2Name": "DIZZY V4 BLUE 2",
@@ -2289,6 +2112,9 @@
         "model": "VH4",
         "source": "fractal-wiki"
       },
+      "originalCab": "Diezel 4x12 (V30, G12-100)",
+      "matchingDynaCab": "4x12 Recto Straight",
+      "powerTubes": "KT77",
       "fractalQuotes": [
         {
           "text": "The reason Diezels compress so much is due to the cathode follower design. You can reduce the compression in the models by lowering the Compression parameter in the Cathode Follower section.",
@@ -2306,10 +2132,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Diezel 4x12 (V30, G12-100)",
-      "matchingDynaCab": "4x12 Recto Straight",
-      "powerTubes": "KT77"
+      "artistNotes": []
     },
     {
       "axefx2Name": "DIZZY V4 BLUE 3",
@@ -2317,7 +2140,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"DIZZY V4 BLUE 2\""
+        "INHERITED: lineage from sibling \"DIZZY V4 BLUE 2\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "DIZZY V4 BLUE 3",
       "wikiName": "DIZZY V4 BLUE 3",
@@ -2327,8 +2151,6 @@
         "model": "VH4",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Diezel 4x12 (V30, G12-100)",
       "matchingDynaCab": "4x12 Recto Straight",
       "powerTubes": "KT77"
@@ -2339,7 +2161,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"DIZZY V4 BLUE 2\""
+        "INHERITED: lineage from sibling \"DIZZY V4 BLUE 2\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "DIZZY V4 BLUE 4",
       "wikiName": "DIZZY V4 BLUE 4",
@@ -2349,8 +2172,6 @@
         "model": "VH4",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Diezel 4x12 (V30, G12-100)",
       "matchingDynaCab": "4x12 Recto Straight",
       "powerTubes": "KT77"
@@ -2368,6 +2189,8 @@
         "productName": "Badger 18",
         "source": "fractal-wiki"
       },
+      "originalCab": "Suhr 1x12 or 2x12 (V30)",
+      "powerTubes": "EL84 (Badger 18), EL34 (Badger 30)",
       "fractalQuotes": [
         {
           "text": "The Badgers are very different amps. If you are used to hot-rod Marshall tones the Badgers won't be your",
@@ -2393,16 +2216,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Suhr 1x12 or 2x12 (V30)",
-      "powerTubes": "EL84 (Badger 18), EL34 (Badger 30)"
+      "artistNotes": []
     },
     {
       "axefx2Name": "SUHR BADGER 30",
       "wireIndex": 94,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Suhr Badger 18\""
+        "INHERITED: lineage from sibling \"Suhr Badger 18\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Suhr Badger 30",
       "wikiName": "SUHR BADGER 30",
@@ -2412,8 +2234,6 @@
         "productName": "Badger 30",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Suhr 1x12 or 2x12 (V30)",
       "powerTubes": "EL84 (Badger 18), EL34 (Badger 30)"
     },
@@ -2438,6 +2258,8 @@
         "productName": "1964T",
         "source": "fractal-wiki"
       },
+      "originalCab": "Supro 2x12",
+      "powerTubes": "6973",
       "fractalQuotes": [
         {
           "text": "They're simple amps with minimal tone shaping.",
@@ -2445,16 +2267,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Supro 2x12",
-      "powerTubes": "6973"
+      "artistNotes": []
     },
     {
       "axefx2Name": "ATOMICA LOW",
       "wireIndex": 97,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Atomica High\""
+        "INHERITED: lineage from sibling \"Atomica High\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Atomica Low",
       "wikiName": "ATOMICA LOW",
@@ -2464,8 +2285,6 @@
         "productName": "Atomica",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "cab with G12H speakers",
       "matchingDynaCab": "4x12 5153",
       "powerTubes": "EL34"
@@ -2477,13 +2296,16 @@
       "flags": [],
       "am4Name": "Atomica High",
       "wikiName": "ATOMICA HIGH",
-      "description": "channel 1, Mid Gain Boost: on",
       "basedOn": {
         "primary": "Cameron Atomica",
         "manufacturer": "Cameron",
         "productName": "Atomica",
         "source": "fractal-wiki"
       },
+      "originalCab": "cab with G12H speakers",
+      "matchingDynaCab": "4x12 5153",
+      "powerTubes": "EL34",
+      "description": "channel 1, Mid Gain Boost: on",
       "fractalQuotes": [
         {
           "text": "The Atomica can tolerate high MV because it is a",
@@ -2505,10 +2327,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "cab with G12H speakers",
-      "matchingDynaCab": "4x12 5153",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "DELUXE TWEED",
@@ -2525,6 +2344,9 @@
         "productName": "Tweed",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 1x12 (Jensen P12R or C12N, or Celestion Alnico Blue)",
+      "matchingDynaCab": "1x12 Deluxe Tweed",
+      "powerTubes": "6V6",
       "fractalQuotes": [
         {
           "text": "Based on a Fender 5E3 Deluxe. Note that this amp only has a single tone control. This is modeled by the Treble control in the Axe-Fx II. The Bass and Mid controls are functional and recreate the amp when set to noon. Also note that this amp suffers from extreme blocking distortion at or near maximum gain. This is common in very old designs. As it is virtually unplayable like this, the model uses a somewhat reduced level of grid conduction to lower the amount of blocking distortion and make the amp more playable at high Drive settings.",
@@ -2596,10 +2418,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 1x12 (Jensen P12R or C12N, or Celestion Alnico Blue)",
-      "matchingDynaCab": "1x12 Deluxe Tweed",
-      "powerTubes": "6V6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "SPAWN ROD OD2-1",
@@ -2639,6 +2458,9 @@
         "productName": "Silver Jubilee previously: Lerxst Omega",
         "source": "fractal-wiki"
       },
+      "originalCab": "Marshall 4x12 (V30)",
+      "matchingDynaCab": "4x12 Lerxst",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "The model is now based on a Silver Jubilee. The Lerxst is actually almost identical except for the taper of the mid control. In a Silver Jubilee the mid pot is log, in the Lerxst it's linear. Guess Alex likes mids... So if you want the sound of the old model turn up the mids.",
@@ -2651,17 +2473,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Marshall 4x12 (V30)",
-      "matchingDynaCab": "4x12 Lerxst",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "SPAWN NITROUS 2",
       "wireIndex": 104,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Spawn Nitrous 1\""
+        "INHERITED: lineage from sibling \"Spawn Nitrous 1\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Spawn Nitrous 2",
       "wikiName": "SPAWN NITROUS 2",
@@ -2669,8 +2489,6 @@
         "primary": "Splawn Nitro",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Splawn 4x12 (G12M, G12-65, V30)",
       "powerTubes": "KT88"
     },
@@ -2679,22 +2497,11 @@
       "wireIndex": 105,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS 6160\""
+        "INHERITED: lineage from sibling \"FAS 6160\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS Crunch",
       "wikiName": "FAS CRUNCH",
-      "fractalQuotes": [
-        {
-          "text": "Our take on the ultimate British-sounding amp. More dynamic and open than a Plexi, but with more gain.",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "My take on the ultimate Plexi.",
-          "url": "https://forum.fractalaudio.com/threads/axe-fx-ii-firmware-9-public-beta.59414/page-22#post-744829",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -2716,6 +2523,9 @@
         "primary": "Fuchs Overdrive Supreme 50",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fuchs 2x12 (Eminence)",
+      "matchingDynaCab": "4x12 Rumble EV12S",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "Supposedly a Dumble ODS clone but our reference amp has way more gain than our Dumble.",
@@ -2728,10 +2538,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fuchs 2x12 (Eminence)",
-      "matchingDynaCab": "4x12 Rumble EV12S",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "HOT KITTY",
@@ -2744,6 +2551,8 @@
         "primary": "Bad Cat Hot Cat 30",
         "source": "fractal-wiki"
       },
+      "originalCab": "BadCat 1x12 (proprietary Celestion)",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "Brilliance is their name for Hi-Cut. I set the Edge control to where I thought it sounded best. It essentially does the same thing as the Bright knob though less precise.",
@@ -2760,9 +2569,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "BadCat 1x12 (proprietary Celestion)",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "BAND-COMMANDER",
@@ -2779,6 +2586,9 @@
         "productName": "silverface/blackface Bandmaster head",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 2x12",
+      "matchingDynaCab": "2x12 65 Bassguy",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "The vibrato channel is loaded down by the vibrato circuit. The normal channel isn't. You can probably get close using the vibrato channel model by increasing the MV trim.",
@@ -2786,10 +2596,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 2x12",
-      "matchingDynaCab": "2x12 65 Bassguy",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "SUPER VERB VIB",
@@ -2797,6 +2604,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Super Verb Normal\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Super Verb Vibrato",
@@ -2809,8 +2617,6 @@
         "productName": "Super",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Fender 4x10 (C10R, C10Q, P10R)",
       "powerTubes": "6L6"
     },
@@ -2828,15 +2634,15 @@
         "productName": "Vibro-King",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 3x10",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "The model is based on the custom version which has higher plate voltages which causes more overdrive on the power tubes.",
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 3x10",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "GIBTONE SCOUT",
@@ -2852,11 +2658,11 @@
         "productName": "Scout",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Gibson 1x10",
       "matchingDynaCab": "1x10 BF Princetone",
-      "powerTubes": "6AQ5"
+      "powerTubes": "6AQ5",
+      "fractalQuotes": [],
+      "artistNotes": []
     },
     {
       "axefx2Name": "PVH 6160+ LD",
@@ -2864,6 +2670,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"PVH 6160+ Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "PVH 6160+ Lead",
@@ -2875,8 +2682,6 @@
         "productName": "+ / EVH 5150-II",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Peavey 4x12 (V30)",
       "powerTubes": "6L6"
     },
@@ -2893,6 +2698,8 @@
         "model": "SLO-100",
         "source": "fractal-wiki"
       },
+      "originalCab": "Soldano 4x12 (Eminence)",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "Cold-biased stages are where there's a very large cathode resistor so the operating point is close to the supply rail. For example, the SLO 100 has a 39K cathode resistor on the cold-biased stage.",
@@ -2965,9 +2772,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Soldano 4x12 (Eminence)",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "USA PRE LD2 GRN",
@@ -2983,6 +2788,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"USA Pre Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "USA Pre LD2 Yellow",
@@ -2994,8 +2800,6 @@
         "productName": "TriAxis",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Mesa bass speaker cabinet",
       "powerTubes": "same as USA Lead model (6L6)"
     },
@@ -3006,6 +2810,7 @@
       "flags": [],
       "am4Name": "CA3+ Clean",
       "wikiName": "CA3+ CLEAN",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "The CA3+SE model is basically an OD100.",
@@ -3021,8 +2826,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "FOX ODS DEEP",
@@ -3030,7 +2834,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"Fox ODS\""
+        "INHERITED: lineage from sibling \"Fox ODS\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FOX ODS DEEP",
       "wikiName": "FOX ODS DEEP",
@@ -3038,8 +2843,6 @@
         "primary": "Fuchs Overdrive Supreme 50",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Fuchs 2x12 (Eminence)",
       "matchingDynaCab": "4x12 Rumble EV12S",
       "powerTubes": "6L6"
@@ -3061,6 +2864,9 @@
         "model": "JVM410H",
         "source": "fractal-wiki"
       },
+      "originalCab": "Marshall 4x12 G12T75 [link](https://thegearforum.com/threads/santiago-alvarez-electronics-engineer-jvm-yjm-afd.477/page-22#post-349437)",
+      "matchingDynaCab": "4x12 1960TV",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "IMO, the reason the JVM sounds good is the plate cap on the second-to-last triode. That smooths out the tone considerably. The second-to-last triode is associated with",
@@ -3087,10 +2893,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Marshall 4x12 G12T75 [link](https://thegearforum.com/threads/santiago-alvarez-electronics-engineer-jvm-yjm-afd.477/page-22#post-349437)",
-      "matchingDynaCab": "4x12 1960TV",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "BRIT JVM OD2 GN",
@@ -3099,6 +2902,7 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"BRIT JVM OD1 GREEN\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "BRIT JVM OD2 GREEN",
@@ -3110,8 +2914,6 @@
         "model": "JVM410H",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 G12T75 [link](https://thegearforum.com/threads/santiago-alvarez-electronics-engineer-jvm-yjm-afd.477/page-22#post-349437)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -3131,6 +2933,8 @@
         "productName": "/ Vibrolux",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 2x10 or 1x12",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "Finished modeling my '63 Vibrolux today.",
@@ -3163,16 +2967,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 2x10 or 1x12",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "BRIT 800 MOD",
       "wireIndex": 122,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Brit 800 2204 High\""
+        "INHERITED: lineage from sibling \"Brit 800 2204 High\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Brit 800 Mod",
       "wikiName": "BRIT 800 MOD",
@@ -3183,18 +2986,6 @@
         "productName": "50W JCM 800 modifications",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "Based on popular modified Marshall JCM800. These mods make the amp “heavier” and less strident.",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "It has an extra gain stage and a 1uF bypass cap on the last triode.",
-          "url": "https://forum.fractalaudio.com/threads/modeling-questions.199009/post-2528944",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (G12M, G12H, G12-75, V30)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -3210,6 +3001,8 @@
         "primary": "Swart Atomic Space Tone",
         "source": "fractal-wiki"
       },
+      "originalCab": "Swart 1x12 (Mojotone BV-25m)",
+      "powerTubes": "6V6",
       "fractalQuotes": [
         {
           "text": "It's unique character comes from the PI. It's a cathodyne phase inverter so it doesn't drive the grids as hard.",
@@ -3221,9 +3014,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Swart 1x12 (Mojotone BV-25m)",
-      "powerTubes": "6V6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "BLUDOJAI CLEAN",
@@ -3236,6 +3027,9 @@
         "primary": "Bludotone Ojai",
         "source": "fractal-wiki"
       },
+      "originalCab": "Bludotone 1x12, 2x12 (G12-65, EVM)",
+      "matchingDynaCab": "4x12 Rumble EV12L",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "The model is of a 100w 6L6 BludoDrive Ojai by Bludotone amps, using Fractal's MIMIC process. The Ojai has the same schematic as the famous",
@@ -3257,10 +3051,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Bludotone 1x12, 2x12 (G12-65, EVM)",
-      "matchingDynaCab": "4x12 Rumble EV12L",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "BLUDOJAI LD PAB",
@@ -3269,6 +3060,7 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"Bludojai Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "BLUDOJAI LEAD PAB",
@@ -3277,8 +3069,6 @@
         "primary": "Bludotone Ojai",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Bludotone 1x12, 2x12 (G12-65, EVM)",
       "matchingDynaCab": "4x12 Rumble EV12L",
       "powerTubes": "6L6"
@@ -3288,7 +3078,8 @@
       "wireIndex": 126,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Plexi 100W 1970\""
+        "INHERITED: lineage from sibling \"Plexi 100W 1970\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Plexi 100W High",
       "wikiName": "PLEXI 100W HIGH",
@@ -3299,68 +3090,6 @@
         "productName": "100W Plexi",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "Just scored a '69 SLP 100.",
-          "url": "https://forum.fractalaudio.com/threads/nothing-like-a-real-plexi.64593/page-4#post-799668",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "There's a 0.68uF cap on the second triode.",
-          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-version-20-05-public-beta-beta-1.187133/post-2317922",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The power supply sags more in a 100W. On our reference 100W Plexi the supply sag is almost double that of our 50W.",
-          "url": "https://forum.fractalaudio.com/threads/marshall-jmp-100w.198803/post-2478167",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "All the pots are log pots in our reference amp",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Our reference 100W is a late 60s.",
-          "url": "https://forum.fractalaudio.com/threads/modeling-questions.199009/page-3#post-2491180",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "It's a '69.",
-          "url": "https://forum.fractalaudio.com/threads/modeling-questions.199009/page-3#post-2491192",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "1959 circuit.",
-          "url": "https://www.facebook.com/photo.php?fbid=10151759408979517&set=a.10151759408834517.621839.312081419516&type=1&theater",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Marshall amps in those days were wildly inconsistent. There are conflicting reports of the tone stacks. Our reference amp has log pots. George Metropolous says most of the amps he's seen had log pots. Some people claim linear pots were more prevalent.",
-          "url": "https://forum.fractalaudio.com/threads/modeling-questions.199009/post-2528926",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Our reference 100W Plexi is sort of in between 1968 and 1969. It has an 820 ohm cathode resistor on V1B. Coupling cap is 2.2n. Feedback is 47K off the speaker jack (!!!). The model assumes a full stack w/ (2) 16-ohm cabs so that would equivalent to 8-ohm tap.",
-          "url": "https://forum.fractalaudio.com/threads/modeling-questions.199009/post-2528947",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Our reference Plexi 100 has log taper tone pots. If you want a more conventional 100W Plexi sound use the 1959SLP models.",
-          "url": "https://forum.fractalaudio.com/threads/plexi-100-very-blanketed-now.205645/#post-2565083",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Our reference amp has a 560p treble cap and a 10A treble pot taper. Both components appear to be original. The tech who checked it out after I bought it said it was one of the best sounding 100W Plexis he'd ever heard. That tech just happens to be Alan Phillips of Carol-Ann Amps. So I modeled it to agree with the reference amp.",
-          "url": "https://forum.fractalaudio.com/threads/modeling-questions.199009/post-2491136",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The default tone stack for the Plexi 100W is Plexi 100W. The equivalent tone stack w/ linear mid and treble pots is Plexi. The Dumble tone stack is the same as Plexi except it is plate driven instead of cathode follower driven.",
-          "url": "https://forum.fractalaudio.com/threads/modeling-questions.199009/post-2528617",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (G12M, G12H)",
       "powerTubes": "EL34"
     },
@@ -3370,6 +3099,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Plexi 100W 1970\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Plexi 100W Normal",
@@ -3381,8 +3111,6 @@
         "productName": "100W Plexi",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (G12M, G12H)",
       "powerTubes": "EL34"
     },
@@ -3397,6 +3125,8 @@
         "primary": "Paul Ruby Rocket",
         "source": "fractal-wiki"
       },
+      "originalCab": "1x12 (Alnico, G12M)",
+      "powerTubes": "EL84",
       "fractalQuotes": [
         {
           "text": "The Ruby Rocket is not the same as an actual Trainwreck Rocket. There are topology differences and the amps don't sound the same.",
@@ -3417,9 +3147,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "1x12 (Alnico, G12M)",
-      "powerTubes": "EL84"
+      "artistNotes": []
     },
     {
       "axefx2Name": "AC-20 EF86 B",
@@ -3448,6 +3176,9 @@
         "primary": "Komet Concorde",
         "source": "fractal-wiki"
       },
+      "originalCab": "Komet's 2x12 has Classic Lead 80",
+      "matchingDynaCab": "2x12 Lead 80",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "The Komet is definitely a unique amp. Sort of like a Fender preamp into a Marshall power amp. Unique tone stack.",
@@ -3455,27 +3186,18 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Komet's 2x12 has Classic Lead 80",
-      "matchingDynaCab": "2x12 Lead 80",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "FAS MODERN II",
       "wireIndex": 132,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS Modern\""
+        "INHERITED: lineage from sibling \"FAS Modern\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS Modern II",
       "wikiName": "FAS MODERN II",
-      "fractalQuotes": [
-        {
-          "text": "This is a tighter version of the popular FAS Modern model with a 5150-style bass boost in the tone stack.",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "6L6"
     },
     {
@@ -3526,14 +3248,14 @@
         "productName": "Dual Rectifier",
         "source": "fractal-wiki"
       },
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "The old Recto models weren't terribly accurate. When G3 came out the models were accurate but Fredrik contacted me and said something like",
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "ODS-100 HRM MID",
@@ -3541,52 +3263,17 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"ODS-100 Clean\""
+        "INHERITED: lineage from sibling \"ODS-100 Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "ODS-100 HRM MID",
       "wikiName": "ODS-100 HRM MID",
-      "description": "based on HRM circuit, Overdrive channel, Mid switch (Deep): on",
       "basedOn": {
         "primary": "Dumble Special",
         "manufacturer": "Dumble",
         "productName": "Special",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "One of the first mods people make to real 'Plexi' Marshalls is to",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "It's the way a Plexi is supposed to sound. That's due to the cathode follower. That raspiness helps it cut through in a mix. I own three of them and they are that fizzy.",
-          "url": "https://forum.fractalaudio.com/posts/576475",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Don't be afraid to turn the bass all the way down or the treble all the way up. Just like with the actual amp. For example, on the Normal channel of a Plexi most people turn the bass way down. Otherwise it's too flubby.",
-          "url": "https://forum.fractalaudio.com/posts/577248",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "My settings for a",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "What you are hearing is output transformer high frequency resonance. Old Plexis didn't do this because they had good transformers. New transformers are crappy and resonate at the cutoff frequency because they are underdamped. This causes a raspy, fizzy texture to the distortion. The transformer resonance is adjustable but the parameter isn't exposed to the user. When you turn it up you get that same squishy rasp that you are hearing. For the Plexis I have the damping set to flat with no resonance because that's how our vintage Plexis measure. Our 50W is a little underdamped but people complain about raspy high frequencies so I erred on the safe side.",
-          "url": "https://forum.fractalaudio.com/threads/dimed-real-plexi-vs-dimed-simulation-q8-01.127161/page-2#post-1513888",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "When modding Marshalls for higher gain sometimes the modder will decrease the input frequency response to reduce noise and fizziness. You can do this by reducing the high-cut frequency in the input EQ. Or you can use a high-shelf filter which is a little more subtle. Another technique is to put a capacitor across the second-to-last triode stage. This is the",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "All the distortion comes from the power amp so the tone controls don't do much.",
-          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-16-00-beta-4-cygnus-firmware-public-beta.170253/post-2052743",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "originalCab": "Dumble 2x12 or 4x12 (G12-65, EVM)",
       "powerTubes": "EL34 (HRM), 6L6 (Ford)"
     },
@@ -3597,6 +3284,7 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"Euro Blue\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "EURO BLUE MODERN",
@@ -3608,8 +3296,6 @@
         "productName": "Ecstasy 20th Anniversary",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Bogner 2x12 or 4x12 (V30)",
       "matchingDynaCab": "4x12 Friedman V30",
       "powerTubes": "EL34 (earlier models were based on the 6L6 version)"
@@ -3621,6 +3307,7 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"Euro Blue\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "EURO RED MODERN",
@@ -3631,8 +3318,6 @@
         "productName": "Ecstasy 20th Anniversary",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Bogner 2x12 or 4x12 (V30)",
       "matchingDynaCab": "4x12 Friedman V30",
       "powerTubes": "EL34 (earlier models were based on the 6L6 version)"
@@ -3643,6 +3328,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Plexi 50W 6550\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Plexi 50W Jumped",
@@ -3654,8 +3340,6 @@
         "productName": "50W Plexi",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "6550"
     },
     {
@@ -3677,6 +3361,9 @@
         "primary": "Komet 60",
         "source": "fractal-wiki"
       },
+      "originalCab": "Komet's 2x12 has Classic Lead 80",
+      "matchingDynaCab": "2x12 Lead 80",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "The Komet is definitely a unique amp. Sort of like a Fender preamp into a Marshall power amp. Unique tone stack.",
@@ -3684,17 +3371,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Komet's 2x12 has Classic Lead 80",
-      "matchingDynaCab": "2x12 Lead 80",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "HIPOWER JUMPED",
       "wireIndex": 144,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Hipower Brilliant\""
+        "INHERITED: lineage from sibling \"Hipower Brilliant\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Hipower Jumped",
       "wikiName": "HIPOWER JUMPED",
@@ -3704,8 +3389,6 @@
         "model": "DR103",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Hiwatt 4x12 (Fane)",
       "powerTubes": "EL34"
     },
@@ -3715,6 +3398,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Plexi 100W 1970\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Plexi 100W Jumped",
@@ -3726,8 +3410,6 @@
         "productName": "100W Plexi",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (G12M, G12H)",
       "powerTubes": "EL34"
     },
@@ -3737,6 +3419,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Brit JM45\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Brit JM45 Jumped",
@@ -3748,8 +3431,6 @@
         "productName": "JTM 45",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (G12M, G12H)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -3770,6 +3451,9 @@
         "productName": "50W 1987X",
         "source": "fractal-wiki"
       },
+      "originalCab": "Marshall 4x12 (G12M, G12H)",
+      "matchingDynaCab": "4x12 1960TV",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "The 1987x doesn't have the 0.68uF cap on the last triode. Gives it a smoother distortion.",
@@ -3787,10 +3471,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Marshall 4x12 (G12M, G12H)",
-      "matchingDynaCab": "4x12 1960TV",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "RECTO1 ORG VNTG",
@@ -3805,7 +3486,8 @@
       "wireIndex": 149,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Recto1 Orange Modern\""
+        "INHERITED: lineage from sibling \"Recto1 Orange Modern\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Recto1 Red",
       "wikiName": "RECTO1 RED",
@@ -3815,8 +3497,6 @@
         "productName": "Dual Rectifier 2 channels",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Mesa 4x12 (V30)",
       "powerTubes": "6L6"
     },
@@ -3833,7 +3513,8 @@
       "wireIndex": 151,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Bogfish Brown\""
+        "INHERITED: lineage from sibling \"Bogfish Brown\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Bogfish Strato",
       "wikiName": "BOGFISH STRATO",
@@ -3844,62 +3525,6 @@
         "productName": "Fish",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "It is a very bright model. However, it sounds exactly like the amp it was based on. If it is too bright, you can adjust the various tone controls and parameters to reduce the brightness to your tastes. They are designed to be run loud and the brightness decreases as the MV is increased. The sound of 80's hair metal for sure.",
-          "url": "https://forum.fractalaudio.com/threads/afxii-jcm800-model.38498/#post-525964",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The saturation switch switches in a zener diode clipping stage right before the tone stack. This is the Arrendondo Mod.",
-          "url": "https://forum.fractalaudio.com/threads/axe-fx-ii-technical-questions-thread.35997/page-38#post-494304",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Rips my head off here. I have to turn the presence way down. Check the MV. Too high and will get muddy.",
-          "url": "https://forum.fractalaudio.com/threads/jcm-800-sounds-a-bit-muddy-with-fw-6-0-tips.51063/#post-657800",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "That",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Those amps are all designed to get their character from power amp distortion. If you don't push the power amp all you are hearing is the preamp which is voiced to be trebly. The power amp then compresses the highs and the sound gets fatter.",
-          "url": "https://forum.fractalaudio.com/posts/1235311",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "At low MV the source resistance into the PI is low which raises the highpass frequency due to the coupling cap and raises the lowpass frequency due to the Miller capacitance and snubber. As you increase the MV the source resistance increases which decreases both of these things. As you keep raising the MV the source resistance then starts to decrease as you get above 50% of the pot value.",
-          "url": "https://forum.fractalaudio.com/threads/setting-the-master-volume.119903/page-2#post-1428935",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "When modding Marshalls for higher gain sometimes the modder will decrease the input frequency response to reduce noise and fizziness. You can do this by reducing the high-cut frequency in the input EQ. Or you can use a high-shelf filter which is a little more subtle. Another technique is to put a capacitor across the second-to-last triode stage. This is the",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "JCM800s sound better with a hot bias IMO. The problem is the plate voltage is too high so when you set the bias higher the dissipation goes up and tube life is shortened. IMO they should've made the plate voltage around 420V. That would allow a hotter bias with longer tube life at the expense of slightly less volume but JCM800s are ungodly loud anyways so...",
-          "url": "https://forum.fractalaudio.com/threads/why-your-amp-doesnt-sound-like-our-amp.172907/post-2091305",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "A JCM800 sounds best when it is getting its distortion from a combination of preamp and power amp distortion.",
-          "url": "https://forum.fractalaudio.com/threads/setting-the-master-volume.119903/page-5#post-2618859",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The factory value for the bright cap in a JCM800 is 1nF (1000pF).",
-          "url": "https://forum.fractalaudio.com/threads/what’s-the-deal-with-the-bright-cap-setting.216177/#post-2717240",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "I have four JCM800s. Every one has a 1000pF bright cap.",
-          "url": "https://forum.fractalaudio.com/threads/what’s-the-deal-with-the-bright-cap-setting.216177/#post-2717251",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -3916,6 +3541,7 @@
         "productName": "Fish",
         "source": "fractal-wiki"
       },
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "I used the power amp models from the XTC.",
@@ -3923,8 +3549,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "5F1 TWEED",
@@ -3942,6 +3567,9 @@
         "productName": "EC Vibro-Champ",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 1x8",
+      "matchingDynaCab": "1x8 5F1 Tweed",
+      "powerTubes": "6V6",
       "fractalQuotes": [
         {
           "text": "The circuit is slightly different than the original 5F1. It has cathode bypass caps giving it more gain.",
@@ -3954,10 +3582,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 1x8",
-      "matchingDynaCab": "1x8 5F1 Tweed",
-      "powerTubes": "6V6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "WRECKER EXPRESS",
@@ -3966,13 +3591,15 @@
       "flags": [],
       "am4Name": "Wrecker Express",
       "wikiName": "WRECKER EXPRESS",
-      "description": "Bright switch in center or top position",
       "basedOn": {
         "primary": "Trainwreck Express",
         "manufacturer": "Trainwreck",
         "productName": "Express",
         "source": "fractal-wiki"
       },
+      "originalCab": "Marshall 4x12 (G12-M25)",
+      "powerTubes": "EL34",
+      "description": "Bright switch in center or top position",
       "fractalQuotes": [
         {
           "text": "The real amp is a nasty thing. Very spitty as one would expect given the lack of a grid stopper resistor between the last triode stage and the PI.",
@@ -4005,9 +3632,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Marshall 4x12 (G12-M25)",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "TWO STONE J35 2",
@@ -4038,6 +3663,8 @@
         "productName": "Maz 8",
         "source": "fractal-wiki"
       },
+      "originalCab": "Dr. Z 1x12 (G12H)",
+      "powerTubes": "EL84",
       "fractalQuotes": [
         {
           "text": "Dr. Z is the quintessential country amp.",
@@ -4045,9 +3672,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Dr. Z 1x12 (G12H)",
-      "powerTubes": "EL84"
+      "artistNotes": []
     },
     {
       "axefx2Name": "CAR ROAMER",
@@ -4074,13 +3699,15 @@
       ],
       "am4Name": "Wrecker Liverpool",
       "wikiName": "WRECKER LIVERPOOL",
-      "description": "Bright switch in center or top position",
       "basedOn": {
         "primary": "Trainwreck Liverpool",
         "manufacturer": "Trainwreck",
         "productName": "Liverpool",
         "source": "fractal-wiki"
       },
+      "originalCab": "Marshall 4x12 (G12-M25)",
+      "powerTubes": "EL84",
+      "description": "Bright switch in center or top position",
       "fractalQuotes": [
         {
           "text": "Just because a power amp is",
@@ -4092,9 +3719,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Marshall 4x12 (G12-M25)",
-      "powerTubes": "EL84"
+      "artistNotes": []
     },
     {
       "axefx2Name": "CITRUS TERRIER",
@@ -4109,6 +3734,9 @@
         "productName": "Tiny Terror",
         "source": "fractal-wiki"
       },
+      "originalCab": "Orange 1x12 or 2x12 (G12H)",
+      "matchingDynaCab": "2x12 Texas Star",
+      "powerTubes": "EL84",
       "fractalQuotes": [
         {
           "text": "The actual amp has no tone stack and a single tone control. The tone control is actually a high cut control in the power amp and is therefore replicated by the Hi Cut parameter.",
@@ -4120,10 +3748,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Orange 1x12 or 2x12 (G12H)",
-      "matchingDynaCab": "2x12 Texas Star",
-      "powerTubes": "EL84"
+      "artistNotes": []
     },
     {
       "axefx2Name": "CITRUS A30 CLN",
@@ -4140,11 +3765,11 @@
         "model": "AD30HTC",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Orange 2x12 (V30)",
       "matchingDynaCab": "4x12 Citrus",
-      "powerTubes": "EL84"
+      "powerTubes": "EL84",
+      "fractalQuotes": [],
+      "artistNotes": []
     },
     {
       "axefx2Name": "CITRUS A30 DRTY",
@@ -4161,19 +3786,17 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"DIV/13 FT37 HIGH\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "DIV/13 FT37 LOW",
       "wikiName": "DIV/13 FT37 LOW",
-      "description": "channel 1, Mid Gain Boost: off",
       "basedOn": {
         "primary": "Divided by 13 FTR 37",
         "manufacturer": "Divided by 13",
         "productName": "FTR 37",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Divided by 13 (G12H and Alnico)",
       "matchingDynaCab": "2x12 Chiefman",
       "powerTubes": "6V6"
@@ -4194,11 +3817,11 @@
         "productName": "FTR 37",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Divided by 13 (G12H and Alnico)",
       "matchingDynaCab": "2x12 Chiefman",
-      "powerTubes": "6V6"
+      "powerTubes": "6V6",
+      "fractalQuotes": [],
+      "artistNotes": []
     },
     {
       "axefx2Name": "MATCHBOX D-30",
@@ -4213,6 +3836,8 @@
         "model": "DC-30",
         "source": "fractal-wiki"
       },
+      "originalCab": "Matchless 2x12 (25w G12M and 30w G12H)",
+      "powerTubes": "EL84",
       "fractalQuotes": [
         {
           "text": "The DC-30 is basically an AC-30 copy. The voltages are a bit different but the topology is nearly identical. However, IMO, it does sound better. Not sure why. Perhaps the better quality components. AC-30's have kind of crappy OTs.",
@@ -4228,26 +3853,18 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Matchless 2x12 (25w G12M and 30w G12H)",
-      "powerTubes": "EL84"
+      "artistNotes": []
     },
     {
       "axefx2Name": "FAS CLASS-A",
       "wireIndex": 167,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS 6160\""
+        "INHERITED: lineage from sibling \"FAS 6160\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS Class-A",
       "wikiName": "FAS CLASS-A",
-      "fractalQuotes": [
-        {
-          "text": "A “Blackface” preamp into a cathode-biased 6L6 power amp with no negative feedback. This was a happy accident when originally modeling the Carr Rambler in the beta version of this release. Several mistakes were made in the model prior to MIMIC’ing the amp but the model was so well liked that we decided to make it into its own custom amp model.",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "EL84"
     },
     {
@@ -4266,10 +3883,10 @@
         "productName": "Bass 400 bass",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Mesa bass speaker cabinet",
-      "powerTubes": "6550"
+      "powerTubes": "6550",
+      "fractalQuotes": [],
+      "artistNotes": []
     },
     {
       "axefx2Name": "USA BASS 400 2",
@@ -4277,7 +3894,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"USA BASS 400 1\""
+        "INHERITED: lineage from sibling \"USA BASS 400 1\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "USA BASS 400 2",
       "wikiName": "USA BASS 400 2",
@@ -4288,36 +3906,6 @@
         "productName": "Bass 400 bass",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "The Mark series have lots of mids because the tone-stack is",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "I have a Mark IIC+, a Mark IV, a Mark V and a Triaxis. They're all completely different. Mesa always says things like",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The key to a good Boogie sound, IMO, is the Fat Switch. This is the treble Pull Shift on the IIC+ and the Pull Fat on the Mark IV. Mesa knew this and the Lead 2 modes on the Triaxis all had the treble shift engaged by default.",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The tone stack on a Boogie is pre-distortion. As you increase gain you want less bass into the distortion stages so the idea is you turn the bass down. In later versions of the Boogies (TriAxis for example) they changed the taper so that noon was equivalent to 1 on earlier models because people are reticent to move controls very far from noon for some weird reason.",
-          "url": "https://forum.fractalaudio.com/threads/highly-compressed-sound-on-high-gain-amps.169132/post-2032825",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "The Mark series graphic EQ sucks. I know some people want authenticity but it's simply a bad design.",
-          "url": "https://thegearforum.com/threads/fractal-audio-firmware-update-thread.673/post-154508",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "With the presence control at noon it's roughly neutral. Turn it down and you are actually boosting bass and reducing treble.",
-          "url": "https://forum.fractalaudio.com/threads/axe-fx-ii-quantum-rev-1-03-firmware-release.106931/page-12#post-1282192",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "originalCab": "Mesa bass speaker cabinet",
       "powerTubes": "6550"
     },
@@ -4335,23 +3923,22 @@
         "productName": "bass",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Orange bass cab",
       "matchingDynaCab": "1x15 Heart Key",
-      "powerTubes": "6550"
+      "powerTubes": "6550",
+      "fractalQuotes": [],
+      "artistNotes": []
     },
     {
       "axefx2Name": "FAS BASS",
       "wireIndex": 171,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS 6160\""
+        "INHERITED: lineage from sibling \"FAS 6160\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS Bass",
       "wikiName": "FAS BASS",
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "6550"
     },
     {
@@ -4369,42 +3956,151 @@
         "productName": "Tremolux",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Fender 2x10",
-      "powerTubes": "6L6"
+      "powerTubes": "6L6",
+      "fractalQuotes": [],
+      "artistNotes": []
     },
     {
       "axefx2Name": "FAS BROOTALZ",
       "wireIndex": 173,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS 6160\""
+        "INHERITED: lineage from sibling \"FAS 6160\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS Brootalz",
       "wikiName": "FAS BROOTALZ",
-      "fractalQuotes": [
-        {
-          "text": "This amp was an accident. I was working on the Savage model and accidentally used the input stage from an SLO100. So it's the front end of an SLO100 with the back end of a Savage. It's probably an SLO100 power amp too but I'd have to check.",
-          "url": "https://forum.fractalaudio.com/posts/1020502",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Brootalz uses the Engl Savage presence network which reduces negative feedback as the control is turned down causing an increase in volume.",
-          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-16-00-beta-5-cygnus-firmware-public-beta-2.170901/post-2059273",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "6550"
     },
     {
       "axefx2Name": "RECTO1 ORG MDRN",
       "wireIndex": 174,
-      "matchVia": "unmatched",
+      "matchVia": "abbrev-expand",
       "flags": [
-        "VERIFY: no wiki match — Axe-Fx II enum entry has no AM4-lineage counterpart"
-      ]
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "Recto1 Orange Modern",
+      "wikiName": "RECTO1 ORANGE MODERN",
+      "basedOn": {
+        "primary": "Mesa Dual Rectifier 2 channels",
+        "manufacturer": "Mesa",
+        "productName": "Dual Rectifier 2 channels",
+        "source": "fractal-wiki"
+      },
+      "originalCab": "Mesa 4x12 (V30)",
+      "powerTubes": "6L6",
+      "fractalQuotes": [
+        {
+          "text": "The reason you're hearing the highs rolled off is because the Master is too high. As you increase the Master the highs get muffled. 7.02 for the Recto Master is ridiculous and will sound like crap.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-vs-tube-amps-my-first-experience.27192/page-3#post-412068",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Note that the Orange Modern and Red Modern models have no negative feedback and therefore the Presence control is a Hi Cut control.",
+          "url": "https://forum.fractalaudio.com/threads/version-10-00-stuff.63202/#post-783037",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "A typical Recto cabinet has a resonant frequency a little over 100 Hz.",
+          "url": "https://forum.fractalaudio.com/threads/dual-recto-with-the-lb-2-vs-the-axe-fx-iii-and-more.143501/page-2#post-1699892",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The unique thing about a Dual Recto tone stack is that the Presence control is part of the tone stack. So the Recto tone controls also interact with the presence control.",
+          "url": "https://forum.fractalaudio.com/threads/dual-recto-with-the-lb-2-vs-the-axe-fx-iii-and-more.143501/#post-1699011",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Rectos don't have a Depth control and even if they did it wouldn't do anything in Modern Red mode since that mode has no negative feedback. When you put a Recto into Modern Red mode it opens a relay which removes the NFB.",
+          "url": "https://forum.fractalaudio.com/threads/recto-depth.92482/#post-1111780",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Real Rectos are bassy/fizzy beasts but that tone works great for certain genres.",
+          "url": "https://forum.fractalaudio.com/posts/658849",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "If you are using the Modern modes be very careful with the MV. If you turn it up too high it will flub out really quick. If in doubt reduce the MV. Compensate with the Level control.",
+          "url": "https://forum.fractalaudio.com/posts/829334",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The Modern mode in Rectos has no negative feedback so there's a huge bass boost from the speaker impedance. Fortunately you can reduce this by reducing the LF Resonance on the Spkr tab which is something you can't do with the real amp without trying different speakers or cabinet.",
+          "url": "https://forum.fractalaudio.com/posts/829906",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Depth works by varying the negative feedback at low frequencies. There is no NFB in the Modern Red mode so the Depth knob won't do anything.",
+          "url": "https://forum.fractalaudio.com/posts/1111770",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "All passive tone controls interact and all the Axe-Fx tone stacks replicate this behavior. The unique thing about a Dual Recto tone stack is that the Presence control is part of the tone stack. So the Recto tone controls also interact with the presence control.",
+          "url": "https://forum.fractalaudio.com/threads/dual-recto-eq-potentially-silly-question.93890/#post-1126242",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "If you are using the Modern mode then it's all about the Spkr page. Since that mode has no negative feedback the speaker resonance has a tremendous effect on the sound. Adjust LF Res, Freq and Q to get desired response.",
+          "url": "https://forum.fractalaudio.com/threads/anyone-have-any-luck-with-the-rectifier-models.109907/#post-1315682",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Another thing with the Modern modes is that the power amp distorts early (again since there is no negative feedback and, therefore, the power amp has a lot more gain). At 9:00 on the Master the power amp is distorting (it's probably a linear taper pot for the ol'",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "We have three of them, a single and two duals.",
+          "url": "https://forum.fractalaudio.com/threads/when-were-the-rectos-improved.122719/#post-1459883",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "If you want that Recto crunch but not so flubby and fizzy try the SOLO models.",
+          "url": "https://forum.fractalaudio.com/threads/ax8-v7-00-public-beta.125015/page-3#post-1487394",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "A Recto is not a Mark series amp. Totally different preamp topology. A Recto preamp is very similar to a SLO100.",
+          "url": "https://forum.fractalaudio.com/threads/the-greatest-digital-guitar-recording-of-all-time.154788/post-1841448",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The Rectifier preamp is almost identical to an SLO100.",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "Recto2 is based on a new 3-channel Dual Rectifier. Recto1 is based on the original 2-channel.",
+          "url": "https://www.thegearpage.net/board/index.php?threads/blind-test-mesa-dual-rectifier-vs-mystery-modeler-update-results-revealed.2208367/post-31647001",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "I have three Rectos: an old Single Rectifier, an old (Rev. G maybe) Dual Rectifier and a new Dual Rectifier. They all sound completely different. The old Dual is the best sounding of the bunch.",
+          "url": "https://forum.fractalaudio.com/threads/axe-fx-iii-16-00-beta-9-cygnus-firmware-public-beta-6.171176/post-2062420",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The MV taper of the model is authentic so just like the real amp the power amp starts to clip very early. With the real amp there's audible feedback (as in it gets insanely loud) but with the model you don't get that and humans have this weird thing where they don't like knobs to deviate from noon. I've debated changing the taper or adding a pad between the preamp and power amp but, in the end, I decided to keep things authentic.",
+          "url": "https://forum.fractalaudio.com/threads/simple-tip-for-recto-tones.174349/post-2114224",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "You have to be very careful with the Master Volume. A Recto will start saturating the power amp in Modern mode at VERY low MV settings. Once the power amp starts clipping the tone will change. With digital products I often see people set the MV higher than they would on the real amp because there are no sonic repercussions (i.e., pissing off the wife/neighbors, knocking Grandma's urn off the mantel, etc.). If an emulation sounds darker or more midrangey than the real amp try turning down the MV. If it's a good emulation you should find a point (around 1-2) where you can hear the power amp start to saturate. Go up/down from there to get the desired power amp overdrive.",
+          "url": "https://www.thegearpage.net/board/index.php?threads/why-are-rectifier-emulations-so-off.2341907/post-34347979",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "The Red channel has no negative feedback so the response is highly dependent upon the impedance curve. Vintage has quite a bit.",
+          "url": "https://thegearforum.com/threads/adventures-in-fractals-dual-rectifiers.3949",
+          "attribution": "Fractal Audio"
+        },
+        {
+          "text": "On the amp the MV is around 9 o'clock (as loud as I dared to go and not get divorced). I had to set the model to 1.2 to get the same response. Above that and the power amp starts clipping and the highs get reduced. This is to be expected given the different taper between the amp and the model.",
+          "url": "https://thegearforum.com/threads/adventures-in-fractals-dual-rectifiers.3949/post-151193",
+          "attribution": "Fractal Audio"
+        }
+      ],
+      "artistNotes": []
     },
     {
       "axefx2Name": "ANGLE SEVERE 1",
@@ -4421,6 +4117,9 @@
         "productName": "Savage 120",
         "source": "fractal-wiki"
       },
+      "originalCab": "Engl 4x12 (V30, V60)",
+      "matchingDynaCab": "4x12 Recto Straight",
+      "powerTubes": "6550",
       "fractalQuotes": [
         {
           "text": "From noon and up it's a presence boost, from noon down it's a presence cut.",
@@ -4433,10 +4132,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Engl 4x12 (V30, V60)",
-      "matchingDynaCab": "4x12 Recto Straight",
-      "powerTubes": "6550"
+      "artistNotes": []
     },
     {
       "axefx2Name": "ANGLE SEVERE 2",
@@ -4444,7 +4140,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"ANGLE SEVERE 1\""
+        "INHERITED: lineage from sibling \"ANGLE SEVERE 1\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "ANGLE SEVERE 2",
       "wikiName": "ANGLE SEVERE 2",
@@ -4454,8 +4151,6 @@
         "productName": "Savage 120",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Engl 4x12 (V30, V60)",
       "matchingDynaCab": "4x12 Recto Straight",
       "powerTubes": "6550"
@@ -4465,7 +4160,8 @@
       "wireIndex": 177,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"USA Pre Clean\""
+        "INHERITED: lineage from sibling \"USA Pre Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "USA Pre LD2 Red",
       "wikiName": "USA PRE LD2 RED",
@@ -4476,8 +4172,6 @@
         "productName": "TriAxis",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Mesa bass speaker cabinet",
       "powerTubes": "same as USA Lead model (6L6)"
     },
@@ -4486,7 +4180,8 @@
       "wireIndex": 178,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"USA Pre Clean\""
+        "INHERITED: lineage from sibling \"USA Pre Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "USA Pre LD1 Red",
       "wikiName": "USA PRE LD1 RED",
@@ -4497,8 +4192,6 @@
         "productName": "TriAxis",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Mesa bass speaker cabinet",
       "powerTubes": "same as USA Lead model (6L6)"
     },
@@ -4518,10 +4211,10 @@
         "productName": "Lone Star",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Mesa 2x12 (C90)",
-      "powerTubes": "6L6"
+      "powerTubes": "6L6",
+      "fractalQuotes": [],
+      "artistNotes": []
     },
     {
       "axefx2Name": "AC-20 12AX7 T",
@@ -4536,11 +4229,11 @@
       "wireIndex": 181,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"VIBRATO VERB\""
+        "INHERITED: lineage from sibling \"VIBRATO VERB\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Vibrato Verb AA",
       "wikiName": "VIBRATO VERB AA",
-      "description": "Cliff’s own 1964 blackface Vibroverb with AA763 circuit",
       "family": "FENDER",
       "basedOn": {
         "primary": "Fender AA763 Vibroverb",
@@ -4549,8 +4242,6 @@
         "productName": "Vibroverb",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Fender 1x15 (Jensen C15N, JBL D130, Eminence)",
       "powerTubes": "6L6"
     },
@@ -4559,11 +4250,11 @@
       "wireIndex": 182,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"VIBRATO VERB\""
+        "INHERITED: lineage from sibling \"VIBRATO VERB\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Vibrato Verb AB",
       "wikiName": "VIBRATO VERB AB",
-      "description": "AB763 circuit",
       "family": "FENDER",
       "basedOn": {
         "primary": "Fender AB763 Vibroverb",
@@ -4572,8 +4263,6 @@
         "productName": "Vibroverb",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Fender 1x15 (Jensen C15N, JBL D130, Eminence)",
       "powerTubes": "6L6"
     },
@@ -4591,7 +4280,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"JR Blues\""
+        "INHERITED: lineage from sibling \"JR Blues\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "JR BLUES FAT",
       "wikiName": "JR BLUES FAT",
@@ -4602,8 +4292,6 @@
         "productName": "Blues Junior",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Fender 1x12 (Eminence, Jensen C12N, P12R)",
       "powerTubes": "EL84"
     },
@@ -4612,7 +4300,8 @@
       "wireIndex": 185,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Solo 88 Clean\""
+        "INHERITED: lineage from sibling \"Solo 88 Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Solo 88 Lead",
       "wikiName": "SOLO 88 LEAD",
@@ -4622,8 +4311,6 @@
         "model": "X88R",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "same as SLO-100 model (6L6)"
     },
     {
@@ -4640,6 +4327,9 @@
         "model": "AFD100SCE",
         "source": "fractal-wiki"
       },
+      "originalCab": "Marshall 4x12 (V30)",
+      "matchingDynaCab": "4x12 Friedman V30",
+      "powerTubes": "6550",
       "fractalQuotes": [
         {
           "text": "I have an actual Slash signature model and spent a lot of time measuring, listening and comparing.",
@@ -4672,17 +4362,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Marshall 4x12 (V30)",
-      "matchingDynaCab": "4x12 Friedman V30",
-      "powerTubes": "6550"
+      "artistNotes": []
     },
     {
       "axefx2Name": "BRIT AFS100 2",
       "wireIndex": 187,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Brit AFS100 1\""
+        "INHERITED: lineage from sibling \"Brit AFS100 1\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Brit AFS100 2",
       "wikiName": "BRIT AFS100 2",
@@ -4693,8 +4381,6 @@
         "model": "AFD100SCE",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (V30)",
       "matchingDynaCab": "4x12 Friedman V30",
       "powerTubes": "6550"
@@ -4704,7 +4390,8 @@
       "wireIndex": 188,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Class-A 30W\""
+        "INHERITED: lineage from sibling \"Class-A 30W\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Class-A 30W Hot",
       "wikiName": "CLASS-A 30W HOT",
@@ -4714,8 +4401,6 @@
         "model": "AC30",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Vox 2x12 (Alnico, G12M)",
       "matchingDynaCab": "2x12 Class-A 30W",
       "powerTubes": "EL84"
@@ -4726,6 +4411,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"DIZZY V4 BLUE 2\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Dizzy V4 Silver 2",
@@ -4736,8 +4422,6 @@
         "model": "VH4",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Diezel 4x12 (V30, G12-100)",
       "matchingDynaCab": "4x12 Recto Straight",
       "powerTubes": "KT77"
@@ -4748,6 +4432,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"DIZZY V4 BLUE 2\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Dizzy V4 Silver 3",
@@ -4758,8 +4443,6 @@
         "model": "VH4",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Diezel 4x12 (V30, G12-100)",
       "matchingDynaCab": "4x12 Recto Straight",
       "powerTubes": "KT77"
@@ -4770,6 +4453,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"DIZZY V4 BLUE 2\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Dizzy V4 Silver 4",
@@ -4780,8 +4464,6 @@
         "model": "VH4",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Diezel 4x12 (V30, G12-100)",
       "matchingDynaCab": "4x12 Recto Straight",
       "powerTubes": "KT77"
@@ -4791,7 +4473,8 @@
       "wireIndex": 192,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"1959SLP Jumped\""
+        "INHERITED: lineage from sibling \"1959SLP Jumped\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "1959SLP Normal",
       "wikiName": "1959SLP NORMAL",
@@ -4803,8 +4486,6 @@
         "productName": "1959 Super Lead Plexi",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (G12M, G12H)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -4814,7 +4495,8 @@
       "wireIndex": 193,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"1959SLP Jumped\""
+        "INHERITED: lineage from sibling \"1959SLP Jumped\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "1959SLP Treble",
       "wikiName": "1959SLP TREBLE",
@@ -4826,8 +4508,6 @@
         "productName": "1959 Super Lead Plexi",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (G12M, G12H)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -4849,6 +4529,9 @@
         "productName": "1959 Super Lead Plexi",
         "source": "fractal-wiki"
       },
+      "originalCab": "Marshall 4x12 (G12M, G12H)",
+      "matchingDynaCab": "4x12 1960TV",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "The old one (Plexi 100w model) has a 2.7K cathode resistor on the first stage, the new one (1959SLP) has an 820 ohm.",
@@ -4861,22 +4544,18 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Marshall 4x12 (G12M, G12H)",
-      "matchingDynaCab": "4x12 1960TV",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "FAS MODERN III",
       "wireIndex": 195,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS Modern\""
+        "INHERITED: lineage from sibling \"FAS Modern\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS Modern III",
       "wikiName": "FAS MODERN III",
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "6L6"
     },
     {
@@ -4902,10 +4581,10 @@
         "productName": "Route 66",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Dr. Z 2x12 (V30 and G12H)",
-      "powerTubes": "KT66"
+      "powerTubes": "KT66",
+      "fractalQuotes": [],
+      "artistNotes": []
     },
     {
       "axefx2Name": "6G4 SUPER",
@@ -4922,16 +4601,16 @@
         "productName": "Super",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 2x10 with Jensen Alnico 25W P10R, 40W P10Q, Oxford 10K5, or Fender 2x12",
+      "matchingDynaCab": "2x10 Super 6G4",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "Super 6G4 is a Brownface Fender Super. Concert 6G12 is a Brownface Fender Concert. They are very similar amps and both sound",
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 2x10 with Jensen Alnico 25W P10R, 40W P10Q, Oxford 10K5, or Fender 2x12",
-      "matchingDynaCab": "2x10 Super 6G4",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "6G12 CONCERT",
@@ -4948,16 +4627,16 @@
         "productName": "Concert",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 4x10 with Jensen Alnico 25W P10R or 40W P10Q, ceramic 25W C10R, or Oxford",
+      "matchingDynaCab": "4x10 Bassguy RI",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "Super 6G4 is a Brownface Fender Super. Concert 6G12 is a Brownface Fender Concert. They are very similar amps and both sound",
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 4x10 with Jensen Alnico 25W P10R or 40W P10Q, ceramic 25W C10R, or Oxford",
-      "matchingDynaCab": "4x10 Bassguy RI",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "65 BASSGUY BASS",
@@ -4974,6 +4653,9 @@
         "productName": "Bassman head",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 2x12 (Oxford)",
+      "matchingDynaCab": "2x12 65 Bassguy",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "Has a pissed-off Marshall vibe to it.",
@@ -4996,10 +4678,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 2x12 (Oxford)",
-      "matchingDynaCab": "2x12 65 Bassguy",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "VIBRA-KING FAT",
@@ -5007,7 +4686,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"Vibra-King\""
+        "INHERITED: lineage from sibling \"Vibra-King\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "VIBRA-KING FAT",
       "wikiName": "VIBRA-KING FAT",
@@ -5018,8 +4698,6 @@
         "productName": "Vibro-King",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Fender 3x10",
       "powerTubes": "6L6"
     },
@@ -5062,6 +4740,7 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"BRIT JVM OD1 GREEN\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "BRIT JVM OD1 RED",
@@ -5073,8 +4752,6 @@
         "model": "JVM410H",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 G12T75 [link](https://thegearforum.com/threads/santiago-alvarez-electronics-engineer-jvm-yjm-afd.477/page-22#post-349437)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -5086,6 +4763,7 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"BRIT JVM OD1 GREEN\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "BRIT JVM OD2 RED",
@@ -5097,8 +4775,6 @@
         "model": "JVM410H",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 G12T75 [link](https://thegearforum.com/threads/santiago-alvarez-electronics-engineer-jvm-yjm-afd.477/page-22#post-349437)",
       "matchingDynaCab": "4x12 1960TV",
       "powerTubes": "EL34"
@@ -5109,7 +4785,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"CAMERON CCV 1A\""
+        "INHERITED: lineage from sibling \"CAMERON CCV 1A\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "CAMERON CCV 1B",
       "wikiName": "CAMERON CCV 1B",
@@ -5119,8 +4796,6 @@
         "model": "CCV-100",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -5129,7 +4804,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"CAMERON CCV 1A\""
+        "INHERITED: lineage from sibling \"CAMERON CCV 1A\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "CAMERON CCV 2B",
       "wikiName": "CAMERON CCV 2B",
@@ -5139,8 +4815,6 @@
         "model": "CCV-100",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -5149,7 +4823,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"CAMERON CCV 1A\""
+        "INHERITED: lineage from sibling \"CAMERON CCV 1A\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "CAMERON CCV 2C",
       "wikiName": "CAMERON CCV 2C",
@@ -5159,8 +4834,6 @@
         "model": "CCV-100",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -5169,7 +4842,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"CAMERON CCV 1A\""
+        "INHERITED: lineage from sibling \"CAMERON CCV 1A\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "CAMERON CCV 2D",
       "wikiName": "CAMERON CCV 2D",
@@ -5179,8 +4853,6 @@
         "model": "CCV-100",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -5198,6 +4870,9 @@
         "productName": "Smallbox",
         "source": "fractal-wiki"
       },
+      "originalCab": "Friedman 3x12 (V30 and/or G12M)",
+      "matchingDynaCab": "4x12 Friedman GB",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "The schematic shows a 2.2 nF coupling cap off the first stage but the actual amp has a 4.7 nF. 2.2 nF would mean less bass. I can only assume the amp was built to the latest specs. If an amp model is",
@@ -5219,17 +4894,15 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Friedman 3x12 (V30 and/or G12M)",
-      "matchingDynaCab": "4x12 Friedman GB",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "5153 50W BLUE",
       "wireIndex": 213,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"5153 100W Blue\""
+        "INHERITED: lineage from sibling \"5153 100W Blue\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "5153 50W Blue",
       "wikiName": "5153 50W BLUE",
@@ -5239,8 +4912,6 @@
         "productName": "5150-III",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "5150 4x12, 2x12 (G12H, G12EVH)",
       "matchingDynaCab": "4x12 5153, 2x12 5153 Stealth",
       "powerTubes": "6L6"
@@ -5251,7 +4922,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"Div/13 CJ\""
+        "INHERITED: lineage from sibling \"Div/13 CJ\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "DIV/13 CJ BOOST",
       "wikiName": "DIV/13 CJ BOOST",
@@ -5261,8 +4933,6 @@
         "productName": "CJ 11",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Divided by 13 (G12M)",
       "matchingDynaCab": "1x12 Div13 CJ11",
       "powerTubes": "6V6"
@@ -5270,10 +4940,24 @@
     {
       "axefx2Name": "USA IIC+ DEEP",
       "wireIndex": 215,
-      "matchVia": "unmatched",
+      "matchVia": "abbrev-expand",
       "flags": [
-        "VERIFY: no wiki match — Axe-Fx II enum entry has no AM4-lineage counterpart"
-      ]
+        "VERIFY: no AMP_TYPES enum match",
+        "INHERITED: lineage from sibling \"USA MK IIC+\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "USA MK IIC+ DEEP",
+      "wikiName": "USA MK IIC+ DEEP",
+      "family": "MESA",
+      "basedOn": {
+        "primary": "Mesa/Boogie Mark IIC+",
+        "manufacturer": "Mesa/Boogie",
+        "productName": "Mark IIC+",
+        "source": "fractal-wiki"
+      },
+      "originalCab": "Mesa 1x12 (C90, EVM)",
+      "powerTubes": "6L6"
     },
     {
       "axefx2Name": "USA IIC+ BRT/DP",
@@ -5299,6 +4983,9 @@
         "productName": "Tweed Twin 5F8",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 2x12 (P12N). Keith Urban's cab has Two-Rock speakers",
+      "matchingDynaCab": "2x12 Double Verb",
+      "powerTubes": "6L6, cathode follower",
       "fractalQuotes": [
         {
           "text": "Based on a 1959 Fender Twin Amp. This particular model is based on Keith Urban’s “#1”. Thank you Keith for allowing us the use of your prized amplifier.",
@@ -5310,10 +4997,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 2x12 (P12N). Keith Urban's cab has Two-Rock speakers",
-      "matchingDynaCab": "2x12 Double Verb",
-      "powerTubes": "6L6, cathode follower"
+      "artistNotes": []
     },
     {
       "axefx2Name": "DOUBLE VERB SF",
@@ -5336,7 +5020,8 @@
       "wireIndex": 220,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"JMPRE-1 CLEAN 1\""
+        "INHERITED: lineage from sibling \"JMPRE-1 CLEAN 1\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "JMPre-1 OD1",
       "wikiName": "JMPRE-1 OD1",
@@ -5347,8 +5032,6 @@
         "model": "JMP-1",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -5356,7 +5039,8 @@
       "wireIndex": 221,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"JMPRE-1 CLEAN 1\""
+        "INHERITED: lineage from sibling \"JMPRE-1 CLEAN 1\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "JMPre-1 OD2",
       "wikiName": "JMPRE-1 OD2",
@@ -5367,8 +5051,6 @@
         "model": "JMP-1",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -5403,6 +5085,9 @@
         "model": "AB763",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 1x12 with a Jensen C12(K), EVM 12L, or JBL D120. Or Fender 2x10 with Jensen C10N or C10Q, or a Jensen 25W Alnico P10R",
+      "matchingDynaCab": "1x12 Deluxe Verb",
+      "powerTubes": "6V6",
       "fractalQuotes": [
         {
           "text": "A DR is numbered 1-10 so 3 on a DR is around 2.2 on the Axe-Fx. The model is based on the Vibrato input #1 which has more gain than the normal input. To simulate plugging into the #2 jack (which has half the gain) set Input Trim to 0.5.",
@@ -5453,10 +5138,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 1x12 with a Jensen C12(K), EVM 12L, or JBL D120. Or Fender 2x10 with Jensen C10N or C10Q, or a Jensen 25W Alnico P10R",
-      "matchingDynaCab": "1x12 Deluxe Verb",
-      "powerTubes": "6V6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "DOUBLE VERB NRM",
@@ -5474,6 +5156,9 @@
         "productName": "Twin",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 2x12 with original speakers",
+      "matchingDynaCab": "2x12 Double Verb",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "The model is extremely accurate and is based on a 1966 Blackface Twin Reverb. Part of the reason the Blackface era are so sought after is because they distort. They are NOT clean amps by any stretch.",
@@ -5491,10 +5176,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 2x12 with original speakers",
-      "matchingDynaCab": "2x12 Double Verb",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "SUPER VERB NRM",
@@ -5513,6 +5195,8 @@
         "productName": "Super",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 4x10 (C10R, C10Q, P10R)",
+      "powerTubes": "6L6",
       "fractalQuotes": [
         {
           "text": "I modeled the Super with V1 pulled as most people pull V1 so the amp has more grunt. Turn down the MV to make it cleaner.",
@@ -5538,9 +5222,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 4x10 (C10R, C10Q, P10R)",
-      "powerTubes": "6L6"
+      "artistNotes": []
     },
     {
       "axefx2Name": "BLUDOJAI LD 2",
@@ -5555,7 +5237,8 @@
       "wireIndex": 228,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Plexi 50W 6CA7\""
+        "INHERITED: lineage from sibling \"Plexi 50W 6CA7\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Plexi 50W 6550",
       "wikiName": "PLEXI 50W 6550",
@@ -5566,8 +5249,6 @@
         "productName": "50W Plexi",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "powerTubes": "6550"
     },
     {
@@ -5575,18 +5256,11 @@
       "wireIndex": 229,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"FAS 6160\""
+        "INHERITED: lineage from sibling \"FAS 6160\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FAS Hot Rod",
       "wikiName": "FAS HOT ROD",
-      "fractalQuotes": [
-        {
-          "text": "FAS Hot Rod is my version of what a modded Marshall should be. I find the BE/HBE a little too boomy and scooped. Bogners are too dark. Splawns don't have enough compression. Etc. So it's my take on a hot-rodded Marshall tone.",
-          "url": "https://forum.fractalaudio.com/threads/axe-fx-ii-quantum-rev-1-02-firmware-release.106477/page-4#post-1274103",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -5610,7 +5284,8 @@
       "wireIndex": 232,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Solo 99 Clean\""
+        "INHERITED: lineage from sibling \"Solo 99 Clean\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Solo 88 Clean",
       "wikiName": "SOLO 88 CLEAN",
@@ -5620,13 +5295,6 @@
         "model": "X88R",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "Solo 88 RHY is based on an X88R since the rhythm channel of an X99 is identical to an SLO-100.",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "same as SLO-100 model (6L6)"
     },
     {
@@ -5635,6 +5303,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Class-A 30W\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Class-A 30W Bright",
@@ -5645,8 +5314,6 @@
         "model": "AC30",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Vox 2x12 (Alnico, G12M)",
       "matchingDynaCab": "2x12 Class-A 30W",
       "powerTubes": "EL84"
@@ -5657,6 +5324,7 @@
       "matchVia": "abbrev-expand",
       "flags": [
         "INHERITED: lineage from sibling \"Plexi 50W High 1\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "Plexi 50W High 2",
@@ -5668,33 +5336,6 @@
         "productName": "50W Plexi",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [
-        {
-          "text": "Similar to Plexi 50W High 1 except the second triode stage has a 0.68uF cathode bypass capacitor. The second bypass capacitor was added in the early 70’s and gives a slightly brighter tone.",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "There's a 0.68uF cap on the second triode.",
-          "url": "https://forum.fractalaudio.com/threads/axe-fx-firmware-version-20-05-public-beta-beta-1.187133/post-2317922",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Our reference 50W Plexi has a 68nF presence cap and the presence network is JCM800-style.",
-          "url": "https://forum.fractalaudio.com/threads/modeling-questions.199009/page-3#post-2491179",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "Plexi High 2 has a 0.68uF cap on V2A and the mixing resistor for the normal channel removed.",
-          "url": "https://forum.fractalaudio.com/threads/modeling-questions.199009/post-2504055",
-          "attribution": "Fractal Audio"
-        },
-        {
-          "text": "I removed the virtual resistor because it sounds better to me that way. This was a common mod for people who only used the High input.",
-          "url": "https://forum.fractalaudio.com/threads/modeling-questions.199009/post-2504173",
-          "attribution": "Fractal Audio"
-        }
-      ],
-      "artistNotes": [],
       "powerTubes": "EL34"
     },
     {
@@ -5708,15 +5349,15 @@
         "primary": "Splawn Nitro",
         "source": "fractal-wiki"
       },
+      "originalCab": "Splawn 4x12 (G12M, G12-65, V30)",
+      "powerTubes": "KT88",
       "fractalQuotes": [
         {
           "text": "Based on a Splawn Nitro with KT-88 power tubes.",
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Splawn 4x12 (G12M, G12-65, V30)",
-      "powerTubes": "KT88"
+      "artistNotes": []
     },
     {
       "axefx2Name": "RUBY ROCKET BRT",
@@ -5725,6 +5366,7 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"Ruby Rocket\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "RUBY ROCKET BRIGHT",
@@ -5733,8 +5375,6 @@
         "primary": "Paul Ruby Rocket",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "1x12 (Alnico, G12M)",
       "powerTubes": "EL84"
     },
@@ -5760,6 +5400,8 @@
         "productName": "100W Plexi",
         "source": "fractal-wiki"
       },
+      "originalCab": "Marshall 4x12 (G12M, G12H)",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "1970 Marshall 1959SLP 100 has a darker, smoother sound than earlier Plexis.",
@@ -5790,9 +5432,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Marshall 4x12 (G12M, G12H)",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "JS410 LEAD OR",
@@ -5801,6 +5441,7 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"JS410 CRUNCH ORANGE\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "JS410 LEAD ORANGE",
@@ -5812,8 +5453,6 @@
         "model": "JVM410HJS",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (V30 and G12H)",
       "powerTubes": "EL34"
     },
@@ -5824,6 +5463,7 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"JS410 CRUNCH ORANGE\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "JS410 LEAD RED",
@@ -5835,8 +5475,6 @@
         "model": "JVM410HJS",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (V30 and G12H)",
       "powerTubes": "EL34"
     },
@@ -5857,6 +5495,8 @@
         "model": "JVM410HJS",
         "source": "fractal-wiki"
       },
+      "originalCab": "Marshall 4x12 (V30 and G12H)",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "Joe said he puts all the tone controls at around 10:00.",
@@ -5878,9 +5518,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Marshall 4x12 (V30 and G12H)",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "JS410 CRUNCH RD",
@@ -5889,6 +5527,7 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"JS410 CRUNCH ORANGE\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "JS410 CRUNCH RED",
@@ -5900,8 +5539,6 @@
         "model": "JVM410HJS",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Marshall 4x12 (V30 and G12H)",
       "powerTubes": "EL34"
     },
@@ -5911,11 +5548,11 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"FRIEDMAN BE 2010\""
+        "INHERITED: lineage from sibling \"FRIEDMAN BE 2010\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FRIEDMAN BE V2",
       "wikiName": "FRIEDMAN BE V2",
-      "description": "later BE-100, voice: middle (brightest)",
       "family": "FRIEDMAN",
       "basedOn": {
         "primary": "Friedman BE",
@@ -5923,8 +5560,6 @@
         "productName": "BE",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Friedman 4x12 (V30 and/or G12M)",
       "matchingDynaCab": "4x12 Friedman V30",
       "powerTubes": "EL34"
@@ -5935,11 +5570,11 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"FRIEDMAN BE 2010\""
+        "INHERITED: lineage from sibling \"FRIEDMAN BE 2010\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "FRIEDMAN HBE V2",
       "wikiName": "FRIEDMAN HBE V2",
-      "description": "later BE-100, voice: middle (brightest)",
       "family": "FRIEDMAN",
       "basedOn": {
         "primary": "Friedman BE",
@@ -5947,8 +5582,6 @@
         "productName": "BE",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Friedman 4x12 (V30 and/or G12M)",
       "matchingDynaCab": "4x12 Friedman V30",
       "powerTubes": "EL34"
@@ -5968,11 +5601,11 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"FRIEDMAN BE 2010\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via prefix — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "FRIEDMAN BE V1 FAT",
       "wikiName": "FRIEDMAN BE V1 FAT",
-      "description": "later BE-100, voice: left, FAT switch engaged",
       "family": "FRIEDMAN",
       "basedOn": {
         "primary": "Friedman BE",
@@ -5980,8 +5613,6 @@
         "productName": "BE",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Friedman 4x12 (V30 and/or G12M)",
       "matchingDynaCab": "4x12 Friedman V30",
       "powerTubes": "EL34"
@@ -5993,11 +5624,11 @@
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
         "INHERITED: lineage from sibling \"FRIEDMAN BE 2010\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
         "VERIFY: matched via prefix — confirm wiki record applies to this Axe-Fx II model"
       ],
       "am4Name": "FRIEDMAN HBE V1 FAT",
       "wikiName": "FRIEDMAN HBE V1 FAT",
-      "description": "later BE-100, voice: left, FAT switch engaged",
       "family": "FRIEDMAN",
       "basedOn": {
         "primary": "Friedman BE",
@@ -6005,8 +5636,6 @@
         "productName": "BE",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Friedman 4x12 (V30 and/or G12M)",
       "matchingDynaCab": "4x12 Friedman V30",
       "powerTubes": "EL34"
@@ -6014,10 +5643,22 @@
     {
       "axefx2Name": "USA IIC++",
       "wireIndex": 248,
-      "matchVia": "unmatched",
+      "matchVia": "abbrev-expand",
       "flags": [
-        "VERIFY: no wiki match — Axe-Fx II enum entry has no AM4-lineage counterpart"
-      ]
+        "INHERITED: lineage from sibling \"USA MK IIC+\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.",
+        "VERIFY: matched via abbrev-expand — confirm wiki record applies to this Axe-Fx II model"
+      ],
+      "am4Name": "USA MK IIC++",
+      "wikiName": "USA MK IIC++",
+      "basedOn": {
+        "primary": "Mesa/Boogie IIC+",
+        "manufacturer": "Mesa/Boogie",
+        "productName": "IIC+",
+        "source": "fractal-wiki"
+      },
+      "originalCab": "Mesa 1x12 (C90, EVM)",
+      "powerTubes": "6L6"
     },
     {
       "axefx2Name": "LEGATO 100",
@@ -6033,7 +5674,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"CAPT HOOK 1A\""
+        "INHERITED: lineage from sibling \"CAPT HOOK 1A\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "CAPT HOOK 2B",
       "wikiName": "CAPT HOOK 2B",
@@ -6041,8 +5683,6 @@
         "primary": "Hook Captain 34",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Hook 2x12 or 4x12 (V30, G12H, G12-65, WGS)",
       "matchingDynaCab": "2x12 5153 Stealth",
       "powerTubes": "EL34"
@@ -6053,7 +5693,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"CAPT HOOK 1A\""
+        "INHERITED: lineage from sibling \"CAPT HOOK 1A\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "CAPT HOOK 3B",
       "wikiName": "CAPT HOOK 3B",
@@ -6061,8 +5702,6 @@
         "primary": "Hook Captain 34",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Hook 2x12 or 4x12 (V30, G12H, G12-65, WGS)",
       "matchingDynaCab": "2x12 5153 Stealth",
       "powerTubes": "EL34"
@@ -6073,7 +5712,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"CAPT HOOK 1A\""
+        "INHERITED: lineage from sibling \"CAPT HOOK 1A\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "CAPT HOOK 2A",
       "wikiName": "CAPT HOOK 2A",
@@ -6081,8 +5721,6 @@
         "primary": "Hook Captain 34",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Hook 2x12 or 4x12 (V30, G12H, G12-65, WGS)",
       "matchingDynaCab": "2x12 5153 Stealth",
       "powerTubes": "EL34"
@@ -6093,7 +5731,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"CAPT HOOK 1A\""
+        "INHERITED: lineage from sibling \"CAPT HOOK 1A\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "CAPT HOOK 3A",
       "wikiName": "CAPT HOOK 3A",
@@ -6101,8 +5740,6 @@
         "primary": "Hook Captain 34",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Hook 2x12 or 4x12 (V30, G12H, G12-65, WGS)",
       "matchingDynaCab": "2x12 5153 Stealth",
       "powerTubes": "EL34"
@@ -6120,6 +5757,9 @@
         "primary": "Hook Captain 34",
         "source": "fractal-wiki"
       },
+      "originalCab": "Hook 2x12 or 4x12 (V30, G12H, G12-65, WGS)",
+      "matchingDynaCab": "2x12 5153 Stealth",
+      "powerTubes": "EL34",
       "fractalQuotes": [
         {
           "text": "This amp uses a mu follower which yields a complex distortion with smooth decay. To simulate the Boost switch use the Boost switch in the amp block as it has the same amount of gain.",
@@ -6144,10 +5784,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Hook 2x12 or 4x12 (V30, G12H, G12-65, WGS)",
-      "matchingDynaCab": "2x12 5153 Stealth",
-      "powerTubes": "EL34"
+      "artistNotes": []
     },
     {
       "axefx2Name": "CAPT HOOK 1B",
@@ -6155,7 +5792,8 @@
       "matchVia": "direct",
       "flags": [
         "VERIFY: no AMP_TYPES enum match",
-        "INHERITED: lineage from sibling \"CAPT HOOK 1A\""
+        "INHERITED: lineage from sibling \"CAPT HOOK 1A\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "CAPT HOOK 1B",
       "wikiName": "CAPT HOOK 1B",
@@ -6163,8 +5801,6 @@
         "primary": "Hook Captain 34",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Hook 2x12 or 4x12 (V30, G12H, G12-65, WGS)",
       "matchingDynaCab": "2x12 5153 Stealth",
       "powerTubes": "EL34"
@@ -6174,7 +5810,8 @@
       "wireIndex": 256,
       "matchVia": "direct",
       "flags": [
-        "INHERITED: lineage from sibling \"Dirty Shirley 1\""
+        "INHERITED: lineage from sibling \"Dirty Shirley 1\"",
+        "inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved."
       ],
       "am4Name": "Dirty Shirley 2",
       "wikiName": "DIRTY SHIRLEY 2",
@@ -6185,8 +5822,6 @@
         "productName": "40W Dirty Shirley",
         "source": "fractal-wiki"
       },
-      "fractalQuotes": [],
-      "artistNotes": [],
       "originalCab": "Friedman 4x12 (V30, G12M, G12-65, G12H)",
       "matchingDynaCab": "4x12 Friedman GB",
       "powerTubes": "5881"
@@ -6215,6 +5850,9 @@
         "productName": "EC Vibro-Champ",
         "source": "fractal-wiki"
       },
+      "originalCab": "Fender 1x8",
+      "matchingDynaCab": "1x8 5F1 Tweed",
+      "powerTubes": "6V6",
       "fractalQuotes": [
         {
           "text": "The circuit is slightly different than the original 5F1. It has cathode bypass caps giving it more gain.",
@@ -6227,10 +5865,7 @@
           "attribution": "Fractal Audio"
         }
       ],
-      "artistNotes": [],
-      "originalCab": "Fender 1x8",
-      "matchingDynaCab": "1x8 5F1 Tweed",
-      "powerTubes": "6V6"
+      "artistNotes": []
     }
   ]
 }

@@ -83,6 +83,7 @@ const ABBREVS: ReadonlyArray<readonly [string, string]> = [
     ['mod', 'modern'],
     ['blk', 'black'],
     ['orng', 'orange'],
+    ['org', 'orange'],            // BK-047: "RECTO1 ORG MDRN" → "Recto1 Orange Modern". The Mesa Dual Rectifier's "Orange channel" is the Original channel — wiki convention is the color label, not the channel role.
     ['or', 'orange'],
     ['rd', 'red'],
     ['gn', 'green'],
@@ -252,10 +253,28 @@ function tryMatch(
         if (m) return { record: m, matchVia: 'abbrev-expand' };
     }
 
+    // 3b. USA → "USA MK" injection (BK-047). Axe-Fx II's 16-char display
+    //     drops the "MK" from Mesa Mark naming — `USA IIC+` corresponds
+    //     to wiki's `USA MK IIC+`. Try the injected form against the
+    //     direct index, then against abbrev-expand variants of the
+    //     injected form (covers `USA IIC+ BRT` → `USA MK IIC+ BRIGHT`).
+    //     Only fires when the enum name starts with `usa ` and doesn't
+    //     already have `mk` as the second token.
+    const enumNorm = norm(enumName);
+    if (enumNorm.startsWith('usa ') && !enumNorm.startsWith('usa mk ')) {
+        const injected = `usa mk ${enumNorm.slice(4)}`;
+        const direct = index.byNorm.get(injected);
+        if (direct) return { record: direct, matchVia: 'abbrev-expand' };
+        for (const variant of expandAbbrevs(injected)) {
+            if (variant === injected) continue;
+            const m = index.byNorm.get(variant);
+            if (m) return { record: m, matchVia: 'abbrev-expand' };
+        }
+    }
+
     // 4. Prefix match — axefx2 name is a prefix of the AM4 wiki entry.
     //    Useful when axefx2 has a "family head" entry summarizing many
     //    AM4 variants. Sorted longest-first so most specific wins.
-    const enumNorm = norm(enumName);
     if (enumNorm.length >= 4) {
         for (const { key, record } of index.forPrefixMatch) {
             if (key === enumNorm) continue; // already tried in step 1
@@ -294,16 +313,41 @@ function extractBlock(
             matchVia: m.matchVia,
             flags: [],
         };
-        // Copy through every relevant field from the AM4 lineage record.
+        // BK-046: detect AM4 records that themselves inherited their lineage
+        // from a sibling. The upstream AM4 extractor copies authored prose
+        // (description / fractalQuotes / artistNotes) along with structured
+        // fields when it backfills, leaving mis-attributed prose that quotes
+        // a different model (Cliff Chase Plexi quotes attached to a Bassman
+        // record, for example). Split the field-copy: structured fields
+        // (basedOn, family, hardware refs) inherit safely; authored prose
+        // is skipped on inherited records and the omission surfaced via a
+        // flag the agent can read.
+        const upstreamFlags = Array.isArray(r.flags) ? (r.flags as string[]) : [];
+        const isInheritedUpstream = upstreamFlags.some(
+            (f) => typeof f === 'string' && f.startsWith('INHERITED:'),
+        );
+        // Structured fields — always inherit. Identify the algorithm/family
+        // and physical hardware reference; safe to share across siblings.
         for (const k of [
-            'am4Name', 'wikiName', 'description', 'family', 'familyType',
-            'basedOn', 'fractalQuotes', 'artistNotes', 'originalCab',
-            'matchingDynaCab', 'powerTubes',
+            'am4Name', 'wikiName', 'family', 'familyType',
+            'basedOn', 'originalCab', 'matchingDynaCab', 'powerTubes',
         ] as const) {
             if (r[k] !== undefined) (rec as unknown as Record<string, unknown>)[k] = r[k];
         }
+        // Authored / context fields — skip when the AM4 source is itself
+        // inherited (the prose belongs to the sibling it copied from, not
+        // this model). When the AM4 source is original (no INHERITED flag),
+        // these fields are trustworthy and pass through.
+        if (!isInheritedUpstream) {
+            for (const k of ['description', 'fractalQuotes', 'artistNotes'] as const) {
+                if (r[k] !== undefined) (rec as unknown as Record<string, unknown>)[k] = r[k];
+            }
+        }
         // Carry the AM4 record's flags through. Often empty.
-        if (Array.isArray(r.flags)) rec.flags.push(...(r.flags as string[]));
+        rec.flags.push(...upstreamFlags);
+        if (isInheritedUpstream) {
+            rec.flags.push('inherited-prose-omitted: AM4 source carries sibling-inherited prose that may quote a different model — only structured fields (basedOn, family, powerTubes, originalCab) preserved.');
+        }
         if (m.matchVia !== 'direct') {
             rec.flags.push(`VERIFY: matched via ${m.matchVia} — confirm wiki record applies to this Axe-Fx II model`);
         }
