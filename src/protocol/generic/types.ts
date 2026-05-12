@@ -73,21 +73,49 @@ export interface DeviceCapabilities {
 
 // ── Param / block schema ────────────────────────────────────────────
 
-export type Unit =
-  | 'knob'
-  | 'db'
-  | 'ms'
-  | 'percent'
-  | 'hz'
-  | 'seconds'
-  | 'enum'
-  | 'bool'
-  | 'count'
-  | 'semitones'
-  | 'ratio'
-  | 'degrees'
-  | 'bipolar_percent'
-  | 'opaque';                                   // catch-all for device-specific units
+/**
+ * Display-unit label surfaced to the LLM in `describe_device` and
+ * `list_params` output. Stored as a string so per-device descriptors
+ * can pass their native unit names through verbatim rather than
+ * lossy-collapsing into a generic taxonomy.
+ *
+ * Standard cross-device values (use these when they fit so the LLM
+ * sees consistent vocabulary across devices):
+ *   'knob' | 'db' | 'ms' | 'percent' | 'hz' | 'seconds' | 'enum' |
+ *   'bool' | 'count' | 'semitones' | 'ratio' | 'degrees' |
+ *   'bipolar_percent' | 'opaque'
+ *
+ * Device-native values are accepted unchanged. AM4 ships with
+ * 'knob_0_10', 'knob_0_20', 'pf', 'rotary_mic_spacing', 'amp_geq_band'
+ * which the manual / front panel use directly — the LLM should see
+ * those words, not a coarsened generic substitute. The encode/decode
+ * closures on each `ParamSchema` handle the scaling correctly
+ * regardless of what `unit` reports.
+ *
+ * Session 63 cont (Session B chunk 1, 2026-05-11) — was a closed enum
+ * collapsing AM4 units lossily; widened to `string` to fix open item
+ * #4 carried from Session A.
+ */
+export type Unit = string;
+
+/** The standard cross-device unit values — provided for editor autocomplete
+ *  + as a discoverability anchor in code reviews. Not enforced. */
+export const STANDARD_UNITS = [
+  'knob',
+  'db',
+  'ms',
+  'percent',
+  'hz',
+  'seconds',
+  'enum',
+  'bool',
+  'count',
+  'semitones',
+  'ratio',
+  'degrees',
+  'bipolar_percent',
+  'opaque',
+] as const;
 
 export interface ParamSchema {
   display_name: string;

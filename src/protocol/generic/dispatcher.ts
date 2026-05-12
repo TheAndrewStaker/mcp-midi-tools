@@ -20,8 +20,9 @@
  * verify-dispatcher.ts golden hardware-free.
  */
 
-import { DispatchError, type DeviceDescriptor, type DispatchErrorDetails } from './types.js';
+import { DispatchError, type DeviceDescriptor, type DispatchCtx, type DispatchErrorDetails, type ReadResult, type WriteResult } from './types.js';
 import { listRegisteredDevices, resolveDevice } from './registry.js';
+import { ensureConnection } from '@/server/shared/connections.js';
 
 // ── Step 1: port resolution ────────────────────────────────────────
 
@@ -300,5 +301,156 @@ export function encodeSetParam(args: {
     canonical_name,
     wire_value,
     bytes,
+  };
+}
+
+// ── Step 5–6: connection + execute (impure I/O) ─────────────────────
+
+function openCtx(descriptor: DeviceDescriptor): DispatchCtx {
+  const label = descriptor.connection_label ?? descriptor.id;
+  const conn = ensureConnection(label);
+  return { conn, descriptor };
+}
+
+/**
+ * Full lifecycle for `set_param`. Steps 1–4 are the same validation
+ * pipeline used by the pure `encodeSetParam`; steps 5–6 open the MIDI
+ * connection and delegate to `descriptor.writer.setParam`. Throws
+ * `capability_not_supported` if the descriptor's writer doesn't
+ * implement the execute method yet (i.e. Session A scope before this
+ * extension landed).
+ */
+export async function executeSetParam(args: {
+  port: string;
+  block: string;
+  name: string;
+  value: number | string;
+  channel?: string | number;
+}): Promise<WriteResult & { device: string; aliased_param_from?: string }> {
+  const descriptor = requireDevice(args.port);
+  const canonical_block = resolveBlockName(descriptor, args.block);
+  const { name: canonical_name, aliased_from } = resolveParamName(descriptor, canonical_block, args.name);
+  const channel = resolveChannel(descriptor, canonical_block, args.channel);
+  const wire_value = encodeValue(descriptor, canonical_block, canonical_name, args.value);
+  if (descriptor.writer.setParam === undefined) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `set_param is not yet implemented for ${descriptor.display_name}. (Descriptor's writer.setParam is undefined.)`,
+    );
+  }
+  const ctx = openCtx(descriptor);
+  const result = await descriptor.writer.setParam(ctx, canonical_block, canonical_name, wire_value, channel);
+  return {
+    ...result,
+    device: descriptor.display_name,
+    aliased_param_from: aliased_from,
+  };
+}
+
+/**
+ * Full lifecycle for `get_param`. Same shape as executeSetParam but
+ * routes to descriptor.reader.getParam.
+ */
+export async function executeGetParam(args: {
+  port: string;
+  block: string;
+  name: string;
+  channel?: string | number;
+}): Promise<ReadResult & { device: string; aliased_param_from?: string }> {
+  const descriptor = requireDevice(args.port);
+  const canonical_block = resolveBlockName(descriptor, args.block);
+  const { name: canonical_name, aliased_from } = resolveParamName(descriptor, canonical_block, args.name);
+  const channel = resolveChannel(descriptor, canonical_block, args.channel);
+  const ctx = openCtx(descriptor);
+  const result = await descriptor.reader.getParam(ctx, canonical_block, canonical_name, channel);
+  return {
+    ...result,
+    device: descriptor.display_name,
+    aliased_param_from: aliased_from,
+  };
+}
+
+/**
+ * Pure descriptor-introspection helper for `describe_device`. No I/O —
+ * returns the registered capabilities + canonical terms + block roster.
+ * The dynamic identity (firmware version, model byte echo) comes from
+ * `send_identity_request` (BK-049 Layer 0) and is merged on top of
+ * this by the tool handler when available.
+ */
+export function describeDevice(port: string): {
+  device: string;
+  id: string;
+  capabilities: DeviceDescriptor['capabilities'];
+  canonical_terms: DeviceDescriptor['canonical_terms'];
+  blocks: readonly string[];
+  block_types: readonly string[];
+} {
+  const desc = requireDevice(port);
+  return {
+    device: desc.display_name,
+    id: desc.id,
+    capabilities: desc.capabilities,
+    canonical_terms: desc.canonical_terms,
+    blocks: Object.keys(desc.blocks),
+    block_types: desc.block_types ? Object.keys(desc.block_types) : [],
+  };
+}
+
+/**
+ * Pure introspection for `list_params(port, block?, name?)`. When
+ * `name` is supplied AND the param is an enum, the response carries
+ * the full enum table — collapses the legacy `*_list_enum_values`
+ * tools into the same surface per BK-051 audit (Session 63).
+ */
+export interface ListParamsEntry {
+  block: string;
+  name: string;
+  display_name: string;
+  unit: string;
+  display_min?: number;
+  display_max?: number;
+  has_aliases?: readonly string[];
+  enum_values?: Readonly<Record<number, string>>;
+}
+
+export function listParams(args: { port: string; block?: string; name?: string }): {
+  device: string;
+  blocks: readonly string[];
+  params: readonly ListParamsEntry[];
+} {
+  const desc = requireDevice(args.port);
+  const entries: ListParamsEntry[] = [];
+  const wantBlock = args.block !== undefined
+    ? resolveBlockName(desc, args.block)
+    : undefined;
+  for (const [block, schema] of Object.entries(desc.blocks)) {
+    if (wantBlock !== undefined && block !== wantBlock) continue;
+    const aliasReverse: Record<string, string[]> = {};
+    for (const [alias, canonical] of Object.entries(schema.aliases ?? {})) {
+      aliasReverse[canonical] ??= [];
+      aliasReverse[canonical].push(alias);
+    }
+    for (const [name, param] of Object.entries(schema.params)) {
+      if (args.name !== undefined && name !== args.name) continue;
+      const aliasList = aliasReverse[name];
+      const includeEnum =
+        args.name !== undefined && param.enum_values !== undefined;
+      entries.push({
+        block,
+        name,
+        display_name: param.display_name,
+        unit: param.unit,
+        display_min: param.display_min,
+        display_max: param.display_max,
+        has_aliases: aliasList && aliasList.length > 0 ? aliasList : undefined,
+        enum_values: includeEnum ? param.enum_values : undefined,
+      });
+    }
+  }
+  return {
+    device: desc.display_name,
+    blocks: Object.keys(desc.blocks),
+    params: entries,
   };
 }

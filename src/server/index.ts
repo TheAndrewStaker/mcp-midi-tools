@@ -63,6 +63,7 @@ import { registerHydrasynthTools, describeHydrasynthPortStatus } from '@/asm/hyd
 // Sessions B onward register the unified MCP tools (set_param,
 // get_param, …) that route through the dispatcher.
 import { registerDevice as registerMcpDevice } from '@/protocol/generic/registry.js';
+import { registerUnifiedTools } from '@/protocol/generic/tools.js';
 import { AM4_DESCRIPTOR } from '@/fractal/am4/descriptor.js';
 
 // -- Server setup -----------------------------------------------------------
@@ -93,11 +94,15 @@ registerHydrasynthTools(server);    // 12 hydra_* tools
 
 // -- Unified-surface descriptor registration (BK-051) -----------------------
 //
-// Phase 1 (Session A): AM4 only. No unified MCP tools are registered yet —
-// only the descriptor's schema, encoders, and pure builders are reachable.
-// `verify-dispatcher.ts` exercises the descriptor for byte-equivalence
-// against the legacy `am4_set_param` wire output.
+// Phase 1 (Session A): AM4 descriptor registers. Session B chunk 1 adds
+// the first batch of unified MCP tools (describe_device, list_params,
+// get_param, set_param) that dispatch through this descriptor. Legacy
+// `am4_*` tools keep working in parallel; v0.1.0 ships with both
+// surfaces, the legacy tools carry the long device-specific guidance
+// the LLM relies on, and the unified surface is the architectural seed
+// for Wave 2 (Axe-Fx II + Hydrasynth descriptors).
 registerMcpDevice(AM4_DESCRIPTOR);
+registerUnifiedTools(server);
 
 // -- Start ------------------------------------------------------------------
 

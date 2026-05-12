@@ -18,7 +18,9 @@
  */
 
 import {
+  describeDevice,
   encodeSetParam,
+  listParams,
   requireDevice,
   resolveBlockName,
   resolveParamName,
@@ -282,6 +284,87 @@ for (const tc of enumCases) {
     eq ? undefined : `dispatcher: ${hex(fromDispatcher.bytes)}\n      legacy:     ${hex(fromLegacy)}`,
   );
 }
+
+// ── describe_device pure introspection ──────────────────────────────
+
+console.log('\ndescribe_device introspection:');
+
+const desc = describeDevice('AM4');
+assert('describe_device returns Fractal AM4', desc.device === 'Fractal AM4');
+assert('describe_device id is am4', desc.id === 'am4');
+assert(
+  'describe_device.capabilities.slot_model = linear',
+  desc.capabilities.slot_model === 'linear',
+);
+assert(
+  'describe_device.capabilities.scene_count = 4',
+  desc.capabilities.scene_count === 4,
+);
+assert(
+  'describe_device.capabilities.channel_names = A/B/C/D',
+  desc.capabilities.channel_names?.join('/') === 'A/B/C/D',
+);
+assert(
+  'describe_device.blocks includes amp, drive, reverb, delay',
+  ['amp', 'drive', 'reverb', 'delay'].every((b) => desc.blocks.includes(b)),
+);
+assert(
+  'describe_device.canonical_terms.channel mentions A/B/C/D',
+  desc.canonical_terms.channel.includes('A/B/C/D'),
+);
+
+// ── list_params pure introspection ──────────────────────────────────
+
+console.log('\nlist_params introspection:');
+
+const allParams = listParams({ port: 'AM4' });
+assert(
+  'list_params(port) returns multiple entries',
+  allParams.params.length > 50,
+  `got ${allParams.params.length} entries`,
+);
+
+const ampOnly = listParams({ port: 'AM4', block: 'amp' });
+assert(
+  'list_params(port, block=amp) scopes to amp block',
+  ampOnly.params.every((p) => p.block === 'amp') && ampOnly.params.length > 5,
+);
+
+const reverbTime = listParams({ port: 'AM4', block: 'reverb', name: 'time' });
+assert(
+  'list_params(reverb, time) returns single entry',
+  reverbTime.params.length === 1 && reverbTime.params[0].name === 'time',
+);
+
+const reverbTimeEntry = reverbTime.params[0];
+assert(
+  'list_params unit passes AM4-native name through (open item #4)',
+  reverbTimeEntry.unit === 'seconds',
+  `got unit=${reverbTimeEntry.unit}`,
+);
+assert(
+  'list_params reverb.time advertises aliases (decay, length)',
+  reverbTimeEntry.has_aliases !== undefined
+    && reverbTimeEntry.has_aliases.includes('decay')
+    && reverbTimeEntry.has_aliases.includes('length'),
+  `got aliases=${reverbTimeEntry.has_aliases?.join('/')}`,
+);
+
+const ampType = listParams({ port: 'AM4', block: 'amp', name: 'type' });
+assert(
+  'list_params(amp, type) enum includes full enum_values table',
+  ampType.params[0].enum_values !== undefined
+    && Object.keys(ampType.params[0].enum_values).length > 10,
+);
+
+// Confirm a knob_0_10 param surfaces its native unit name now (was
+// previously collapsing to "knob" before open item #4 fix).
+const ampGain = listParams({ port: 'AM4', block: 'amp', name: 'gain' });
+assert(
+  'list_params(amp, gain) unit is knob_0_10 (native AM4 name preserved)',
+  ampGain.params[0].unit === 'knob_0_10',
+  `got unit=${ampGain.params[0].unit}`,
+);
 
 // ── Reporting ───────────────────────────────────────────────────────
 

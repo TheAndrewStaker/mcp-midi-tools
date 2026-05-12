@@ -26,8 +26,10 @@ import type {
   DeviceDescriptor,
   DeviceReader,
   DeviceWriter,
+  DispatchCtx,
   ParamSchema,
-  Unit,
+  ReadResult,
+  WriteResult,
 } from '@/protocol/generic/types.js';
 
 import {
@@ -38,40 +40,22 @@ import {
   resolveEnumValue,
   type Param,
   type ParamKey,
-  type Unit as AM4Unit,
 } from '@/fractal/am4/params.js';
 import { BLOCK_TYPE_VALUES, BLOCK_NAMES_BY_VALUE } from '@/fractal/am4/blockTypes.js';
-import { buildSetParam } from '@/fractal/am4/setParam.js';
+import { buildSetParam, isWriteEcho } from '@/fractal/am4/setParam.js';
 import { TOTAL_LOCATIONS } from '@/fractal/am4/locations.js';
+import { sendAndAwaitAck } from '@/server/shared/wireOps.js';
+import { sendReadAndParse } from '@/server/shared/readOps.js';
+import { switchBlockChannel, channelLetter, CHANNEL_BLOCKS } from '@/server/shared/channels.js';
 
-// ── Unit translation ────────────────────────────────────────────────
+// ── Unit pass-through ───────────────────────────────────────────────
 //
-// AM4's `Unit` type is wider than the generic `Unit` (it carries
-// device-specific encodings like `knob_0_10`, `pf`, `rotary_mic_spacing`).
-// The generic `Unit` is a presentation hint for the LLM-facing surface;
-// the descriptor maps AM4 units down to the closest generic match. The
-// fine-grained AM4 scaling info still lives on the param schema's
-// `encode` closure, which delegates to AM4's own `encode()` — no
-// information is lost.
-
-const UNIT_MAP: Record<AM4Unit, Unit> = {
-  knob_0_10: 'knob',
-  knob_0_20: 'knob',
-  db: 'db',
-  hz: 'hz',
-  seconds: 'seconds',
-  percent: 'percent',
-  bipolar_percent: 'bipolar_percent',
-  count: 'count',
-  semitones: 'semitones',
-  ratio: 'ratio',
-  ms: 'ms',
-  degrees: 'degrees',
-  pf: 'opaque',
-  rotary_mic_spacing: 'opaque',
-  amp_geq_band: 'opaque',
-  enum: 'enum',
-};
+// AM4's unit names (`knob_0_10`, `pf`, `rotary_mic_spacing`,
+// `amp_geq_band`, …) are the words the AM4 manual + front panel use,
+// so the LLM should see those words in describe_device / list_params
+// output. Open item #4 (Session 63 cont): the generic `Unit` is now
+// `string`, so AM4 units pass through verbatim. The encode/decode
+// closures still own all the scaling math — `unit` is purely a label.
 
 // ── Encode helper ───────────────────────────────────────────────────
 //
@@ -141,7 +125,7 @@ function buildBlocks(): Record<string, BlockSchema> {
     blocks[block] ??= { params: {}, aliases: {} };
     blocks[block].params[name] = {
       display_name: name,
-      unit: UNIT_MAP[param.unit],
+      unit: param.unit,                 // AM4-native name passes through
       display_min: param.unit === 'enum' ? undefined : param.displayMin,
       display_max: param.unit === 'enum' ? undefined : param.displayMax,
       enum_values: param.enumValues,
@@ -186,28 +170,116 @@ function buildBlockTypes(): Record<string, BlockTypeMeta> {
   return result;
 }
 
-// ── Writer / reader adapters ────────────────────────────────────────
+// ── Writer adapter ──────────────────────────────────────────────────
+//
+// Pure builder (`buildSetParam`) is what `verify-dispatcher.ts`
+// exercises for byte-equivalence vs the legacy path. Execute method
+// (`setParam`) is what the unified `set_param` MCP tool calls at
+// runtime — wraps the same wire-plumbing the legacy `am4_set_param`
+// handler uses (channel-switch → send → await echo → result).
+// `am4_set_param` itself is untouched; the legacy tool keeps working
+// in parallel through v0.1.0.
 
 const writer: DeviceWriter = {
   buildSetParam(block, name, displayValue): number[] {
     const key = `${block}.${name}` as ParamKey;
     return buildSetParam(key, displayValue);
   },
-  // Execute methods + remaining builders land in follow-up sessions.
-  // Their absence here is intentional — Session A's verify-dispatcher
-  // golden only exercises buildSetParam.
+
+  async setParam(
+    ctx: DispatchCtx,
+    block: string,
+    name: string,
+    value: number,
+    channel?: string | number,
+  ): Promise<WriteResult> {
+    const key = `${block}.${name}` as ParamKey;
+    const param: Param = KNOWN_PARAMS[key];
+    const bytes = buildSetParam(key, value);
+    let channelSwitched: boolean | undefined;
+    if (channel !== undefined && CHANNEL_BLOCKS.has(block)) {
+      const switchResult = await switchBlockChannel(ctx.conn, block, channel);
+      channelSwitched = switchResult.switched;
+    }
+    const result = await sendAndAwaitAck(ctx.conn, bytes, isWriteEcho);
+    const enumName = param.unit === 'enum'
+      ? (param.enumValues as Record<number, string> | undefined)?.[value]
+      : undefined;
+    const display: number | string = param.unit === 'enum'
+      ? (enumName ?? value)
+      : value;
+    const channelName = channelSwitched && typeof channel === 'number'
+      ? channelLetter(channel)
+      : (typeof channel === 'string' ? channel.toUpperCase() : undefined);
+    return {
+      block,
+      name,
+      wire_value: value,
+      display_value: display,
+      acked: result.acked,
+      channel: channelName,
+      warning: result.acked
+        ? undefined
+        : `No ack within timeout — typically a stale MIDI handle or the block isn't placed. Try reconnect_midi or check the layout.`,
+    };
+  },
 };
 
-// AM4 already has full read implementations in src/server/shared/readOps.ts
-// and src/fractal/am4/tools/read.ts; wiring them into reader.getParam is
-// a Session B follow-up. The legacy `am4_get_param` tool keeps working
-// untouched until then.
+// ── Reader adapter ──────────────────────────────────────────────────
+//
+// `getParam` wraps the existing `sendReadAndParse` + `decode` pipeline
+// from the legacy `am4_get_param` handler. The dispatcher pre-resolves
+// the canonical (block, name); this method does the wire round-trip
+// and returns the display value. Optional channel switch happens
+// before the read so callers can target A/B/C/D explicitly without
+// a separate switch tool call.
+
 const reader: DeviceReader = {
-  async getParam() {
-    throw new Error('AM4 descriptor.reader.getParam — not yet wired (Session B). Use legacy `am4_get_param` until then.');
+  async getParam(
+    ctx: DispatchCtx,
+    block: string,
+    name: string,
+    channel?: string | number,
+  ): Promise<ReadResult> {
+    const key = `${block}.${name}` as ParamKey;
+    const param: Param = KNOWN_PARAMS[key];
+    if (channel !== undefined && CHANNEL_BLOCKS.has(block)) {
+      await switchBlockChannel(ctx.conn, block, channel);
+    }
+    const parsed = await sendReadAndParse(ctx.conn, param.pidLow, param.pidHigh);
+    const wire = param.unit === 'enum'
+      ? parsed.asUInt32LE()
+      : parsed.asInternalFloat();
+    const display = param.unit === 'enum'
+      ? ((param.enumValues as Record<number, string> | undefined)?.[Math.round(wire)] ?? Math.round(wire))
+      : am4Decode(param, wire);
+    return {
+      block,
+      name,
+      wire_value: wire,
+      display_value: display,
+      unit: param.unit,
+    };
   },
-  async getParams() {
-    throw new Error('AM4 descriptor.reader.getParams — not yet wired (Session B). Use legacy `am4_get_params` until then.');
+
+  async getParams(ctx: DispatchCtx, queries) {
+    const reads: ReadResult[] = [];
+    const failed_indices: number[] = [];
+    const errors: Record<number, string> = {};
+    for (let i = 0; i < queries.length; i++) {
+      const q = queries[i];
+      try {
+        reads.push(await reader.getParam(ctx, q.block, q.name, q.channel));
+      } catch (err) {
+        failed_indices.push(i);
+        errors[i] = err instanceof Error ? err.message : String(err);
+      }
+    }
+    return {
+      reads,
+      failed_indices,
+      errors: failed_indices.length > 0 ? errors : undefined,
+    };
   },
 };
 
