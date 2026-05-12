@@ -123,6 +123,36 @@ Anti-patterns to avoid:
 - "effect in slot 3" is correct; "effect in position 3" is also OK but
   "slot" matches Fractal's wording
 
+## Tool surface architecture
+
+**Two surfaces ship in parallel through v0.1.0.**
+
+1. **Unified surface** (`src/protocol/generic/tools.ts`) — port-
+   dispatched, device-agnostic. `set_param(port, block, name, value)`,
+   `get_param`, `apply_preset`, `switch_preset`, `save_preset`,
+   `switch_scene`, `set_block`, `set_bypass`, `set_params`,
+   `get_params`, `list_params`, `describe_device`, `rename`,
+   `scan_locations`, `lookup_lineage`. 14 tools cover every registered
+   device. Adding a new device means writing a schema descriptor
+   (`src/<vendor>/<device>/descriptor.ts`) + wire adapter; no new
+   tools. Dispatcher lives in `src/protocol/generic/dispatcher.ts`,
+   types in `src/protocol/generic/types.ts`.
+
+2. **Device-namespaced surface** (`am4_*`, `axefx2_*`, `hydra_*`) —
+   first-generation pattern. Kept in parallel through v0.1 because
+   the long tool descriptions carry device-specific behavioral
+   guidance (AM4: relative-change discipline, tempo-sync model,
+   channel/scene semantics, enum-naming conventions, reverb.type
+   format) the LLM relies on during tone-building. Slated for removal
+   in v0.3 once that guidance migrates into per-device
+   `describe_device` responses.
+
+**When adding a new tool, prefer the unified surface.** New device-
+namespaced tools are technical debt — the unified surface is what
+v0.3+ ships exclusively. If a new capability doesn't fit the unified
+contract, design the contract change first (extend `DeviceWriter` /
+`DeviceReader` / capabilities), then register the unified tool.
+
 ## Tool API conventions (project-wide)
 
 **Display-first.** MCP tool inputs and outputs use **display units** —
@@ -131,6 +161,16 @@ Enum-typed params accept the **display name** as a string. Wire and
 protocol numbers (14-bit septet-encoded ints, packed-float bytes,
 internal `value × scale` fixed-point) are an internal detail that
 **never appears in tool surfaces**.
+
+This contract is enforced by the unified surface's TypeScript types
+(`ParamSchema.encode: (display: number | string) => number`) — every
+descriptor's encoder must accept display input by signature. Errors
+emit display-shaped messages (`"amp.gain out of range [0..10]: 12.5"`,
+not `"wire value 0x4800 invalid"`). `WriteResult.display_value` is
+what the LLM reads back. The unit label on each param passes through
+verbatim from the descriptor (AM4's `knob_0_10`, `pf`,
+`rotary_mic_spacing` etc. — open item #4 fix in Session B chunk 1) so
+the LLM sees the words the device's manual uses.
 
 This rule applies to **AM4 today and every future instrument** (a
 parked Hydrasynth-explorer branch already follows it):

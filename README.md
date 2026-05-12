@@ -21,10 +21,33 @@ pedals, and other gear are reachable from day one.
 
 ## Status
 
-v0.1.0 — first public release. The protocol layer is
-hardware-verified, 29 MCP tools are live (24 AM4-specific plus 5
-generic-MIDI primitives that work against any USB MIDI device), and
-every tool ships with byte-exact goldens against real captures.
+v0.1.0 — first public release. The protocol layer is hardware-verified
+across Fractal AM4, Axe-Fx II XL+, and ASM Hydrasynth Explorer; 80 MCP
+tools are live; every wire-level tool ships with byte-exact goldens
+against real captures.
+
+Tools split across two surfaces:
+
+- **Unified surface** (14 tools) — port-dispatched, device-agnostic.
+  `set_param(port, block, name, value)`, `get_param`, `apply_preset`,
+  `switch_preset`, `save_preset`, `switch_scene`, `set_block`,
+  `set_bypass`, `set_params`, `get_params`, `list_params`,
+  `describe_device`, `rename`, `scan_locations`, `lookup_lineage`. Same
+  tool name works against any registered device — the `port` argument
+  picks the device. Adding a new device means registering a schema
+  descriptor; no new tools.
+- **Device-namespaced surface** (`am4_*`, `axefx2_*`, `hydra_*` — ~65
+  tools) — first-generation tool pattern, kept in parallel through
+  v0.1. Carries device-specific behavioral guidance in tool
+  descriptions (AM4: relative-change discipline, tempo-sync model,
+  channel/scene semantics, enum-naming conventions) the LLM relies on
+  during tone-building. Slated for removal in v0.3 once that guidance
+  migrates into per-device `describe_device` responses.
+- **Generic-MIDI primitives** (13 tools) — `send_cc`, `send_note`,
+  `send_program_change`, `send_nrpn`, `send_sysex`, plus `send_panic`,
+  `send_pitch_bend`, `send_clock_*`, etc. Work against any USB MIDI
+  device the OS exposes.
+
 Distribution is a Windows ZIP that bundles a Node runtime plus the
 server — no Node or developer tooling required. A signed `.exe`
 installer is planned for v0.2 once we have install-friction data
@@ -51,17 +74,22 @@ Once connected, Claude can:
   Klon?"* / *"Which amp on the AM4 is inspired by a Matchless DC-30?"*
 - **Switch presets.** *"Load A01."*
 
-Under the hood Claude picks one of 29 tools (`apply_preset`,
-`set_param`, `get_block_layout`, `save_preset`, `switch_scene`,
-`lookup_lineage`, …) and
-sends SysEx to the device. Tool round-trips land in roughly 30–60 ms;
+Under the hood Claude picks one of 80 tools and sends SysEx (or CC /
+NRPN / etc.) to the device. Tool round-trips land in roughly 30–60 ms;
 whole-preset builds take under a second.
 
-Five of those tools are device-agnostic generic-MIDI primitives
-(`send_cc`, `send_note`, `send_program_change`, `send_nrpn`,
-`send_sysex`). They work against any USB MIDI device the OS exposes,
-not just the AM4. See [Generic MIDI quick-start](#generic-midi-quick-start)
-below.
+The unified surface (`set_param`, `get_param`, `apply_preset`,
+`switch_preset`, `save_preset`, `switch_scene`, `set_block`,
+`set_bypass`, `lookup_lineage`, `scan_locations`, `describe_device`,
+…) works against any registered device — pass the `port` argument and
+the dispatcher routes to the right device. Device-namespaced tools
+(`am4_*`, `axefx2_*`, `hydra_*`) ship in parallel and carry deeper
+device-specific guidance until v0.3.
+
+Generic-MIDI primitives (`send_cc`, `send_note`, `send_program_change`,
+`send_nrpn`, `send_sysex`, …) work against any USB MIDI device the OS
+exposes, not just registered hardware. See [Generic MIDI
+quick-start](#generic-midi-quick-start) below.
 
 ---
 
@@ -306,9 +334,38 @@ If step 3 works, you're done. Move on to building full presets.
 
 ---
 
-## The 29 tools at a glance
+## The 80 tools at a glance
 
-### AM4-specific (24)
+### Unified surface (14) — port-dispatched, device-agnostic
+
+Same tool name works against every registered device. Pass `port` to
+select which device (id, display_name, or any MIDI port-name substring
+match). Adding a new device means writing a schema descriptor + wire
+adapter; no new tools.
+
+| Tool | What it does |
+|---|---|
+| `describe_device(port)` | Capabilities + canonical vocabulary + block roster. Pure introspection. Call once per session to learn what a device offers. |
+| `list_params(port, block?, name?)` | Enumerate named params. With `block`+`name` on an enum-typed param, returns the full enum table. |
+| `get_param(port, block, name, channel?)` | Single read, returns display-shaped value. |
+| `set_param(port, block, name, value, channel?)` | Single write. Display values for numerics ("4.5"); enum names or wire index for enums. |
+| `get_params(port, queries[])` | Batch read. Continues past per-query failures. |
+| `set_params(port, ops[])` | Atomic batch write — validates every entry up-front. |
+| `set_block(port, slot, block_type)` | Place/clear a block at a slot. |
+| `set_bypass(port, block, bypassed)` | Silence/activate a block on the active scene. |
+| `switch_preset(port, location)` | Load a stored preset into the working buffer. |
+| `save_preset(port, location, name?)` | Persist working buffer (optional rename first). Only on explicit user save phrase — apply_preset is reversible, save_preset is not. |
+| `switch_scene(port, scene)` | Switch scene. Capability-gated (devices without scenes reject). |
+| `rename(port, target, name)` | Rename `'preset'` or `'scene:N'`. Working-buffer scope; pair with `save_preset` to persist. |
+| `scan_locations(port, from, to)` | Bulk-scan stored preset names across a location range. Setlist-load opener. |
+| `lookup_lineage(port, block_type, query)` | Authored lineage data — real-hardware inspiration, manufacturer/model, developer quotes. AM4 + Axe-Fx II ship lineage corpora. |
+
+> The unified `apply_preset`, `apply_setlist`, and `restore_defaults`
+> are post-v0.1.0 work (deferred from Session B). The device-namespaced
+> `am4_apply_preset` / `am4_apply_setlist` / `am4_restore_factory_range`
+> still ship and cover the v0.1.0 user need.
+
+### Device-namespaced — AM4 (30, slated for v0.3 removal)
 
 | Tool | What it does |
 |---|---|
@@ -337,13 +394,26 @@ If step 3 works, you're done. Move on to building full presets.
 | `lookup_lineage` | "What real amp inspired this?" / "Find me a Klon-style drive." |
 | `am4_test_navigate` | Diagnostic tool — drives the AM4's mode-switch envelope for protocol smoke-testing. |
 
-### Generic MIDI primitives (5)
+### Device-namespaced — Axe-Fx II XL+ (21, slated for v0.3 removal)
+
+Same shape as the AM4 surface. Wire-format-verified end-to-end as of
+Session 62; setlist build round-trip lands in ~6–10s for a 3-preset
+batch. The unified surface dispatches through these for v0.1.0.
+
+### Device-namespaced — ASM Hydrasynth Explorer (14, slated for v0.3 removal)
+
+Patch-based architecture (no scenes). `hydra_apply_patch`,
+`hydra_set_param`, `hydra_set_engine_params`, `hydra_set_macro`, etc.
+NRPN-driven engine. The unified `set_param` / `get_param` / etc. work
+against the Hydrasynth in v0.1.0 with `port="hydra"`.
+
+### Generic MIDI primitives (13)
 
 Work with any USB MIDI device the OS exposes. Channels are 1..16 at the
 tool boundary (musician convention); the wire layer converts to 0..15
-once. The AM4 has dedicated wrappers above (which understand block /
-parameter / scene semantics), so reach for these primitives when the
-target is a different device.
+once. Reach for these primitives when the target device doesn't have a
+registered descriptor yet, or when you want to send raw MIDI rather
+than addressing named params.
 
 | Tool | What it does |
 |---|---|
@@ -352,6 +422,14 @@ target is a different device.
 | `send_program_change` | Switch patches. Optional Bank Select MSB/LSB prefix. |
 | `send_nrpn` | Write a Non-Registered Parameter Number. 7-bit by default; `high_res: true` unlocks 14-bit values (0..16383). |
 | `send_sysex` | Send a raw System Exclusive frame. Validates F0/F7 framing; otherwise sends bytes verbatim. |
+| `send_panic` | All notes off + reset controllers across all 16 channels. |
+| `send_pitch_bend` | 14-bit pitch bend (-8192..+8191). |
+| `send_channel_pressure` | After-touch / aftertouch on a channel. |
+| `send_song_position` | MIDI clock song-position pointer. |
+| `send_reset_controllers` | Reset all controllers on a channel. |
+| `send_clock_start` / `_stop` / `_continue` | MIDI clock transport commands. |
+| `list_midi_ports` | Enumerate input/output ports the OS exposes. |
+| `reconnect_midi` | Force-reopen a stale MIDI handle. |
 
 Full tool descriptions surface inside Claude automatically (just ask).
 
