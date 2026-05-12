@@ -1,0 +1,174 @@
+/**
+ * Preset tools — full-preset apply, batch setlist apply, and factory
+ * restore. These tools wrap the device's preset executor; the AM4
+ * implementation lives in `src/fractal/am4/tools/applyExecutor.ts` and
+ * is invoked by the descriptor's `writer.applyPreset` /
+ * `writer.applySetlist` / `writer.restoreDefaults` methods.
+ *
+ * Tools registered here:
+ *   - `apply_preset(port, spec, target_location?)`
+ *   - `apply_setlist(port, entries, options?)`
+ *   - `restore_defaults(port, from, to?, options?)`
+ */
+
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import * as z from 'zod/v4';
+
+import {
+  executeApplyPreset,
+  executeApplySetlist,
+  executeRestoreDefaults,
+} from '@/protocol/generic/dispatcher.js';
+import type { PresetSpec } from '@/protocol/generic/types.js';
+
+import { PORT_DESC, asError, asText, presetShape } from './shared.js';
+
+export function registerPresetTools(server: McpServer): void {
+  server.registerTool('apply_preset', {
+    description: [
+      'Build a preset on a device in one call. Use this when the user is',
+      'designing a fresh tone or applying a named preset concept — it replaces',
+      'a sequence of set_block + set_param + switch_scene calls with one',
+      'structured request.',
+      'TWEAK vs FRESH: this tool REPLACES the working-buffer block layout. If',
+      'the user says "tweak my current tone" or "just adjust the reverb", do',
+      'NOT call apply_preset — call set_param or set_block for the targeted',
+      'change. apply_preset is for fresh designs ("build me a clean tone",',
+      '"design a Mesa rectifier preset").',
+      'WITHOUT target_location: writes to the working buffer only. Reversible',
+      'by switching presets; the user can audition then ask you to save.',
+      'WITH target_location: atomic switch + apply + save. Use ONLY when the',
+      'user has explicitly asked to save / persist / store the preset at a',
+      'location. A bare "make me a preset for X" is a try-it-out ask, not a',
+      'save ask.',
+      'PRESET SHAPE: slots[].params is a per-channel map ({"A": {gain:6}, "D":',
+      '{gain:8}}). Channel keys match describe_device.capabilities.channel_',
+      'names. scenes[] picks per-block channel + bypass on each scene; it does',
+      'not duplicate the params (channels hold the params, scenes pick which',
+      'channel each block uses).',
+      'FRESH-BUILD CLEARING: unlisted slots get block_type="none" and unlisted',
+      'scenes are reset to defaults on every call. For device-specific',
+      'behavioral guidance (control-surface discipline, compressor type',
+      'groups, scene-structure-for-songs rules, naming conventions), see the',
+      'legacy device-namespaced apply tools (am4_apply_preset etc.) — that',
+      'guidance migrates into describe_device in a future release.',
+      'PERFORMANCE: ~1-3 seconds wire time depending on slot/scene density.',
+      'With target_location, add ~250 ms for the save.',
+    ].join(' '),
+    inputSchema: {
+      port: z.string().describe(PORT_DESC),
+      spec: presetShape.describe('Preset specification (slots, optional scenes, optional name).'),
+      target_location: z.union([z.string(), z.number()]).optional().describe(
+        'Optional save target. With this set, the tool runs switch + apply + save atomically. Without it, the write hits the working buffer only and is reversible by switching presets.',
+      ),
+    },
+  }, async ({ port, spec, target_location }) => {
+    try {
+      const result = await executeApplyPreset({ port, spec: spec as PresetSpec, target_location });
+      return asText(result);
+    } catch (err) {
+      return asError(err);
+    }
+  });
+
+  server.registerTool('apply_setlist', {
+    description: [
+      'Bulk-apply a setlist to the device. Each entry pairs a target location',
+      'with a preset spec; the tool runs switch + apply + save per entry,',
+      'with one shared inbound capture across the batch.',
+      'WHEN TO USE: prefer this when the user has a fully-specified setlist',
+      'plan ready up front (loaded from config, copied from prior notes).',
+      'For CREATIVE batch builds where you decide blocks / scenes / tones',
+      'per song from natural-language direction, prefer apply_preset with',
+      'target_location in sequence (one call per preset, narrating progress',
+      'between calls).',
+      'PRE-FLIGHT SCAN: before bulk-applying into a range that may contain',
+      'user-customised presets, call scan_locations and surface what would',
+      'be overwritten. Silent overwrites are the worst failure mode for',
+      'this workflow.',
+      'PERFORMANCE: ~3-5 seconds per entry. A 15-entry setlist takes',
+      '~1 minute wall time — frame it to the user as a "load before the',
+      'show" workflow, not "load between songs".',
+      'FAILURE SEMANTICS: on_error="stop" (default) halts immediately on',
+      'first error; on_error="continue" logs each error and proceeds.',
+      'DRY RUN: pass dry_run=true to validate every entry without sending',
+      'wire bytes.',
+      'VERIFY: by default each successful apply is followed by a name read-',
+      'back; mismatches flip the entry to error. Pass verify=false only',
+      'when the caller explicitly accepts silent-failure risk.',
+    ].join(' '),
+    inputSchema: {
+      port: z.string().describe(PORT_DESC),
+      entries: z.array(z.object({
+        location: z.union([z.string(), z.number()]),
+        spec: presetShape,
+      })).min(1).max(26).describe(
+        '1..26 setlist entries. Each entry pairs a target location with a preset spec. Locations must be unique within the batch.',
+      ),
+      on_error: z.enum(['stop', 'continue']).optional(),
+      dry_run: z.boolean().optional(),
+      verify: z.boolean().optional(),
+    },
+  }, async ({ port, entries, on_error, dry_run, verify }) => {
+    try {
+      const result = await executeApplySetlist({
+        port,
+        entries: entries.map((e: { location: string | number; spec: unknown }) => ({
+          location: e.location,
+          spec: e.spec as PresetSpec,
+        })),
+        options: { on_error, dry_run, verify },
+      });
+      return asText(result);
+    } catch (err) {
+      return asError(err);
+    }
+  });
+
+  server.registerTool('restore_defaults', {
+    description: [
+      'Reset device preset locations to their factory state. Two shapes:',
+      '  (a) single — pass only `from`: resets that one location.',
+      '  (b) range — pass `from` AND `to`: resets every location from..to',
+      '      inclusive (max 26 per call).',
+      'DESTRUCTIVE: overwrites user-customised content with factory bytes,',
+      'no recovery via the working buffer. Confirm with the user before',
+      'calling on any non-empty location. For ranges, run scan_locations',
+      'first and list the slots that would be wiped — get explicit "go"',
+      'from the user before this call.',
+      'Working buffer + active location pointer untouched; the user can',
+      'keep playing through a different preset while the restore runs.',
+      'PERFORMANCE: ~250 ms per location plus ~100 ms verify overhead.',
+      'A 20-slot range takes ~5-7 seconds.',
+      'VERIFICATION (default on): pre/post name comparison. Empty post-',
+      'restore name is a hard fail; matching pre/post is a soft warning.',
+      'See describe_device.capabilities.supports_factory_restore to gate',
+      'this call.',
+    ].join(' '),
+    inputSchema: {
+      port: z.string().describe(PORT_DESC),
+      from: z.union([z.string(), z.number()]).describe(
+        'Single target, or inclusive start of a range (e.g. "G01" or 24).',
+      ),
+      to: z.union([z.string(), z.number()]).optional().describe(
+        'Inclusive end of a range. Omit for single-location restore.',
+      ),
+      on_error: z.enum(['stop', 'continue']).optional().describe(
+        'Range only. "stop" (default) halts on first error; "continue" logs and proceeds.',
+      ),
+      dry_run: z.boolean().optional().describe(
+        'Range only. Validate without sending any wire bytes.',
+      ),
+      verify: z.boolean().optional().describe(
+        'Read name pre/post and compare. Default true.',
+      ),
+    },
+  }, async ({ port, from, to, on_error, dry_run, verify }) => {
+    try {
+      const result = await executeRestoreDefaults({ port, from, to, on_error, dry_run, verify });
+      return asText(result);
+    } catch (err) {
+      return asError(err);
+    }
+  });
+}

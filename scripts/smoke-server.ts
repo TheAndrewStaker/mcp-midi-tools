@@ -166,16 +166,17 @@ async function main(): Promise<void> {
     // save_preset, switch_scene, rename.
     // Session B chunk 3: set_block, set_bypass, scan_locations,
     // lookup_lineage.
-    // Remaining (apply_preset, apply_setlist, restore_defaults) deferred
-    // to Session B-cont — they wrap the 1633-LOC apply.ts and add no
-    // new wire capability vs. the legacy am4_apply_preset / _setlist
-    // / restore_factory tools that already ship.
+    // Session B-cont (2026-05-12): apply_preset, apply_setlist,
+    // restore_defaults — wrap the AM4 apply executor and factoryBank.
+    'apply_preset',
+    'apply_setlist',
     'describe_device',
     'get_param',
     'get_params',
     'list_params',
     'lookup_lineage',
     'rename',
+    'restore_defaults',
     'save_preset',
     'scan_locations',
     'set_block',

@@ -251,6 +251,77 @@ export interface ApplyResult {
   steps: number;
   duration_ms: number;
   failed_step?: { index: number; description: string; error: string };
+  /** Optional warning carried through to the LLM (e.g. unack count) when ok=true. */
+  warning?: string;
+}
+
+export interface SetlistEntrySpec {
+  location: LocationRef;
+  spec: PresetSpec;
+}
+
+export interface SetlistApplyOptions {
+  /** "stop" (default) halts on first failure; "continue" logs each error. */
+  on_error?: 'stop' | 'continue';
+  /** Validate every entry without sending wire bytes. */
+  dry_run?: boolean;
+  /** After each successful apply, read the preset name back and compare. */
+  verify?: boolean;
+}
+
+export interface SetlistEntryResult {
+  location: string;
+  status: 'ok' | 'error';
+  error?: string;
+  wallTimeMs: number;
+}
+
+export interface ApplySetlistResult {
+  ok: boolean;
+  total: number;
+  applied: number;
+  failed: number;
+  remaining: readonly string[];
+  results: readonly SetlistEntryResult[];
+  totalWallTimeMs: number;
+  finalActiveLocation?: string;
+}
+
+export interface RestoreDefaultsOptions {
+  verify?: boolean;
+}
+
+export interface RestoreDefaultsRangeOptions extends SetlistApplyOptions {
+  /** Same on_error / dry_run / verify shape as SetlistApplyOptions. */
+}
+
+export interface RestoreDefaultsResult {
+  ok: boolean;
+  location: string;
+  message?: string;
+  wallTimeMs: number;
+  verified?: boolean;
+  preRestoreName?: string;
+  postRestoreName?: string;
+  totalBytes?: number;
+  messageCount?: number;
+}
+
+export interface RestoreDefaultsRangeResult {
+  ok: boolean;
+  total: number;
+  restored: number;
+  failed: number;
+  remaining: readonly string[];
+  results: readonly {
+    location: string;
+    status: 'ok' | 'error';
+    error?: string;
+    preRestoreName?: string;
+    postRestoreName?: string;
+    wallTimeMs: number;
+  }[];
+  totalWallTimeMs: number;
 }
 
 export interface ParamQuery {
@@ -338,10 +409,27 @@ export interface DeviceWriter {
   setBlock?(ctx: DispatchCtx, slot: SlotRef, change: BlockChange): Promise<WriteResult>;
   setBypass?(ctx: DispatchCtx, block: string, bypassed: boolean): Promise<WriteResult>;
   applyPreset?(ctx: DispatchCtx, spec: PresetSpec, target?: LocationRef): Promise<ApplyResult>;
+  applySetlist?(
+    ctx: DispatchCtx,
+    entries: readonly SetlistEntrySpec[],
+    options?: SetlistApplyOptions,
+  ): Promise<ApplySetlistResult>;
   switchPreset?(ctx: DispatchCtx, location: LocationRef): Promise<WriteResult>;
   savePreset?(ctx: DispatchCtx, location: LocationRef, name?: string): Promise<WriteResult>;
   switchScene?(ctx: DispatchCtx, scene: number): Promise<WriteResult>;
   rename?(ctx: DispatchCtx, target: RenameTarget, name: string): Promise<WriteResult>;
+  /** Restore the device's defaults for a single location (or range). */
+  restoreDefaults?(
+    ctx: DispatchCtx,
+    target: LocationRef,
+    options?: RestoreDefaultsOptions,
+  ): Promise<RestoreDefaultsResult>;
+  restoreDefaultsRange?(
+    ctx: DispatchCtx,
+    from: LocationRef,
+    to: LocationRef,
+    options?: RestoreDefaultsRangeOptions,
+  ): Promise<RestoreDefaultsRangeResult>;
 }
 
 // ── Top-level descriptor ────────────────────────────────────────────

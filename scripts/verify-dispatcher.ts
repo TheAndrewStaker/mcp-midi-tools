@@ -34,6 +34,7 @@ import {
 import { DispatchError } from '@/protocol/generic/types.js';
 import { AM4_DESCRIPTOR } from '@/fractal/am4/descriptor.js';
 import { buildSetParam } from '@/fractal/am4/setParam.js';
+import { prepareApplyPresetWrites } from '@/fractal/am4/tools/applyExecutor.js';
 
 function hex(arr: number[]): string {
   return arr.map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -366,7 +367,73 @@ assert(
   `got unit=${ampGain.params[0].unit}`,
 );
 
-// ── Reporting ───────────────────────────────────────────────────────
+// ── BK-051 Session B-cont — apply_preset PresetSpec validation ─────
+//
+// Pure-path coverage for the unified `apply_preset` tool: PresetSpec
+// translation onto AM4 ApplyPresetInput goes through prepareApplyPresetWrites,
+// which surfaces validation errors before any MIDI. We exercise the same
+// failure shapes the legacy `am4_apply_preset` smoke covers.
+
+console.log('\nPresetSpec validation (via prepareApplyPresetWrites):');
+
+function expectApplyError(label: string, spec: unknown, fragment: string): void {
+  try {
+    prepareApplyPresetWrites(spec as Parameters<typeof prepareApplyPresetWrites>[0]);
+    failed++;
+    console.error(`  ✗ ${label}\n      expected error, got success`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes(fragment)) {
+      passed++;
+    } else {
+      failed++;
+      console.error(`  ✗ ${label}\n      expected error to include "${fragment}", got: ${msg}`);
+    }
+  }
+}
+
+expectApplyError(
+  'duplicate slot position',
+  { slots: [
+    { position: 1, block_type: 'amp' },
+    { position: 1, block_type: 'drive' },
+  ] },
+  'used twice',
+);
+
+expectApplyError(
+  'unknown block_type',
+  { slots: [{ position: 1, block_type: 'not_a_real_block' }] },
+  'unknown block_type',
+);
+
+expectApplyError(
+  'channels on a block without channels',
+  { slots: [{ position: 1, block_type: 'compressor', channels: { A: { ratio: 4 } } }] },
+  "doesn't have channels",
+);
+
+expectApplyError(
+  'duplicate scene index',
+  {
+    slots: [{ position: 1, block_type: 'amp' }],
+    scenes: [
+      { index: 1, channels: { amp: 'A' } },
+      { index: 1, channels: { amp: 'B' } },
+    ],
+  },
+  'used twice',
+);
+
+// Note: name validation runs through buildSetPresetName which throws on
+// overlong/non-ASCII names. 32-char name is the boundary.
+expectApplyError(
+  'overlong preset name (33 chars)',
+  { slots: [{ position: 1, block_type: 'amp' }], name: 'x'.repeat(33) },
+  'name',
+);
+
+// Reporting ───────────────────────────────────────────────────────
 
 console.log(`\n${passed} passed, ${failed} failed.`);
 if (failed > 0) {

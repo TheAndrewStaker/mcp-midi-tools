@@ -1,0 +1,109 @@
+/**
+ * Discovery tools — pure-introspection MCP tools that surface device
+ * capabilities, parameter catalogs, and authored block-type lineage. None
+ * of these tools touch MIDI; they read the descriptor's static schema.
+ *
+ * Tools registered here:
+ *   - `describe_device(port)` — capabilities + canonical terms + block roster
+ *   - `list_params(port, block?, name?)` — param catalog + enum tables
+ *   - `lookup_lineage(port, block_type, ...)` — Fractal-style real-gear lineage
+ */
+
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import * as z from 'zod/v4';
+
+import {
+  describeDevice,
+  executeLookupLineage,
+  listParams,
+} from '@/protocol/generic/dispatcher.js';
+
+import { PORT_DESC, asError, asText } from './shared.js';
+
+export function registerDiscoveryTools(server: McpServer): void {
+  server.registerTool('describe_device', {
+    description: [
+      'Return a registered device\'s capabilities and canonical vocabulary.',
+      'Call once per session for any device you\'re about to control via the',
+      'unified set_param / get_param / apply_preset / etc. tools — the',
+      'response tells you what blocks the device has, what its scenes /',
+      'channels / preset locations look like, and which words the device',
+      'uses for each concept (e.g. AM4: "channel A/B/C/D"; Axe-Fx II:',
+      '"channel X/Y"; Hydrasynth: "patch" instead of "preset").',
+      'Pure introspection — no MIDI I/O. Safe to call repeatedly.',
+    ].join(' '),
+    inputSchema: {
+      port: z.string().describe(PORT_DESC),
+    },
+  }, async ({ port }) => {
+    try {
+      return asText(describeDevice(port));
+    } catch (err) {
+      return asError(err);
+    }
+  });
+
+  server.registerTool('list_params', {
+    description: [
+      'Enumerate a device\'s named parameters. With no `block` filter,',
+      'returns every (block, name) pair the device exposes plus its unit',
+      'and display range. With `block` supplied, scopes to just that block.',
+      'With both `block` AND `name`, the response also includes the full',
+      'enum table for enum-typed params (e.g. amp.type with 50+ amp model',
+      'names; reverb.type with all the "Room, Small" / "Plate, Medium"',
+      'entries). Use this before calling set_param when you\'re unsure of',
+      'the exact spelling of an enum value.',
+      'Pure introspection — no MIDI I/O.',
+    ].join(' '),
+    inputSchema: {
+      port: z.string().describe(PORT_DESC),
+      block: z.string().optional().describe('Optional block-name filter (e.g. "amp", "reverb").'),
+      name: z.string().optional().describe(
+        'Optional param-name filter (requires `block`). For enum params, returns the full enum table.',
+      ),
+    },
+  }, async ({ port, block, name }) => {
+    try {
+      return asText(listParams({ port, block, name }));
+    } catch (err) {
+      return asError(err);
+    }
+  });
+
+  server.registerTool('lookup_lineage', {
+    description: [
+      'Look up the registered device\'s authored lineage data for one of',
+      'its block types — what real hardware it\'s modeled after, the',
+      'device manufacturer\'s description, and developer/forum quotes.',
+      'Three call shapes (provide one):',
+      '  (a) forward — { block_type, name }: exact-match the canonical',
+      '      device model name (case-insensitive).',
+      '  (b) reverse — { block_type, real_gear }: substring search across',
+      '      basedOn / description / quotes. Use for fuzzy queries like',
+      '      "1176", "Tube Screamer", "Keith Urban tone".',
+      '  (c) structured — { block_type, manufacturer?, model? }: exact-',
+      '      match against structured fields. Most precise.',
+      'Devices without a registered lineage corpus reject with a capability',
+      'error — see describe_device.capabilities.supports_lineage.',
+      'Pure data lookup — no MIDI I/O.',
+    ].join(' '),
+    inputSchema: {
+      port: z.string().describe(PORT_DESC),
+      block_type: z.string().describe(
+        'Block type to query. See describe_device.block_types and the device\'s lineage coverage.',
+      ),
+      name: z.string().optional(),
+      real_gear: z.string().optional(),
+      manufacturer: z.string().optional(),
+      model: z.string().optional(),
+      include_quotes: z.boolean().optional().describe('Default true; pass false for a terser response.'),
+    },
+  }, async ({ port, block_type, name, real_gear, manufacturer, model, include_quotes }) => {
+    try {
+      const result = executeLookupLineage({ port, block_type, name, real_gear, manufacturer, model, include_quotes });
+      return asText(result);
+    } catch (err) {
+      return asError(err);
+    }
+  });
+}
