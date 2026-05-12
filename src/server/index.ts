@@ -55,6 +55,16 @@ import { registerAM4Tools } from '@/fractal/am4/tools/index.js';
 import { registerAxeFxIITools, describeAxeFxIIPortStatus } from '@/fractal/axe-fx-ii/tools.js';
 import { registerHydrasynthTools, describeHydrasynthPortStatus } from '@/asm/hydrasynth-explorer/server.js';
 
+// BK-051 unified tool surface — descriptor registration. The dispatcher
+// resolves a tool call's `port` to a registered descriptor; per-device
+// behavior lives in the descriptor's schema + reader/writer adapters.
+// Session A (BK-051 phase 1, 2026-05-11) registers AM4 only — the
+// existing legacy `am4_*` tools keep working unchanged in parallel.
+// Sessions B onward register the unified MCP tools (set_param,
+// get_param, …) that route through the dispatcher.
+import { registerDevice as registerMcpDevice } from '@/protocol/generic/registry.js';
+import { AM4_DESCRIPTOR } from '@/fractal/am4/descriptor.js';
+
 // -- Server setup -----------------------------------------------------------
 
 const server = new McpServer({
@@ -80,6 +90,14 @@ registerMidiPrimitiveTools(server); // send_cc / _note / _program_change / _nrpn
 registerAM4Tools(server);           // 30 am4_* tools
 registerAxeFxIITools(server);       // 9 axefx2_* tools
 registerHydrasynthTools(server);    // 12 hydra_* tools
+
+// -- Unified-surface descriptor registration (BK-051) -----------------------
+//
+// Phase 1 (Session A): AM4 only. No unified MCP tools are registered yet —
+// only the descriptor's schema, encoders, and pure builders are reachable.
+// `verify-dispatcher.ts` exercises the descriptor for byte-equivalence
+// against the legacy `am4_set_param` wire output.
+registerMcpDevice(AM4_DESCRIPTOR);
 
 // -- Start ------------------------------------------------------------------
 
