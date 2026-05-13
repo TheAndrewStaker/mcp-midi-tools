@@ -181,18 +181,25 @@ recognizes the pattern in another.
 ## Test scenarios — what every device must pass
 
 These are the user-facing behaviors that prove the contract is
-implemented. Use them as a regression check whenever the
-safe-edit code changes.
+implemented. Use them as a regression check whenever the safe-edit
+code changes.
 
-| Scenario | Expected |
-|---|---|
-| 1. User on clean preset says "build a tone at slot X" | Tool builds in working buffer, doesn't save. Response says auditioning + how to save. |
-| 2. User on clean preset says "save a tone as Glassy at slot X" | Tool builds, names, saves to X. |
-| 3. User on dirty preset Y says "build a tone at slot X" | Tool refuses, surfaces warning naming Y's slot/name. Agent asks user, retries with `save_active_first` or `discard`. |
-| 4. User on clean preset says "build setlist for 700/701/702" | Tool pre-flight scans (warns about overwrites), navigates-applies-saves each. |
-| 5. User on dirty preset says "build setlist for 700/701/702" | Combination: warn dirty first, then per-multi-preset flow. |
-| 6. User on clean preset says "switch to slot 47" (no apply) | Tool navigates, no save concern. |
-| 7. User on dirty preset says "switch to slot 47" (no apply) | Tool refuses, asks save/discard. |
+**Automated suite:** `npm run mcp-test-safe-edit` (refusal scenarios
+only, hardware-free) and `npm run mcp-test-safe-edit -- --write`
+(full suite, requires connected hardware). Spawns the shipped MCP
+server via `StdioClientTransport` and asserts each scenario against
+the actual tool surface — same code path Claude Desktop hits.
+Source: `scripts/mcp-test-safe-edit-scenarios.ts`.
+
+| Scenario | Expected | Suite assertion |
+|---|---|---|
+| 1. User on clean preset says "build a tone at slot X" | Agent calls `*_apply_preset` (working buffer), tool succeeds without `save_authorized`. | S1 — working-buffer apply succeeds. |
+| 2. User on clean preset says "save a tone as Glassy at slot X" | Agent calls `*_apply_preset_at` with `save_authorized=true`, tool persists. | S2 — clean + apply-at-slot with auth succeeds. |
+| 3. User on dirty preset Y says "build a tone at slot X" | Tool refuses (save-auth gate fires first; if auth granted, dirty gate fires next). | S3a (refusal, no auth) + S3b (refusal, auth but dirty). |
+| 4. User on clean preset says "build setlist for 700/701/702" | Tool pre-flight scans (warns about overwrites), navigates-applies-saves each. | Covered by founder-driven setlist tests, outside the regression suite. |
+| 5. User on dirty preset says "build setlist for 700/701/702" | Refuses dirty first; agent must save/discard before retrying. | S5 — dirty + setlist refuses. |
+| 6. User on clean preset says "switch to slot 47" (no apply) | Tool navigates, no save concern. | S6 — clean + switch_preset succeeds with default mode. |
+| 7. User on dirty preset says "switch to slot 47" (no apply) | Tool refuses, asks save/discard. | S7 — dirty + switch_preset refuses. |
 
 ## Failure modes documented
 
