@@ -115,11 +115,10 @@ async function main(): Promise<void> {
     'send_reset_controllers',
     'send_song_position',
     'send_sysex',
-    // am4_set_block_type, am4_set_block_bypass, am4_restore_factory,
-    // am4_restore_factory_range removed v0.3 — use unified set_block /
-    // set_bypass / restore_defaults with port="am4".
-    'am4_set_param',
-    'am4_set_params',
+    // AM4 device-namespaced write tools removed v0.3 — use unified
+    // set_param / set_params / set_block / set_bypass with port="am4".
+    // (am4_set_param, am4_set_params, am4_set_block_type,
+    // am4_set_block_bypass, am4_restore_factory, am4_restore_factory_range)
     // Hydrasynth Explorer tools — registered alongside AM4 tools per
     // the single-MCP-project model. `hydra_` prefix avoids name
     // collisions; tools work when a Hydrasynth is plugged in.
