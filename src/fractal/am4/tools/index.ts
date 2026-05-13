@@ -23,7 +23,6 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { registerApplyTools } from './apply.js';
 import { registerDiagnosticsTools } from './diagnostics.js';
-import { registerFactoryTools } from './factory.js';
 import { registerLookupTools } from './lookup.js';
 import { registerNavigationTools } from './navigation.js';
 import { registerReadTools } from './read.js';
@@ -34,7 +33,6 @@ export function registerAM4Tools(server: McpServer): void {
     registerReadTools(server);
     registerApplyTools(server);
     registerNavigationTools(server);
-    registerFactoryTools(server);
     registerLookupTools(server);
     registerDiagnosticsTools(server);
 }

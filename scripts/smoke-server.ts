@@ -115,8 +115,9 @@ async function main(): Promise<void> {
     'send_reset_controllers',
     'send_song_position',
     'send_sysex',
-    'am4_set_block_bypass',
-    'am4_set_block_type',
+    // am4_set_block_type, am4_set_block_bypass, am4_restore_factory,
+    // am4_restore_factory_range removed v0.3 — use unified set_block /
+    // set_bypass / restore_defaults with port="am4".
     'am4_set_param',
     'am4_set_params',
     // Hydrasynth Explorer tools — registered alongside AM4 tools per

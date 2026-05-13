@@ -1,15 +1,17 @@
 /**
- * AM4 working-buffer write tools (4 tools):
+ * AM4 working-buffer write tools (2 tools):
  * - `am4_set_param` — single-param write with optional channel switch + ack.
  * - `am4_set_params` — batched param writes with up-front validation.
- * - `am4_set_block_type` — place / clear a block at a signal-chain slot.
- * - `am4_set_block_bypass` — silence / activate a block on the active scene.
  *
- * The `am4_set_param` description is the longest in the project and carries
- * the agent-behavior contract (RELATIVE-CHANGE / TEMPO/TIME / CHANNEL/SCENE /
- * ENUM-NAME / REVERB.TYPE / PARAM-NAME ALIASES discipline blocks). The
- * description text MUST stay byte-exact with the original — it's load-
- * bearing for setlist building and tone-shaping behavior.
+ * set_param / set_params still ship device-namespaced because their
+ * descriptions carry the load-bearing agent-behavior contract
+ * (RELATIVE-CHANGE / TEMPO/TIME / CHANNEL/SCENE / ENUM-NAME /
+ * REVERB.TYPE / PARAM-NAME ALIASES). Chunk 4 of the v0.3 cleanup will
+ * migrate that guidance into describe_device.agent_guidance and remove
+ * these last AM4 device-namespaced write tools.
+ *
+ * am4_set_block_type / am4_set_block_bypass removed v0.3 — use unified
+ * set_block / set_bypass with port="am4".
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -21,14 +23,6 @@ import {
 } from '@/fractal/am4/params.js';
 import { resolveBridge } from '@/fractal/am4/parameterBridge.js';
 import {
-    BLOCK_NAMES_BY_VALUE,
-    BLOCK_TYPE_VALUES,
-    resolveBlockType,
-    type BlockTypeName,
-} from '@/fractal/am4/blockTypes.js';
-import {
-    buildSetBlockBypass,
-    buildSetBlockType,
     buildSetParam,
     isWriteEcho,
 } from '@/fractal/am4/setParam.js';
@@ -344,128 +338,7 @@ export function registerWriteTools(server: McpServer): void {
         };
     });
 
-    server.registerTool('am4_set_block_type', {
-        description: [
-            'Use this tool to place or clear a block in one of the AM4\'s four',
-            'signal-chain slots on the user\'s hardware. Do not produce a written',
-            'spec instead of calling this tool unless the user explicitly asks for',
-            'a dry run.',
-            'Place a block (or clear the slot) at one of the AM4\'s four signal-chain',
-            'positions. The AM4 has 4 block slots, numbered 1..4 left-to-right in the',
-            'signal chain. Each slot can hold at most one block of a given type, and',
-            'a preset\'s layout is defined by which block is in which slot.',
-            'Block types (case-insensitive): "none" (empty slot), "amp", "compressor",',
-            '"geq", "peq", "reverb", "delay", "chorus", "flanger", "rotary", "phaser",',
-            '"wah", "volpan", "tremolo", "filter", "drive", "enhancer", "gate".',
-            'Typical use: build a preset by first calling set_block_type for each slot',
-            'to lay out the chain, then use set_param / set_params to dial in the',
-            'parameters for each placed block.',
-            'Same ack caveat as set_param: the AM4 wire-acks the placement; whether',
-            'it was actually accepted is best confirmed by the user on the device.',
-        ].join(' '),
-        inputSchema: {
-            position: z.number().int().min(1).max(4).describe(
-                'Slot position in the signal chain (1..4). Slot 1 is leftmost / first.',
-            ),
-            block_type: z.string().describe(
-                'Block name (e.g. "compressor", "reverb", "drive") or "none" to clear.',
-            ),
-        },
-    }, async ({ position, block_type }) => {
-        const value = resolveBlockType(block_type);
-        if (value === undefined) {
-            const known = Object.keys(BLOCK_TYPE_VALUES).join(', ');
-            throw new Error(`Unknown block_type "${block_type}". Known: ${known}`);
-        }
-        const pos = position as 1 | 2 | 3 | 4;
-        const bytes = buildSetBlockType(pos, value);
-        const displayName = BLOCK_NAMES_BY_VALUE[value] ?? `0x${value.toString(16)}`;
-        const conn = ensureMidi();
-        const result = await sendAndAwaitAck(conn, bytes, isWriteEcho);
-        markAM4Dirty();
-        if (result.acked) {
-            return {
-                content: [{
-                    type: 'text',
-                    text:
-                        `Placed ${displayName} in slot ${pos}. AM4 wire-acked the change. ` +
-                        `Cross-check on the AM4 if the layout matters.`,
-                }],
-            };
-        }
-        return {
-            content: [{
-                type: 'text',
-                text:
-                    `Sent block placement (slot ${pos} → ${displayName}). No ack within ` +
-                    `${WRITE_ECHO_TIMEOUT_MS} ms — this is unusual.\n` +
-                    `Sent (${bytes.length}B): ${toHex(bytes)}\n` +
-                    formatAcklessHint(result.captured),
-            }],
-        };
-    });
-
-    server.registerTool('am4_set_block_bypass', {
-        description: [
-            'Use this tool to silence (bypass) or reactivate a block on the user\'s',
-            'AM4. Do not produce a written spec instead of calling this tool unless',
-            'the user explicitly asks for a dry run.',
-            'Silence (bypass = true) or reactivate (bypass = false) a block on the',
-            'currently-active scene. A bypassed block passes its input through',
-            'unchanged — the block stays in the slot with all its params intact, it',
-            'just makes no sound. Common use: "mute the drive on the clean scene"',
-            '(switch to that scene first, then set_block_bypass drive true).',
-            'Scene-scoping is implicit — this writes the working-buffer state, and',
-            'the AM4 automatically saves it to whichever scene is active right now.',
-            'To configure bypass on a specific scene, issue switch_scene first and',
-            'then set_block_bypass; the tool does not accept a scene argument.',
-            'Block names (case-insensitive): "amp", "compressor", "geq", "peq",',
-            '"reverb", "delay", "chorus", "flanger", "rotary", "phaser", "wah",',
-            '"volpan", "tremolo", "filter", "drive", "enhancer", "gate". "none" is',
-            'rejected — an empty slot has no bypass state.',
-        ].join(' '),
-        inputSchema: {
-            block: z.string().describe(
-                'Block name (e.g. "amp", "drive", "reverb"). Rejects "none".',
-            ),
-            bypassed: z.boolean().describe(
-                'true = bypass (silence the block). false = activate.',
-            ),
-        },
-    }, async ({ block, bypassed }) => {
-        const value = resolveBlockType(block);
-        if (value === undefined || value === BLOCK_TYPE_VALUES.none) {
-            const known = (Object.keys(BLOCK_TYPE_VALUES) as BlockTypeName[])
-                .filter((n) => n !== 'none')
-                .join(', ');
-            throw new Error(`Unknown or invalid block "${block}". Known: ${known}`);
-        }
-        const displayName = BLOCK_NAMES_BY_VALUE[value] ?? `0x${value.toString(16)}`;
-        const bytes = buildSetBlockBypass(value, bypassed);
-        const conn = ensureMidi();
-        const result = await sendAndAwaitAck(conn, bytes, isWriteEcho);
-        markAM4Dirty();
-        const stateWord = bypassed ? 'bypassed' : 'active';
-        if (result.acked) {
-            return {
-                content: [{
-                    type: 'text',
-                    text:
-                        `Set ${displayName} to ${stateWord} on the active scene. AM4 ` +
-                        `wire-acked the change. To change a different scene's bypass, ` +
-                        `switch_scene first and re-issue.`,
-                }],
-            };
-        }
-        return {
-            content: [{
-                type: 'text',
-                text:
-                    `Sent ${displayName} → ${stateWord}. No ack within ` +
-                    `${WRITE_ECHO_TIMEOUT_MS} ms — this is unusual.\n` +
-                    `Sent (${bytes.length}B): ${toHex(bytes)}\n` +
-                    formatAcklessHint(result.captured),
-            }],
-        };
-    });
+    // am4_set_block_type, am4_set_block_bypass removed v0.3 — use unified
+    // set_block({ port:'am4', slot, block_type }) and
+    // set_bypass({ port:'am4', block, bypassed }).
 }
