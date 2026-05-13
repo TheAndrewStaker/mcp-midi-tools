@@ -9,7 +9,6 @@ import * as z from 'zod/v4';
 import { BLOCK_BY_ID } from '@/fractal/axe-fx-ii/blockTypes.js';
 import {
   buildGetGridLayout,
-  buildSetBlockBypass as buildSetBlockBypassEnvelope,
   buildSetGridCell,
   isGetGridLayoutResponse,
   isSetGridCellResponse,
@@ -29,51 +28,9 @@ import {
 export function registerAxeFxIILayoutTools(server: McpServer): void {
 
 
-  server.registerTool('axefx2_set_block_bypass', {
-    description: [
-      'Use this tool to bypass or engage a block on the user\'s Axe-Fx II.',
-      'Per the wiki, bypass uses the same SET_BLOCK_PARAMETER_VALUE function',
-      'with paramId = 255: value 0 engages the block, value 1 bypasses it.',
-      '',
-      'Some blocks (Mixer, Input, Output, Controllers, Feedback Send/Return)',
-      'don\'t expose a bypass — call axefx2_list_block_types to see which',
-      'blocks have `canBypass: true`. Trying to bypass a no-bypass block',
-      'will still send the wire bytes (the device ignores them) but the',
-      'tool surfaces a warning rather than fabricating success.',
-      '',
-      'NO-ACK PROTOCOL — same caveat as axefx2_set_param. The signal of',
-      'success is the user hearing the block engage / disengage and the',
-      'device\'s LED state changing.',
-    ].join('\n'),
-    inputSchema: {
-      block: z.union([z.string(), z.number()]).describe(
-        'Block instance — display name like "Amp 1" / "Reverb 1" or numeric effectId. Call axefx2_list_block_types for the full set.',
-      ),
-      bypassed: z.boolean().describe(
-        'true = bypass (block out of signal path), false = engage (block in signal path).',
-      ),
-    },
-  }, async ({ block, bypassed }) => {
-    const target = findBlock(block);
-    const bytes = buildSetBlockBypassEnvelope(target.id, bypassed);
-    const c = ensureConn();
-    c.send(bytes);
-    const noBypassWarning = target.canBypass
-      ? ''
-      : `\n\nWARNING: ${target.name} (group ${target.groupCode}) is documented as no-bypass per the wiki. ` +
-        `The wire write was sent (${bytes.length} bytes) but the device likely ignored it.`;
-    return {
-      content: [{
-        type: 'text',
-        text:
-          `Sent bypass=${bypassed ? 'BYPASS' : 'ENGAGE'} for ${target.name} ` +
-          `(${target.groupCode}, effectId ${target.id}, paramId 255).\n` +
-          `Wrote ${bytes.length} bytes: ${toHex(bytes)}${noBypassWarning}\n` +
-          `\n${NO_ACK_NOTE}`,
-      }],
-    };
-  });
-
+  // axefx2_set_block_bypass removed v0.3 — use unified
+  // set_bypass({ port: 'axe-fx-ii', block, bypassed }) which routes
+  // through descriptor.writer.setBypass (same paramId-255 wire write).
 
   server.registerTool('axefx2_get_grid_layout', {
     description: [

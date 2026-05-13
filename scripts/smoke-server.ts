@@ -148,12 +148,12 @@ async function main(): Promise<void> {
     // removed v0.3 — use unified list_params / lookup_lineage with
     // port="axe-fx-ii".
     'axefx2_reconnect_midi',
-    'axefx2_set_block_bypass',
+    // axefx2_set_block_bypass, axefx2_switch_preset, axefx2_switch_scene,
+    // axefx2_set_preset_name, axefx2_save_preset, axefx2_scan_preset_range
+    // removed v0.3 — use unified set_bypass / switch_preset / switch_scene
+    // / rename / save_preset / scan_locations with port="axe-fx-ii".
     'axefx2_set_block_channel',
     'axefx2_set_param',
-    'axefx2_set_preset_name',
-    'axefx2_switch_preset',
-    'axefx2_switch_scene',
     'axefx2_test_apply',
     // BK-051 unified tool surface — port-dispatched, device-agnostic.
     // Session B chunk 1 (2026-05-11): describe_device, list_params,
