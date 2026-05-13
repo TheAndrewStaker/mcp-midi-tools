@@ -139,10 +139,13 @@ async function main(): Promise<void> {
     // Fractal Axe-Fx II tools — registered alongside AM4 + Hydrasynth on
     // the single MCP server. `axefx2_` prefix avoids name collisions; the
     // surface is wiki-documented (🟡) until HW-074 lands the live capture.
-    'axefx2_apply_preset',
+    // axefx2_apply_preset, axefx2_apply_preset_at, axefx2_apply_setlist
+    // removed v0.3 — use unified apply_preset / apply_setlist with
+    // port="axe-fx-ii".
+    'axefx2_get_active_preset_number',
     'axefx2_get_block_channel',
     'axefx2_get_grid_layout',
-    'axefx2_get_param',
+    // axefx2_get_param removed v0.3 — use get_param({port:'axe-fx-ii',...}).
     'axefx2_get_preset_name',
     // axefx2_list_params, axefx2_list_enum_values, axefx2_lookup_lineage
     // removed v0.3 — use unified list_params / lookup_lineage with
@@ -153,7 +156,7 @@ async function main(): Promise<void> {
     // removed v0.3 — use unified set_bypass / switch_preset / switch_scene
     // / rename / save_preset / scan_locations with port="axe-fx-ii".
     'axefx2_set_block_channel',
-    'axefx2_set_param',
+    // axefx2_set_param removed v0.3 — use set_param({port:'axe-fx-ii',...}).
     'axefx2_test_apply',
     // BK-051 unified tool surface — port-dispatched, device-agnostic.
     // Session B chunk 1 (2026-05-11): describe_device, list_params,
