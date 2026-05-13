@@ -22,36 +22,43 @@ pedals, and other gear are reachable from day one.
 ## Status
 
 v0.1.0 — first public release. The protocol layer is hardware-verified
-across Fractal AM4, Axe-Fx II XL+, and ASM Hydrasynth Explorer; 95 MCP
-tools are live; every wire-level tool ships with byte-exact goldens
-against real captures. Axe-Fx II preset authoring is audio-confirmed
-end-to-end on Q8.02 firmware — building "Comp + Amp + Cab + Reverb" in
-chat saves an audible preset on a fresh-empty slot, no manual
-re-routing in AxeEdit required.
+across Fractal AM4, Axe-Fx II XL+, and ASM Hydrasynth Explorer; **57
+MCP tools** are live; every wire-level tool ships with byte-exact
+goldens against real captures. Axe-Fx II preset authoring is
+audio-confirmed end-to-end on Q8.02 firmware — building "Comp + Amp +
+Cab + Reverb" in chat saves an audible preset on a fresh-empty slot,
+no manual re-routing in AxeEdit required. Multi-scene authoring
+(distinct per-scene bypass + channel state) is hardware-verified too.
 
-Tools split across two surfaces:
+Tools split across three surfaces:
 
-- **Unified surface** (17 tools) — port-dispatched, device-agnostic.
+- **Unified surface (17 tools)** — port-dispatched, device-agnostic.
   `set_param(port, block, name, value)`, `get_param`, `apply_preset`,
   `apply_setlist`, `switch_preset`, `save_preset`, `switch_scene`,
   `set_block`, `set_bypass`, `set_params`, `get_params`, `list_params`,
   `describe_device`, `rename`, `scan_locations`, `lookup_lineage`,
-  `restore_defaults`. Same tool name works against any registered device
-  — the `port` argument picks the device. Adding a new device means
-  registering a schema descriptor; no new tools. AM4 and Axe-Fx II both
-  ship as descriptors today (BK-051 Wave 2); Hydrasynth descriptor lands
-  next session.
-- **Device-namespaced surface** (`am4_*`, `axefx2_*`, `hydra_*` — ~65
-  tools) — first-generation tool pattern, kept in parallel through
-  v0.1. Carries device-specific behavioral guidance in tool
-  descriptions (AM4: relative-change discipline, tempo-sync model,
-  channel/scene semantics, enum-naming conventions) the LLM relies on
-  during tone-building. Slated for removal in v0.3 once that guidance
-  migrates into per-device `describe_device` responses.
-- **Generic-MIDI primitives** (13 tools) — `send_cc`, `send_note`,
+  `restore_defaults`. Same tool name works against any registered
+  device — the `port` argument picks the device. Adding a new device
+  means writing a `DeviceDescriptor`; no new tools. **This is the
+  surface to learn first** — it's the v0.3+ contract.
+- **Device-namespaced surface (~27 tools)** — `am4_*`, `axefx2_*`,
+  `hydra_*` prefixes. Used to be much larger; v0.3 removed redundancy
+  by migrating per-device behavioral guidance into
+  `describe_device(port).agent_guidance`. The tools that survive each
+  carry unique semantics with no unified equivalent (Axe-Fx II's
+  `axefx2_get_grid_layout` for the 4×12 routing grid, Hydrasynth's
+  `hydra_apply_patch` for its full NRPN-style patch dump, etc.).
+- **Generic-MIDI primitives (13 tools)** — `send_cc`, `send_note`,
   `send_program_change`, `send_nrpn`, `send_sysex`, plus `send_panic`,
   `send_pitch_bend`, `send_clock_*`, etc. Work against any USB MIDI
   device the OS exposes.
+
+> **Your presets stay safe.** Every save is gated behind explicit
+> user save-intent language; the server refuses silent saves and
+> warns before navigating away from edited buffers. Recovery is one
+> tool call (`restore_defaults`). See
+> [`docs/SAFETY-FOR-MUSICIANS.md`](docs/SAFETY-FOR-MUSICIANS.md) for
+> the trust model in plain English.
 
 Distribution is a Windows ZIP that bundles a Node runtime plus the
 server — no Node or developer tooling required. A signed `.exe`
@@ -79,7 +86,7 @@ Once connected, Claude can:
   Klon?"* / *"Which amp on the AM4 is inspired by a Matchless DC-30?"*
 - **Switch presets.** *"Load A01."*
 
-Under the hood Claude picks one of 95 tools and sends SysEx (or CC /
+Under the hood Claude picks one of 57 tools and sends SysEx (or CC /
 NRPN / etc.) to the device. Tool round-trips land in roughly 30–60 ms;
 whole-preset builds take under a second.
 
@@ -137,6 +144,13 @@ troubleshooting tips for port-not-found errors.
 To uninstall: double-click `uninstall.cmd` to remove the entry from
 Claude Desktop's config (any other MCP servers you have stay intact),
 then delete the extracted folder.
+
+> **First time using it?** [`docs/GETTING-STARTED.md`](docs/GETTING-STARTED.md)
+> walks through 6 day-one conversations with literal prompts to paste,
+> expected behavior, and the audition-vs-save vocabulary. Read it
+> before you ask Claude to "save" anything. Pair with
+> [`docs/SAFETY-FOR-MUSICIANS.md`](docs/SAFETY-FOR-MUSICIANS.md) for
+> the full trust model.
 
 > **Note on signing.** v0.1.0 ships unsigned to keep the project free.
 > Windows shows a "this came from another computer" warning until you
@@ -339,7 +353,7 @@ If step 3 works, you're done. Move on to building full presets.
 
 ---
 
-## The 95 tools at a glance
+## The 57 tools at a glance
 
 ### Unified surface (17) — port-dispatched, device-agnostic
 
@@ -368,52 +382,54 @@ adapter; no new tools.
 | `lookup_lineage(port, block_type, query)` | Authored lineage data — real-hardware inspiration, manufacturer/model, developer quotes. AM4 + Axe-Fx II ship lineage corpora. |
 | `restore_defaults(port, from, to?)` | Reset a single location or inclusive range to factory state. Capability-gated; only devices with `supports_factory_restore=true` (currently AM4) honor it. |
 
-### Device-namespaced — AM4 (30, slated for v0.3 removal)
+### Device-namespaced — surviving tools (v0.3)
+
+v0.3 removed redundancy. The device-namespaced tools that still ship
+are the ones with semantics the unified surface doesn't cover yet —
+device-state reads, grid-specific writes, raw-protocol probes. Use
+the unified `apply_preset`, `set_param`, `switch_preset`, etc. for
+everything else; pass `port='am4' | 'axe-fx-ii' | 'hydrasynth'` to
+target a device.
+
+**AM4 (5 tools)** — device-state reads + non-destructive working-buffer dump.
 
 | Tool | What it does |
 |---|---|
-| `apply_preset` | Build a whole preset in one call (blocks, per-channel params, scenes, optional name). Working buffer only; does not save. |
-| `set_param` | Write one parameter (amp gain, reverb mix, …). |
-| `set_params` | Batch write. Validates the whole batch before any MIDI leaves. |
-| `set_block_type` | Place a block (amp, drive, reverb, …) in a signal-chain slot. |
-| `set_block_bypass` | Silence / activate a block on the currently-active scene. |
-| `save_to_location` | Persist the working buffer to a preset location (gated to Z04 until factory-safety ships). |
-| `set_preset_name` | Rename the working-buffer preset. |
-| `save_preset` | One-shot rename + save. |
-| `set_scene_name` | Rename a scene in the working buffer. |
-| `switch_preset` | Load a preset (A01–Z04). |
-| `switch_scene` | Switch to scene 1–4. |
-| `get_active_location` | Read the currently-loaded preset location. |
-| `get_active_scene` | Read which scene (1..4) is currently selected. |
-| `get_block_layout` | Read what's in each of the four signal-chain slots. |
-| `get_block_bypass` | Read whether a block is bypassed in the active scene. |
-| `get_param` | Read one parameter's current value. |
-| `get_params` | Batch read. Pairs naturally with `set_params` for "read, summarize, confirm, write" flows. |
-| `list_params` | Describe every param Claude can write. |
-| `list_block_types` | List the block types that fit each slot. |
-| `list_enum_values` | List enum choices for a given param (e.g. all amp types). |
-| `list_midi_ports` | Diagnose the USB/MIDI connection (any device; tags AM4 by default). |
-| `reconnect_midi` | Force-reopen the AM4 handle after an AM4-Edit excursion (also accepts a `port` arg for non-AM4 devices). |
-| `lookup_lineage` | "What real amp inspired this?" / "Find me a Klon-style drive." |
-| `am4_test_navigate` | Diagnostic tool — drives the AM4's mode-switch envelope for protocol smoke-testing. |
+| `am4_get_active_location` | Read the currently-loaded preset location (A01–Z04). |
+| `am4_get_active_scene` | Read which scene (1..4) is currently selected. |
+| `am4_get_block_layout` | Read what's in each of the four signal-chain slots. |
+| `am4_get_block_bypass` | Read whether a block is bypassed in the active scene. |
+| `am4_request_active_buffer_dump` | Non-destructive full working-buffer dump (advanced; for protocol RE). |
 
-### Device-namespaced — Axe-Fx II XL+ (21, slated for v0.3 removal)
+**Axe-Fx II XL+ (9 tools)** — grid reads, cell-level placement, raw-protocol probes.
 
-Same shape as the AM4 surface. Wire-format-verified end-to-end as of
-Session 62; setlist build round-trip lands in ~6–10s for a 3-preset
-batch. The unified surface ALSO dispatches against the Axe-Fx II via
-its own `DeviceDescriptor` (Session 67, BK-051 Wave 2) — call
-`set_param(port='axe-fx-ii', block='amp', name='bass', value=6.0)`
-to route through the unified path.
+| Tool | What it does |
+|---|---|
+| `axefx2_get_active_preset_number` | Read the currently-loaded preset number. |
+| `axefx2_get_preset_name` | Read the active preset's stored name. |
+| `axefx2_get_grid_layout` | Read the 4×12 routing grid — block ID + input mask per cell. |
+| `axefx2_get_block_channel` | Read which channel (X / Y) a block is currently on. |
+| `axefx2_set_block_channel` | Switch a block's channel (X / Y). |
+| `axefx2_set_block_at_cell` | Place a single block at a specific `(row, col)`. Multi-row placement is exposed here; cross-row cabling is not yet (Level 4 in the roadmap). |
+| `axefx2_test_apply` | Working-buffer apply + chain-integrity verify in one call. Returns `ok=true` only if every cell past col 1 has a non-zero routing mask. |
+| `axefx2_probe_sysex` | Raw SysEx send + inbound capture. Developer tool for protocol RE. |
+| `axefx2_reconnect_midi` | Force-reopen the Axe-Fx II MIDI handle. |
 
-### Device-namespaced — ASM Hydrasynth Explorer (14, slated for v0.3 removal)
+**ASM Hydrasynth Explorer (11 tools)** — patch-based architecture (no scenes); NRPN-driven engine.
 
-Patch-based architecture (no scenes). `hydra_apply_patch`,
-`hydra_set_param`, `hydra_set_engine_params`, `hydra_set_macro`, etc.
-NRPN-driven engine. The Hydrasynth `DeviceDescriptor` (BK-031, post-
-Session 67) is the next item on the BK-051 Wave 2 roadmap; until it
-ships, the unified surface routes Hydrasynth calls through the
-namespaced tools.
+| Tool | What it does |
+|---|---|
+| `hydra_apply_init` | Dump the factory INIT patch via SysEx (resets the active patch to defaults). |
+| `hydra_apply_init_to` | Same as `hydra_apply_init`, targeting a named slot. |
+| `hydra_apply_patch` | Build a full patch with sparse overrides on top of the factory INIT buffer. Optional `save: true` (gated by `save_authorized`). |
+| `hydra_set_param` | Set a system CC (master volume, mod wheel, sustain). 7 system params only. |
+| `hydra_set_engine_param` | Set one of 1175 engine params (oscillators / filters / envelopes / FX) via NRPN. |
+| `hydra_set_engine_params` | Batch engine-param write — same shape as `hydra_set_engine_param`. |
+| `hydra_set_macro` | Set a macro (1..8) value. |
+| `hydra_play_note` | Send a Note On + Note Off pair to the device for audition. |
+| `hydra_get_active_patch` | Read the active patch's bank/slot indices. |
+| `hydra_navigate_to` | Navigate to a specific Bank/Patch on the device. |
+| `hydra_reconnect_midi` | Force-reopen the Hydrasynth MIDI handle. |
 
 ### Generic MIDI primitives (13)
 
