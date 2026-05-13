@@ -685,11 +685,13 @@ export const writer: DeviceWriter = {
 // MVP simplifications (Section 6, Q1 + Q6 + Q7 of the descriptor plan):
 //   - Single-instance addressing — every `block_type` resolves to
 //     instance 1 of that group (no `amp_1` / `amp_2` discrimination).
-//   - Single-scene authoring — only `spec.scenes[0]` is honored; its
-//     `scene` index drives the executor's scene-switch op.
 //   - Channel walk in `slots[].params` honors the FIRST channel only
 //     when a slot supplies multiple (X then Y). The executor processes
 //     each block once with a single optional channel switch.
+//
+// Multi-scene authoring + landingScene restored v0.3 parity audit
+// (Session 68 / HW-106 — switch-write-switch-back walk maps each
+// scene's per-block bypass + channel state).
 
 function translateSpec(spec: PresetSpec): ApplyPresetInput {
   // Sort slots by grid column so the executor builds the chain
@@ -745,18 +747,51 @@ function translateSpec(spec: PresetSpec): ApplyPresetInput {
     });
   }
 
-  let scene: number | undefined;
+  // Multi-scene authoring (HW-106 / Session 68 parity, restored v0.3).
+  // Walk every PresetSpec.scenes entry — each provides per-block
+  // bypass + channel state for that scene. The executor handles the
+  // switch-write-switch-back wire pattern.
+  let scenes: NonNullable<ApplyPresetAtInput['scenes']> | undefined;
   if (spec.scenes && spec.scenes.length > 0) {
-    const s = spec.scenes[0];
-    if (!Number.isInteger(s.scene) || s.scene < 1 || s.scene > 8) {
-      throw new Error(`scenes[0].scene=${s.scene} out of range (1..8).`);
+    scenes = spec.scenes.map((sc) => {
+      if (!Number.isInteger(sc.scene) || sc.scene < 1 || sc.scene > 8) {
+        throw new Error(`scenes[].scene=${sc.scene} out of range (1..8).`);
+      }
+      const channels: Record<string, 'X' | 'Y'> | undefined = sc.channels && Object.keys(sc.channels).length > 0
+        ? Object.fromEntries(Object.entries(sc.channels).map(([blk, ch]) => {
+            const letter = typeof ch === 'number' ? (ch === 0 ? 'X' : 'Y') : String(ch).toUpperCase();
+            if (letter !== 'X' && letter !== 'Y') {
+              throw new Error(`scenes[${sc.scene}].channels.${blk}=${ch} not a valid Axe-Fx II channel (X or Y).`);
+            }
+            return [blk, letter as 'X' | 'Y'];
+          }))
+        : undefined;
+      const bypass: Record<string, boolean> | undefined = sc.bypassed && Object.keys(sc.bypassed).length > 0
+        ? { ...sc.bypassed }
+        : undefined;
+      return { index: sc.scene, channels, bypass };
+    });
+  }
+
+  // landingScene — scene the device sits on after the build. Default 1
+  // when scenes are authored (executor enforces this). When only a
+  // single scene is requested (legacy single-scene mode), keep the
+  // back-compat behaviour: spec.landingScene drives `scene` (the
+  // single-scene shortcut) so old callers that just want "switch to
+  // scene N first" still work.
+  let scene: number | undefined;
+  if (scenes === undefined && spec.landingScene !== undefined) {
+    if (!Number.isInteger(spec.landingScene) || spec.landingScene < 1 || spec.landingScene > 8) {
+      throw new Error(`landingScene=${spec.landingScene} out of range (1..8).`);
     }
-    scene = s.scene - 1; // executor uses 0-indexed scene
+    scene = spec.landingScene - 1;
   }
 
   return {
     blocks,
     scene,
+    scenes,
+    landingScene: spec.landingScene,
     name: spec.name,
   };
 }

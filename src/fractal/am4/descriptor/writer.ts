@@ -135,7 +135,21 @@ function specToApplyInput(spec: PresetSpec): ApplyPresetInput {
     };
   });
 
-  return { slots, name: spec.name, scenes };
+  // landingScene parity (restored v0.3 audit). AM4 scenes are 1..4
+  // and the executor clamps; explicit out-of-range throws early.
+  let landingScene: 1 | 2 | 3 | 4 | undefined;
+  if (spec.landingScene !== undefined) {
+    if (!Number.isInteger(spec.landingScene) || spec.landingScene < 1 || spec.landingScene > 4) {
+      throw new DispatchError(
+        'value_out_of_range',
+        'Fractal AM4',
+        `landingScene=${spec.landingScene} out of range on Fractal AM4 (valid: 1..4).`,
+      );
+    }
+    landingScene = spec.landingScene as 1 | 2 | 3 | 4;
+  }
+
+  return { slots, name: spec.name, scenes, landingScene };
 }
 
 export const writer: DeviceWriter = {
