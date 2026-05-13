@@ -739,8 +739,17 @@ function translateSpec(spec: PresetSpec): ApplyPresetInput {
       }
     }
 
+    // Resolve the slot's block_type slug ("compressor", "amp", "reverb")
+    // into the executor-expected display name ("Compressor 1", "Amp 1",
+    // "Reverb 1"). The unified surface uses lowercase slugs per the
+    // descriptor's `block_aliases`; the legacy applyExecutor's findBlock
+    // helper only matches display names + effectIds. Without this
+    // resolution step, applyPreset({port:'axe-fx-ii', spec:{slots:
+    // [{block_type:'compressor'}]}}) errors with "Unknown block
+    // 'compressor'" (caught in Session 73 hardware test 1).
+    const resolvedBlock = findBlockBySlug(s.block_type);
     blocks.push({
-      block: s.block_type,
+      block: resolvedBlock ? resolvedBlock.name : s.block_type,
       bypass: s.bypassed,
       channel,
       params,
@@ -757,17 +766,26 @@ function translateSpec(spec: PresetSpec): ApplyPresetInput {
       if (!Number.isInteger(sc.scene) || sc.scene < 1 || sc.scene > 8) {
         throw new Error(`scenes[].scene=${sc.scene} out of range (1..8).`);
       }
+      // Resolve scene-map block keys from slugs → executor display
+      // names (same translation as slots[].block_type above). Without
+      // this, scenes[].bypassed/channels with slug keys (e.g.
+      // {drive: true}) error in the executor's findBlock helper which
+      // only matches display names like "Drive 1".
+      const resolveSceneKey = (slugOrName: string): string => {
+        const fromSlug = findBlockBySlug(slugOrName);
+        return fromSlug ? fromSlug.name : slugOrName;
+      };
       const channels: Record<string, 'X' | 'Y'> | undefined = sc.channels && Object.keys(sc.channels).length > 0
         ? Object.fromEntries(Object.entries(sc.channels).map(([blk, ch]) => {
             const letter = typeof ch === 'number' ? (ch === 0 ? 'X' : 'Y') : String(ch).toUpperCase();
             if (letter !== 'X' && letter !== 'Y') {
               throw new Error(`scenes[${sc.scene}].channels.${blk}=${ch} not a valid Axe-Fx II channel (X or Y).`);
             }
-            return [blk, letter as 'X' | 'Y'];
+            return [resolveSceneKey(blk), letter as 'X' | 'Y'];
           }))
         : undefined;
       const bypass: Record<string, boolean> | undefined = sc.bypassed && Object.keys(sc.bypassed).length > 0
-        ? { ...sc.bypassed }
+        ? Object.fromEntries(Object.entries(sc.bypassed).map(([blk, b]) => [resolveSceneKey(blk), b]))
         : undefined;
       return { index: sc.scene, channels, bypass };
     });
