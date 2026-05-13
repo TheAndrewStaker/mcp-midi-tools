@@ -63,11 +63,11 @@ function bipolar64(): NrpnDisplayFormula {
   };
 }
 
-/** 0..100% (wet, mix, feedback). */
+/** 0..100% (wet, mix, feedback). Device shows 1 decimal (e.g. "42.0%"). */
 function percent(): NrpnDisplayFormula {
   return {
     unitLabel: '%',
-    decode: (wire) => `${Math.floor(wire / 8.192) / 10}%`,
+    decode: (wire) => `${(Math.floor(wire / 8.192) / 10).toFixed(1)}%`,
   };
 }
 

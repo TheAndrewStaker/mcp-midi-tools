@@ -65,6 +65,13 @@ server.registerTool('hydra_switch_patch', {
 });
 
 // hydra_play_note --------------------------------------------------------
+// TODO: hoist into protocol/generic/tools.ts as play_note(port, note,
+// velocity, duration_ms) during v0.3 cleanup. The implementation here
+// IS the primitive (no wrapped tool below it) and is identical across
+// MIDI devices — note-on/off bytes don't vary by vendor. AM4 and
+// Axe-Fx II don't expose play-note tools today; unification only
+// becomes valuable when one of them does. Leaving device-namespaced
+// keeps churn off this PR.
 
 server.registerTool('hydra_play_note', {
   description: HYDRA_DEV_MODE_PREAMBLE + [

@@ -815,9 +815,25 @@ server.registerTool('hydra_apply_patch', {
     }
 
     conn.send(wrapSysex([0x18, 0x00]));
+    const headerErr = conn.lastSendError;
+    if (headerErr) {
+      throw new Error(
+        `hydra_apply_patch: MIDI output handle is stale — header SysEx failed (${headerErr.message}). Call hydra_reconnect_midi and retry.`,
+      );
+    }
     const chunks = splitIntoChunks(buf);
     for (let i = 0; i < chunks.length; i++) {
       conn.send(wrapSysex(chunks[i]!.info));
+      const chunkErr = conn.lastSendError;
+      if (chunkErr) {
+        // Stale handle (USB disconnect, driver re-enumeration). Bail
+        // loudly with the chunk index so the agent knows where the
+        // partial write landed instead of looping through 22 broken
+        // writes and reporting "success" (yungatita test, 2026-05-12).
+        throw new Error(
+          `hydra_apply_patch: chunk ${i + 1}/${chunks.length} send failed (${chunkErr.message}). Patch is partially written; call hydra_reconnect_midi and retry the full apply_patch.`,
+        );
+      }
       if (i < chunks.length - 1) await sleep(SYSEX_CHUNK_PACING_MS);
     }
     // Write Request — persist to flash. Per spec, sent BEFORE the
@@ -827,6 +843,12 @@ server.registerTool('hydra_apply_patch', {
     // we honour that with the post-Write-Request sleep.
     if (save) {
       conn.send(wrapSysex([0x14, 0x00]));
+      const saveErr = conn.lastSendError;
+      if (saveErr) {
+        throw new Error(
+          `hydra_apply_patch: save Write Request send failed (${saveErr.message}). Chunks landed but flash persist did not; call hydra_reconnect_midi and re-run with save:true.`,
+        );
+      }
       await sleep(WRITE_REQUEST_FLASH_PAUSE_MS);
     }
     conn.send(wrapSysex([0x1a, 0x00]));
@@ -879,10 +901,25 @@ server.registerTool('hydra_apply_patch', {
   recordApplyPatch(dupSignature, target.display, now);
 
   const lines: string[] = [];
+  // 0-acks-with-input is suspicious: normal Hydrasynth flakiness can
+  // drop a few acks, but 0/22 while the input port is open looks like
+  // the dump landed on the wrong bank or the device ignored it. The
+  // yungatita test had this pattern when the MIDI handle went stale
+  // (30+ stderr send-errors with 0 chunk acks despite hasInput=true).
+  const suspiciousSilence =
+    conn.hasInput &&
+    chunkAcksSeen.size === 0 &&
+    headerResponses === 0 &&
+    others.length === 0;
+
   // Lead with the success signal — value-applied summary is the truth
   // of "the patch landed". Chunk acks are unreliable on this device
   // (Session 48: agent looped after misreading missing acks as failure).
-  lines.push(`Patch applied successfully to ${target.display} — ${params.length} override${params.length === 1 ? '' : 's'} written via SysEx in ${elapsedMs} ms. The device is now at the requested state.`);
+  if (suspiciousSilence) {
+    lines.push(`Patch SENT to ${target.display} (${params.length} override${params.length === 1 ? '' : 's'}, ${elapsedMs} ms), BUT the device acknowledged 0/22 chunks despite the input port being open. The dump may have been ignored — verify on the front-panel display before relying on the new state. If the patch isn't audible, call hydra_reconnect_midi and retry.`);
+  } else {
+    lines.push(`Patch applied successfully to ${target.display} — ${params.length} override${params.length === 1 ? '' : 's'} written via SysEx in ${elapsedMs} ms. The device is now at the requested state.`);
+  }
   if (name !== undefined && !save) {
     lines.push('');
     lines.push(`(Note: \`name: "${name}"\` was dropped because \`save: false\`. The Hydrasynth's on-screen name display reads from flash, so a RAM-only dump can't show a new name. Re-call with \`save: true\` to embed and persist the name.)`);

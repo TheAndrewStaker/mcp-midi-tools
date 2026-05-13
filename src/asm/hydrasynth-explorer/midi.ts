@@ -27,6 +27,17 @@ const HYDRA_PORT_NEEDLES = ['hydrasynth', 'asm hydra'];
 export interface HydrasynthConnection {
   send: (bytes: number[]) => void;
   /**
+   * Last error thrown by the underlying `out.sendMessage` call, or
+   * `undefined` if the most recent send succeeded. node-midi's WinMM
+   * backend prints `MidiOutWinMM::sendMessage: error sending sysex
+   * message` to stderr and previously silently failed on a stale
+   * handle. Multi-chunk dumps (hydra_apply_patch's 22-chunk SysEx
+   * sequence) read this after each send so they bail loudly on the
+   * first failed write instead of looping through 22 broken writes
+   * and reporting "success" (yungatita test, 2026-05-12).
+   */
+  lastSendError?: Error;
+  /**
    * Subscribe to inbound MIDI from the Hydrasynth. Returns an
    * unsubscribe function. When `hasInput` is false (no input port
    * found), the handler is registered but will never fire.
@@ -134,8 +145,21 @@ export function connectHydrasynth(): HydrasynthConnection {
     try { input.closePort(); } catch { /* never opened */ }
   }
 
+  // Track send errors on a separate cell so the conn object can
+  // expose live state via a getter without TS forward-reference
+  // issues. See AM4 midi.ts for the same pattern.
+  const sendErrCell: { value?: Error } = {};
   return {
-    send: (bytes) => out.sendMessage(bytes),
+    send: (bytes) => {
+      try {
+        out.sendMessage(bytes);
+        sendErrCell.value = undefined;
+      } catch (err) {
+        sendErrCell.value = err instanceof Error ? err : new Error(String(err));
+        throw sendErrCell.value;
+      }
+    },
+    get lastSendError(): Error | undefined { return sendErrCell.value; },
     onMessage: (handler) => {
       handlers.add(handler);
       return () => { handlers.delete(handler); };
