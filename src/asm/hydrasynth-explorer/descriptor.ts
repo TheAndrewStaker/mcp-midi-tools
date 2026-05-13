@@ -38,6 +38,7 @@
 
 import type { DeviceDescriptor } from '@/protocol/generic/types.js';
 
+import { HYDRASYNTH_AGENT_GUIDANCE } from './descriptor/agentGuidance.js';
 import { buildBlocks, buildBlockTypes } from './descriptor/schema.js';
 import { reader } from './descriptor/reader.js';
 import { writer } from './descriptor/writer.js';
@@ -78,4 +79,5 @@ export const HYDRASYNTH_DESCRIPTOR: DeviceDescriptor = {
   block_types: buildBlockTypes(),
   reader,
   writer,
+  agent_guidance: HYDRASYNTH_AGENT_GUIDANCE,
 };

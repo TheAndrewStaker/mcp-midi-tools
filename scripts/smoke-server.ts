@@ -127,15 +127,15 @@ async function main(): Promise<void> {
     'hydra_apply_init_to',
     'hydra_apply_patch',
     'hydra_get_active_patch',
-    'hydra_list_enum_values',
+    // hydra_list_enum_values, hydra_param_catalog, hydra_switch_patch
+    // removed v0.3 — use unified list_params / switch_preset with
+    // port="hydrasynth".
     'hydra_navigate_to',
-    'hydra_param_catalog',
     'hydra_play_note',
     'hydra_set_engine_param',
     'hydra_set_engine_params',
     'hydra_set_macro',
     'hydra_set_param',
-    'hydra_switch_patch',
     // Fractal Axe-Fx II tools — registered alongside AM4 + Hydrasynth on
     // the single MCP server. `axefx2_` prefix avoids name collisions; the
     // surface is wiki-documented (🟡) until HW-074 lands the live capture.

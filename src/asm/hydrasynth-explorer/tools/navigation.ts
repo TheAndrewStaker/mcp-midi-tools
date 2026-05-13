@@ -1,11 +1,15 @@
 /**
  * Hydrasynth navigation + play tools.
  *
- * 3 tools:
- *   - hydra_switch_patch  — bank-select MSB/LSB + PC
+ * 2 tools (v0.3):
  *   - hydra_play_note     — audition the active patch
  *   - hydra_navigate_to   — diagnostic primitive (bank/PC, no SysEx) with
  *                           inbound MIDI capture
+ *
+ * hydra_switch_patch removed v0.3 — use unified
+ *   switch_preset({ port:'hydrasynth', location })
+ * The unified switchPreset routes through descriptor.writer.switchPreset
+ * which sends the same Bank Select MSB / LSB / PC sequence.
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -28,41 +32,8 @@ import {
 
 export function registerHydrasynthNavigationTools(server: McpServer): void {
 
-// hydra_switch_patch -----------------------------------------------------
-
-server.registerTool('hydra_switch_patch', {
-  description: HYDRA_DEV_MODE_PREAMBLE + [
-    'Use this tool to switch the Hydrasynth Explorer to a specific stored patch.',
-    'The Explorer holds 8 banks (A-H) × 128 patches each = 1024 total slots.',
-    'Bank Select MSB is fixed at 0 on the Explorer; LSB picks the bank.',
-    '',
-    'IMPORTANT — DEVICE PRECONDITION: this only works if "Pgm Chg RX" is set to On',
-    'on MIDI: Page 11 of System Setup (it is by default). If patch switching has',
-    'no effect, that\'s the first thing to check.',
-    '',
-    'The tool sends Bank Select MSB (0) → Bank Select LSB (bank) → Program Change',
-    'in that order, which is what the manual specifies (page 83). Program Change',
-    'alone will only switch within the current bank.',
-  ].join('\n'),
-  inputSchema: {
-    bank: z.union([z.string(), z.number()]).describe('Bank A..H (letter, case-insensitive) or 0..7.'),
-    program: z.number().int().min(0).max(127).describe('Patch number within the bank (0..127). Note: device displays patches 1..128, so subtract 1.'),
-  },
-}, async ({ bank, program }) => {
-  const bankIdx = parseBank(bank);
-  const conn = ensureMidi();
-  // Order matters per manual p. 83: MSB, then LSB, then PC.
-  conn.send(ccBytes(DEFAULT_CHANNEL, 0, 0));        // Bank MSB = 0 (Explorer always)
-  conn.send(ccBytes(DEFAULT_CHANNEL, 32, bankIdx)); // Bank LSB = 0..7
-  conn.send(programChangeBytes(DEFAULT_CHANNEL, program));
-  const bankLetter = String.fromCharCode('A'.charCodeAt(0) + bankIdx);
-  return {
-    content: [{
-      type: 'text',
-      text: `Switched to bank ${bankLetter} (LSB=${bankIdx}), program ${program} (display: ${program + 1}). Sent Bank MSB=0, Bank LSB=${bankIdx}, PC=${program}.`,
-    }],
-  };
-});
+// hydra_switch_patch removed v0.3 — use unified
+// switch_preset({ port:'hydrasynth', location: 'A001' }).
 
 // hydra_play_note --------------------------------------------------------
 // TODO: hoist into protocol/generic/tools.ts as play_note(port, note,
