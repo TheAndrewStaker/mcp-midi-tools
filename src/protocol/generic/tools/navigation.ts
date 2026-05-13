@@ -19,6 +19,10 @@ import {
   executeSwitchPreset,
   executeSwitchScene,
 } from '@/protocol/generic/dispatcher.js';
+import {
+  ON_EDITED_DESCRIPTION,
+  ON_EDITED_SCHEMA,
+} from '@/server/shared/safeEdit.js';
 
 import { PORT_DESC, asError, asText } from './shared.js';
 
@@ -42,10 +46,17 @@ export function registerNavigationTools(server: McpServer): void {
       location: z.union([z.string(), z.number()]).describe(
         'Preset location. See describe_device.capabilities.preset_location_format for the device\'s expected shape.',
       ),
+      on_active_preset_edited: ON_EDITED_SCHEMA.describe(ON_EDITED_DESCRIPTION),
     },
-  }, async ({ port, location }) => {
+  }, async ({ port, location, on_active_preset_edited }) => {
     try {
-      const result = await executeSwitchPreset({ port, location });
+      const result = await executeSwitchPreset({ port, location, on_active_preset_edited });
+      if (result.refused) {
+        return {
+          content: [{ type: 'text', text: result.warningText ?? 'navigation refused' }],
+          isError: true,
+        };
+      }
       return asText(result);
     } catch (err) {
       return asError(err);

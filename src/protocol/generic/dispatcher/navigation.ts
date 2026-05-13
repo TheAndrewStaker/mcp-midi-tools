@@ -15,9 +15,17 @@ import {
 import { openCtx, requireDevice } from './core.js';
 
 /**
- * Full lifecycle for `switch_preset`.
+ * Full lifecycle for `switch_preset`. Honors the cross-device safe-edit
+ * contract: if the active buffer is dirty, the gate refuses (or saves
+ * first) per the caller's `on_active_preset_edited` mode. Devices
+ * without a dirty signal (Hydrasynth) omit the writer.guardActive...
+ * method and the gate is skipped — guidance in describe_device.
  */
-export async function executeSwitchPreset(args: { port: string; location: string | number }): Promise<WriteResult & { device: string }> {
+export async function executeSwitchPreset(args: {
+  port: string;
+  location: string | number;
+  on_active_preset_edited?: 'warn' | 'discard' | 'save_active_first';
+}): Promise<WriteResult & { device: string; warningText?: string; refused?: boolean }> {
   const descriptor = requireDevice(args.port);
   if (descriptor.writer.switchPreset === undefined) {
     throw new DispatchError(
@@ -27,6 +35,20 @@ export async function executeSwitchPreset(args: { port: string; location: string
     );
   }
   const ctx = openCtx(descriptor);
+  if (descriptor.writer.guardActiveBufferOrSave) {
+    const mode = args.on_active_preset_edited ?? 'warn';
+    const guard = await descriptor.writer.guardActiveBufferOrSave(ctx, mode);
+    if (!guard.proceed) {
+      return {
+        op: 'switch_preset',
+        target: String(args.location),
+        acked: false,
+        refused: true,
+        warningText: guard.warningText,
+        device: descriptor.display_name,
+      };
+    }
+  }
   const result = await descriptor.writer.switchPreset(ctx, args.location);
   return { ...result, device: descriptor.display_name };
 }

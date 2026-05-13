@@ -98,8 +98,10 @@ async function main(): Promise<void> {
     'list_midi_ports',
     'am4_list_params',
     'reconnect_midi',
-    'am4_save_preset',
-    'am4_save_to_location',
+    // am4_save_preset, am4_save_to_location, am4_switch_preset,
+    // am4_switch_scene, am4_set_preset_name, am4_set_scene_name removed
+    // v0.3 — use unified save_preset / switch_preset / switch_scene /
+    // rename with port="am4".
     'send_cc',
     'send_channel_pressure',
     'send_clock_continue',
@@ -117,10 +119,6 @@ async function main(): Promise<void> {
     'am4_set_block_type',
     'am4_set_param',
     'am4_set_params',
-    'am4_set_preset_name',
-    'am4_set_scene_name',
-    'am4_switch_preset',
-    'am4_switch_scene',
     // Hydrasynth Explorer tools — registered alongside AM4 tools per
     // the single-MCP-project model. `hydra_` prefix avoids name
     // collisions; tools work when a Hydrasynth is plugged in.
