@@ -144,9 +144,9 @@ async function main(): Promise<void> {
     'axefx2_get_grid_layout',
     'axefx2_get_param',
     'axefx2_get_preset_name',
-    'axefx2_list_enum_values',
-    'axefx2_list_params',
-    'axefx2_lookup_lineage',
+    // axefx2_list_params, axefx2_list_enum_values, axefx2_lookup_lineage
+    // removed v0.3 — use unified list_params / lookup_lineage with
+    // port="axe-fx-ii".
     'axefx2_reconnect_midi',
     'axefx2_set_block_bypass',
     'axefx2_set_block_channel',

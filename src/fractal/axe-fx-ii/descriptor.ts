@@ -34,6 +34,7 @@ import type { DeviceDescriptor } from '@/protocol/generic/types.js';
 
 import { AXE_FX_II_BLOCKS } from '@/fractal/axe-fx-ii/blockTypes.js';
 
+import { AXEFX2_AGENT_GUIDANCE } from './descriptor/agentGuidance.js';
 import { buildBlocks, buildBlockTypes } from './descriptor/schema.js';
 import { reader } from './descriptor/reader.js';
 import { writer } from './descriptor/writer.js';
@@ -79,4 +80,5 @@ export const AXEFX2_DESCRIPTOR: DeviceDescriptor = {
   block_types: buildBlockTypes(),
   reader,
   writer,
+  agent_guidance: AXEFX2_AGENT_GUIDANCE,
 };

@@ -84,14 +84,13 @@ export function registerLookupTools(server: McpServer): void {
         // schemas hadn't been loaded yet. Getting this response proves the
         // connector is live.
         const liveConfirmation =
-            'mcp-midi-tools MCP server is live and reachable. All AM4 tools ' +
-            '(apply_preset, set_param, set_params, set_block_type, set_block_bypass, ' +
-            'switch_preset, switch_scene, save_preset, save_to_location, ' +
-            'set_preset_name, set_scene_name, reconnect_midi, am4_test_navigate) are available to ' +
-            'call — if a user request matches any of them, prefer executing the ' +
-            'tool over writing a spec. A connected AM4 is detected at the OS level ' +
-            'via list_midi_ports; this tool responds regardless of whether the AM4 ' +
-            'itself is plugged in.';
+            'mcp-midi-tools MCP server is live and reachable. The unified tool ' +
+            'surface (apply_preset, set_param, set_params, set_block, set_bypass, ' +
+            'switch_preset, switch_scene, save_preset, rename, scan_locations, ' +
+            'restore_defaults, get_param, get_params, describe_device, list_params, ' +
+            'lookup_lineage) is registered — pass port="am4" to address this device. ' +
+            'A connected AM4 is detected at the OS level via list_midi_ports; this ' +
+            'tool responds regardless of whether the AM4 itself is plugged in.';
         return {
             content: [{
                 type: 'text',
