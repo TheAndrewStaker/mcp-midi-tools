@@ -38,6 +38,8 @@ import {
   parseLocationCode,
   TOTAL_LOCATIONS,
 } from '@/fractal/am4/locations.js';
+import { resolveBridge } from '@/fractal/am4/parameterBridge.js';
+import { describeApplicability } from '@/fractal/am4/applicability.js';
 
 // ── Unit pass-through ───────────────────────────────────────────────
 //
@@ -114,6 +116,16 @@ export function buildBlocks(): Record<string, BlockSchema> {
     const block = param.block;
     const name = param.name;
     blocks[block] ??= { params: {}, aliases: {} };
+    // Host-side annotations restored v0.3 audit (gap #7 from
+    // SKEPTICAL-GUITARIST-REVIEW): the AM4-Edit UI label (canonical
+    // wording the user sees on screen) and per-type applicability
+    // (which amp/drive/reverb/etc. types audibly expose this knob)
+    // are load-bearing for tone-building accuracy. The removed
+    // `am4_list_params` surfaced both; restoring on the unified
+    // `list_params` path so the LLM can avoid writing type-gated
+    // params on incompatible types.
+    const bridge = resolveBridge(block, name);
+    const applicability = describeApplicability(key);
     blocks[block].params[name] = {
       display_name: name,
       unit: param.unit,                 // AM4-native name passes through
@@ -122,6 +134,9 @@ export function buildBlocks(): Record<string, BlockSchema> {
       enum_values: param.enumValues,
       encode: makeEncode(param),
       decode: makeDecode(param),
+      host_label: bridge?.canonicalLabel,
+      parameter_name: bridge?.parameterName,
+      applies_only_when: applicability,
     };
   }
   // Per-block aliases: PARAM_ALIASES has fully-qualified keys

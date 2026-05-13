@@ -132,6 +132,46 @@ export interface ParamSchema {
   encode: (display: number | string) => number;
   /** Wire → display conversion. Used by readers + by enum reporting. */
   decode: (wire: number) => number | string;
+
+  // ── Optional host/device annotations ──────────────────────────────
+  //
+  // Carried in `list_params` and `describe_device` output when present.
+  // Devices populate these from their authoring tools' metadata
+  // (manufacturer's editor UI labels, type-gating tables) so the LLM
+  // can match user vocabulary to the right knob AND avoid writing
+  // type-gated params on the wrong block model.
+
+  /**
+   * The label the manufacturer's authoring app uses for this param
+   * on its UI (e.g. AM4-Edit's "Master Volume" for `amp.master`, or
+   * "Big Muff Drive" for a specific drive type's gain knob). The
+   * LLM should prefer this wording when discussing the param with
+   * the user. Optional — devices that don't have an authoring app or
+   * stable UI vocabulary omit it.
+   */
+  host_label?: string;
+
+  /**
+   * The firmware-internal symbolic identifier for this param (e.g.
+   * `DISTORT_MASTER`, `REVERB_TIME`). Useful for cross-referencing
+   * against vendor docs or PDFs. Optional.
+   */
+  parameter_name?: string;
+
+  /**
+   * Per-block-type applicability — names which `block_type` values
+   * expose this param. The LLM uses this to avoid writing type-gated
+   * params on incompatible types (e.g. AM4's `amp.bias_x` only
+   * applies on triode amp types; writing it on a solid-state amp
+   * model is silently ignored).
+   *
+   * Format: free-form prose describing the constraint, since the
+   * shape of "which types" varies per device. E.g. "applies only
+   * when amp.type ∈ [Plexi100W, 1959SLP]" or "applies to any type
+   * (special-cased on Twin Verb: shows as 'Vibrato Speed')". When
+   * absent, treat as "always applies."
+   */
+  applies_only_when?: string;
 }
 
 export interface BlockSchema {

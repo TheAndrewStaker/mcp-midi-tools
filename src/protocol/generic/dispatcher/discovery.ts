@@ -57,6 +57,18 @@ export interface ListParamsEntry {
   display_max?: number;
   has_aliases?: readonly string[];
   enum_values?: Readonly<Record<number, string>>;
+  /** Manufacturer UI label (e.g. AM4-Edit's "Master Volume" for `amp.master`). */
+  host_label?: string;
+  /** Firmware-internal symbolic identifier (e.g. `DISTORT_MASTER`). */
+  parameter_name?: string;
+  /**
+   * Per-block-type applicability annotation when the param is type-gated
+   * (e.g. "applies only when amp.type ∈ [Plexi100W, 1959SLP]"). Absent
+   * when the param applies universally. Load-bearing for type-gated
+   * params on AM4 — writing a gated param on an incompatible type
+   * silently no-ops on the device.
+   */
+  applies_only_when?: string;
 }
 
 export function listParams(args: { port: string; block?: string; name?: string }): {
@@ -91,6 +103,9 @@ export function listParams(args: { port: string; block?: string; name?: string }
         display_max: param.display_max,
         has_aliases: aliasList && aliasList.length > 0 ? aliasList : undefined,
         enum_values: includeEnum ? param.enum_values : undefined,
+        host_label: param.host_label,
+        parameter_name: param.parameter_name,
+        applies_only_when: param.applies_only_when,
       });
     }
   }
