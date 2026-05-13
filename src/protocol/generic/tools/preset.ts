@@ -20,6 +20,12 @@ import {
   executeRestoreDefaults,
 } from '@/protocol/generic/dispatcher.js';
 import type { PresetSpec } from '@/protocol/generic/types.js';
+import {
+  ON_EDITED_DESCRIPTION,
+  ON_EDITED_SCHEMA,
+  SAVE_AUTHORIZED_SCHEMA,
+  buildSaveAuthorizedDescription,
+} from '@/server/shared/safeEdit.js';
 
 import { PORT_DESC, asError, asText, presetShape } from './shared.js';
 
@@ -61,10 +67,20 @@ export function registerPresetTools(server: McpServer): void {
       target_location: z.union([z.string(), z.number()]).optional().describe(
         'Optional save target. With this set, the tool runs switch + apply + save atomically. Without it, the write hits the working buffer only and is reversible by switching presets.',
       ),
+      save_authorized: SAVE_AUTHORIZED_SCHEMA.describe(
+        buildSaveAuthorizedDescription('apply_preset (without target_location)'),
+      ),
+      on_active_preset_edited: ON_EDITED_SCHEMA.describe(ON_EDITED_DESCRIPTION),
     },
-  }, async ({ port, spec, target_location }) => {
+  }, async ({ port, spec, target_location, save_authorized, on_active_preset_edited }) => {
     try {
-      const result = await executeApplyPreset({ port, spec: spec as PresetSpec, target_location });
+      const result = await executeApplyPreset({
+        port,
+        spec: spec as PresetSpec,
+        target_location,
+        save_authorized,
+        on_active_preset_edited,
+      });
       return asText(result);
     } catch (err) {
       return asError(err);
@@ -108,8 +124,9 @@ export function registerPresetTools(server: McpServer): void {
       on_error: z.enum(['stop', 'continue']).optional(),
       dry_run: z.boolean().optional(),
       verify: z.boolean().optional(),
+      on_active_preset_edited: ON_EDITED_SCHEMA.describe(ON_EDITED_DESCRIPTION),
     },
-  }, async ({ port, entries, on_error, dry_run, verify }) => {
+  }, async ({ port, entries, on_error, dry_run, verify, on_active_preset_edited }) => {
     try {
       const result = await executeApplySetlist({
         port,
@@ -118,6 +135,7 @@ export function registerPresetTools(server: McpServer): void {
           spec: e.spec as PresetSpec,
         })),
         options: { on_error, dry_run, verify },
+        on_active_preset_edited,
       });
       return asText(result);
     } catch (err) {

@@ -72,6 +72,7 @@ import {
   type ApplyPresetSlotInput,
 } from '@/fractal/am4/tools/applyExecutor.js';
 import { loadFactoryBank, sendFactoryRestore } from '@/fractal/am4/factoryBank.js';
+import { guardActiveAM4BufferOrSave } from '@/fractal/am4/tools/safeEdit.js';
 import { readPresetName } from '@/server/shared/readOps.js';
 import { recordInbound, sendAndAwaitAck } from '@/server/shared/wireOps.js';
 import {
@@ -792,5 +793,14 @@ export const writer: DeviceWriter = {
         ? `Scene ${sceneIdx + 1} renamed to "${name}" in the working buffer. Call save_preset to persist.`
         : `Scene rename sent but no ack — verify on the AM4 display.`,
     };
+  },
+
+  /**
+   * Safe-edit dirty-gate adapter. Delegates to the device-specific
+   * implementation in tools/safeEdit.ts which knows AM4's location-
+   * code naming + READ_PRESET_NAME wire format.
+   */
+  async guardActiveBufferOrSave(ctx, mode) {
+    return guardActiveAM4BufferOrSave(ctx.conn, mode);
   },
 };

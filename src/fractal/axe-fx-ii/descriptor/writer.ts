@@ -86,6 +86,7 @@ import {
   type ApplyPresetInput,
 } from '@/fractal/axe-fx-ii/tools/applyExecutor.js';
 import { findParamFuzzy } from '@/fractal/axe-fx-ii/paramAliases.js';
+import { guardActiveBufferOrSave } from '@/fractal/axe-fx-ii/tools/shared.js';
 
 import { findBlockBySlug, parseAxeFxIILocation } from './schema.js';
 
@@ -663,6 +664,16 @@ export const writer: DeviceWriter = {
       DEVICE_LABEL,
       `rename target '${target}' is not supported on Fractal Axe-Fx II — scene-name writes have no decoded SysEx envelope on this device. Only target='preset' is implemented.`,
     );
+  },
+
+  /**
+   * Safe-edit dirty-gate adapter. Delegates to the device-specific
+   * implementation in tools/shared.ts which uses Axe-Fx II's device-
+   * sourced dirty signal (0x74 state-broadcast triple) for authoritative
+   * dirty tracking.
+   */
+  async guardActiveBufferOrSave(_ctx, mode) {
+    return guardActiveBufferOrSave(mode);
   },
 };
 

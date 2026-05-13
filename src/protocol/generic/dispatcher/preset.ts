@@ -27,11 +27,25 @@ import { openCtx, requireDevice } from './core.js';
  * Full lifecycle for `apply_preset`. Optional `target_location` runs the
  * switch + apply + save sequence atomically; without it, writes the
  * spec to the working buffer only (legacy `am4_apply_preset` shape).
+ *
+ * Safe-edit gates apply when `target_location` is set (cf.
+ * `docs/SAFE-EDIT-WORKFLOW.md`):
+ *   - `save_authorized` MUST be true; otherwise the dispatcher
+ *     throws a `save_authorization_required` DispatchError that the
+ *     unified tool handler formats into the canonical refusal text.
+ *   - `on_active_preset_edited` is passed to the descriptor's
+ *     `guardActiveBufferOrSave` (if the device supports dirty
+ *     tracking); a refusal becomes a `buffer_dirty` DispatchError.
+ *
+ * Working-buffer-only mode (no `target_location`) doesn't navigate
+ * and doesn't save, so neither gate applies.
  */
 export async function executeApplyPreset(args: {
   port: string;
   spec: PresetSpec;
   target_location?: string | number;
+  save_authorized?: boolean;
+  on_active_preset_edited?: 'warn' | 'discard' | 'save_active_first';
 }): Promise<ApplyResult & { device: string }> {
   const descriptor = requireDevice(args.port);
   if (descriptor.writer.applyPreset === undefined) {
@@ -48,7 +62,31 @@ export async function executeApplyPreset(args: {
       `apply_preset(target_location=...) requires a device that supports save; ${descriptor.display_name} does not.`,
     );
   }
+  // Safe-edit gates fire only when target_location is set (i.e. the
+  // tool is doing an atomic switch+apply+save). Working-buffer-only
+  // mode has no destructive blast radius and no navigation.
+  if (args.target_location !== undefined) {
+    if (args.save_authorized !== true) {
+      throw new DispatchError(
+        'save_authorization_required',
+        descriptor.display_name,
+        `apply_preset(target_location=${JSON.stringify(args.target_location)}) is destructive and ` +
+          `requires save_authorized=true. Use apply_preset WITHOUT target_location for audition.`,
+      );
+    }
+  }
   const ctx = openCtx(descriptor);
+  if (args.target_location !== undefined && descriptor.writer.guardActiveBufferOrSave) {
+    const mode = args.on_active_preset_edited ?? 'warn';
+    const guard = await descriptor.writer.guardActiveBufferOrSave(ctx, mode);
+    if (!guard.proceed) {
+      throw new DispatchError(
+        'buffer_dirty',
+        descriptor.display_name,
+        guard.warningText ?? 'Navigation refused: active buffer has unsaved edits.',
+      );
+    }
+  }
   const result = await descriptor.writer.applyPreset(ctx, args.spec, args.target_location);
   return { ...result, device: descriptor.display_name };
 }
@@ -62,6 +100,7 @@ export async function executeApplySetlist(args: {
   port: string;
   entries: readonly SetlistEntrySpec[];
   options?: SetlistApplyOptions;
+  on_active_preset_edited?: 'warn' | 'discard' | 'save_active_first';
 }): Promise<ApplySetlistResult & { device: string }> {
   const descriptor = requireDevice(args.port);
   if (descriptor.writer.applySetlist === undefined) {
@@ -86,6 +125,21 @@ export async function executeApplySetlist(args: {
     );
   }
   const ctx = openCtx(descriptor);
+  // Multi-preset intent implies save authorization, but the dirty
+  // gate still applies — discarding the active buffer's unsaved
+  // edits is a separate concern from "the user asked to save N
+  // new presets." Per docs/SAFE-EDIT-WORKFLOW.md scenario 5.
+  if (descriptor.writer.guardActiveBufferOrSave) {
+    const mode = args.on_active_preset_edited ?? 'warn';
+    const guard = await descriptor.writer.guardActiveBufferOrSave(ctx, mode);
+    if (!guard.proceed) {
+      throw new DispatchError(
+        'buffer_dirty',
+        descriptor.display_name,
+        guard.warningText ?? 'Setlist refused: active buffer has unsaved edits.',
+      );
+    }
+  }
   const result = await descriptor.writer.applySetlist(ctx, args.entries, args.options);
   return { ...result, device: descriptor.display_name };
 }

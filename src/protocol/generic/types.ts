@@ -430,6 +430,40 @@ export interface DeviceWriter {
     to: LocationRef,
     options?: RestoreDefaultsRangeOptions,
   ): Promise<RestoreDefaultsRangeResult>;
+
+  /**
+   * Cross-device safe-edit gate (see `docs/SAFE-EDIT-WORKFLOW.md`).
+   * Called by the dispatcher BEFORE any navigation operation
+   * (apply-at-slot, setlist, switch_preset) when target_location is
+   * set. Implementations check `isDirty(label)` and either let the
+   * caller proceed, refuse with a structured warning, or save the
+   * working buffer to its active slot first.
+   *
+   * Devices without a dirty signal (e.g. Hydrasynth) omit this
+   * method — the dispatcher treats omission as "no gate" and
+   * proceeds. The `save_authorized` gate is enforced elsewhere
+   * (always at the dispatcher, regardless of device capability).
+   */
+  guardActiveBufferOrSave?(
+    ctx: DispatchCtx,
+    mode: 'warn' | 'discard' | 'save_active_first',
+  ): Promise<GuardResult>;
+}
+
+/**
+ * Result envelope from `guardActiveBufferOrSave`. Mirrors the per-
+ * device shape (`DirtyGuardResult` in `src/server/shared/safeEdit.ts`)
+ * intentionally so the dispatcher can pass it through unchanged.
+ */
+export interface GuardResult {
+  /** Whether the caller may proceed with the navigation. */
+  proceed: boolean;
+  /** Tool-result text when proceed=false (the warning to surface). */
+  warningText?: string;
+  /** Human-readable detail for the proceed=true case (after save_active_first). */
+  savedDetail?: string;
+  /** When proceed=true after save_active_first, the slot the buffer was saved to. */
+  savedSlot?: number | string;
 }
 
 // ── Top-level descriptor ────────────────────────────────────────────
@@ -475,7 +509,9 @@ export type ErrorCode =
   | 'bad_location'
   | 'block_not_placed'           // soft-fail — write acked but block isn't in preset
   | 'no_ack'
-  | 'stale_handle';
+  | 'stale_handle'
+  | 'save_authorization_required' // gate refusal: apply-at-slot called without save_authorized=true
+  | 'buffer_dirty';               // gate refusal: nav/save-at-slot while active buffer has unsaved edits
 
 export interface DispatchErrorDetails {
   /** Single best near-match — printed inline ("did you mean X?"). */
