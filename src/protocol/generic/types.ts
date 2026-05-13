@@ -228,6 +228,14 @@ export interface PresetSpec {
   /** Per-scene channel/bypass selections. Devices without scenes ignore this. */
   scenes?: readonly SceneSpec[];
   name?: string;
+  /**
+   * Scene the device lands on AFTER the build (1-indexed, device-clamped).
+   * Default 1. Lets the agent preview a specific scene-section
+   * (e.g. land on solo scene for an immediate lead test). Devices without
+   * scenes ignore this field. Restored v0.3 parity audit — was a top-level
+   * field on the removed `axefx2_apply_preset_at` / `axefx2_apply_setlist`.
+   */
+  landingScene?: number;
 }
 
 export interface PresetSlotSpec {

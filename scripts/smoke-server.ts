@@ -98,7 +98,9 @@ async function main(): Promise<void> {
     // removed v0.3 — use unified get_param / get_params / lookup_lineage /
     // scan_locations with port="am4".
     'list_midi_ports',
-    'am4_list_params',
+    // am4_list_params removed v0.3 — use list_params({port:'am4'}). The
+    // live-confirmation line for P5-011 / HW-012 is on the unified
+    // list_params response now.
     'reconnect_midi',
     // am4_save_preset, am4_save_to_location, am4_switch_preset,
     // am4_switch_scene, am4_set_preset_name, am4_set_scene_name removed
@@ -222,25 +224,27 @@ async function main(): Promise<void> {
   }
   console.log(`✓ list_midi_ports accepts custom pattern argument`);
 
-  // Exercise list_params — doesn't touch MIDI.
+  // Exercise unified list_params — doesn't touch MIDI. v0.3: am4_list_params
+  // removed; the unified list_params({port:'am4'}) response now carries the
+  // live_confirmation field that P5-011 item 4 / HW-012 depend on.
   const callResp = await request('tools/call', {
-    name: 'am4_list_params',
-    arguments: {},
+    name: 'list_params',
+    arguments: { port: 'am4' },
   });
   if (callResp.error) throw new Error(`tools/call error: ${callResp.error.message}`);
   const content = (callResp.result as { content: { type: string; text: string }[] }).content;
   const text = content[0].text;
-  if (!text.includes('amp.gain')) throw new Error(`list_params output missing amp.gain:\n${text}`);
-  if (!text.includes('amp.type')) throw new Error(`list_params output missing amp.type:\n${text}`);
-  // P5-011 item 4: list_params doubles as a connector-live sanity check.
-  // The response must lead with a confirmation that the MCP server is
-  // reachable and its tools are callable. Don't let this line regress —
-  // if it disappears, Claude Desktop's HW-012 failure mode becomes
-  // silently harder to diagnose.
+  if (!text.includes('amp')) throw new Error(`list_params output missing amp block:\n${text}`);
+  if (!text.includes('gain')) throw new Error(`list_params output missing gain param:\n${text}`);
+  // P5-011 item 4 / HW-012 — list_params doubles as a connector-live
+  // sanity check. The response must include a confirmation that the MCP
+  // server is reachable and its tools are callable. Don't let this
+  // regress — if it disappears, Claude Desktop's HW-012 failure mode
+  // becomes silently harder to diagnose.
   if (!text.includes('mcp-midi-tools MCP server is live')) {
     throw new Error(`list_params missing live-confirmation line (P5-011 item 4):\n${text}`);
   }
-  console.log(`✓ list_params call returned catalog (${text.split('\n').length} lines) with live-confirmation line`);
+  console.log(`✓ list_params call returned catalog with live-confirmation line`);
 
   // Exercise lookup_lineage forward + reverse — doesn't touch MIDI, just
   // reads src/knowledge/*.json. Confirms the tool is wired up and the data

@@ -63,6 +63,7 @@ export function listParams(args: { port: string; block?: string; name?: string }
   device: string;
   blocks: readonly string[];
   params: readonly ListParamsEntry[];
+  live_confirmation: string;
 } {
   const desc = requireDevice(args.port);
   const entries: ListParamsEntry[] = [];
@@ -93,10 +94,25 @@ export function listParams(args: { port: string; block?: string; name?: string }
       });
     }
   }
+  // P5-011 item 4 / HW-012 — Claude Desktop sometimes thinks the connector
+  // isn't attached when in fact it is but the tool schemas hadn't been
+  // loaded yet. Getting this response proves mcp-midi-tools is live and
+  // its tools callable. Kept on the unified list_params surface after
+  // am4_list_params was removed v0.3.
+  const live_confirmation =
+    'mcp-midi-tools MCP server is live and reachable. The unified tool ' +
+    'surface (apply_preset, set_param, set_params, set_block, set_bypass, ' +
+    'switch_preset, switch_scene, save_preset, rename, scan_locations, ' +
+    'restore_defaults, get_param, get_params, describe_device, list_params, ' +
+    'lookup_lineage) is registered — pass port as the device id (e.g. "am4", ' +
+    '"axe-fx-ii", "hydrasynth") to address the device. A connected device is ' +
+    'detected at the OS level via list_midi_ports; this tool responds ' +
+    'regardless of whether the device itself is plugged in.';
   return {
     device: desc.display_name,
     blocks: Object.keys(desc.blocks),
     params: entries,
+    live_confirmation,
   };
 }
 

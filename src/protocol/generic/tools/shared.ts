@@ -77,4 +77,9 @@ export const presetShape = z.object({
   slots: z.array(presetSlotShape).min(1),
   scenes: z.array(presetSceneShape).optional(),
   name: z.string().max(32).optional(),
+  landingScene: z.number().int().min(1).optional().describe(
+    'Scene the device lands on after the build (1-indexed, device-clamped). ' +
+    'Default 1. Lets the agent preview a specific scene-section ' +
+    '(e.g. land on solo scene for an immediate lead test). Devices without scenes ignore this.',
+  ),
 });
