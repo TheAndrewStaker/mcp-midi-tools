@@ -93,6 +93,7 @@ async function main(): Promise<void> {
     'am4_get_active_scene',
     'am4_get_block_bypass',
     'am4_get_block_layout',
+    'am4_request_active_buffer_dump',
     // am4_get_param, am4_get_params, am4_lookup_lineage, am4_scan_locations
     // removed v0.3 — use unified get_param / get_params / lookup_lineage /
     // scan_locations with port="am4".
@@ -132,6 +133,7 @@ async function main(): Promise<void> {
     // port="hydrasynth".
     'hydra_navigate_to',
     'hydra_play_note',
+    'hydra_reconnect_midi',
     'hydra_set_engine_param',
     'hydra_set_engine_params',
     'hydra_set_macro',
@@ -150,11 +152,13 @@ async function main(): Promise<void> {
     // axefx2_list_params, axefx2_list_enum_values, axefx2_lookup_lineage
     // removed v0.3 — use unified list_params / lookup_lineage with
     // port="axe-fx-ii".
+    'axefx2_probe_sysex',
     'axefx2_reconnect_midi',
     // axefx2_set_block_bypass, axefx2_switch_preset, axefx2_switch_scene,
     // axefx2_set_preset_name, axefx2_save_preset, axefx2_scan_preset_range
     // removed v0.3 — use unified set_bypass / switch_preset / switch_scene
     // / rename / save_preset / scan_locations with port="axe-fx-ii".
+    'axefx2_set_block_at_cell',
     'axefx2_set_block_channel',
     // axefx2_set_param removed v0.3 — use set_param({port:'axe-fx-ii',...}).
     'axefx2_test_apply',
