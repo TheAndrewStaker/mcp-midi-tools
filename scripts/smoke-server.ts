@@ -87,7 +87,6 @@ async function main(): Promise<void> {
   console.log(`✓ tools/list returned: ${names.join(', ')}`);
 
   const expected = [
-    'am4_test_navigate',
     'am4_apply_preset',
     'am4_get_active_location',
     'am4_get_active_scene',
@@ -95,8 +94,6 @@ async function main(): Promise<void> {
     'am4_get_block_layout',
     'am4_get_param',
     'am4_get_params',
-    'am4_list_block_types',
-    'am4_list_enum_values',
     'list_midi_ports',
     'am4_list_params',
     'am4_lookup_lineage',
@@ -148,7 +145,6 @@ async function main(): Promise<void> {
     'axefx2_get_grid_layout',
     'axefx2_get_param',
     'axefx2_get_preset_name',
-    'axefx2_list_block_types',
     'axefx2_list_enum_values',
     'axefx2_list_params',
     'axefx2_lookup_lineage',

@@ -100,42 +100,7 @@ export function registerLookupTools(server: McpServer): void {
         };
     });
 
-    server.registerTool('am4_list_block_types', {
-        description:
-            'List every block type that can be placed via set_block_type, together ' +
-            'with its wire pidLow (mostly for debugging — callers normally pass the ' +
-            'block name, not the numeric value). "none" clears a slot to empty.',
-        inputSchema: {},
-    }, async () => {
-        const rows = (Object.entries(BLOCK_TYPE_VALUES) as [BlockTypeName, number][]).map(
-            ([name, value]) => `  ${name} (pidLow=0x${value.toString(16).padStart(4, '0')})`,
-        );
-        return {
-            content: [{
-                type: 'text',
-                text: `Block types available for set_block_type (${rows.length}):\n${rows.join('\n')}`,
-            }],
-        };
-    });
-
-    server.registerTool('am4_list_enum_values', {
-        description: 'List the dropdown names for an enum parameter (e.g. amp.type, drive.type).',
-        inputSchema: {
-            block: z.string().describe('Block name'),
-            name: z.string().describe('Parameter name'),
-        },
-    }, async ({ block, name }) => {
-        const key = paramKey(block, name);
-        const param: Param = KNOWN_PARAMS[key];
-        if (param.unit !== 'enum' || !param.enumValues) {
-            throw new Error(`${key} is not an enum parameter (unit=${param.unit})`);
-        }
-        const entries = Object.entries(param.enumValues).map(([idx, name]) => `  ${idx}: ${name}`);
-        return {
-            content: [{
-                type: 'text',
-                text: `${key} has ${entries.length} options:\n${entries.join('\n')}`,
-            }],
-        };
-    });
+    // am4_list_block_types removed Phase G — describe_device('am4')
+    // returns block_types. am4_list_enum_values removed Phase G —
+    // list_params({ port: 'am4', block, name }) returns the enum table.
 }

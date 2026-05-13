@@ -45,75 +45,11 @@ const AM4_MODE_SWITCH_BYTES: Record<'presets' | 'scenes' | 'effects' | 'amp' | '
  */
 const MODE_SWITCH_DRAIN_MS = 250;
 
-export function registerDiagnosticsTools(server: McpServer): void {
-    server.registerTool('am4_test_navigate', {
-        description: [
-            '**Diagnostic primitive — bypass the stack.** Sends ONE raw mode-switch',
-            'SysEx command to the AM4 and captures any inbound MIDI for ~250 ms after.',
-            'No high-level mediation. No param resolution. No channel-cache updates.',
-            'No retries. Just bytes-on-the-wire.',
-            '',
-            'Use this when a high-level tool (apply_preset, set_param, save_to_location,',
-            'switch_preset, ...) fails inscrutably and you need to confirm the wire path',
-            'is alive at all. The mode-switch family is the simplest message the AM4',
-            'supports — if these don\'t ack with a `Multipurpose response for fn=0x12: OK`,',
-            'no other tool will work either, and the problem is below the protocol layer',
-            '(USB driver hung, stale MIDI handle, AM4 powered off, USB cable seated wrong).',
-            '',
-            'Modes available — these are the device\'s top-level navigation buttons:',
-            '  • `presets` — Presets mode (default boot mode, shows the preset list)',
-            '  • `scenes`  — Scenes mode (the per-scene mixer view inside a preset)',
-            '  • `effects` — Effects mode (block-level signal-chain view)',
-            '  • `amp`     — Amp mode (focused amp parameters)',
-            '  • `tuner`   — Tuner mode (the chromatic tuner; mutes audio)',
-            '',
-            'Reading the response: a healthy device emits a single inbound message —',
-            '`F0 00 01 74 15 64 12 00 [cs] F7` — labelled as `Multipurpose response',
-            'for fn=0x12: OK`. The tool surfaces this in the labelled timeline plus',
-            'the one-line ack summary. If hasInput=true and 0 messages arrive, the',
-            'device is wedged or unplugged. If hasInput=false the input port wasn\'t',
-            'opened at connect time — `reconnect_midi` may help.',
-            '',
-            'Does NOT change preset / scene / channel state in any meaningful way —',
-            'mode is a UI selector; pressing it on the front panel is the same action.',
-            'Audio output is unaffected EXCEPT in `tuner` mode, which mutes audio',
-            'until the user navigates away.',
-        ].join('\n'),
-        inputSchema: {
-            mode: z.enum(['presets', 'scenes', 'effects', 'amp', 'tuner']).describe(
-                'Which mode to navigate to. The five values map to the AM4\'s documented mode-switch SysEx commands (see CLAUDE.md AM4 SysEx Quick Reference).',
-            ),
-        },
-    }, async ({ mode }) => {
-        const bytes = AM4_MODE_SWITCH_BYTES[mode];
-        const conn = ensureMidi();
-        const capture = recordInbound(conn);
-        const sentMs = Date.now();
-        try {
-            conn.send(bytes);
-            // Drain inbound MIDI for the configured window. Plain sleep, no
-            // ack-driven flow control — point of this tool is to observe what
-            // ACTUALLY comes back without making protocol-level assumptions.
-            await new Promise<void>((resolve) => setTimeout(resolve, MODE_SWITCH_DRAIN_MS));
-        } finally {
-            capture.unsubscribe();
-        }
-        const elapsedMs = Date.now() - sentMs;
-
-        const lines: string[] = [];
-        lines.push(`Mode-switch sent: mode="${mode}" (${bytes.length}B SysEx, drain ${MODE_SWITCH_DRAIN_MS} ms, total ${elapsedMs} ms).`);
-        lines.push(`Sent: ${toHex(bytes)}`);
-        lines.push('');
-        lines.push('Expected: a single `Multipurpose response for fn=0x12: OK` within ~50 ms.');
-        lines.push('  - 1 OK + 0 other = device responding normally; the wire path is alive.');
-        lines.push('  - 0 messages with hasInput=true = device wedged or unplugged.');
-        lines.push('  - 0 messages with hasInput=false = input port not open; try reconnect_midi.');
-        lines.push('  - Multiple messages or NACK = capture them and check SYSEX-MAP.md.');
-        lines.push('');
-        lines.push(formatInboundCapture(capture));
-
-        return {
-            content: [{ type: 'text', text: lines.join('\n') }],
-        };
-    });
+export function registerDiagnosticsTools(_server: McpServer): void {
+    // am4_test_navigate removed Phase G — same effect via `send_sysex`
+    // with the documented mode-switch bytes from CLAUDE.md "Known
+    // Working Commands" section. The diagnostic value (one raw send,
+    // capture inbound, report timing) is preserved by send_sysex
+    // because the inbound capture is a server-wide concern, not a
+    // device-specific one.
 }

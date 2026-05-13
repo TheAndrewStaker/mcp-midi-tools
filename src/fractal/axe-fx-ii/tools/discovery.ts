@@ -24,56 +24,9 @@ import { findBlock, findParam } from './shared.js';
 export function registerAxeFxIIDiscoveryTools(server: McpServer): void {
 
 
-  server.registerTool('axefx2_list_block_types', {
-    description: [
-      'Use this tool to list every addressable block instance on the user\'s',
-      'Axe-Fx II family device. The Axe-Fx II exposes multiple instances of',
-      'most block groups (Amp 1 + Amp 2, Reverb 1 + Reverb 2, etc.) — each',
-      'instance has a unique 14-bit effectId used in the wire address. All',
-      'instances of the same group share the same parameter table; pick the',
-      'instance the user is editing (usually "1" unless they\'ve placed a',
-      'second one in the signal chain).',
-      '',
-      'Returns 71 block instances per the wiki. The optional `group` filter',
-      'narrows by 3-letter group code (AMP, CPR, REV, DLY, CHO, FLG, PHA,',
-      'WAH, GTE, FIL, DRV, ENH, PIT, etc.) — useful when the agent only',
-      'cares about which Amp / Drive / Reverb instances exist.',
-    ].join('\n'),
-    inputSchema: {
-      group: z.string().optional().describe(
-        'Optional 3-letter group code to filter by (case-insensitive). e.g. "AMP" returns just the Amp instances.',
-      ),
-    },
-  }, async ({ group }) => {
-    const filter = group?.trim().toUpperCase();
-    const matches = filter
-      ? AXE_FX_II_BLOCKS.filter((b) => b.groupCode === filter)
-      : AXE_FX_II_BLOCKS.slice();
-    if (filter && matches.length === 0) {
-      const allGroups = [...new Set(AXE_FX_II_BLOCKS.map((b) => b.groupCode))].sort();
-      return {
-        content: [{
-          type: 'text',
-          text: `No blocks match group "${filter}". Valid group codes: ${allGroups.join(', ')}.`,
-        }],
-      };
-    }
-    const lines = matches.map((b) =>
-      `  ${String(b.id).padStart(3)}  ${b.name.padEnd(22)} (group: ${b.groupCode}${b.canBypass ? '' : ', no-bypass'})`,
-    );
-    return {
-      content: [{
-        type: 'text',
-        text: [
-          `Axe-Fx II addressable blocks${filter ? ` (filtered to ${filter})` : ''}: ${matches.length} instance(s).`,
-          'Format: <effectId> <name> (group, flags)',
-          ...lines,
-          '',
-        ].join('\n'),
-      }],
-    };
-  });
-
+  // axefx2_list_block_types removed Phase G — describe_device({ port:
+  // 'axe-fx-ii' }) returns the block roster, including all instances
+  // per group, with the same effectId + canBypass info.
 
   server.registerTool('axefx2_list_params', {
     description: [

@@ -13,6 +13,11 @@ import { ensureConn, resetAxeFxIIConnection, toHex } from './shared.js';
 export function registerAxeFxIIMetaTools(server: McpServer): void {
 
 
+  // Kept (NOT removed Phase G) — generic reconnect_midi operates on
+  // the shared connection registry (src/server/shared/connections.ts)
+  // but the Axe-Fx II tools use their own module-level cache in
+  // tools/shared.ts. Until the Axe-Fx II is migrated onto the shared
+  // registry, this tool is the only way to drop the cached handle.
   server.registerTool('axefx2_reconnect_midi', {
     description: [
       'Use this tool to drop the cached Axe-Fx II MIDI handle and force a',

@@ -344,74 +344,12 @@ export function registerReadTools(server: McpServer): void {
         }
     });
 
-    server.registerTool('am4_get_preset_name', {
-        description: [
-            'Read the stored preset name at a location (A01..Z04) WITHOUT loading',
-            'it into the working buffer. Use this when the user asks "what\'s on',
-            'M03?" or "what\'s in bank W?" without wanting to switch presets.',
-            'Non-destructive: working-buffer state is preserved. Any unsaved edits',
-            'in the current working buffer survive this read; contrast with',
-            'am4_switch_preset which loads the target into the working buffer and',
-            'discards unsaved edits.',
-            'Returns { location, name, isEmpty }. Empty locations decode to the',
-            'literal string "<EMPTY>" (and isEmpty: true) — preserve that wording',
-            'in user-facing prose so empty-vs-named presets read distinctly.',
-            'Use before a destructive bulk operation (setlist load, save_preset)',
-            'to surface what would be overwritten — e.g. scan the target locations',
-            'first to warn the user about user-customised presets they\'d clobber.',
-            'Read-only, single round-trip, < 100 ms. Wire address: pidLow=0x00CE,',
-            'pidHigh=0x000B, action=0x0012. Decoded HW-070 (Session 50) byte-exact',
-            'against AM4-Edit\'s "Refresh Preset Names" capture; same command the',
-            'editor uses to populate its preset list.',
-        ].join(' '),
-        inputSchema: {
-            location: z.string().describe(
-                'AM4 preset location, format: bank letter A..Z + sub-index 01..04 (e.g. "A01", "M03", "Z04").',
-            ),
-        },
-    }, async ({ location }) => {
-        const normalized = location.trim().toUpperCase();
-        let locationIndex: number;
-        try {
-            locationIndex = parseLocationCode(normalized);
-        } catch (err) {
-            const reason = err instanceof Error ? err.message : String(err);
-            return {
-                content: [{ type: 'text', text: `Invalid location "${location}": ${reason}` }],
-                isError: true,
-            };
-        }
-        const conn = ensureMidi();
-        try {
-            const parsed = await readPresetName(conn, locationIndex);
-            const display = formatLocationDisplay(locationIndex);
-            if (parsed.isEmpty) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: `${display}: <EMPTY> (no preset stored at this location)`,
-                    }],
-                };
-            }
-            return {
-                content: [{
-                    type: 'text',
-                    text: `${display}: "${parsed.name}"`,
-                }],
-            };
-        } catch (err) {
-            const reason = err instanceof Error ? err.message : String(err);
-            return {
-                content: [{
-                    type: 'text',
-                    text:
-                        `Preset-name read for ${formatLocationDisplay(locationIndex)} failed: ${reason}. ` +
-                        `If this is the first failed read in a while, the MIDI handle may be stale — call reconnect_midi.`,
-                }],
-                isError: true,
-            };
-        }
-    });
+    // am4_get_preset_name removed Phase G — same data via
+    // scan_locations({ port: 'am4', from: 'M03', to: 'M03' }) which
+    // returns a single-entry results array with the same shape. The
+    // unified scan_locations handles single-location reads; the
+    // device-namespaced tool was a thin convenience that's no longer
+    // load-bearing.
 
     server.registerTool('am4_scan_locations', {
         description: [
