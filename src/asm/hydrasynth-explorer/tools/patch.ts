@@ -646,8 +646,45 @@ server.registerTool('hydra_apply_patch', {
     save: z.boolean().optional().describe(
       'When true, sends a Write Request (`14 00`) after the chunks, persisting THE RECIPE in `params` to flash. **Costs ~3.5 seconds of additional wire time**. Default false. **CLOBBER WARNING — this re-dumps the recipe; any manual front-panel tweaks the user made on the device between the last apply_patch call and this one ARE LOST.** Hydrasynth has no SysEx read flow that surfaces working memory, so this tool has no way to preserve unknown tweaks. If the user just turned knobs and now says "save it", tell them to press the device\'s SAVE button (or Shift+Save) — DO NOT call apply_patch+save:true, because it will overwrite their tweaks with the agent\'s last-known recipe. Reserve save:true for "build this exact recipe and persist it" (the recipe IS the saved state). Also note: silently no-ops if System Menu → Protect is ON; the tool cannot detect that — verify off the device.',
     ),
+    save_authorized: z.boolean().optional().describe(
+      'Cross-device safe-edit gate (see docs/SAFE-EDIT-WORKFLOW.md). When `save: true` is set, this MUST also be true. Description-only enforcement isn\'t enough — agents can misread "build a patch at A005" as save intent. The runtime gate makes the refusal explicit. Authorize ONLY when the user uses save/store/keep/persist language. For "build a patch" / "design a sound" without save language, omit `save` entirely (RAM-only dump, reversible by navigating). The gate fires BEFORE any wire I/O so refusals are zero-cost.',
+    ),
   },
-}, async ({ slot, params, dance, name, save }) => {
+}, async ({ slot, params, dance, name, save, save_authorized }) => {
+  // Safe-edit save-authorization gate (cross-device contract per
+  // docs/SAFE-EDIT-WORKFLOW.md). Hydrasynth doesn't expose a MIDI
+  // dirty signal so there's no on_active_preset_edited gate, but
+  // the save_authorized gate still applies: save:true requires
+  // explicit save-intent language from the user.
+  if (save === true && save_authorized !== true) {
+    return {
+      content: [{
+        type: 'text',
+        text:
+          `REFUSING TO SAVE: hydra_apply_patch was called with save: true but ` +
+          `save_authorized was not explicitly set. The default policy refuses ` +
+          `silent saves — agents can misread "build a patch at A005" as save ` +
+          `intent.\n` +
+          `\n` +
+          `If the user said something like "build a patch for X" / "design a ` +
+          `sound" without naming a save action, drop save: true entirely. The ` +
+          `tool will dump to RAM only — fully reversible by navigating away. ` +
+          `Let the user audition the patch, then ASK "want me to save it to ` +
+          `${slot ?? 'H128'}?" before retrying with save: true AND ` +
+          `save_authorized: true.\n` +
+          `\n` +
+          `User phrases that authorize saving: "save this", "store as ${slot ?? 'A001'}", ` +
+          `"build and save", "keep it at ${slot ?? 'A001'}", "put it on ${slot ?? 'A001'}", ` +
+          `"persist this patch".\n` +
+          `\n` +
+          `User phrases that do NOT authorize saving: "build a patch", "design ` +
+          `a sound", "make me a Tony Banks lead", "try out a pad at ${slot ?? 'A005'}" ` +
+          `(the "at ${slot ?? 'A005'}" names a target but doesn't authorize a save).`,
+      }],
+      isError: true,
+    };
+  }
+
   const conn = ensureMidi();
   // In-place workflow: when caller omits slot, default to H128 (the
   // designated scratch slot). Either way, default dance is "both" —
