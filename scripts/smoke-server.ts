@@ -159,6 +159,7 @@ async function main(): Promise<void> {
     'axefx2_set_preset_name',
     'axefx2_switch_preset',
     'axefx2_switch_scene',
+    'axefx2_test_apply',
     // BK-051 unified tool surface — port-dispatched, device-agnostic.
     // Session B chunk 1 (2026-05-11): describe_device, list_params,
     // get_param, set_param.

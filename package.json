@@ -46,6 +46,7 @@
     "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && tsx scripts/copy-build-assets.ts",
     "inspect": "npx @modelcontextprotocol/inspector node dist/server/index.js",
     "mcp-test-apply": "tsx scripts/mcp-test-apply-preset.ts",
+    "mcp-test-suite": "tsx scripts/mcp-test-preset-suite.ts",
     "build:installer": "tsx scripts/build-installer.ts",
     "setup-claude-desktop": "npm run build && tsx scripts/setup-claude-desktop.ts",
     "hydra:smoke": "tsx scripts/hydrasynth/smoke.ts",

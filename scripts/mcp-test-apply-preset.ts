@@ -73,6 +73,24 @@ function parseCli(argv: string[]): CliOpts {
 // MCP tool's encode layer translates display → wire under the hood.
 
 const PRESETS = {
+  // Minimal — single block. Edge case: only col 1 occupied, the rest
+  // of row 2 is shunts only. Exercises the "11-cable chain to OUTPUT
+  // via 11 shunts" path.
+  'amp-only': {
+    name: 'Amp Only',
+    blocks: [
+      { block: 'Amp 1', params: { input_drive: 5, master_volume: 5 } },
+    ],
+  },
+  // Two-block edge case — Amp + Cab, the classic minimal tone.
+  'amp-cab': {
+    name: 'Amp Cab',
+    blocks: [
+      { block: 'Amp 1', params: { input_drive: 5, master_volume: 5 } },
+      { block: 'Cab 1' },
+    ],
+  },
+  // The canonical 4-block Glassy Clean chain (Session 71 oracle).
   'glassy-clean': {
     name: 'Glassy Clean',
     blocks: [
@@ -85,6 +103,7 @@ const PRESETS = {
       { block: 'Reverb 1', params: { mix: 25 } },
     ],
   },
+  // 6-block chain — Comp + Drive + Amp + Cab + Delay + Reverb.
   'high-gain': {
     name: 'High Gain',
     blocks: [
@@ -99,6 +118,7 @@ const PRESETS = {
       { block: 'Reverb 1', params: { mix: 20 } },
     ],
   },
+  // Same 6-block shape, different param emphasis (more modulation).
   'ambient-lead': {
     name: 'Ambient Lead',
     blocks: [
@@ -111,6 +131,46 @@ const PRESETS = {
       { block: 'Cab 1' },
       { block: 'Delay 1', params: { mix: 35 } },
       { block: 'Reverb 1', params: { mix: 40 } },
+    ],
+  },
+  // Saturated stack: Wah + Compressor + Drive + Drive + Amp + Cab +
+  // Chorus + Delay + Reverb. 9 blocks → only 3 shunt cells. Stresses
+  // the "long chain, fewer shunts" path.
+  'saturated-stack': {
+    name: 'Saturated Stack',
+    blocks: [
+      { block: 'Wah 1' },
+      { block: 'Compressor 1' },
+      { block: 'Drive 1' },
+      { block: 'Drive 2' },
+      {
+        block: 'Amp 1',
+        params: { input_drive: 6.5, bass: 5, middle: 4.5, treble: 6, presence: 6, master_volume: 5 },
+      },
+      { block: 'Cab 1' },
+      { block: 'Chorus 1' },
+      { block: 'Delay 1', params: { mix: 20 } },
+      { block: 'Reverb 1', params: { mix: 25 } },
+    ],
+  },
+  // Max chain length — 12 content blocks fill all of row 2, zero
+  // shunts. Stresses the "no shunt extension needed" path. The
+  // applyExecutor's shunt loop should be a no-op here.
+  'max-12-blocks': {
+    name: 'Max 12 Blocks',
+    blocks: [
+      { block: 'Wah 1' },
+      { block: 'Compressor 1' },
+      { block: 'Drive 1' },
+      { block: 'Drive 2' },
+      { block: 'Amp 1', params: { input_drive: 5, master_volume: 5 } },
+      { block: 'Cab 1' },
+      { block: 'Chorus 1' },
+      { block: 'Flanger 1' },
+      { block: 'Phaser 1' },
+      { block: 'Delay 1', params: { mix: 18 } },
+      { block: 'Multi Delay 1' },
+      { block: 'Reverb 1', params: { mix: 25 } },
     ],
   },
 } as const;

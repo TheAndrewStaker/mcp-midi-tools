@@ -22,9 +22,12 @@ pedals, and other gear are reachable from day one.
 ## Status
 
 v0.1.0 — first public release. The protocol layer is hardware-verified
-across Fractal AM4, Axe-Fx II XL+, and ASM Hydrasynth Explorer; 83 MCP
+across Fractal AM4, Axe-Fx II XL+, and ASM Hydrasynth Explorer; 84 MCP
 tools are live; every wire-level tool ships with byte-exact goldens
-against real captures.
+against real captures. Axe-Fx II preset authoring is audio-confirmed
+end-to-end on Q8.02 firmware — building "Comp + Amp + Cab + Reverb" in
+chat saves an audible preset on a fresh-empty slot, no manual
+re-routing in AxeEdit required.
 
 Tools split across two surfaces:
 
@@ -76,7 +79,7 @@ Once connected, Claude can:
   Klon?"* / *"Which amp on the AM4 is inspired by a Matchless DC-30?"*
 - **Switch presets.** *"Load A01."*
 
-Under the hood Claude picks one of 83 tools and sends SysEx (or CC /
+Under the hood Claude picks one of 84 tools and sends SysEx (or CC /
 NRPN / etc.) to the device. Tool round-trips land in roughly 30–60 ms;
 whole-preset builds take under a second.
 
@@ -336,7 +339,7 @@ If step 3 works, you're done. Move on to building full presets.
 
 ---
 
-## The 83 tools at a glance
+## The 84 tools at a glance
 
 ### Unified surface (17) — port-dispatched, device-agnostic
 
