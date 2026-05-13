@@ -64,8 +64,8 @@ export const presetSlotShape = z.object({
 
 export const presetSceneShape = z.object({
   scene: z.number().int().min(1).describe('Scene number (1-indexed).'),
-  channels: z.record(z.string(), z.union([z.string(), z.number()])).describe(
-    'Per-block channel selection: { "amp": "A", "drive": "A" }.',
+  channels: z.record(z.string(), z.union([z.string(), z.number()])).optional().describe(
+    'Per-block channel selection: { "amp": "A", "drive": "A" }. Optional — supply at least one of channels / bypassed / name per entry.',
   ),
   bypassed: z.record(z.string(), z.boolean()).optional().describe(
     'Per-block bypass: { "drive": true } silences drive on this scene.',

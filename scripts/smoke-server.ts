@@ -87,7 +87,8 @@ async function main(): Promise<void> {
   console.log(`✓ tools/list returned: ${names.join(', ')}`);
 
   const expected = [
-    'am4_apply_preset',
+    // am4_apply_preset, am4_apply_preset_at, am4_apply_setlist removed v0.3
+    // — use apply_preset / apply_setlist with port="am4".
     'am4_get_active_location',
     'am4_get_active_scene',
     'am4_get_block_bypass',
@@ -294,18 +295,21 @@ async function main(): Promise<void> {
   }
   console.log(`✓ lookup_lineage forward (wah/"Cry Babe") returned Dunlop Cry Baby`);
 
-  // apply_preset validation (BK-027 phase 1). Exercises the pre-MIDI
+  // apply_preset validation (BK-027 phase 1 + 2). Exercises the pre-MIDI
   // validation path so the smoke test runs without a connected AM4.
-  // Errors from the handler surface as a tool result with isError=true
-  // and a text content block carrying the thrown message.
+  // v0.3: tests now exercise the unified apply_preset tool with port="am4"
+  // (the legacy am4_apply_preset / am4_apply_preset_at were removed).
+  // The unified spec shape uses {slots[].slot, slots[].params:{channel:{...}},
+  // scenes[].scene, scenes[].bypassed}. The applyExecutor's AM4-specific
+  // validation still fires below the dispatcher.
   const assertApplyPresetError = async (
     label: string,
-    args: unknown,
+    spec: unknown,
     expectedFragment: string,
   ): Promise<void> => {
     const resp = await request('tools/call', {
-      name: 'am4_apply_preset',
-      arguments: args,
+      name: 'apply_preset',
+      arguments: { port: 'am4', spec },
     });
     const result = resp.result as
       | { isError?: boolean; content: { type: string; text: string }[] }
@@ -323,46 +327,30 @@ async function main(): Promise<void> {
   };
 
   await assertApplyPresetError(
-    'mutual exclusion (channel + channels)',
-    { slots: [{ position: 1, block_type: 'amp', channel: 'A', channels: { B: { gain: 5 } } }] },
-    "'channels' (per-channel params) and 'channel'",
-  );
-  console.log(`✓ apply_preset rejects channels+channel combo with mutual-exclusion error`);
-
-  await assertApplyPresetError(
-    'mutual exclusion (params + channels)',
-    { slots: [{ position: 1, block_type: 'amp', params: { gain: 6 }, channels: { A: { bass: 5 } } }] },
-    "'channels' (per-channel params) and 'params'",
-  );
-  console.log(`✓ apply_preset rejects channels+params combo with mutual-exclusion error`);
-
-  await assertApplyPresetError(
     'channels on a block without channels',
-    { slots: [{ position: 1, block_type: 'compressor', channels: { A: { ratio: 4 } } }] },
+    { slots: [{ slot: 1, block_type: 'compressor', params: { A: { ratio: 4 } } }] },
     "doesn't have channels",
   );
   console.log(`✓ apply_preset rejects channels on compressor (no channel register)`);
 
   await assertApplyPresetError(
     'unknown channel letter',
-    { slots: [{ position: 1, block_type: 'amp', channels: { E: { gain: 6 } } }] },
+    { slots: [{ slot: 1, block_type: 'amp', params: { E: { gain: 6 } } }] },
     'must be one of A/B/C/D',
   );
   console.log(`✓ apply_preset rejects unknown channel letter E`);
 
   await assertApplyPresetError(
     'unknown param inside channels.<letter>',
-    { slots: [{ position: 1, block_type: 'amp', channels: { A: { not_a_real_param: 6 } } }] },
+    { slots: [{ slot: 1, block_type: 'amp', params: { A: { not_a_real_param: 6 } } }] },
     'channels.A.not_a_real_param',
   );
   console.log(`✓ apply_preset surfaces path-like error for unknown param inside channels`);
 
-  // Name-field validation — the schema cap is 32, but the zod max rejects at
-  // the input layer with a validation error (not our buildSetPresetName
-  // throw). Either way the 33-char name must be rejected.
+  // Name-field validation — zod max rejects the 33-char name at input.
   await assertApplyPresetError(
     'overlong name',
-    { slots: [{ position: 1, block_type: 'amp' }], name: 'x'.repeat(33) },
+    { slots: [{ slot: 1, block_type: 'amp' }], name: 'x'.repeat(33) },
     '32',
   );
   console.log(`✓ apply_preset rejects overlong name (33 chars)`);
@@ -371,7 +359,7 @@ async function main(): Promise<void> {
   // fail in the pre-MIDI validation layer so no hardware is required.
   await assertApplyPresetError(
     'scenes: empty scene entry',
-    { slots: [{ position: 1, block_type: 'amp' }], scenes: [{ index: 1 }] },
+    { slots: [{ slot: 1, block_type: 'amp' }], scenes: [{ scene: 1 }] },
     'at least one of channels / bypass / name',
   );
   console.log(`✓ apply_preset rejects scene entry with no channels/bypass/name`);
@@ -379,10 +367,10 @@ async function main(): Promise<void> {
   await assertApplyPresetError(
     'scenes: duplicate index',
     {
-      slots: [{ position: 1, block_type: 'amp' }],
+      slots: [{ slot: 1, block_type: 'amp' }],
       scenes: [
-        { index: 2, channels: { amp: 'A' } },
-        { index: 2, channels: { amp: 'B' } },
+        { scene: 2, channels: { amp: 'A' } },
+        { scene: 2, channels: { amp: 'B' } },
       ],
     },
     'used twice',
@@ -392,8 +380,8 @@ async function main(): Promise<void> {
   await assertApplyPresetError(
     'scenes: unknown block in channels map',
     {
-      slots: [{ position: 1, block_type: 'amp' }],
-      scenes: [{ index: 1, channels: { not_a_block: 'A' } }],
+      slots: [{ slot: 1, block_type: 'amp' }],
+      scenes: [{ scene: 1, channels: { not_a_block: 'A' } }],
     },
     'channels.not_a_block',
   );
@@ -402,8 +390,8 @@ async function main(): Promise<void> {
   await assertApplyPresetError(
     'scenes: channels on block without channels',
     {
-      slots: [{ position: 1, block_type: 'compressor' }],
-      scenes: [{ index: 1, channels: { compressor: 'A' } }],
+      slots: [{ slot: 1, block_type: 'compressor' }],
+      scenes: [{ scene: 1, channels: { compressor: 'A' } }],
     },
     "doesn't have channels",
   );
@@ -412,8 +400,8 @@ async function main(): Promise<void> {
   await assertApplyPresetError(
     'scenes: non-A/B/C/D letter',
     {
-      slots: [{ position: 1, block_type: 'amp' }],
-      scenes: [{ index: 1, channels: { amp: 'E' } }],
+      slots: [{ slot: 1, block_type: 'amp' }],
+      scenes: [{ scene: 1, channels: { amp: 'E' } }],
     },
     'must be one of A/B/C/D',
   );
@@ -422,8 +410,8 @@ async function main(): Promise<void> {
   await assertApplyPresetError(
     'scenes: unknown block in bypass map',
     {
-      slots: [{ position: 1, block_type: 'amp' }],
-      scenes: [{ index: 1, bypass: { not_a_block: true } }],
+      slots: [{ slot: 1, block_type: 'amp' }],
+      scenes: [{ scene: 1, bypassed: { not_a_block: true } }],
     },
     'bypass.not_a_block',
   );
@@ -432,8 +420,8 @@ async function main(): Promise<void> {
   await assertApplyPresetError(
     'scenes: "none" in bypass map',
     {
-      slots: [{ position: 1, block_type: 'amp' }],
-      scenes: [{ index: 1, bypass: { none: true } }],
+      slots: [{ slot: 1, block_type: 'amp' }],
+      scenes: [{ scene: 1, bypassed: { none: true } }],
     },
     'no bypass state',
   );

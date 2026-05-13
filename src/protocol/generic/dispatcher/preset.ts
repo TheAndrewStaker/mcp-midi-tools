@@ -62,6 +62,12 @@ export async function executeApplyPreset(args: {
       `apply_preset(target_location=...) requires a device that supports save; ${descriptor.display_name} does not.`,
     );
   }
+  // Pre-MIDI validation pass: lets devices reject malformed specs
+  // before we open a MIDI handle. Without this, "AM4 not found"
+  // would mask a spec-shape bug whenever the hardware isn't connected.
+  if (descriptor.writer.validatePreset !== undefined) {
+    descriptor.writer.validatePreset(args.spec, args.target_location);
+  }
   // Safe-edit gates fire only when target_location is set (i.e. the
   // tool is doing an atomic switch+apply+save). Working-buffer-only
   // mode has no destructive blast radius and no navigation.

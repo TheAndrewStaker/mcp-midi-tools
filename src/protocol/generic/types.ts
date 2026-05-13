@@ -403,6 +403,16 @@ export interface DeviceWriter {
   buildSavePreset?(location: LocationRef, name?: string): number[];
   buildSwitchScene?(scene: number): number[];
 
+  /**
+   * Pre-MIDI validation hook for `apply_preset`. Optional. When present,
+   * the dispatcher calls it BEFORE opening the MIDI handle so spec-shape
+   * errors surface without a "device not found" mask when the hardware
+   * isn't connected. Throw a plain Error (or DispatchError) with the
+   * human-facing rejection message. v0.3 — AM4 implements this so the
+   * smoke test can exercise validation without a connected device.
+   */
+  validatePreset?(spec: PresetSpec, target?: LocationRef): void;
+
   // ── Execute (I/O — optional for Session A) ────────────────────
   setParam?(ctx: DispatchCtx, block: string, name: string, wireValue: number, channel?: string | number): Promise<WriteResult>;
   setParams?(ctx: DispatchCtx, ops: readonly WriteOp[]): Promise<BatchWriteResult>;

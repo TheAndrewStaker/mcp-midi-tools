@@ -88,6 +88,56 @@ import {
 
 import { parseAm4Location } from './schema.js';
 
+/**
+ * Translate the generic-surface PresetSpec into the AM4-native
+ * ApplyPresetInput shape. The legacy AM4 schema supports `channel`
+ * (single-channel shortcut) and `params` (current-channel) for backward
+ * compat; the unified surface only exposes per-channel `channels`, so
+ * we translate slots[].params (channel → name → value) onto the legacy
+ * `channels` field. Shared by `validatePreset` (pre-MIDI) and
+ * `applyPreset` (execute) so both paths see byte-identical translated
+ * input.
+ */
+function specToApplyInput(spec: PresetSpec): ApplyPresetInput {
+  const slots: ApplyPresetSlotInput[] = spec.slots.map((s) => {
+    if (typeof s.slot !== 'number') {
+      throw new DispatchError(
+        'capability_not_supported',
+        'Fractal AM4',
+        `apply_preset on Fractal AM4 uses linear slots — pass slot as a 1..4 integer, not {row,col}.`,
+      );
+    }
+    const channels: Record<string, Record<string, number | string>> = {};
+    if (s.params) {
+      for (const [ch, paramMap] of Object.entries(s.params)) {
+        channels[ch] = { ...paramMap } as Record<string, number | string>;
+      }
+    }
+    return {
+      position: s.slot,
+      block_type: s.block_type,
+      channels: Object.keys(channels).length > 0 ? channels : undefined,
+    };
+  });
+
+  const scenes: ApplyPresetSceneInput[] | undefined = spec.scenes?.map((sc: SceneSpec) => {
+    const channels: Record<string, string> = {};
+    if (sc.channels) {
+      for (const [block, ch] of Object.entries(sc.channels)) {
+        channels[block] = typeof ch === 'number' ? ['A', 'B', 'C', 'D'][ch] : String(ch);
+      }
+    }
+    return {
+      index: sc.scene,
+      name: sc.name,
+      channels: Object.keys(channels).length > 0 ? channels : undefined,
+      bypass: sc.bypassed ? { ...sc.bypassed } : undefined,
+    };
+  });
+
+  return { slots, name: spec.name, scenes };
+}
+
 export const writer: DeviceWriter = {
   buildSetParam(block, name, displayValue): number[] {
     const key = `${block}.${name}` as ParamKey;
@@ -309,53 +359,18 @@ export const writer: DeviceWriter = {
     };
   },
 
+  validatePreset(spec: PresetSpec, _target): void {
+    // Translate generic PresetSpec → AM4-native ApplyPresetInput and run
+    // applyExecutor's pre-MIDI validation pass. Throws a plain Error
+    // with the human-facing rejection message; the dispatcher's tool
+    // handler formats it via asError. Same translation logic as the
+    // execute path (kept in sync via specToApplyInput below).
+    const input = specToApplyInput(spec);
+    prepareApplyPresetWrites(input);
+  },
+
   async applyPreset(ctx, spec: PresetSpec, target): Promise<ApplyResult> {
-    // Map generic PresetSpec onto the AM4-native ApplyPresetInput shape.
-    // The legacy AM4 schema supports `channel` (single-channel shortcut) and
-    // `params` (current-channel) for backward compat; the unified surface
-    // only exposes per-channel `channels`, so we translate slots[].params
-    // (channel → name → value) onto the legacy `channels` field.
-    const slots: ApplyPresetSlotInput[] = spec.slots.map((s) => {
-      if (typeof s.slot !== 'number') {
-        throw new DispatchError(
-          'capability_not_supported',
-          'Fractal AM4',
-          `apply_preset on Fractal AM4 uses linear slots — pass slot as a 1..4 integer, not {row,col}.`,
-        );
-      }
-      // Pre-normalize channels: lowercase A/B/C/D → uppercase keys, walk in
-      // canonical order so wire output is deterministic.
-      const channels: Record<string, Record<string, number | string>> = {};
-      if (s.params) {
-        for (const [ch, paramMap] of Object.entries(s.params)) {
-          channels[ch] = { ...paramMap } as Record<string, number | string>;
-        }
-      }
-      return {
-        position: s.slot,
-        block_type: s.block_type,
-        channels: Object.keys(channels).length > 0 ? channels : undefined,
-      };
-    });
-
-    const scenes: ApplyPresetSceneInput[] | undefined = spec.scenes?.map((sc: SceneSpec) => {
-      const channels: Record<string, string> = {};
-      for (const [block, ch] of Object.entries(sc.channels)) {
-        channels[block] = typeof ch === 'number' ? ['A', 'B', 'C', 'D'][ch] : String(ch);
-      }
-      return {
-        index: sc.scene,
-        name: sc.name,
-        channels: Object.keys(channels).length > 0 ? channels : undefined,
-        bypass: sc.bypassed ? { ...sc.bypassed } : undefined,
-      };
-    });
-
-    const input: ApplyPresetInput = {
-      slots,
-      name: spec.name,
-      scenes,
-    };
+    const input = specToApplyInput(spec);
 
     const startMs = Date.now();
     if (target !== undefined) {
@@ -442,40 +457,9 @@ export const writer: DeviceWriter = {
       seenLocations.add(locationIndex);
 
       // Translate PresetSpec → ApplyPresetInput for this entry.
-      const slots: ApplyPresetSlotInput[] = e.spec.slots.map((s) => {
-        if (typeof s.slot !== 'number') {
-          throw new DispatchError(
-            'capability_not_supported',
-            'Fractal AM4',
-            `entries[${i}]: linear slot expected, got grid shape.`,
-          );
-        }
-        const channels: Record<string, Record<string, number | string>> = {};
-        if (s.params) {
-          for (const [ch, paramMap] of Object.entries(s.params)) {
-            channels[ch] = { ...paramMap } as Record<string, number | string>;
-          }
-        }
-        return {
-          position: s.slot,
-          block_type: s.block_type,
-          channels: Object.keys(channels).length > 0 ? channels : undefined,
-        };
-      });
-      const scenes = e.spec.scenes?.map((sc: SceneSpec) => {
-        const ch: Record<string, string> = {};
-        for (const [block, val] of Object.entries(sc.channels)) {
-          ch[block] = typeof val === 'number' ? ['A', 'B', 'C', 'D'][val] : String(val);
-        }
-        return {
-          index: sc.scene,
-          name: sc.name,
-          channels: Object.keys(ch).length > 0 ? ch : undefined,
-          bypass: sc.bypassed ? { ...sc.bypassed } : undefined,
-        };
-      });
-      const input: ApplyPresetInput = { slots, name: e.spec.name, scenes };
+      let input: ApplyPresetInput;
       try {
+        input = specToApplyInput(e.spec);
         prepareApplyPresetWrites(input);
       } catch (err) {
         throw new DispatchError(
