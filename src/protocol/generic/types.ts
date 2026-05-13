@@ -492,6 +492,22 @@ export interface DeviceDescriptor {
   // -- adapters --
   reader: DeviceReader;
   writer: DeviceWriter;
+
+  /**
+   * Long-form agent-behavior guidance surfaced via `describe_device`. v0.3
+   * migrated the device-namespaced tool surface (`am4_*`, `axefx2_*`,
+   * `hydra_*`) into the unified `set_param` / `apply_preset` / etc. tools.
+   * The long tool descriptions that used to carry per-device behavior
+   * (relative-change discipline, tempo/time semantics, channel/scene
+   * model, reverb naming, save-language gating, etc.) now live here so
+   * the LLM still sees them — but as device-scoped guidance rather than
+   * tool-scoped duplication.
+   *
+   * Keyed by topic (e.g. 'relative_change', 'tempo_time', 'reverb_naming')
+   * so a `describe_device` reader can selectively surface what's relevant.
+   * Keys are device-defined; no enforced taxonomy.
+   */
+  agent_guidance?: Readonly<Record<string, string>>;
 }
 
 // ── Error envelope ─────────────────────────────────────────────────

@@ -28,6 +28,7 @@ export function describeDevice(port: string): {
   canonical_terms: DeviceDescriptor['canonical_terms'];
   blocks: readonly string[];
   block_types: readonly string[];
+  agent_guidance?: DeviceDescriptor['agent_guidance'];
 } {
   const desc = requireDevice(port);
   return {
@@ -37,6 +38,7 @@ export function describeDevice(port: string): {
     canonical_terms: desc.canonical_terms,
     blocks: Object.keys(desc.blocks),
     block_types: desc.block_types ? Object.keys(desc.block_types) : [],
+    agent_guidance: desc.agent_guidance,
   };
 }
 

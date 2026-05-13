@@ -92,11 +92,11 @@ async function main(): Promise<void> {
     'am4_get_active_scene',
     'am4_get_block_bypass',
     'am4_get_block_layout',
-    'am4_get_param',
-    'am4_get_params',
+    // am4_get_param, am4_get_params, am4_lookup_lineage, am4_scan_locations
+    // removed v0.3 — use unified get_param / get_params / lookup_lineage /
+    // scan_locations with port="am4".
     'list_midi_ports',
     'am4_list_params',
-    'am4_lookup_lineage',
     'reconnect_midi',
     'am4_save_preset',
     'am4_save_to_location',
@@ -240,8 +240,8 @@ async function main(): Promise<void> {
   // reads src/knowledge/*.json. Confirms the tool is wired up and the data
   // is present.
   const forwardResp = await request('tools/call', {
-    name: 'am4_lookup_lineage',
-    arguments: { block_type: 'drive', name: 'T808 OD' },
+    name: 'lookup_lineage',
+    arguments: { port: 'am4', block_type: 'drive', name: 'T808 OD' },
   });
   if (forwardResp.error) throw new Error(`lookup_lineage forward error: ${forwardResp.error.message}`);
   const forwardText = (forwardResp.result as { content: { text: string }[] }).content[0].text;
@@ -250,8 +250,8 @@ async function main(): Promise<void> {
   console.log(`✓ lookup_lineage forward (drive/T808 OD) returned record with Tube Screamer lineage`);
 
   const reverseResp = await request('tools/call', {
-    name: 'am4_lookup_lineage',
-    arguments: { block_type: 'compressor', real_gear: '1176', include_quotes: false },
+    name: 'lookup_lineage',
+    arguments: { port: 'am4', block_type: 'compressor', real_gear: '1176', include_quotes: false },
   });
   if (reverseResp.error) throw new Error(`lookup_lineage reverse error: ${reverseResp.error.message}`);
   const reverseText = (reverseResp.result as { content: { text: string }[] }).content[0].text;
@@ -262,8 +262,8 @@ async function main(): Promise<void> {
 
   // Structured filter: compressor by manufacturer ("MXR").
   const mfrResp = await request('tools/call', {
-    name: 'am4_lookup_lineage',
-    arguments: { block_type: 'compressor', manufacturer: 'MXR', include_quotes: false },
+    name: 'lookup_lineage',
+    arguments: { port: 'am4', block_type: 'compressor', manufacturer: 'MXR', include_quotes: false },
   });
   if (mfrResp.error) throw new Error(`lookup_lineage manufacturer error: ${mfrResp.error.message}`);
   const mfrText = (mfrResp.result as { content: { text: string }[] }).content[0].text;
@@ -274,8 +274,8 @@ async function main(): Promise<void> {
 
   // Phaser block: "classic MXR phaser block" use case from BK-021 spec.
   const phaserResp = await request('tools/call', {
-    name: 'am4_lookup_lineage',
-    arguments: { block_type: 'phaser', manufacturer: 'MXR', include_quotes: false },
+    name: 'lookup_lineage',
+    arguments: { port: 'am4', block_type: 'phaser', manufacturer: 'MXR', include_quotes: false },
   });
   if (phaserResp.error) throw new Error(`lookup_lineage phaser error: ${phaserResp.error.message}`);
   const phaserText = (phaserResp.result as { content: { text: string }[] }).content[0].text;
@@ -286,8 +286,8 @@ async function main(): Promise<void> {
 
   // Wah block by forward lookup.
   const wahResp = await request('tools/call', {
-    name: 'am4_lookup_lineage',
-    arguments: { block_type: 'wah', name: 'Cry Babe', include_quotes: false },
+    name: 'lookup_lineage',
+    arguments: { port: 'am4', block_type: 'wah', name: 'Cry Babe', include_quotes: false },
   });
   if (wahResp.error) throw new Error(`lookup_lineage wah error: ${wahResp.error.message}`);
   const wahText = (wahResp.result as { content: { text: string }[] }).content[0].text;
