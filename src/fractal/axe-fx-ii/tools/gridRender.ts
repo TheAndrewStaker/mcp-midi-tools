@@ -104,6 +104,28 @@ export function renderGridSummary(cells: GridCell[]): string {
             `Row ${row} — serial chain, ${blockCells.length} block${blockCells.length === 1 ? '' : 's'}${shuntNote}:`,
         );
         lines.push('  ' + labels.join(' → '));
+
+        // Cable-health check: every cell past col 1 must have a non-zero
+        // routing mask, otherwise the chain has a break and signal won't
+        // reach OUTPUT. Surface broken cables explicitly so the agent
+        // (and the founder) catch silent-preset bugs without relying on
+        // AxeEdit's display, which can be stale and ambiguous.
+        const broken = rowCells
+            .filter((c) => c.col > 1 && c.routingFlags === 0)
+            .sort((a, b) => a.col - b.col);
+        if (broken.length > 0) {
+            lines.push('');
+            lines.push(
+                `⚠ CHAIN BREAK — ${broken.length} cell${broken.length === 1 ? '' : 's'} in this chain ${broken.length === 1 ? 'has' : 'have'} no input cable (routing_mask = 0):`,
+            );
+            for (const c of broken) {
+                const { label } = describeCell(c);
+                lines.push(`  - ${label} at row ${c.row} col ${c.col} — expected mask 0x${(1 << (c.row - 1)).toString(16)} (feed from row ${c.row} of col ${c.col - 1})`);
+            }
+            lines.push(
+                'Signal will not flow past the first break. If this is the result of an apply_preset_at, re-run the apply or surface the issue to the user.',
+            );
+        }
     } else {
         // Multi-row: list each row's contents on its own line. The routing
         // mask is what determines actual signal flow across rows; surface

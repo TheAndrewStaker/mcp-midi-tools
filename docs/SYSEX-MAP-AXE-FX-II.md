@@ -100,6 +100,7 @@ verification status against the founder's XL+ where applicable:
 |----|---------------|-----------|---------------|
 | 0x01 | GET_BLOCK_PARAMETERS_LIST | both | 🟡 wiki |
 | 0x02 | GET / SET_BLOCK_PARAMETER_VALUE | both | 🟡 wiki — 16-bit value packed into 3×7-bit septets |
+| **0x06** | **SET_CELL_ROUTING** (undocumented) | req | **🟢 hardware-decoded on Q8.02 XL+ (Session 70, 2026-05-13)** — 3-byte payload `[src_cell, dst_cell, connect]` adds/removes a cable between adjacent-column cells. Byte-exact golden in `scripts/verify-axe-fx-ii-encoding.ts`. See § 5c. |
 | 0x07 | GET / SET_MODIFIER_VALUE | both | 🟡 wiki |
 | 0x08 | GET_FIRMWARE_VERSION | both | 🟡 wiki |
 | 0x09 | SET_PRESET_NAME | req | 🟡 wiki |
@@ -113,7 +114,7 @@ verification status against the founder's XL+ where applicable:
 | 0x14 | GET_PRESET_NUMBER (read) / MIDI_SET_PRESET (legacy write) | both | 🟡 wiki — 14-bit preset number (XL+ range 0-767). **Captured response payload is MSB-first**, not LSB-first as the wiki suggests — see § 6b below. |
 | 0x17 | GET_MIDI_CHANNEL | both | 🟡 wiki |
 | **0x1D** | **STORE_PRESET (save-to-location)** | req | **🟢 wire-confirmed XL+ Q8.02 (Session 61 capture + HW-102 round-trip, 2026-05-11)** — 2-byte payload `[preset_high, preset_low]` MSB-first; device responds with 0x64 echoing 0x1D + result_code |
-| 0x20 | GET_GRID_LAYOUT_AND_ROUTING | both | 🟡 wiki — returns 48 grid cells (4 rows × 12 cols), 4 bytes each |
+| **0x20** | **GET_GRID_LAYOUT_AND_ROUTING** | both | **🟢 wire-confirmed XL+ Q8.02 (Session 69 captures, 2026-05-12)** — 200-byte frame, 192-byte payload, column-major (12 cols × 4 rows × 4 bytes/cell). Each cell `[blockId_lo, blockId_hi, routing_mask, byte3]`. See § 5c. |
 | 0x21 | FRONT_PANEL_CHANGE_DETECTED | resp | 🟡 wiki — broadcast by device after 0x08 handshake |
 | 0x23 | MIDI_LOOPER_STATUS_ENABLE / MIDI_LOOPER_STATUS | both | 🟡 wiki |
 | 0x29 | GET / SET_SCENE_NUMBER | both | 🟡 wiki — scene 0..7 (8 scenes) |
@@ -195,6 +196,148 @@ encoder fired against Q8.02 XL+ produced byte-identical wire output;
 device returned `0x64 1D 00` (OK) and the founder confirmed the
 working buffer landed at slot 700 via front-panel inspection. First
 attempt success — no encoder bugs in the path.
+
+## 5c. Routing grid wire format (function 0x20 + fn 0x06) 🟢
+
+**fn 0x20 GET_GRID_LAYOUT_AND_ROUTING response — wire-confirmed XL+ Q8.02.**
+
+```
+F0 00 01 74 07 20 [192-byte payload] [cs] F7
+```
+
+Payload is **column-major**: 12 columns × 16 bytes/column. Each
+16-byte column packs 4 rows × 4 bytes/cell:
+
+```
+column N (16 bytes) = row0[4 bytes] | row1[4 bytes] | row2[4 bytes] | row3[4 bytes]
+cell  (4 bytes)     = [blockId_lo, blockId_hi, routing_mask, byte3_unknown]
+```
+
+- `blockId` = 14-bit septet pair (`blockId_lo | (blockId_hi << 7)`).
+  Empty cells have blockId = 0; SHUNT cells have blockId = 201.
+- `routing_mask` at byte offset +2 is a **4-bit input mask** — each bit
+  N (0..3) set means "feed this cell from row N+1 of the previous
+  column." So `0x02` (bit 1) = "feed from row 2 of prev col."
+  Multi-bit masks encode parallel-path merges (e.g. `0x06` = feed from
+  both row 2 AND row 3 of prev col). The mask lives on the
+  **destination** cell, not the source. Cabling Amp(R2C2)→Cab(R2C3)
+  sets *Cab's* mask to 0x02, leaving Amp's mask untouched.
+- `byte3` semantics unknown — likely channel state or per-cell flags.
+
+**State-broadcast `op_flag = 0x03` = "routing changed".** When a
+cable is added or removed, the device emits a 0x74/0x75/0x76 triple
+targeting the **source** block of the affected cable, with
+`op_flag` = 0x03 (distinct from 0x00 = preset structure, 0x01 = block
+edit decoded Session 60). Listeners can use this to detect routing
+changes without polling the full grid.
+
+**Decoding evidence (Session 69, 2026-05-12):**
+
+Two passive captures (`samples/captured/session-68-click-connect.syx`
+and `session-69-click-connect-ctrl.syx`) of AxeEdit's "Click to
+connect" gesture on slot 666 "Glassy Clean":
+
+- First capture: clicked + between Comp (R2C1) and Amp (R2C2). Diff
+  of pre/post grid frames showed Amp's mask flipped 0x00 → 0x02
+  (cell at col 1 row 1, byte offset 6 within the 16-byte column
+  stride = byte 2 of row 1's 4-byte cell).
+- Control capture: clicked + between Amp (R2C2) and Cab (R2C3). Final
+  grid shows Comp(0x02) → Amp(0x02) → Cab(0x02) → Reverb(0x00),
+  matching the visible cable chain.
+
+Decoder: `scripts/diff-axefx2-grid-state.ts`.
+
+**fn 0x06 SET_CELL_ROUTING — hardware-decoded Session 70 (2026-05-13).**
+
+Wire envelope:
+
+```
+F0 00 01 74 [model] 06
+  [src_cell_idx]    ← col-major linear index: (col-1)*4 + (row-1)
+  [dst_cell_idx]    ← col-major linear index; MUST be src_col + 1
+  [connect]         ← 0x01 = add cable, 0x00 = remove cable
+  [cs] F7
+```
+
+The device updates `dst_cell.routing_mask` by setting (connect=1) or
+clearing (connect=0) the bit at index `src_row_0indexed`. Since the
+mask is the destination's INPUT mask (see § 5c above), this is the
+inverse of what one might naively guess from the function name —
+*"set cell routing"* sets the **destination cell's** mask, not the
+source's.
+
+**Captured oracle** (`samples/captured/session-69-click-connect-ctrl.syx`,
+AxeEdit click-to-connect on Amp(R2C2) → Cab(R2C3)):
+
+```
+F0 00 01 74 07 06 05 09 01 09 F7
+  src_cell = 5  = (2-1)*4 + (2-1) = R2C2 (Amp's cell)
+  dst_cell = 9  = (3-1)*4 + (2-1) = R2C3 (Cab's cell)
+  connect  = 1  = add cable
+  cs       = 09 (XOR of F0..01 inclusive, & 0x7F)
+```
+
+**Replayed by `scripts/verify-axefx2-routing-write.ts`** against
+Q8.02 XL+: device acked `F0 00 01 74 07 64 06 00 [cs] F7` (result
+code 0x00 = OK) and the grid-state read confirmed Cab's routing
+mask flipped 0x00 → 0x02 ("Cab now feeds from row 2 of col 2 = Amp").
+
+**Critical bug rooted out:** prior probe scripts (`probe-axefx2-
+routing.ts`, `probe-axefx2-routing-sweep.ts`) used a local checksum
+that started XOR at index 1 (excluding the leading F0). Fractal's
+canonical checksum INCLUDES F0 (`src/fractal/shared/checksum.ts`).
+Switching probes to the canonical `fractalChecksum` flipped most
+of Session 68's 0x01 acks to 0x00 OK — the "payload shapes failed"
+finding was a cs-validation failure misdiagnosed as shape rejection.
+
+**Result codes observed on Q8.02 XL+:**
+- `0x00` — OK, routing updated
+- `0x01` — request rejected (e.g. non-adjacent columns, malformed)
+- `0x0C` — payload length too short
+
+**Implementation:** `buildSetCellRouting({srcRow, srcCol, dstRow,
+dstCol, connect})` in `src/fractal/axe-fx-ii/setParam.ts`. The
+applyExecutor uses it to wire EVERY adjacent pair in row 2, both
+between content blocks (cols 1→2, 2→3, ..., N-1→N) AND through the
+shunt-chain extension (cols N→N+1 through 11→12). Closes the
+silent-preset bug (HW-105) that was the v0.1.0 Axe-Fx II MVP ship
+gate.
+
+**Content blocks do NOT auto-route on fn 0x05 placement.** Session 70
+slot-601 hardware test (2026-05-13) proved this empirically: Comp /
+Amp / Cab / Reverb placed via fn 0x05 SET_GRID_CELL came up with
+routing_mask=0 across all four cells. The earlier "device auto-cables
+Comp→Amp→Cab→Reverb on row 2" assumption was wrong — what actually
+happened in pre-Session-70 tests was that the SOURCE slot (e.g.
+slot 666 "Glassy Clean") already had the cables saved from a prior
+authoring session, and our apply was inheriting that wiring. Once
+applied to a truly-empty target slot (601), the content blocks land
+unwired. Fix: emit explicit fn 0x06 cables for every adjacent pair
+from col 2..12, regardless of whether the source cell is a content
+block or a shunt. Byte 3 of fn 0x05 confirmed unrelated to routing
+(probed values 0x00, 0x01, 0x02, 0x04, 0x08, 0x0F — all accepted by
+device, none mutate the routing_mask).
+
+**Each shunt position needs a UNIQUE block instance ID.** Session 71
+in-to-out-route capture (`samples/captured/session-71-in-to-out-
+route.pcapng`, 2026-05-13) shows AxeEdit placing 6 shunts at cols 7-12
+using `blockId` 200, 201, 202, 203, 204, 205 — one unique instance
+per cell. Reusing the same blockId across positions triggers the
+device's documented "move on duplicate" behavior (`setParam.ts:797`):
+the second placement clears the first cell as a side effect, leaving
+only the LAST placement persisted. Per-cell mask=0 broke the chain
+even after cabling — silent preset. Fix: use `SHUNT 1`..`SHUNT N`
+(`blockId 200 + (n-1)`) for each shunt position, never repeating an
+instance ID within a single preset.
+
+**fn 0x05 envelope is 3 payload bytes in AxeEdit's wire format**, not
+4 — `F0 00 01 74 [model] 05 [block_lo] [block_hi] [cell_idx] [cs] F7`
+(11 bytes total). Our `buildSetGridCell` appends a 0x00 "reserved"
+byte (12 bytes total). Device accepts both — 4-byte format was
+hardware-verified in Session 62/63 probes — but AxeEdit's canonical
+form omits the trailing byte. No known semantic difference under
+Q8.02, but minimizing protocol drift is preferable; pending future
+session to retire byte 3.
 
 ## 6b. 0x14 GET_PRESET_NUMBER byte-ordering correction 🟢
 

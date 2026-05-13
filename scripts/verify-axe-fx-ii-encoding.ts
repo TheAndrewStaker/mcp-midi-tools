@@ -28,6 +28,7 @@ import {
     buildStateBroadcastTriple,
     buildStateBroadcastTripleMessages,
     buildGetPresetNumber,
+    buildSetCellRouting,
     buildSetGridCell,
     buildStorePreset,
     buildSwitchPreset,
@@ -38,6 +39,7 @@ import {
     isGetPresetNameResponse,
     isGetPresetNumberResponse,
     isSceneNumberResponse,
+    isSetCellRoutingResponse,
     isSetGridCellResponse,
     isStorePresetResponse,
     MODEL_IDS,
@@ -48,6 +50,7 @@ import {
     parseGetPresetNameResponse,
     parseGetPresetNumberResponse,
     parseSceneNumberResponse,
+    parseSetCellRoutingResponse,
     parseSetGridCellResponse,
     parseStorePresetResponse,
     unpackValue16,
@@ -1024,6 +1027,121 @@ check('AXE_FX_II_XL_PLUS_MODEL_ID === 0x07', AXE_FX_II_XL_PLUS_MODEL_ID === 0x07
             parsed.resultCode === 0x06 && parsed.ok === false,
         );
     }
+}
+
+// ── SET_CELL_ROUTING (function 0x06) — Session 70 hardware decode ─────
+//
+// Captured AxeEdit's outbound fn 0x06 from a single click-to-connect
+// of Amp(R2C2) → Cab(R2C3) in `samples/captured/session-69-click-
+// connect-ctrl.syx`. Replayed by `scripts/verify-axefx2-routing-write.ts`
+// against Q8.02 XL+: device acked 0x00 OK and the grid-state read
+// confirmed Cab's routing mask flipped 0x00 → 0x02 ("Cab now feeds
+// from row 2 of prev col = from Amp").
+//
+// Payload:
+//   src_cell = 5  = (col-1)*4 + (row-1) = (2-1)*4 + (2-1) = R2C2
+//   dst_cell = 9  = (3-1)*4 + (2-1)                      = R2C3
+//   connect  = 1  = add cable
+//
+// Checksum: XOR(F0, 00, 01, 74, 07, 06, 05, 09, 01) & 0x7F = 0x09.
+
+{
+    const expected = [0xf0, 0x00, 0x01, 0x74, 0x07, 0x06, 0x05, 0x09, 0x01, 0x09, 0xf7];
+    const built = buildSetCellRouting({ srcRow: 2, srcCol: 2, dstRow: 2, dstCol: 3, connect: true });
+    check(
+        'buildSetCellRouting Amp(R2C2)→Cab(R2C3) matches captured AxeEdit click',
+        eqBytes(built, expected),
+        `got [${hex(built)}], expected [${hex(expected)}]`,
+    );
+}
+
+// Disconnect variant — same shape, byte 8 flips to 0x00.
+{
+    const expectedHead = [0xf0, 0x00, 0x01, 0x74, 0x07, 0x06, 0x05, 0x09, 0x00];
+    const cs = fractalChecksum(expectedHead);
+    const expected = [...expectedHead, cs, 0xf7];
+    const built = buildSetCellRouting({ srcRow: 2, srcCol: 2, dstRow: 2, dstCol: 3, connect: false });
+    check(
+        'buildSetCellRouting connect=false produces remove-cable byte (0x00) and recomputed cs',
+        eqBytes(built, expected),
+        `got [${hex(built)}], expected [${hex(expected)}]`,
+    );
+}
+
+// Cross-row cable (parallel-path wiring): row 1 col 5 → row 3 col 6.
+//   src_cell = (5-1)*4 + (1-1) = 16 = 0x10
+//   dst_cell = (6-1)*4 + (3-1) = 22 = 0x16
+{
+    const built = buildSetCellRouting({ srcRow: 1, srcCol: 5, dstRow: 3, dstCol: 6 });
+    check(
+        'buildSetCellRouting cross-row cable encodes both cell indices correctly',
+        built[6] === 0x10 && built[7] === 0x16 && built[8] === 0x01,
+        `got src=0x${built[6]?.toString(16)} dst=0x${built[7]?.toString(16)} connect=0x${built[8]?.toString(16)}, ` +
+        `expected src=0x10 dst=0x16 connect=0x01`,
+    );
+}
+
+// Default connect=true.
+{
+    const builtDefault = buildSetCellRouting({ srcRow: 2, srcCol: 1, dstRow: 2, dstCol: 2 });
+    check(
+        'buildSetCellRouting defaults connect to true (0x01)',
+        builtDefault[8] === 0x01,
+    );
+}
+
+// Adjacency validation.
+{
+    let threw = false;
+    try { buildSetCellRouting({ srcRow: 2, srcCol: 2, dstRow: 2, dstCol: 4 }); } catch { threw = true; }
+    check('buildSetCellRouting rejects non-adjacent columns (src+2)', threw);
+
+    threw = false;
+    try { buildSetCellRouting({ srcRow: 2, srcCol: 3, dstRow: 2, dstCol: 2 }); } catch { threw = true; }
+    check('buildSetCellRouting rejects backward cable (dst before src)', threw);
+
+    threw = false;
+    try { buildSetCellRouting({ srcRow: 0, srcCol: 1, dstRow: 1, dstCol: 2 }); } catch { threw = true; }
+    check('buildSetCellRouting rejects srcRow=0', threw);
+
+    threw = false;
+    try { buildSetCellRouting({ srcRow: 1, srcCol: 12, dstRow: 1, dstCol: 13 }); } catch { threw = true; }
+    check('buildSetCellRouting rejects dstCol=13', threw);
+
+    threw = false;
+    try { buildSetCellRouting({ srcRow: 1, srcCol: 1, dstRow: 5, dstCol: 2 }); } catch { threw = true; }
+    check('buildSetCellRouting rejects dstRow=5', threw);
+}
+
+// MULTIPURPOSE_RESPONSE matcher — OK ACK shape from Q8.02 captures.
+// F0 00 01 74 07 64 06 00 [cs] F7  where cs = XOR of preceding bytes & 0x7F.
+{
+    const head = [0xf0, 0x00, 0x01, 0x74, 0x07, 0x64, 0x06, 0x00];
+    const captured = [...head, fractalChecksum(head), 0xf7];
+    check(
+        'isSetCellRoutingResponse matches Q8.02 OK ACK shape',
+        isSetCellRoutingResponse(captured),
+    );
+    const parsed = parseSetCellRoutingResponse(captured);
+    check(
+        'parseSetCellRoutingResponse OK ACK → resultCode=0 ok=true',
+        parsed.resultCode === 0x00 && parsed.ok === true,
+    );
+}
+
+// NACK shape — result code 0x01 ("args/shape unknown").
+{
+    const head = [0xf0, 0x00, 0x01, 0x74, 0x07, 0x64, 0x06, 0x01];
+    const captured = [...head, fractalChecksum(head), 0xf7];
+    check(
+        'isSetCellRoutingResponse matches NACK shape',
+        isSetCellRoutingResponse(captured),
+    );
+    const parsed = parseSetCellRoutingResponse(captured);
+    check(
+        'parseSetCellRoutingResponse NACK → resultCode=0x01 ok=false',
+        parsed.resultCode === 0x01 && parsed.ok === false,
+    );
 }
 
 // ── Report ────────────────────────────────────────────────────────────

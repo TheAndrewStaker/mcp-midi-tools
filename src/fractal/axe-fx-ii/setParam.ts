@@ -35,6 +35,7 @@ const SYSEX_END = 0xf7;
 const FRACTAL_MFR = [0x00, 0x01, 0x74] as const;
 const FUNC_BLOCK_PARAM = 0x02;
 const FUNC_SET_GRID_CELL = 0x05;
+const FUNC_SET_CELL_ROUTING = 0x06;
 const FUNC_SET_PRESET_NAME = 0x09;
 const FUNC_GET_PRESET_NAME = 0x0f;
 const FUNC_BLOCK_CHANNEL = 0x11;
@@ -910,6 +911,119 @@ export function parseSetGridCellResponse(bytes: readonly number[]): SetGridCellR
     if (!isSetGridCellResponse(bytes)) {
         throw new Error(
             `parseSetGridCellResponse: not a SET_GRID_CELL MULTIPURPOSE_RESPONSE: ${bytes.map((b) => b.toString(16).padStart(2, '0')).join(' ')}`,
+        );
+    }
+    const resultCode = bytes[7];
+    return { resultCode, ok: resultCode === 0x00 };
+}
+
+/**
+ * Build a SET_CELL_ROUTING message (function 0x06) — add or remove a
+ * cable between two adjacent-column grid cells. Companion to
+ * `buildSetGridCell` (function 0x05): 0x05 places the block, 0x06 wires
+ * its inputs.
+ *
+ * Wire envelope:
+ *
+ *   F0 00 01 74 [model] 06
+ *     [src_cell_idx]    ← col-major linear index (col-1)*4 + (row-1)
+ *     [dst_cell_idx]    ← col-major linear index; MUST be src_col + 1
+ *     [connect]         ← 0x01 = add cable, 0x00 = remove cable
+ *     [cs] F7
+ *
+ * Effect: the device updates `dst_cell.routing_mask` by setting
+ * (connect=1) or clearing (connect=0) the bit at index `src_row_0indexed`.
+ * The mask byte uses 4-bit input-mask encoding — bit N set means "feed
+ * from row N+1 of previous column" (see `parseGetGridLayoutResponse`).
+ * So a cable from row 2 → row 2 with src_col=2, dst_col=3 toggles
+ * `dst_cell.routing_mask`'s bit 1 (= 0x02) on or off.
+ *
+ * Status: 🟢 hardware-decoded on Q8.02 XL+ (Session 70, 2026-05-13).
+ * Captured AxeEdit's outbound fn 0x06 from a click-to-connect on
+ * Amp(R2C2) → Cab(R2C3):
+ *
+ *   F0 00 01 74 07 06 05 09 01 09 F7
+ *     src_cell = 5  = (2-1)*4 + (2-1) = R2C2
+ *     dst_cell = 9  = (3-1)*4 + (2-1) = R2C3
+ *     connect  = 1  = add cable
+ *
+ * Replayed by our own probe with byte-exact match — device acked
+ * 0x00 OK and the grid-state read confirmed Cab's routing mask
+ * flipped 0x00 → 0x02 ("Cab now feeds from row 2 of col 2 = from Amp").
+ *
+ * Validates adjacency (`dstCol === srcCol + 1`); the device rejects
+ * non-adjacent cables. Cross-row cables (e.g. row 1 of col 5 → row 3
+ * of col 6) ARE allowed — that's how parallel paths are wired.
+ */
+export function buildSetCellRouting(opts: {
+    srcRow: number;
+    srcCol: number;
+    dstRow: number;
+    dstCol: number;
+    connect?: boolean;
+    modelId?: number;
+}): number[] {
+    const { srcRow, srcCol, dstRow, dstCol, connect = true } = opts;
+    if (!Number.isInteger(srcRow) || srcRow < 1 || srcRow > 4) {
+        throw new Error(`buildSetCellRouting: srcRow out of range (1..4): ${srcRow}`);
+    }
+    if (!Number.isInteger(srcCol) || srcCol < 1 || srcCol > 11) {
+        throw new Error(`buildSetCellRouting: srcCol out of range (1..11): ${srcCol}`);
+    }
+    if (!Number.isInteger(dstRow) || dstRow < 1 || dstRow > 4) {
+        throw new Error(`buildSetCellRouting: dstRow out of range (1..4): ${dstRow}`);
+    }
+    if (!Number.isInteger(dstCol) || dstCol < 2 || dstCol > 12) {
+        throw new Error(`buildSetCellRouting: dstCol out of range (2..12): ${dstCol}`);
+    }
+    if (dstCol !== srcCol + 1) {
+        throw new Error(
+            `buildSetCellRouting: dstCol (${dstCol}) must equal srcCol + 1 (got src=${srcCol}, dst=${dstCol}). ` +
+            `Cables connect adjacent columns only — the device rejects off-column cables.`,
+        );
+    }
+    const srcCellIdx = (srcCol - 1) * 4 + (srcRow - 1);
+    const dstCellIdx = (dstCol - 1) * 4 + (dstRow - 1);
+    const modelId = opts.modelId ?? AXE_FX_II_XL_PLUS_MODEL_ID;
+    return buildEnvelope(modelId, [
+        FUNC_SET_CELL_ROUTING,
+        srcCellIdx & 0x7f,
+        dstCellIdx & 0x7f,
+        connect ? 0x01 : 0x00,
+    ]);
+}
+
+/**
+ * Match a MULTIPURPOSE_RESPONSE (function 0x64) acknowledging a
+ * SET_CELL_ROUTING (function 0x06) request.
+ *
+ *   F0 00 01 74 [model] 64 06 [result_code] [cs] F7
+ *
+ * Result codes observed on Q8.02 XL+ during decode:
+ *   0x00 — OK, routing updated
+ *   0x01 — request rejected (e.g. non-adjacent columns, malformed shape)
+ *   0x0C — payload length too short
+ */
+export function isSetCellRoutingResponse(bytes: readonly number[]): boolean {
+    if (bytes.length < 10) return false;
+    if (bytes[0] !== SYSEX_START) return false;
+    if (bytes[1] !== FRACTAL_MFR[0]) return false;
+    if (bytes[2] !== FRACTAL_MFR[1]) return false;
+    if (bytes[3] !== FRACTAL_MFR[2]) return false;
+    if (bytes[5] !== FUNC_MULTIPURPOSE_RESPONSE) return false;
+    if (bytes[6] !== FUNC_SET_CELL_ROUTING) return false;
+    return bytes[bytes.length - 1] === SYSEX_END;
+}
+
+export interface SetCellRoutingResult {
+    resultCode: number;
+    ok: boolean;
+}
+
+export function parseSetCellRoutingResponse(bytes: readonly number[]): SetCellRoutingResult {
+    if (!isSetCellRoutingResponse(bytes)) {
+        throw new Error(
+            `parseSetCellRoutingResponse: not a SET_CELL_ROUTING MULTIPURPOSE_RESPONSE: ${bytes.map((b) => b.toString(16).padStart(2, '0')).join(' ')}`,
         );
     }
     const resultCode = bytes[7];

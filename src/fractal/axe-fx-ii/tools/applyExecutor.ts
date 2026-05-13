@@ -14,6 +14,7 @@ import {
   buildSetBlockBypass as buildSetBlockBypassEnvelope,
   buildSetBlockChannel,
   buildSetBlockParameterValue,
+  buildSetCellRouting,
   buildSetGridCell,
   buildSetPresetName,
   buildSetSceneNumber,
@@ -21,9 +22,11 @@ import {
   buildSwitchPreset,
   displayToWire,
   isGetGridLayoutResponse,
+  isSetCellRoutingResponse,
   isSetGridCellResponse,
   isStorePresetResponse,
   parseGetGridLayoutResponse,
+  parseSetCellRoutingResponse,
   parseSetGridCellResponse,
   parseStorePresetResponse,
   type AxeFxIIChannel,
@@ -94,10 +97,10 @@ export interface ApplyPresetAtInput {
 }
 
 export interface ApplyPresetAtOp {
-  kind: 'switch_preset' | 'clear_cell' | 'place_block' | 'switch_scene' | 'channel' | 'bypass' | 'param' | 'name' | 'save';
+  kind: 'switch_preset' | 'clear_cell' | 'place_block' | 'cable' | 'switch_scene' | 'channel' | 'bypass' | 'param' | 'name' | 'save';
   bytes: number[];
   summary: string;
-  awaitResponse?: 'set_grid_cell' | 'store_preset';
+  awaitResponse?: 'set_grid_cell' | 'set_cell_routing' | 'store_preset';
   // For 'clear_cell' ops only — the (row, col) being cleared. The
   // runtime uses this to skip clears for cells the device's GET_GRID_
   // LAYOUT read confirms are already empty (no point emitting ~40
@@ -256,25 +259,73 @@ export function buildApplyPresetAtOps(
     });
   }
 
-  // Silent-preset bridging — DEFERRED (Session 68 follow-up):
+  // Silent-preset fix — wire row 2 end-to-end with explicit cables.
   //
-  // Original plan was to place shunts (blockId 201, mask 0x02) at
-  // row 2 cols N+1..12 to bridge the chain to OUTPUT. Hardware test
-  // 2026-05-12 (Glassy Clean at slot 666) proved this DOESN'T work:
-  // shunts placed via buildSetGridCell get default mask 0 (no input),
-  // and the device's auto-route logic — which fires correctly for
-  // real-block placements (Comp→Amp→Cab→Reverb cable up automatically)
-  // — does NOT fire for shunts. The shunts end up isolated.
+  // The device's OUTPUT pulls from col 12 of the routing grid. Two
+  // separate cabling problems must be solved for a fresh-empty slot
+  // to produce audio:
   //
-  // To fix properly we need to decode AxeEdit's outbound routing-
-  // write envelope. The new HW-NEW "Click to connect" capture
-  // (single-click of AxeEdit's green + connect button) is the next
-  // probe target. Without that decode, placing shunts adds misleading
-  // noise — better to leave row 2 cols N+1..12 empty and let
-  // OUTPUT's existing routing pull from wherever it does by default.
+  //   (1) Content-block cabling: cols 1→2, 2→3, ..., N-1→N. Despite
+  //       earlier assumptions, the device does NOT auto-route content
+  //       blocks placed via fn 0x05 — Session 70 hardware test
+  //       (slot 601) showed Comp/Amp/Cab/Reverb sitting in row 2 with
+  //       all routing_mask=0 even after fn 0x05 placement. The agent
+  //       pinpointed it: AxeEdit fires fn 0x06 SET_CELL_ROUTING on
+  //       every cable-drag, including between content blocks.
   //
-  // The clear_cell loop above already cleared cols N+1..12, so
-  // they remain empty after the chain is placed.
+  //   (2) Shunt-chain extension: cols N+1..12 must hold SHUNT blocks
+  //       (blockId 201) cabled left-to-right so signal reaches the
+  //       col-12 OUTPUT terminator.
+  //
+  // Both are solved by the same primitive: `buildSetCellRouting({
+  // srcRow, srcCol, dstRow, dstCol, connect: true})` writes fn 0x06
+  // (decoded Session 70, captured from AxeEdit Amp→Cab click-to-connect).
+  // Sets dst_cell's input-mask bit at src_row_index — for all-row-2
+  // chains, that's 0x02 ("feed from row 2 of prev col") on every cell.
+  //
+  // Op ordering: place all cells first (chain blocks already done +
+  // shunts below), then issue all cables in one pass. Decoupling
+  // placement from cabling avoids any place→cable→place interactions
+  // that could disturb earlier writes' masks.
+  //
+  // The clear_cell pre-pass above wiped cols N+1..12; the shunt loop
+  // below fills them.
+  //
+  // Each shunt position needs a UNIQUE block instance ID. SHUNT 1 =
+  // blockId 200, SHUNT 2 = 201, ..., SHUNT 36 = 235 (per Q8.02 wire
+  // capture range). Reusing the same blockId across positions triggers
+  // the device's "move on duplicate" behavior — only the LAST
+  // placement persists, all earlier cells get cleared as a side
+  // effect, leaving the row-2 chain riddled with empty cells (silent
+  // preset even after cabling). Confirmed by AxeEdit's session-71
+  // in-to-out-route capture: 6 shunt placements at cols 7-12 used
+  // blockIds 200, 201, 202, 203, 204, 205 — one unique instance per
+  // cell.
+  const SHUNT_BASE_ID = 200;
+  // Pass 1: place all shunts (content blocks were placed above).
+  for (let col = resolved.length + 1; col <= 12; col++) {
+    // Number shunts left-to-right starting at SHUNT 1 = 200.
+    const shuntIndex = col - resolved.length;
+    const shuntBlockId = SHUNT_BASE_ID + (shuntIndex - 1);
+    ops.push({
+      kind: 'place_block',
+      bytes: buildSetGridCell({ row: 2, col, blockId: shuntBlockId }),
+      summary: `PLACE SHUNT ${shuntIndex} (id ${shuntBlockId}) at row 2 col ${col}`,
+      awaitResponse: 'set_grid_cell',
+    });
+  }
+  // Pass 2: cable every adjacent pair in row 2 — content blocks AND
+  // shunts. Col 1 (first cell) receives input from the implicit INPUT
+  // column and needs no cable. All other cells (cols 2..12) need a
+  // cable from their left neighbor.
+  for (let col = 2; col <= 12; col++) {
+    ops.push({
+      kind: 'cable',
+      bytes: buildSetCellRouting({ srcRow: 2, srcCol: col - 1, dstRow: 2, dstCol: col, connect: true }),
+      summary: `CABLE row 2 col ${col - 1} → row 2 col ${col}`,
+      awaitResponse: 'set_cell_routing',
+    });
+  }
 
   if (scene !== undefined) {
     ops.push({
@@ -556,6 +607,27 @@ export async function runApplyPresetAtOps(
       try {
         const ack = await ackPromise;
         const parsed = parseSetGridCellResponse(ack);
+        if (!parsed.ok) {
+          lastNack = { summary: op.summary, resultCode: parsed.resultCode };
+          summaries.push(`  ${op.summary}  ❌ result=0x${parsed.resultCode.toString(16)}`);
+        } else {
+          acks++;
+          summaries.push(`  ${op.summary}  ✓`);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        summaries.push(`  ${op.summary}  ⚠ no ACK (${msg})`);
+      }
+    } else if (op.awaitResponse === 'set_cell_routing') {
+      const ackPromise = conn.receiveSysExMatching(
+        isSetCellRoutingResponse,
+        GET_RESPONSE_TIMEOUT_MS,
+      );
+      conn.send(op.bytes);
+      totalBytes += op.bytes.length;
+      try {
+        const ack = await ackPromise;
+        const parsed = parseSetCellRoutingResponse(ack);
         if (!parsed.ok) {
           lastNack = { summary: op.summary, resultCode: parsed.resultCode };
           summaries.push(`  ${op.summary}  ❌ result=0x${parsed.resultCode.toString(16)}`);
