@@ -55,6 +55,7 @@ import {
     recordInbound,
     sendAndAwaitAck,
 } from '@/server/shared/wireOps.js';
+import { markAM4Dirty } from '@/fractal/am4/tools/safeEdit.js';
 
 export function registerWriteTools(server: McpServer): void {
     server.registerTool('am4_set_param', {
@@ -180,6 +181,7 @@ export function registerWriteTools(server: McpServer): void {
                 channelSwitched = switchResult.switched;
             }
             result = await sendAndAwaitAck(conn, bytes, isWriteEcho);
+            markAM4Dirty();
         } finally {
             capture.unsubscribe();
         }
@@ -311,6 +313,7 @@ export function registerWriteTools(server: McpServer): void {
                 WRITE_ECHO_TIMEOUT_MS,
             );
             conn.send(bytes);
+            markAM4Dirty();
             try {
                 await echoPromise;
                 acked++;
@@ -373,6 +376,7 @@ export function registerWriteTools(server: McpServer): void {
         const displayName = BLOCK_NAMES_BY_VALUE[value] ?? `0x${value.toString(16)}`;
         const conn = ensureMidi();
         const result = await sendAndAwaitAck(conn, bytes, isWriteEcho);
+        markAM4Dirty();
         if (result.acked) {
             return {
                 content: [{
@@ -434,6 +438,7 @@ export function registerWriteTools(server: McpServer): void {
         const bytes = buildSetBlockBypass(value, bypassed);
         const conn = ensureMidi();
         const result = await sendAndAwaitAck(conn, bytes, isWriteEcho);
+        markAM4Dirty();
         const stateWord = bypassed ? 'bypassed' : 'active';
         if (result.acked) {
             return {

@@ -34,6 +34,16 @@ import {
     recordInbound,
     sendAndAwaitAck,
 } from '@/server/shared/wireOps.js';
+import {
+    ON_EDITED_DESCRIPTION,
+    ON_EDITED_SCHEMA,
+    type OnEditedMode,
+} from '@/server/shared/safeEdit.js';
+import {
+    guardActiveAM4BufferOrSave,
+    markAM4Clean,
+    markAM4Dirty,
+} from '@/fractal/am4/tools/safeEdit.js';
 
 const PRESET_DUMP_RECEIVE_TIMEOUT_MS = 2000;
 
@@ -94,6 +104,12 @@ export function registerNavigationTools(server: McpServer): void {
         } finally {
             capture.unsubscribe();
         }
+        // Save committed working buffer to flash — buffer now matches a
+        // saved slot. Clean state. (Same behavior even if the ack didn't
+        // land: the wire bytes went out, the AM4 will have processed them
+        // by the time the next nav arrives. False-clean is a known limit;
+        // false-dirty is the safer drift direction.)
+        if (result.acked) markAM4Clean();
         const inboundBlock = formatInboundCapture(capture);
         if (result.acked) {
             return {
@@ -152,6 +168,7 @@ export function registerNavigationTools(server: McpServer): void {
         const bytes = buildSetPresetName(locationIndex, name);
         const conn = ensureMidi();
         const result = await sendAndAwaitAck(conn, bytes, isCommandAck);
+        markAM4Dirty();
         if (result.acked) {
             return {
                 content: [{
@@ -226,6 +243,8 @@ export function registerNavigationTools(server: McpServer): void {
         }
         const saveBytes = buildSaveToLocation(locationIndex);
         const saveResult = await sendAndAwaitAck(conn, saveBytes, isCommandAck);
+        // Working buffer committed to flash — clean state.
+        if (saveResult.acked) markAM4Clean();
         if (saveResult.acked) {
             return {
                 content: [{
@@ -277,6 +296,7 @@ export function registerNavigationTools(server: McpServer): void {
         const bytes = buildSetSceneName(sceneIdx, name);
         const conn = ensureMidi();
         const result = await sendAndAwaitAck(conn, bytes, isCommandAck);
+        markAM4Dirty();
         if (result.acked) {
             return {
                 content: [{
@@ -319,21 +339,40 @@ export function registerNavigationTools(server: McpServer): void {
             location: z.string().describe(
                 'AM4 preset location in bank+slot form, A01..Z04 (26 banks × 4 per bank = 104 locations).',
             ),
+            on_active_preset_edited: ON_EDITED_SCHEMA.describe(ON_EDITED_DESCRIPTION),
         },
-    }, async ({ location }) => {
+    }, async ({ location, on_active_preset_edited }) => {
         const normalized = location.trim().toUpperCase();
         const locationIndex = parseLocationCode(normalized);
-        const bytes = buildSwitchPreset(locationIndex);
+
         const conn = ensureMidi();
+
+        // Buffer-dirty gate — switch_preset discards the active
+        // buffer's unsaved edits. Honor the caller's mode.
+        const mode: OnEditedMode = on_active_preset_edited ?? 'warn';
+        const guard = await guardActiveAM4BufferOrSave(conn, mode);
+        if (!guard.proceed) {
+            return {
+                content: [{ type: 'text', text: guard.warningText ?? 'navigation refused' }],
+                isError: true,
+            };
+        }
+
+        const bytes = buildSwitchPreset(locationIndex);
         const result = await sendAndAwaitAck(conn, bytes, isWriteEcho);
         // A new preset loads a new set of block channels — any cached channel
         // state from a previous preset is now stale.
         invalidateChannelCache();
+        // Loading a stored slot replaces working buffer with the saved
+        // bytes — clean state.
+        if (result.acked) markAM4Clean();
         if (result.acked) {
+            const savedLine = guard.savedDetail ? `${guard.savedDetail}\n` : '';
             return {
                 content: [{
                     type: 'text',
                     text:
+                        savedLine +
                         `Switched to preset ${formatLocationCode(locationIndex)}. ` +
                         `Any unsaved working-buffer edits were discarded. ` +
                         `(Channel cache cleared — param writes will report "unknown channel" until a channel is explicitly set.)`,

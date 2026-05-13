@@ -36,6 +36,19 @@ import {
     type ApplyPresetSceneInput,
     type ApplyPresetSlotInput,
 } from '@/fractal/am4/tools/applyExecutor.js';
+import {
+    ON_EDITED_DESCRIPTION,
+    ON_EDITED_SCHEMA,
+    SAVE_AUTHORIZED_SCHEMA,
+    buildSaveAuthorizationRefusal,
+    buildSaveAuthorizedDescription,
+    type OnEditedMode,
+} from '@/server/shared/safeEdit.js';
+import {
+    guardActiveAM4BufferOrSave,
+    markAM4Clean,
+    markAM4Dirty,
+} from '@/fractal/am4/tools/safeEdit.js';
 
 export function registerApplyTools(server: McpServer): void {
     server.registerTool('am4_apply_preset', {
@@ -333,6 +346,10 @@ export function registerApplyTools(server: McpServer): void {
       } finally {
         capture.unsubscribe();
       }
+      // apply_preset writes to the working buffer (no save). After
+      // successful writes, the buffer diverges from the loaded slot —
+      // mark dirty so the next navigation surfaces a warning.
+      markAM4Dirty();
       const body = [runResult.header, ...runResult.stateLines, ...runResult.lines, '', formatInboundCapture(capture)].join('\n');
       return {
         content: [{ type: 'text', text: body }],
@@ -526,8 +543,12 @@ export function registerApplyTools(server: McpServer): void {
         preset: presetShapeSchema.describe(
           'Preset content to build at the target location. Same shape as am4_apply_preset\'s input: slots (required), optional name, optional scenes.',
         ),
+        save_authorized: SAVE_AUTHORIZED_SCHEMA.describe(
+          buildSaveAuthorizedDescription('am4_apply_preset'),
+        ),
+        on_active_preset_edited: ON_EDITED_SCHEMA.describe(ON_EDITED_DESCRIPTION),
       },
-    }, async ({ location, preset }) => {
+    }, async ({ location, preset, save_authorized, on_active_preset_edited }) => {
       const startMs = Date.now();
       const normalized = String(location).trim().toUpperCase();
       let locationIndex: number;
@@ -547,7 +568,41 @@ export function registerApplyTools(server: McpServer): void {
           isError: true,
         };
       }
+
+      // Save-authorization gate (per docs/SAFE-EDIT-WORKFLOW.md):
+      // refuse silently destructive saves unless the caller has
+      // explicitly authorized it. Description-only enforcement isn't
+      // enough — the agent can misread "build a tone at G01" as save
+      // intent. This makes the refusal explicit and points the agent
+      // at the working-buffer-only sibling for audition flow.
+      if (save_authorized !== true) {
+        return {
+          content: [{
+            type: 'text',
+            text: buildSaveAuthorizationRefusal({
+              targetDescriptor: `location ${normalized}`,
+              applyAtToolName: 'am4_apply_preset_at',
+              workingBufferToolName: 'am4_apply_preset',
+            }),
+          }],
+          isError: true,
+        };
+      }
+
       const conn = ensureMidi();
+
+      // Buffer-dirty gate. apply_preset_at navigates to the target
+      // location, which discards the active buffer's unsaved edits.
+      // Honor the caller's mode (warn/discard/save_active_first).
+      const mode: OnEditedMode = on_active_preset_edited ?? 'warn';
+      const guard = await guardActiveAM4BufferOrSave(conn, mode);
+      if (!guard.proceed) {
+        return {
+          content: [{ type: 'text', text: guard.warningText ?? 'navigation refused' }],
+          isError: true,
+        };
+      }
+
       const capture = recordInbound(conn);
       let result: ApplyPresetAtResult;
       try {
@@ -555,7 +610,13 @@ export function registerApplyTools(server: McpServer): void {
       } finally {
         capture.unsubscribe();
       }
-      const body = [JSON.stringify(result, null, 2), '', formatInboundCapture(capture)].join('\n');
+      // After a successful apply-and-save, the working buffer matches
+      // the saved slot — clean state.
+      if (result.ok) markAM4Clean();
+      else markAM4Dirty();
+
+      const savedLine = guard.savedDetail ? `${guard.savedDetail}\n\n` : '';
+      const body = [savedLine + JSON.stringify(result, null, 2), '', formatInboundCapture(capture)].join('\n');
       return {
         content: [{ type: 'text', text: body }],
         isError: !result.ok,
@@ -638,8 +699,9 @@ export function registerApplyTools(server: McpServer): void {
         verify: z.boolean().optional().describe(
           'After each successful apply, read the preset name back and compare to entry.preset.name. Default true. Pass false only if the caller explicitly accepts silent-failure risk.',
         ),
+        on_active_preset_edited: ON_EDITED_SCHEMA.describe(ON_EDITED_DESCRIPTION),
       },
-    }, async ({ presets, on_error, dry_run, verify }) => {
+    }, async ({ presets, on_error, dry_run, verify, on_active_preset_edited }) => {
       const startMs = Date.now();
       const onError: 'stop' | 'continue' = on_error ?? 'stop';
       const dryRun = dry_run ?? false;
@@ -728,6 +790,22 @@ export function registerApplyTools(server: McpServer): void {
       // --- Live execution. One inbound capture spans the whole batch so
       //     callers can inspect ack timeline across the sequence if needed.
       const conn = ensureMidi();
+
+      // Buffer-dirty gate. apply_setlist navigates to each target
+      // location in turn; any of those navigations discards the
+      // active buffer's unsaved edits. Multi-preset intent does NOT
+      // imply discard authorization for the CURRENT active preset —
+      // that's a separate concern from "the user asked me to save N
+      // new presets". Per docs/SAFE-EDIT-WORKFLOW.md scenario 5.
+      const mode: OnEditedMode = on_active_preset_edited ?? 'warn';
+      const guard = await guardActiveAM4BufferOrSave(conn, mode);
+      if (!guard.proceed) {
+        return {
+          content: [{ type: 'text', text: guard.warningText ?? 'navigation refused' }],
+          isError: true,
+        };
+      }
+
       const capture = recordInbound(conn);
       const results: { location: string; status: 'ok' | 'error'; error?: string; wallTimeMs: number }[] = [];
       let applied = 0;
@@ -805,6 +883,13 @@ export function registerApplyTools(server: McpServer): void {
         capture.unsubscribe();
       }
 
+      // After a successful batch, the AM4 is sitting on the last
+      // built+saved location with the working buffer matching that
+      // slot — clean state. On partial failure, the working buffer
+      // is whatever the last successful entry produced (still clean
+      // because save_to_location runs after each apply).
+      if (applied > 0) markAM4Clean();
+
       const remaining =
         stopIndex !== undefined
           ? resolved.slice(stopIndex + 1).map((r) => r.shortLocation)
@@ -817,6 +902,7 @@ export function registerApplyTools(server: McpServer): void {
         results,
         totalWallTimeMs: Date.now() - startMs,
         finalActiveLocation,
+        savedActiveBeforeBatch: guard.savedDetail,
       };
       const body = [JSON.stringify(summary, null, 2), '', formatInboundCapture(capture)].join('\n');
       return {

@@ -32,6 +32,12 @@ import {
   parseStorePresetResponse,
 } from '@/fractal/axe-fx-ii/setParam.js';
 import { isDirty } from '@/server/shared/bufferDirty.js';
+import {
+  ON_EDITED_DESCRIPTION as SHARED_ON_EDITED_DESCRIPTION,
+  ON_EDITED_SCHEMA as SHARED_ON_EDITED_SCHEMA,
+  type DirtyGuardResult as SharedDirtyGuardResult,
+  type OnEditedMode as SharedOnEditedMode,
+} from '@/server/shared/safeEdit.js';
 
 export const AXEFX_DIRTY_LABEL = 'axe-fx-ii';
 
@@ -140,29 +146,13 @@ export function toHex(bytes: number[]): string {
 // it consults `isDirty('axe-fx-ii')` and respects the caller's
 // `on_active_preset_edited` mode.
 
-export type OnEditedMode = 'warn' | 'discard' | 'save_active_first';
-
-export const ON_EDITED_DESCRIPTION =
-  'What to do if the active preset has UNSAVED working-buffer edits ' +
-  'when this tool needs to navigate away from it. "warn" (default) ' +
-  'refuses to navigate and returns a structured warning — the agent ' +
-  'should surface this to the user and ask whether to save first or ' +
-  'discard the edits, then call again with on_active_preset_edited set. ' +
-  '"discard" navigates immediately and silently throws away the edits. ' +
-  '"save_active_first" saves the working buffer to whichever preset is ' +
-  'currently loaded BEFORE navigating, preserving the user\'s in-progress ' +
-  'edits.';
-
-export interface DirtyGuardResult {
-  /** Whether the caller may proceed with the navigation. */
-  proceed: boolean;
-  /** Tool-result text when proceed=false (the warning to surface). */
-  warningText?: string;
-  /** Human-readable detail for the proceed=true case (after save_active_first). */
-  savedDetail?: string;
-  /** When proceed=true after save_active_first, the slot the buffer was saved to. */
-  savedSlot?: number;
-}
+// Re-exported from the cross-device shared safe-edit module so the
+// Axe-Fx II callers don't change their import path, but the canonical
+// definition lives in one place. AM4 and Hydrasynth import from the
+// shared module directly.
+export type OnEditedMode = SharedOnEditedMode;
+export const ON_EDITED_DESCRIPTION = SHARED_ON_EDITED_DESCRIPTION;
+export type DirtyGuardResult = SharedDirtyGuardResult;
 
 /**
  * Pre-navigation dirty check + optional save-first behavior.
@@ -265,4 +255,4 @@ export async function guardActiveBufferOrSave(
   }
 }
 
-export const ON_EDITED_SCHEMA = z.enum(['warn', 'discard', 'save_active_first']).optional();
+export const ON_EDITED_SCHEMA = SHARED_ON_EDITED_SCHEMA;
