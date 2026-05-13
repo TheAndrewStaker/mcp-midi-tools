@@ -45,6 +45,7 @@ import {
   guardActiveBufferOrSave,
   type OnEditedMode,
 } from './shared.js';
+import { buildSaveAuthorizationRefusal } from '@/server/shared/safeEdit.js';
 
 export function registerAxeFxIIPresetTools(server: McpServer): void {
 
@@ -481,15 +482,11 @@ export function registerAxeFxIIPresetTools(server: McpServer): void {
       return {
         content: [{
           type: 'text',
-          text:
-            `REFUSING TO SAVE: this tool persists the built preset to slot ${slot}, which overwrites whatever is there. ` +
-            `The default policy refuses unless save_authorized: true is explicitly passed.\n` +
-            `\n` +
-            `If the user said something like "build a clean tone" / "design a tone for X" without naming a save action (save, store, keep, put on, persist to slot N), the right tool is axefx2_apply_preset (WORKING-BUFFER-ONLY) — let them audition the tone first, then ASK "want me to save it to slot ${slot}?" before calling axefx2_apply_preset_at again with save_authorized: true.\n` +
-            `\n` +
-            `User phrases that DO authorize saving here: "save this to slot N", "store as N", "build and save", "put it on N", "keep it at N", or "build a setlist into slots A/B/C" (multi-preset intent implies save).\n` +
-            `\n` +
-            `User phrases that DO NOT authorize saving (use apply_preset first): "build a tone for X", "design a clean preset", "make me a Marshall sound", "build a tone at slot 666" (the "at slot 666" names a target but doesn't authorize a save — the user might just want to audition there).`,
+          text: buildSaveAuthorizationRefusal({
+            targetDescriptor: `slot ${slot}`,
+            applyAtToolName: 'axefx2_apply_preset_at',
+            workingBufferToolName: 'axefx2_apply_preset',
+          }),
         }],
         isError: true,
       };
