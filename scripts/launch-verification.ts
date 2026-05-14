@@ -379,6 +379,47 @@ async function verifyAxefx2(client: Client): Promise<void> {
       t.slice(0, 300),
     );
   }
+
+  // Dirty-buffer gate on switch_preset. Axe-Fx II has a device-sourced
+  // dirty signal (state-broadcast triple on every edit), so this exercises
+  // a different code path than AM4 but checks the same contract: dirty
+  // buffer + un-qualified switch_preset → refusal.
+  {
+    // Set a known starting location. Slot 600 is a long-standing scratch
+    // slot from prior session work; switching there with discard cleans
+    // any leftover dirty state.
+    await client.callTool({
+      name: 'switch_preset',
+      arguments: { port: 'axefx2', location: 600, on_active_preset_edited: 'discard' },
+    });
+
+    // Dirty the buffer. Wait briefly so the device's state-broadcast
+    // reaches the inbound listener before we test the gate.
+    const setR = await client.callTool({
+      name: 'set_param',
+      arguments: { port: 'axefx2', block: 'amp', name: 'input_drive', value: 6 },
+    });
+    const setOk = !isError(setR);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    // Try to navigate without on_active_preset_edited — should refuse.
+    const switchR = await client.callTool({
+      name: 'switch_preset',
+      arguments: { port: 'axefx2', location: 601 },
+    });
+    const switchText = extractText(switchR);
+    record(
+      'axefx2 switch_preset refuses with dirty buffer (no on_active_preset_edited)',
+      setOk && isError(switchR) && /unsaved|dirty|edited|discard|save_active_first|REFUSING/i.test(switchText),
+      switchText.slice(0, 400),
+    );
+
+    // Cleanup: discard-switch back to slot 600 so we leave a clean state.
+    await client.callTool({
+      name: 'switch_preset',
+      arguments: { port: 'axefx2', location: 600, on_active_preset_edited: 'discard' },
+    });
+  }
 }
 
 // ── Main ───────────────────────────────────────────────────────────

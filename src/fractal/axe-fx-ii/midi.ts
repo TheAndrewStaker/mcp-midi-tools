@@ -64,12 +64,45 @@ const CLEAN_FUNCTIONS = new Set<number>([
   0x1d, // STORE_PRESET
 ]);
 
+// Belt-and-suspenders: while the inbound 0x74 state-broadcast is the
+// authoritative dirty signal documented above, hardware testing (2026-
+// 05-14) showed it doesn't reliably reach the listener after SysEx-
+// driven function 0x02 SET writes from our unified set_param tool. Until
+// that's fully characterized, we also fire markDirty on outbound edit-
+// class functions so the safe-edit gate cannot silently miss an edit
+// the agent issued. This is fail-safe (extra confirmation needed if
+// the device's own broadcast missed) rather than fail-dangerous
+// (silently discarding the user's tweak on the next switch_preset).
+//
+// 0x02 is dual-purpose (GET=0x00 / SET=0x01 in the action byte at
+// offset 11); only SET is an edit.
+const EDIT_FUNCTIONS = new Set<number>([
+  0x05, // SET_GRID_CELL (block placement)
+  0x06, // SET_CELL_ROUTING (cable add/remove)
+  0x09, // SET_PRESET_NAME (rename)
+  0x11, // SET_BLOCK_CHANNEL (X/Y change)
+]);
+
 function isCleanOutbound(bytes: readonly number[]): boolean {
   if (bytes.length < 8) return false;
   if (bytes[0] !== 0xf0) return false;
   if (bytes[1] !== 0x00 || bytes[2] !== 0x01 || bytes[3] !== 0x74) return false;
   if (bytes[4] !== AXE_FX_II_XL_PLUS_MODEL_ID) return false;
   return CLEAN_FUNCTIONS.has(bytes[5]);
+}
+
+function isEditOutbound(bytes: readonly number[]): boolean {
+  if (bytes.length < 8) return false;
+  if (bytes[0] !== 0xf0) return false;
+  if (bytes[1] !== 0x00 || bytes[2] !== 0x01 || bytes[3] !== 0x74) return false;
+  if (bytes[4] !== AXE_FX_II_XL_PLUS_MODEL_ID) return false;
+  if (EDIT_FUNCTIONS.has(bytes[5])) return true;
+  // 0x02 SET_PARAM dual-purpose: action byte at offset 13 distinguishes
+  // SET (0x01) from GET (0x00). The byte after the func is effectId(2)
+  // + paramId(2) + value(3) = 7 bytes; then the action byte. Only mark
+  // dirty on SET.
+  if (bytes[5] === 0x02 && bytes.length >= 15 && bytes[13] === 0x01) return true;
+  return false;
 }
 
 function isStateBroadcastInbound(bytes: readonly number[]): boolean {
@@ -217,6 +250,7 @@ export function connectAxeFxII(): AxeFxIIConnection {
       // operations transition the buffer to a known-clean state (device
       // doesn't announce that transition, so we record it here).
       if (isCleanOutbound(bytes)) markClean(AXEFX_DIRTY_LABEL);
+      else if (isEditOutbound(bytes)) markDirty(AXEFX_DIRTY_LABEL);
       out.sendMessage(bytes);
     },
     onMessage: (handler) => {
