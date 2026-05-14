@@ -461,3 +461,219 @@ exposure. Implementation order:
 
 Effort estimate: 1 focused session (~6 hours) for steps 1-4 + the
 hardware tests.
+
+---
+
+## Appendix — `fill_to_output` proposal (post-v0.4)
+
+**Status:** sketch (Session 74). Pre-implementation; expect iteration
+before code.
+
+### Problem
+
+The Axe-Fx II OUTPUT terminator pulls from col 12 of the routing grid.
+Signal that doesn't reach a cabled cell on row 2 col 12 is silent. The
+legacy row-2 auto-chain mode handles this implicitly — it places
+shunts at every empty row-2 col after the last content block and
+cables them to col 12.
+
+v0.4 explicit-routing mode SKIPS all of that on the principle "the
+caller supplied the routing, trust it verbatim." That's correct for
+fully-specified topologies, but it makes the common wet/dry case
+verbose. A two-row wet/dry split with the merge at col 5 needs:
+
+```jsonc
+{
+  "slots": [
+    { "id": "comp",     "slot": { "row": 2, "col": 1 }, "block_type": "compressor" },
+    { "id": "delay",    "slot": { "row": 1, "col": 2 }, "block_type": "delay" },
+    { "id": "reverb",   "slot": { "row": 1, "col": 3 }, "block_type": "reverb" },
+    { "id": "mixer",    "slot": { "row": 2, "col": 4 }, "block_type": "mixer" },
+    // 7 more "shunt" entries needed at row 2 cols 5..11 to reach col 12.
+    // Each shunt is also a "block_type" placement (shunt is its own block type),
+    // and each adjacent pair needs a routing edge below.
+    { "id": "shunt_5",  "slot": { "row": 2, "col": 5 },  "block_type": "shunt" },
+    { "id": "shunt_6",  "slot": { "row": 2, "col": 6 },  "block_type": "shunt" },
+    { "id": "shunt_7",  "slot": { "row": 2, "col": 7 },  "block_type": "shunt" },
+    { "id": "shunt_8",  "slot": { "row": 2, "col": 8 },  "block_type": "shunt" },
+    { "id": "shunt_9",  "slot": { "row": 2, "col": 9 },  "block_type": "shunt" },
+    { "id": "shunt_10", "slot": { "row": 2, "col": 10 }, "block_type": "shunt" },
+    { "id": "shunt_11", "slot": { "row": 2, "col": 11 }, "block_type": "shunt" },
+    { "id": "shunt_12", "slot": { "row": 2, "col": 12 }, "block_type": "shunt" }
+  ],
+  "routing": [
+    { "from": "comp",     "to": "delay" },
+    { "from": "delay",    "to": "reverb" },
+    { "from": "reverb",   "to": "mixer" },
+    { "from": "comp",     "to": "mixer" },     // dry path: comp R2C1 → ... wait, mixer is R2C4, comp R2C1; cols not adjacent
+    // ↑ this is the real catch: dry-path R2C1 → R2C4 needs intermediate
+    // shunts too (comp → R2C2 shunt → R2C3 shunt → mixer). The wet/dry
+    // example doesn't fit cleanly without ALSO filling dry-path shunts.
+    { "from": "shunt_5",  "to": "shunt_6" },
+    { "from": "shunt_6",  "to": "shunt_7" },
+    { "from": "shunt_7",  "to": "shunt_8" },
+    { "from": "shunt_8",  "to": "shunt_9" },
+    { "from": "shunt_9",  "to": "shunt_10" },
+    { "from": "shunt_10", "to": "shunt_11" },
+    { "from": "shunt_11", "to": "shunt_12" },
+    { "from": "mixer",    "to": "shunt_5" }
+  ]
+}
+```
+
+The 8 shunt entries + 8 routing edges (the entire bottom half of the
+spec) carry no creative intent — they're the cost of "getting signal
+to OUTPUT." An LLM authoring this is more likely to forget a shunt
+than to get the topology wrong, and the resulting silent preset
+looks identical to a real audio failure.
+
+### Proposed API
+
+Add an optional boolean to `PresetSpec`:
+
+```ts
+interface PresetSpec {
+  // ... existing fields ...
+  routing?: readonly RoutingEdge[];
+
+  /**
+   * v0.4+: grid devices only. When true AND routing[] is supplied,
+   * the executor auto-extends row 2 from the rightmost-occupied row-2
+   * cell to col 12 by placing shunt blocks in every empty intermediate
+   * cell and cabling them in sequence. Linear devices (AM4) reject
+   * this field with a capability error — they route implicitly.
+   *
+   * No-op when routing[] is omitted (legacy auto-chain mode already
+   * extends to OUTPUT) or when the rightmost row-2 cell is already col 12.
+   *
+   * Default: false (opt-in, preserves explicit-mode "trust the caller
+   * verbatim" semantics for fully-specified topologies).
+   */
+  fill_to_output?: boolean;
+}
+```
+
+With `fill_to_output: true`, the wet/dry spec above collapses to:
+
+```jsonc
+{
+  "slots": [
+    { "id": "comp",   "slot": { "row": 2, "col": 1 }, "block_type": "compressor" },
+    { "id": "delay",  "slot": { "row": 1, "col": 2 }, "block_type": "delay" },
+    { "id": "reverb", "slot": { "row": 1, "col": 3 }, "block_type": "reverb" },
+    { "id": "mixer",  "slot": { "row": 2, "col": 4 }, "block_type": "mixer" }
+  ],
+  "routing": [
+    { "from": "comp",   "to": "delay" },
+    { "from": "delay",  "to": "reverb" },
+    { "from": "reverb", "to": "mixer" },
+    { "from": "comp",   "to": "mixer" }    // ← still flagged: not adjacent (R2C1 → R2C4)
+  ],
+  "fill_to_output": true
+}
+```
+
+The dry path R2C1 → R2C4 is still adjacency-invalid (cols 1 and 4
+aren't adjacent), so the user still needs to either:
+  a) Put a shunt at R2C2 and R2C3, cable comp→R2C2→R2C3→mixer
+  b) Or accept that one of "wet path runs cols 2-3" or "dry path runs
+     cols 2-3" needs intermediate shunts — they share row 2
+
+This is a real topological constraint, not a verbosity problem.
+`fill_to_output` only solves the post-merge tail (`mixer → OUTPUT`),
+which is genuinely mechanical.
+
+### Behavior — what the executor does
+
+After the explicit-routing edge loop (current behavior), if
+`fill_to_output: true`:
+
+1. Find the rightmost row-2 column occupied by any block in `resolved`.
+   Call it `lastRow2Col`. If no row-2 blocks at all, raise an error
+   ("`fill_to_output` requires at least one row-2 block to extend
+   from — your topology has no row-2 anchor"). Don't silently no-op.
+
+2. If `lastRow2Col >= 12`, skip (the chain already terminates at the
+   OUTPUT column).
+
+3. For each col in `lastRow2Col + 1` .. `12`:
+   a. Allocate a unique shunt block id (extend the SHUNT_BASE_ID=200
+      counter past any explicit shunts already in `resolved`).
+   b. Emit `set_grid_cell({ row: 2, col, blockId })` (SHUNT placement).
+   c. Emit `set_cell_routing({ srcRow: 2, srcCol: col-1, dstRow: 2,
+      dstCol: col, connect: true })` (cable previous cell to this one).
+
+   The cable at `col = lastRow2Col + 1` connects the user's last block
+   to the first auto-shunt; everything from there to col 12 is the
+   auto-fill chain.
+
+4. Append all the auto-fill ops to the same `ops[]` array the
+   explicit-routing loop populates, so they hit the wire in the same
+   single-pass place-then-cable order the existing flow uses.
+
+### Safety / failure modes
+
+- **Unmixed parallel paths**. If the user has row-1 blocks at cols
+  past `lastRow2Col` (a wet path that didn't merge), those signals
+  don't reach OUTPUT. `fill_to_output` shouldn't try to fix this —
+  it only extends row 2. Optional follow-up: emit a warning in the
+  apply_preset response: `"fill_to_output extended row 2 to col 12,
+  but row 1 has blocks past your row-2 endpoint that aren't cabled
+  to a mixer — those signals won't reach OUTPUT."`
+
+- **Block-id collisions**. Auto-fill shunts must use ids that don't
+  conflict with explicit blocks. Scan `resolved` for existing shunt
+  ids in the 200..235 range, allocate next-available.
+
+- **Cross-device contract**. AM4 must reject `fill_to_output: true`
+  in the same capability-not-supported branch that already rejects
+  `routing[]`. Hydrasynth's apply_preset path doesn't reach this
+  code, but the dispatcher should validate at the boundary so the
+  error is consistent across grid vs non-grid devices.
+
+- **Interaction with `routing[]` omitted**. `fill_to_output` is
+  meaningless without explicit routing — the legacy auto-chain mode
+  already extends to OUTPUT. Decision: silently ignore (no error)
+  when routing[] is omitted, on the grounds that the user's intent is
+  satisfied either way. Document this in the field's description.
+
+### Implementation effort
+
+~1-2 hours including:
+  - PresetSpec type extension (1 line)
+  - Zod schema entry on `presetShape` with description (5 lines)
+  - AM4 writer specToApplyInput rejection (5 lines, mirrors routing[] rejection)
+  - Axe-Fx II applyExecutor auto-fill loop after the explicit-routing
+    edge loop (~30 lines)
+  - 1 golden in verify-transpile covering: explicit routing topology
+    that stops at col 5 with `fill_to_output: true` → 7 auto-shunts +
+    8 auto-cables appended to the op stream
+  - Optional: warning when unmixed paths detected
+
+Hardware verification once it lands:
+  - `scripts/mcp-hwtest-wet-dry.ts` (was task #16). With
+    `fill_to_output: true`, the wet/dry spec is ~10 lines instead of ~30.
+  - `scripts/mcp-hwtest-dual-amp.ts` (was task #16). Dual amp at R2C4
+    + R4C4 merging at a mixer at R2C5 — `fill_to_output` extends R2
+    cols 6..12.
+
+### Open questions for review
+
+1. **Field name.** `fill_to_output` is explicit but verbose. Alternatives:
+   `auto_extend_to_output`, `terminate_at_output`, `auto_shunt_tail`. The
+   verbose name is preferable because it appears in user-facing tool
+   responses ("Auto-extended row 2 with 7 shunts via fill_to_output.").
+
+2. **Default true vs false?** Currently proposing default false.
+   Argument for default true: most users want their preset to make
+   sound, the few cases where they explicitly want row 2 truncated
+   are rare. Argument for default false: explicit-routing mode is
+   already opt-in (you only get there by passing `routing[]`); adding
+   implicit shunt-fill on top muddies the contract. Lean: false.
+
+3. **Should the auto-fill emit a `warnings[]` entry in the
+   apply_preset response listing which cells were auto-filled?** Yes
+   — same pattern as `apply_preset.warning` for type-gated skip+warn.
+   Lets the agent narrate the action honestly ("Filled row 2 cols
+   6-12 with shunts to reach OUTPUT").
+
