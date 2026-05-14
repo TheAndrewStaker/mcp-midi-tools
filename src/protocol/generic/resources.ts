@@ -37,20 +37,43 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { listRegisteredDevices } from '@/protocol/generic/registry.js';
 
+/**
+ * Compact device label for resource titles in MCP-aware UIs. The full
+ * display_name (e.g. "Fractal Axe-Fx II XL+") is too long for menu
+ * dropdowns once the topic name is appended. The compact label keeps
+ * each resource title short enough to read in the Claude Desktop
+ * "Add from <server>" submenu without truncation.
+ */
+function compactDeviceLabel(deviceId: string, displayName: string): string {
+  switch (deviceId) {
+    case 'am4': return 'AM4';
+    case 'axe-fx-ii': return 'Axe-Fx II';
+    case 'hydrasynth': return 'Hydrasynth';
+    default: return displayName;
+  }
+}
+
 export function registerDeviceResources(server: McpServer): void {
   for (const descriptor of listRegisteredDevices()) {
     const guidance = descriptor.agent_guidance;
     if (guidance === undefined) continue;
+    const compactLabel = compactDeviceLabel(descriptor.id, descriptor.display_name);
     for (const [topic, content] of Object.entries(guidance)) {
       if (typeof content !== 'string' || content.length === 0) continue;
       const uri = `guidance://${descriptor.id}/${topic}`;
+      // Internal name stays unique + technical so resources/list can be
+      // disambiguated unambiguously. Title is what users see in the
+      // Add-from dropdown — kept short by leading with the topic name
+      // (the part users actually care about) and using the compact
+      // device label.
       const name = `${descriptor.display_name} — ${topic}`;
+      const title = `${topic}  (${compactLabel})`;
       const description = firstSentence(content, 200);
       server.registerResource(
         name,
         uri,
         {
-          title: name,
+          title,
           description,
           mimeType: 'text/plain',
         },
