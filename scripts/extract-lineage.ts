@@ -34,7 +34,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 const WIKI_DIR = path.join(ROOT, 'docs', '_private', 'wiki');
 const MANUALS_DIR = path.join(ROOT, 'docs', 'manuals');
-const OUT_DIR = path.join(ROOT, 'src', 'fractal', 'shared', 'lineage');
+const OUT_DIR = path.join(ROOT, 'packages', 'core', 'src', 'fractal-shared', 'lineage');
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

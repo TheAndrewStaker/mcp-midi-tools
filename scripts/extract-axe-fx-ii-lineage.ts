@@ -41,8 +41,8 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
-const LINEAGE_DIR = path.join(ROOT, 'src', 'fractal', 'shared', 'lineage');
-const PARAMS_PATH = path.join(ROOT, 'src', 'fractal', 'axe-fx-ii', 'params.ts');
+const LINEAGE_DIR = path.join(ROOT, 'packages', 'core', 'src', 'fractal-shared', 'lineage');
+const PARAMS_PATH = path.join(ROOT, 'packages', 'axe-fx-ii', 'src', 'params.ts');
 
 // ─── Matching helpers ────────────────────────────────────────────────────
 
@@ -384,7 +384,7 @@ function emit(
 ): void {
     const { records, stats } = extractBlock(block, enumName);
     const out: EmittedJSON = {
-        _source: `Re-keyed from src/fractal/shared/lineage/${block}-lineage.json against AMP_EFFECT_TYPE_VALUES from src/fractal/axe-fx-ii/params.ts`,
+        _source: `Re-keyed from packages/core/src/fractal-shared/lineage/${block}-lineage.json against AMP_EFFECT_TYPE_VALUES from packages/axe-fx-ii/src/params.ts`,
         _extractedAt: new Date().toISOString(),
         _enumSize: stats.total,
         _matched: stats.matched,
@@ -410,4 +410,4 @@ emit('amp', 'AMP');
 emit('drive', 'DRIVE');
 emit('reverb', 'REVERB');
 emit('delay', 'DELAY');
-console.log('Done. Output: src/fractal/shared/lineage/axefx2-{amp,drive,reverb,delay}-lineage.json');
+console.log('Done. Output: packages/core/src/fractal-shared/lineage/axefx2-{amp,drive,reverb,delay}-lineage.json');

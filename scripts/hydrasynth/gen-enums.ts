@@ -30,7 +30,7 @@ const SOURCE_PATH = path.resolve(
 );
 const OUTPUT_PATH = path.resolve(
   __dirname,
-  '../../src/asm/hydrasynth-explorer/enums.ts',
+  '../../packages/hydrasynth-explorer/src/enums.ts',
 );
 
 interface JavaArrayLiteral {

@@ -356,7 +356,7 @@ ${entries.map(formatEntry).join('\n')}
 export type CacheParamKey = keyof typeof CACHE_PARAMS;
 `;
 
-  const outPath = 'src/fractal/am4/cacheParams.ts';
+  const outPath = 'packages/am4/src/cacheParams.ts';
   writeFileSync(outPath, header);
   console.log(`wrote ${outPath} — ${entries.length} entries`);
   for (const e of entries) {

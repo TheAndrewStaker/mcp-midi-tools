@@ -36,8 +36,8 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 const WIKI_HTML = 'docs/_private/wiki-cache/axe-fx-ii-midi-sysex.html';
 const XML_CATALOG_JSON = 'samples/captured/decoded/labels/axe-edit-catalog.json';
-const OUT_BLOCKTYPES_TS = 'src/fractal/axe-fx-ii/blockTypes.ts';
-const OUT_PARAMS_TS = 'src/fractal/axe-fx-ii/params.ts';
+const OUT_BLOCKTYPES_TS = 'packages/axe-fx-ii/src/blockTypes.ts';
+const OUT_PARAMS_TS = 'packages/axe-fx-ii/src/params.ts';
 const OUT_DEBUG_JSON = 'samples/captured/decoded/labels/axe-fx-ii-params.json';
 
 // ── Wiki group code → Axe-Edit XML block name ────────────────────────
@@ -630,7 +630,7 @@ export const REGISTRY_STATS = Object.freeze({
 
 // ── Persist ───────────────────────────────────────────────────────────
 
-mkdirSync('src/fractal/axe-fx-ii', { recursive: true });
+mkdirSync('packages/axe-fx-ii/src', { recursive: true });
 mkdirSync('samples/captured/decoded/labels', { recursive: true });
 
 writeFileSync(OUT_BLOCKTYPES_TS, emitBlockTypes(), 'utf8');
