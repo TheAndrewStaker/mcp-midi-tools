@@ -21,12 +21,15 @@
  *   • AM4 apply_preset skip-with-warning on type-gated params.
  *   • Axe-Fx II read surface — describe_device, get_param.
  *   • Axe-Fx II audition apply_preset (no target_location).
+ *   • Axe-Fx II v0.4 routing-walk audition (BK-054) — wet/dry parallel
+ *     chain via explicit routing[] edges. Confirms the dispatcher
+ *     accepts the topology and the device acks every cable.
  *
  * NOT covered (would require flash writes):
  *   • save_preset wire path — exercised by mcp-test-safe-edit-scenarios --write.
  *   • restore_defaults — destructive.
- *   • Axe-Fx II routing walk hardware verification — needs a target
- *     slot, queued as task #16.
+ *   • Axe-Fx II routing-walk persisted to a slot + audio sign-off — that
+ *     requires a target slot the founder is willing to overwrite.
  *
  * USAGE:
  *   npm run launch-verify                    # both ports
@@ -415,6 +418,61 @@ async function verifyAxefx2(client: Client): Promise<void> {
     );
 
     // Cleanup: discard-switch back to slot 600 so we leave a clean state.
+    await client.callTool({
+      name: 'switch_preset',
+      arguments: { port: 'axefx2', location: 600, on_active_preset_edited: 'discard' },
+    });
+  }
+
+  // v0.4 routing-walk audition (BK-054). Send a wet/dry parallel-chain
+  // spec with explicit routing[] and verify the apply_preset (audition,
+  // no target_location) succeeds. This exercises the full dispatcher
+  // path: schema validation → descriptor.applyPreset → applyExecutor
+  // routing walk → SET_CELL_ROUTING wire emits → device acks. Doesn't
+  // assert audible behavior — that's the founder's hardware sign-off
+  // at a target slot. Just confirms the routing[] code path is wired
+  // end-to-end and the device accepts the cabling sequence without
+  // NACKing.
+  {
+    const r = await client.callTool({
+      name: 'apply_preset',
+      arguments: {
+        port: 'axefx2',
+        spec: {
+          name: 'WETDRY',
+          slots: [
+            { id: 'comp',   slot: { row: 2, col: 1 }, block_type: 'Compressor 1' },
+            { id: 'amp',    slot: { row: 2, col: 2 }, block_type: 'Amp 1' },
+            { id: 'cab',    slot: { row: 2, col: 3 }, block_type: 'Cab 1' },
+            { id: 'delay',  slot: { row: 1, col: 4 }, block_type: 'Delay 1' },
+            { id: 'reverb', slot: { row: 3, col: 4 }, block_type: 'Reverb 1' },
+            { id: 'mixer',  slot: { row: 2, col: 5 }, block_type: 'Mixer' },
+          ],
+          routing: [
+            { from: 'comp',   to: 'amp' },
+            { from: 'amp',    to: 'cab' },
+            { from: 'cab',    to: 'delay' },
+            { from: 'cab',    to: 'reverb' },
+            { from: 'delay',  to: 'mixer' },
+            { from: 'reverb', to: 'mixer' },
+          ],
+        },
+        on_active_preset_edited: 'discard',
+      },
+    });
+    const t = extractText(r);
+    record(
+      'axefx2 v0.4 routing-walk audition (wet/dry split) succeeds',
+      !isError(r),
+      t.slice(0, 400),
+    );
+    record(
+      'axefx2 routing-walk audition response does NOT claim save',
+      !isError(r) && !/saved|persisted/i.test(t),
+      t.slice(0, 300),
+    );
+
+    // Cleanup: discard-switch so we leave a clean state.
     await client.callTool({
       name: 'switch_preset',
       arguments: { port: 'axefx2', location: 600, on_active_preset_edited: 'discard' },
