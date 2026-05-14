@@ -153,7 +153,13 @@ confirm each device is visible to the server.
 5. Double-click `setup.cmd` inside the extracted folder. A console
    window opens, registers the server with Claude Desktop, and waits
    for a keypress.
-6. Open Claude Desktop. The mcp-midi-control server appears in the
+6. (Optional but recommended) Double-click `verify-midi.cmd`. It asks
+   the OS directly which MIDI devices are visible and reports
+   `[OK] Fractal AM4`, `[OK] Fractal Axe-Fx II`, etc. — confirms the
+   USB / driver side is healthy before you open Claude Desktop. If
+   nothing is detected, the script prints driver download links and
+   the next thing to try (usually replug the USB cable).
+7. Open Claude Desktop. The mcp-midi-control server appears in the
    connector panel (the + button near the chat input).
 
 To uninstall: double-click `uninstall.cmd` to remove the entry from

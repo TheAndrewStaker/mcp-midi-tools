@@ -182,14 +182,21 @@ async function main() {
   // Installer wrappers (root of the bundle so users see them after
   // extracting): setup.cmd / uninstall.cmd / verify-midi.cmd /
   // instructions.txt.
+  //
+  // Normalize EOLs to CRLF on the way out. cmd.exe and PowerShell
+  // mis-parse multi-line scripts with bare LF (the first character of
+  // line 2 gets dropped, so `setlocal` becomes `tlocal` etc.). Repo
+  // working-tree state can be either LF or CRLF depending on the
+  // contributor's git autocrlf setting; the shipped bundle is always
+  // CRLF regardless.
   for (const f of ['setup.cmd', 'uninstall.cmd', 'verify-midi.cmd', 'instructions.txt']) {
-    fs.copyFileSync(path.join(PROJECT_ROOT, 'installer', f), path.join(STAGING, f));
+    copyAsCrlf(path.join(PROJECT_ROOT, 'installer', f), path.join(STAGING, f));
   }
   // PowerShell helpers go under install/ to keep the root tidy.
   const installerHelperDir = path.join(STAGING, 'install');
   fs.mkdirSync(installerHelperDir, { recursive: true });
   for (const f of ['merge-mcp-config.ps1', 'unmerge-mcp-config.ps1']) {
-    fs.copyFileSync(path.join(PROJECT_ROOT, 'installer', f), path.join(installerHelperDir, f));
+    copyAsCrlf(path.join(PROJECT_ROOT, 'installer', f), path.join(installerHelperDir, f));
   }
 
   // 5. Production-only npm install using the BUNDLED node + npm. This
@@ -336,6 +343,13 @@ async function downloadAndExtractNode() {
     throw new Error(`After extract, expected node.exe at ${NODE_CACHE}\\${NODE_DIR_NAME}\\node.exe`);
   }
   fs.unlinkSync(zipPath);
+}
+
+function copyAsCrlf(src: string, dst: string): void {
+  const buf = fs.readFileSync(src, 'utf8');
+  // Replace lone LFs with CRLF without doubling existing CRs.
+  const crlf = buf.replace(/\r?\n/g, '\r\n');
+  fs.writeFileSync(dst, crlf, 'utf8');
 }
 
 function dirSizeMb(dir: string): number {
