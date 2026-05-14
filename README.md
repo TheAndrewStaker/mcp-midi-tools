@@ -4,18 +4,21 @@ Talk to Claude. Control your MIDI gear.
 
 MCP MIDI Tools is a local [Model Context Protocol](https://modelcontextprotocol.io)
 (MCP) server that lets Claude drive USB MIDI hardware in plain English.
-First-class support today for the **Fractal Audio AM4** guitar amp
-modeler — block layout, amp type, drive, delay, reverb, scenes, and
-preset naming all updateable in real time. Five generic-MIDI primitives
-work against any CC/NRPN/SysEx-addressable device, so synths, looper
-pedals, and other gear are reachable from day one.
+First-class support today for the **Fractal Audio AM4**, **Fractal
+Axe-Fx II XL+**, and **ASM Hydrasynth Explorer** — block layout, amp/
+oscillator/filter type, drive/cutoff, delay/envelopes, reverb/mutators,
+scenes, and preset names all updateable in real time. Thirteen generic-
+MIDI primitives (CC, NRPN, SysEx, program change, …) work against any
+USB MIDI device, so synths, looper pedals, and other gear are reachable
+from day one.
 
-> **Unaffiliated community tool.** "Fractal Audio", "AM4", and related
-> product names are trademarks of Fractal Audio Systems, Inc. This project
-> neither claims endorsement from, nor affiliation with, Fractal Audio
-> Systems. It communicates with AM4 hardware the user already owns via
-> SysEx messages. See [`NOTICE`](./NOTICE) for the full trademark
-> statement.
+> **Unaffiliated community tool.** "Fractal Audio", "AM4", "Axe-Fx II",
+> "ASM", "Hydrasynth", and related product names are trademarks of
+> their respective owners (Fractal Audio Systems, Inc. and Ashun Sound
+> Machines). This project neither claims endorsement from, nor
+> affiliation with, those manufacturers. It communicates with hardware
+> the user already owns via SysEx / NRPN / CC messages. See
+> [`NOTICE`](./NOTICE) for the full trademark statement.
 
 ---
 
@@ -94,9 +97,14 @@ The unified surface (`set_param`, `get_param`, `apply_preset`,
 `switch_preset`, `save_preset`, `switch_scene`, `set_block`,
 `set_bypass`, `lookup_lineage`, `scan_locations`, `describe_device`,
 …) works against any registered device — pass the `port` argument and
-the dispatcher routes to the right device. Device-namespaced tools
-(`am4_*`, `axefx2_*`, `hydra_*`) ship in parallel and carry deeper
-device-specific guidance until v0.3.
+the dispatcher routes to the right device. The device-namespaced tools
+that remain (`am4_*`, `axefx2_*`, `hydra_*`) carry device-unique
+capabilities with no cross-device equivalent (e.g. Axe-Fx II's
+`axefx2_get_grid_layout` for the 4×12 routing grid, Hydrasynth's
+`hydra_apply_patch` for its full NRPN-style patch dump). Per-device
+behavioral guidance (channel/scene model, applicability rules, iconic-
+amp tables) lives in `describe_device(port).agent_guidance` — call it
+once per session before any tone-building work.
 
 Generic-MIDI primitives (`send_cc`, `send_note`, `send_program_change`,
 `send_nrpn`, `send_sysex`, …) work against any USB MIDI device the OS
@@ -108,8 +116,11 @@ quick-start](#generic-midi-quick-start) below.
 ## Requirements
 
 - **Windows 10/11.** macOS / Linux builds are a future item (P5-006).
-- **Fractal AM4** connected by USB with Fractal's AM4 USB driver
-  installed ([downloads](https://www.fractalaudio.com/am4-downloads/)).
+- At least one registered MIDI device connected by USB. Currently
+  registered: **Fractal AM4** ([USB driver](https://www.fractalaudio.com/am4-downloads/)),
+  **Fractal Axe-Fx II XL+** (Q8.02 firmware, hardware-verified),
+  **ASM Hydrasynth Explorer** (firmware 1.5.x). Unregistered USB MIDI
+  devices still work through the generic-MIDI primitives.
 - A Claude client that supports MCP — [Claude Desktop](https://claude.ai/download),
   [Claude Code](https://docs.claude.com/en/docs/claude-code), or any
   other MCP-capable host.
@@ -117,9 +128,11 @@ quick-start](#generic-midi-quick-start) below.
   (to compile the `node-midi` native module). The release ZIP bundles
   Node so end users do not need either.
 
-AM4-Edit can stay open while the MCP server runs — Windows MIDI ports
-are shareable. If a tool call doesn't reach the device, see the
-troubleshooting tips for port-not-found errors.
+Editor apps (AM4-Edit, AxeEdit, Hydrasynth Manager) can stay open
+while the MCP server runs — Windows MIDI ports are shareable. If a
+tool call doesn't reach the device, see the troubleshooting tips for
+port-not-found errors. After install, run `verify-midi.cmd` to
+confirm each device is visible to the server.
 
 ---
 
