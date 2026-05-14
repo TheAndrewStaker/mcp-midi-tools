@@ -73,3 +73,55 @@ export function connectAxeFxIII(): MidiConnection {
 import { registerConnector, AXEFX3_LABEL } from '@mcp-midi-control/core/server-shared/connections.js';
 registerConnector(AXEFX3_LABEL, connectAxeFxIII);
 export { AXEFX3_LABEL };
+
+// ── Startup banner helper ────────────────────────────────────────────
+
+import midi from 'midi';
+
+interface AxeFxIIIPortInfo {
+  index: number;
+  name: string;
+  looksLikeAxeFxIII: boolean;
+}
+
+/**
+ * Enumerate output ports without opening any. Used by the startup
+ * banner so the server can log a verdict ("Axe-Fx III detected" /
+ * "Axe-Fx III not visible") at boot — mirrors the AM4 + Axe-Fx II
+ * + Hydrasynth startup-banner pattern for consistency.
+ */
+export function listAxeFxIIIOutputs(): AxeFxIIIPortInfo[] {
+  const out = new midi.Output();
+  try {
+    const result: AxeFxIIIPortInfo[] = [];
+    for (let i = 0; i < out.getPortCount(); i++) {
+      const name = out.getPortName(i);
+      const lower = name.toLowerCase();
+      result.push({
+        index: i,
+        name,
+        looksLikeAxeFxIII: AXE_FX_III_PORT_NEEDLES.some((n) => lower.includes(n)),
+      });
+    }
+    return result;
+  } finally {
+    out.closePort();
+  }
+}
+
+/**
+ * Startup-banner helper — describes whether an Axe-Fx III output port
+ * is visible right now, without opening it. Returns a single-line
+ * string for the server's startup stderr log.
+ */
+export function describeAxeFxIIIPortStatus(): string {
+  try {
+    const outputs = listAxeFxIIIOutputs();
+    const iii = outputs.find((p) => p.looksLikeAxeFxIII);
+    if (iii) return `Axe-Fx III detected at output [${iii.index}]: "${iii.name}" (🟡 community beta — see HARDWARE-TASKS-AXEFX3.md)`;
+    if (outputs.length === 0) return 'no MIDI outputs visible';
+    return `Axe-Fx III not visible among ${outputs.length} output(s)`;
+  } catch (err) {
+    return `port scan failed: ${err instanceof Error ? err.message : String(err)}`;
+  }
+}

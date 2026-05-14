@@ -54,6 +54,7 @@ import { registerMidiPrimitiveTools } from './tools/midi-primitives.js';
 
 import { registerAM4Tools } from '@mcp-midi-control/am4/tools/index.js';
 import { registerAxeFxIITools, describeAxeFxIIPortStatus } from '@mcp-midi-control/axe-fx-ii/tools.js';
+import { describeAxeFxIIIPortStatus } from '@mcp-midi-control/axe-fx-iii/midi.js';
 import { registerHydrasynthTools, describeHydrasynthPortStatus } from '@mcp-midi-control/hydrasynth-explorer/server.js';
 
 // BK-051 unified tool surface — descriptor registration. The dispatcher
@@ -226,6 +227,15 @@ async function main(): Promise<void> {
     console.error(`Axe-Fx II port scan: ${describeAxeFxIIPortStatus()}.`);
   } catch (err) {
     console.error(`Axe-Fx II port scan failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  // Axe-Fx III port-scan banner — 🟡 community beta (BK-015). Banner
+  // surfaces the device's presence + beta status so users see in the
+  // MCP log panel that the III is registered and what tier of support
+  // ships today.
+  try {
+    console.error(`Axe-Fx III port scan: ${describeAxeFxIIIPortStatus()}.`);
+  } catch (err) {
+    console.error(`Axe-Fx III port scan failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
