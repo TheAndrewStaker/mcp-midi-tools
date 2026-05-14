@@ -28,34 +28,40 @@ if (-not (Test-Path $InstallDir)) {
     exit 1
 }
 
-# Two layouts are supported — the script auto-detects:
+# Three layouts are supported — the script auto-detects (in priority order):
 #
-#   1. Source-install layout (developer running `npm run setup-claude-
+#   1. Installer ZIP layout (v0.1.x post-workspace-split):
+#      $InstallDir\node.exe           (bundled Node runtime)
+#      $InstallDir\node_modules\@mcp-midi-control\server-all\dist\server\index.js
+#      (Each workspace package is copied as a real directory under
+#       node_modules\@mcp-midi-control\ — no symlinks, ZIP-safe.)
+#
+#   2. Source-install layout (developer running `npm run setup-claude-
 #      desktop` after `npm run build`):
 #      $InstallDir\packages\server-all\dist\server\index.js
 #      (no bundled node.exe; uses the system `node` on PATH)
 #
-#   2. v0.1.x installer ZIP layout (planned — rework pending after the
-#      workspace split; the legacy single-`dist\` layout below still
-#      ships with v0.1.0 ZIPs built before the rework):
-#      $InstallDir\node.exe           (bundled Node runtime)
-#      $InstallDir\packages\server-all\dist\server\index.js
-#         OR (legacy v0.1.0 ZIP)
+#   3. Legacy v0.1.0 ZIP layout (pre-workspace-split):
+#      $InstallDir\node.exe
 #      $InstallDir\dist\server\index.js
 #
-# Each package is built independently to its own `dist/`; cross-package
-# imports resolve through `node_modules` symlinks created by npm
-# workspaces. No path-alias rewriting happens at build time.
+# Each workspace package is built independently to its own `dist/`;
+# cross-package imports resolve via Node's normal node_modules
+# resolution against the real per-package directories. No path-alias
+# rewriting happens at build time.
 
+$installerEntry = Join-Path $InstallDir 'node_modules\@mcp-midi-control\server-all\dist\server\index.js'
 $workspaceEntry = Join-Path $InstallDir 'packages\server-all\dist\server\index.js'
 $legacyEntry = Join-Path $InstallDir 'dist\server\index.js'
 
-if (Test-Path $workspaceEntry) {
+if (Test-Path $installerEntry) {
+    $entryJs = $installerEntry
+} elseif (Test-Path $workspaceEntry) {
     $entryJs = $workspaceEntry
 } elseif (Test-Path $legacyEntry) {
     $entryJs = $legacyEntry
 } else {
-    Write-Error "Server entry point not found at $workspaceEntry (nor legacy $legacyEntry). Did you run ``npm run build`` first?"
+    Write-Error "Server entry point not found at $installerEntry (nor $workspaceEntry, nor legacy $legacyEntry). Did you run ``npm run build`` first?"
     exit 1
 }
 

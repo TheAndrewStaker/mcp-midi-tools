@@ -13,12 +13,24 @@ rem Run after setup.cmd, before opening Claude Desktop.
 set "INSTALL_DIR=%~dp0"
 if "%INSTALL_DIR:~-1%"=="\" set "INSTALL_DIR=%INSTALL_DIR:~0,-1%"
 
-set "ENTRY=%INSTALL_DIR%\dist\cli\verify-midi.js"
+rem Three layouts are supported (try in order):
+rem   1. Installer ZIP (v0.1.x post-workspace-split):
+rem      %INSTALL_DIR%\node_modules\@mcp-midi-control\server-all\dist\cli\verify-midi.js
+rem   2. Source install (developer running `npm run build` in checkout):
+rem      %INSTALL_DIR%\packages\server-all\dist\cli\verify-midi.js
+rem   3. Legacy v0.1.0 ZIP (pre-workspace-split):
+rem      %INSTALL_DIR%\dist\cli\verify-midi.js
+
+set "ENTRY=%INSTALL_DIR%\node_modules\@mcp-midi-control\server-all\dist\cli\verify-midi.js"
+if not exist "%ENTRY%" set "ENTRY=%INSTALL_DIR%\packages\server-all\dist\cli\verify-midi.js"
+if not exist "%ENTRY%" set "ENTRY=%INSTALL_DIR%\dist\cli\verify-midi.js"
 
 if not exist "%ENTRY%" (
     echo.
-    echo verify-midi.js not found at:
-    echo   %ENTRY%
+    echo verify-midi.js not found in any of the expected locations:
+    echo   %INSTALL_DIR%\node_modules\@mcp-midi-control\server-all\dist\cli\verify-midi.js
+    echo   %INSTALL_DIR%\packages\server-all\dist\cli\verify-midi.js
+    echo   %INSTALL_DIR%\dist\cli\verify-midi.js
     echo.
     echo The install bundle looks incomplete. Re-extract the ZIP and
     echo try again.

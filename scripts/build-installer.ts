@@ -85,10 +85,17 @@ async function main() {
   }
   fs.mkdirSync(NODE_CACHE, { recursive: true });
 
-  // 2. Compile TypeScript and resolve @/ aliases.
-  console.log('[build] Compiling TypeScript');
+  // 2. Compile TypeScript across all workspace packages.
+  console.log('[build] Compiling TypeScript (all workspace packages)');
   execSync('npm run build', { cwd: PROJECT_ROOT, stdio: 'inherit' });
-  const compiledEntry = path.join(PROJECT_ROOT, 'dist', 'server', 'index.js');
+  const compiledEntry = path.join(
+    PROJECT_ROOT,
+    'packages',
+    'server-all',
+    'dist',
+    'server',
+    'index.js',
+  );
   if (!fs.existsSync(compiledEntry)) {
     throw new Error(`TypeScript compile produced no ${path.relative(PROJECT_ROOT, compiledEntry)}`);
   }
@@ -106,10 +113,68 @@ async function main() {
     throw new Error(`Bundled npm not found at ${cachedNpmCli} — Node ZIP layout may have changed`);
   }
 
-  // 4. Copy artifacts into staging.
+  // 4. Stage workspace packages.
+  //
+  // Bundle layout (no symlinks; safe to ZIP and Explorer-extract):
+  //   STAGING/
+  //   ├── node.exe
+  //   ├── package.json  (lean root: NO workspaces; deps = non-workspace only)
+  //   ├── node_modules/
+  //   │   ├── @modelcontextprotocol/sdk/  (npm install populates)
+  //   │   ├── midi/                       (npm install populates, native build)
+  //   │   ├── zod/                        (npm install populates)
+  //   │   └── @mcp-midi-control/
+  //   │       ├── core/{package.json,dist/}        (copied from packages/core)
+  //   │       ├── am4/{package.json,dist/}         (copied from packages/am4)
+  //   │       ├── axe-fx-ii/{package.json,dist/}
+  //   │       ├── hydrasynth-explorer/{package.json,dist/}
+  //   │       └── server-all/{package.json,dist/}
+  //   ├── LICENSE, NOTICE
+  //   ├── setup.cmd, uninstall.cmd, verify-midi.cmd, instructions.txt
+  //   └── install/{merge,unmerge}-mcp-config.ps1
+  //
+  // Node resolves cross-package imports (e.g. server-all importing
+  // `@mcp-midi-control/core/midi/transport.js`) via normal node_modules
+  // walk-up — each package is a real directory under
+  // node_modules/@mcp-midi-control/, no symlinks needed.
   console.log('[build] Staging artifacts');
-  fs.cpSync(path.join(PROJECT_ROOT, 'dist'), path.join(STAGING, 'dist'), { recursive: true });
-  for (const f of ['package.json', 'package-lock.json', 'LICENSE', 'NOTICE']) {
+  const WORKSPACE_PACKAGES = [
+    'core',
+    'am4',
+    'axe-fx-ii',
+    'hydrasynth-explorer',
+    'server-all',
+  ] as const;
+
+  // 4a. Lean root package.json — NO workspaces, NO @mcp-midi-control/*
+  //     deps. npm install only fetches the three leaf node-only deps.
+  //     We pull leaf-dep versions from the project's devDependencies
+  //     (Phase B moved them there since each workspace package now
+  //     declares its own runtime deps).
+  const devPkg = JSON.parse(
+    fs.readFileSync(path.join(PROJECT_ROOT, 'package.json'), 'utf8'),
+  ) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
+  const leafDeps = ['@modelcontextprotocol/sdk', 'midi', 'zod'] as const;
+  const leanDeps: Record<string, string> = {};
+  for (const d of leafDeps) {
+    const v = devPkg.devDependencies?.[d] ?? devPkg.dependencies?.[d];
+    if (!v) throw new Error(`Leaf dep ${d} missing from root package.json`);
+    leanDeps[d] = v;
+  }
+  const leanPkg = {
+    name: 'mcp-midi-control-bundle',
+    version: VERSION,
+    private: true,
+    type: 'module' as const,
+    dependencies: leanDeps,
+  };
+  fs.writeFileSync(
+    path.join(STAGING, 'package.json'),
+    JSON.stringify(leanPkg, null, 2) + '\n',
+  );
+
+  // 4b. Static files at staging root.
+  for (const f of ['LICENSE', 'NOTICE']) {
     fs.copyFileSync(path.join(PROJECT_ROOT, f), path.join(STAGING, f));
   }
   fs.copyFileSync(cachedNodeExe, path.join(STAGING, 'node.exe'));
@@ -129,21 +194,70 @@ async function main() {
 
   // 5. Production-only npm install using the BUNDLED node + npm. This
   // guarantees the native node-midi binary is compiled against the same
-  // V8 ABI as the node.exe we ship, regardless of what's on PATH.
-  console.log('[build] Installing production deps with bundled node + npm');
+  // V8 ABI as the node.exe we ship, regardless of what's on PATH. Only
+  // the three leaf deps install.
+  //
+  // ORDER MATTERS: install FIRST, copy workspace packages AFTER. If we
+  // pre-place the workspace packages, npm install treats them as
+  // orphans (no declaration in the lean package.json) and prunes them.
+  console.log('[build] Installing leaf production deps with bundled node + npm');
   execSync(
-    `"${cachedNodeExe}" "${cachedNpmCli}" ci --omit=dev`,
+    `"${cachedNodeExe}" "${cachedNpmCli}" install --omit=dev --no-package-lock`,
     { cwd: STAGING, stdio: 'inherit' }
   );
 
-  // 6. Verify the bundle.
+  // 6. Copy each workspace package as a real directory under
+  // node_modules/@mcp-midi-control/. Done AFTER npm install so npm
+  // doesn't prune them. Node's runtime resolution finds them by
+  // directory presence + each package's `exports` field — no need for
+  // the bundle to be a workspace, no symlinks needed (ZIP-safe).
+  console.log('[build] Copying workspace packages into node_modules');
+  const mcpNs = path.join(STAGING, 'node_modules', '@mcp-midi-control');
+  fs.mkdirSync(mcpNs, { recursive: true });
+  for (const pkg of WORKSPACE_PACKAGES) {
+    const srcPkg = path.join(PROJECT_ROOT, 'packages', pkg);
+    const dstPkg = path.join(mcpNs, pkg);
+    fs.mkdirSync(dstPkg, { recursive: true });
+
+    // Strip workspace-internal deps (`@mcp-midi-control/*: "*"`) from
+    // each copied package.json — the shipped bundle isn't a workspace,
+    // so the `"*"` specifier would confuse any future `npm` run. Real-
+    // directory presence + each package's `exports` field is what runtime
+    // resolution actually needs. Non-internal deps (e.g. `midi`) stay
+    // listed but are already present at the bundle's root node_modules.
+    const pkgJson = JSON.parse(
+      fs.readFileSync(path.join(srcPkg, 'package.json'), 'utf8'),
+    ) as { dependencies?: Record<string, string>; [k: string]: unknown };
+    if (pkgJson.dependencies) {
+      const cleaned: Record<string, string> = {};
+      for (const [name, version] of Object.entries(pkgJson.dependencies)) {
+        if (!name.startsWith('@mcp-midi-control/')) cleaned[name] = version;
+      }
+      pkgJson.dependencies = cleaned;
+    }
+    fs.writeFileSync(
+      path.join(dstPkg, 'package.json'),
+      JSON.stringify(pkgJson, null, 2) + '\n',
+    );
+    fs.cpSync(path.join(srcPkg, 'dist'), path.join(dstPkg, 'dist'), { recursive: true });
+  }
+
+  // 7. Verify the bundle.
   const stagedNodeExe = path.join(STAGING, 'node.exe');
   const versionOutput = execSync(`"${stagedNodeExe}" --version`).toString().trim();
   if (!versionOutput.includes(NODE_VERSION)) {
     throw new Error(`Bundled node reported ${versionOutput}; expected v${NODE_VERSION}`);
   }
 
-  const stagedEntry = path.join(STAGING, 'dist', 'server', 'index.js');
+  const stagedEntry = path.join(
+    STAGING,
+    'node_modules',
+    '@mcp-midi-control',
+    'server-all',
+    'dist',
+    'server',
+    'index.js',
+  );
   if (!fs.existsSync(stagedEntry)) {
     throw new Error(`Entry point missing at ${stagedEntry}`);
   }
@@ -152,14 +266,21 @@ async function main() {
   if (!fs.existsSync(stagedNativeMidi)) {
     throw new Error(
       `Native node-midi binary missing at ${stagedNativeMidi}.\n` +
-      `npm ci probably skipped the native build step. Try: rm -rf build/staging/node_modules ` +
+      `npm install probably skipped the native build step. Try: rm -rf build/staging/node_modules ` +
       `&& re-run this script.`
     );
   }
 
+  // Note: skipping a deeper import-resolution smoke test here because the
+  // server reads stdio for MCP and shouldn't be spawned headless without
+  // a transport peer. The `npm run preflight` smoke-server step already
+  // exercises the same dist/ entry against a real MCP handshake, so any
+  // import-resolution regression would have been caught before this
+  // script runs.
+
   const stagedSize = dirSizeMb(STAGING);
 
-  // 7. Package staging into a versioned ZIP. Rename staging -> versioned
+  // 8. Package staging into a versioned ZIP. Rename staging -> versioned
   // dir so the ZIP contains a clean top-level folder, then rename back so
   // re-builds and the deferred Inno Setup .iss path keep working.
   console.log('[build] Packaging release ZIP');
@@ -190,7 +311,7 @@ async function main() {
   console.log(`        staging:         ${STAGING} (${stagedSize} MB)`);
   console.log(`        release ZIP:     ${RELEASE_ZIP_PATH} (${zipSizeMb} MB)`);
   console.log(`        bundled node:    ${versionOutput}`);
-  console.log(`        entry point:     dist/server/index.js`);
+  console.log(`        entry point:     node_modules/@mcp-midi-control/server-all/dist/server/index.js`);
   console.log(`        native node-midi: node_modules/midi/build/Release/midi.node`);
   console.log('');
   console.log('Next: smoke-test the ZIP on a clean Win11 VM per docs/RELEASE-RUNBOOK.md');
