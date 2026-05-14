@@ -261,6 +261,45 @@ async function verifyAm4(client: Client): Promise<void> {
     );
   }
 
+  // Dirty-buffer gate on switch_preset: dirty the working buffer via
+  // set_param, then try to switch_preset without on_active_preset_edited.
+  // Expect refusal naming the working preset.
+  {
+    // First, ensure we're starting from a known clean location: discard-
+    // navigate to Z3 (the previous test's audition-at-Z4 will have left
+    // the buffer dirty). Audition-at-Z3 with no params lands the buffer
+    // clean enough for the next test setup.
+    await client.callTool({
+      name: 'switch_preset',
+      arguments: { port: 'am4', location: 'Z3', on_active_preset_edited: 'discard' },
+    });
+
+    // Dirty the buffer.
+    const setR = await client.callTool({
+      name: 'set_param',
+      arguments: { port: 'am4', block: 'amp', name: 'gain', value: 6 },
+    });
+    const setOk = !isError(setR);
+
+    // Try to navigate without on_active_preset_edited — should refuse.
+    const switchR = await client.callTool({
+      name: 'switch_preset',
+      arguments: { port: 'am4', location: 'A1' },
+    });
+    const switchText = extractText(switchR);
+    record(
+      'switch_preset refuses with dirty buffer (no on_active_preset_edited)',
+      setOk && isError(switchR) && /unsaved|dirty|edited|discard|save_active_first/i.test(switchText),
+      switchText.slice(0, 400),
+    );
+
+    // Cleanup: discard-switch so the next test starts clean.
+    await client.callTool({
+      name: 'switch_preset',
+      arguments: { port: 'am4', location: 'Z3', on_active_preset_edited: 'discard' },
+    });
+  }
+
   // AM4 apply_preset skip+warn: 5F8 Tweed Normal has no master knob.
   // The spec asks for amp.master; the executor should skip+warn, not
   // refuse the whole call.

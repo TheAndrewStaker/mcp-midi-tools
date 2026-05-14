@@ -75,6 +75,7 @@ import { loadFactoryBank, sendFactoryRestore } from '@/fractal/am4/factoryBank.j
 import {
   guardActiveAM4BufferOrSave,
   markAM4Clean,
+  markAM4Dirty,
 } from '@/fractal/am4/tools/safeEdit.js';
 import { readPresetName } from '@/server/shared/readOps.js';
 import { recordInbound, sendAndAwaitAck } from '@/server/shared/wireOps.js';
@@ -311,6 +312,11 @@ export const writer: DeviceWriter = {
       // the only thing that catches a type write done in an isolated
       // call.
       observeWrittenParam(block, name, value);
+      // Mark the working buffer dirty — AM4 doesn't broadcast a dirty
+      // signal (HW-107 pending), so the safe-edit gate relies on this
+      // code-side classifier. Without this, switch_preset and apply_
+      // preset with target_location would silently discard the edit.
+      markAM4Dirty();
     }
     const enumName = param.unit === 'enum'
       ? (param.enumValues as Record<number, string> | undefined)?.[value]
@@ -426,6 +432,12 @@ export const writer: DeviceWriter = {
     const result = await sendAndAwaitAck(ctx.conn, bytes, isWriteEcho);
     // New preset = new channel layout; existing cache is stale.
     invalidateChannelCache();
+    if (result.acked) {
+      // Switching presets loads a stored preset into the working
+      // buffer, so the buffer matches what's on flash — clean by
+      // definition. Mirrors the markAM4Clean in runPostSaveSwitch.
+      markAM4Clean();
+    }
     return {
       op: 'switch_preset',
       target: formatLocationDisplay(locationIndex),
@@ -534,6 +546,7 @@ export const writer: DeviceWriter = {
     }
     const bytes = buildSetBlockType(slot as 1 | 2 | 3 | 4, wire);
     const result = await sendAndAwaitAck(ctx.conn, bytes, isWriteEcho);
+    if (result.acked) markAM4Dirty();
     const displayName = BLOCK_NAMES_BY_VALUE[wire] ?? `0x${wire.toString(16)}`;
     return {
       op: 'set_block',
@@ -557,6 +570,7 @@ export const writer: DeviceWriter = {
     }
     const bytes = buildSetBlockBypass(wire, bypassed);
     const result = await sendAndAwaitAck(ctx.conn, bytes, isWriteEcho);
+    if (result.acked) markAM4Dirty();
     const stateWord = bypassed ? 'bypassed' : 'active';
     return {
       op: 'set_bypass',
@@ -593,6 +607,16 @@ export const writer: DeviceWriter = {
         capture.unsubscribe();
       }
       if (result.ok) {
+        // Post-conditions for the safe-edit dirty signal: a save run
+        // persists the working buffer to flash → clean. An audition
+        // run leaves the working buffer mutated relative to flash →
+        // dirty. (Switch+apply on AM4 doesn't have a device-broadcast
+        // dirty signal yet; HW-107 pending.)
+        if (result.saved) {
+          markAM4Clean();
+        } else {
+          markAM4Dirty();
+        }
         const auditionNote = result.saved
           ? undefined
           : `Auditioning at ${formatLocationDisplay(locationIndex)} — working buffer only, not saved. ` +
@@ -646,6 +670,12 @@ export const writer: DeviceWriter = {
       : undefined;
     const skipNote = formatSkippedNote(skipped);
     const warning = [ackNote, skipNote].filter((s) => s !== undefined).join(' ');
+    if (wireResult.totalWrites > 0 && wireResult.unacked < wireResult.totalWrites) {
+      // Working-buffer-only apply mutated the buffer → dirty per the
+      // safe-edit contract. Even a partial apply is dirty if any
+      // write landed.
+      markAM4Dirty();
+    }
     return {
       ok: wireResult.unacked === 0,
       steps: wireResult.totalWrites,
@@ -992,6 +1022,7 @@ export const writer: DeviceWriter = {
     const sceneIdx = Number(m[1]) - 1;
     const bytes = buildSetSceneName(sceneIdx, name);
     const result = await sendAndAwaitAck(ctx.conn, bytes, isCommandAck);
+    if (result.acked) markAM4Dirty();
     return {
       op: 'rename',
       target,
