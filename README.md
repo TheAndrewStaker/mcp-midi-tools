@@ -125,8 +125,9 @@ quick-start](#generic-midi-quick-start) below.
   [Claude Code](https://docs.claude.com/en/docs/claude-code), or any
   other MCP-capable host.
 - For source-installs only: Node.js 18+ and Visual Studio Build Tools
-  (to compile the `node-midi` native module). The release ZIP bundles
-  Node so end users do not need either.
+  (to compile the `midi` native module — published on npm as `midi`,
+  source at [justinlatimer/node-midi](https://github.com/justinlatimer/node-midi)).
+  The release ZIP bundles Node so end users do not need either.
 
 Editor apps (AM4-Edit, AxeEdit, Hydrasynth Manager) can stay open
 while the MCP server runs — Windows MIDI ports are shareable. If a
@@ -358,8 +359,9 @@ If step 3 works, you're done. Move on to building full presets.
   the USB port. Check the AM4 is powered on, the USB cable is seated,
   and the driver is installed. Power-cycle the AM4 if needed.
 - **Tool call hangs in Claude Desktop** — the server writes to MIDI
-  synchronously, so hangs usually mean `node-midi` couldn't load.
-  Check Claude Desktop's MCP log for stderr output from the server.
+  synchronously, so hangs usually mean the `midi` native module
+  couldn't load. Check Claude Desktop's MCP log for stderr output
+  from the server.
 - **Parameter out of range** — `set_param` validates against the
   parameter's `displayMin`/`displayMax`. Ranges are derived from the
   AM4's own metadata cache.

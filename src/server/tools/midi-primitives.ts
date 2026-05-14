@@ -46,22 +46,25 @@ function userChannelToWire(channel: number): number {
 }
 
 /**
- * Catch-all error reporter for the send_* tools. Validation errors from
- * the message builders surface as structured tool results so Claude can
- * see the rejection and recover, rather than the server returning a
- * 500-equivalent.
+ * Catch-all error reporter for the send_* tools. Validation errors
+ * from the message builders surface as structured tool results so
+ * Claude can see the rejection and recover, rather than the server
+ * returning a 500-equivalent. `isError: true` is mandatory per the
+ * MCP spec — without it a failed send_cc looks identical to a
+ * successful one that returned the error text in its content.
  */
 function sendErrorResponse(
     toolName: string,
     port: string,
     err: unknown,
-): { content: Array<{ type: 'text'; text: string }> } {
+): { content: Array<{ type: 'text'; text: string }>; isError: true } {
     const msg = err instanceof Error ? err.message : String(err);
     return {
         content: [{
             type: 'text',
             text: `${toolName} failed for port "${port}": ${msg}`,
         }],
+        isError: true,
     };
 }
 
