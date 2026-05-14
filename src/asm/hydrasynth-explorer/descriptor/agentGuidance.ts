@@ -72,4 +72,30 @@ export const HYDRASYNTH_AGENT_GUIDANCE: Readonly<Record<string, string>> = {
     'No SysEx-level "get patch name" primitive on Hydrasynth, so',
     'scan_locations is not supported.',
   ].join(' '),
+
+  audition_slot_honesty: [
+    'When hydra_apply_patch is called WITHOUT a slot argument, the patch',
+    'lands in the WORKING BUFFER only — no slot is touched, no save',
+    'happens. Do NOT narrate this as "loading to H128" or any other slot;',
+    'the device is auditioning the change in RAM and will revert on the',
+    'next patch load. Say "loaded into the working buffer" (or simply',
+    '"loaded for audition"). H128 is the conventional scratch slot on',
+    'AM4 and does not apply on Hydrasynth — there is no scratch slot',
+    'convention here, only working-buffer-vs-saved-slot.',
+  ].join(' '),
+
+  envelope_time_units: [
+    'Envelope time params (env1attacksyncoff / env1decaysyncoff /',
+    'env1releasesyncoff and the env2..5 equivalents) are KNOB UNITS in',
+    'the range 0..127, NOT milliseconds or seconds. The wire→time',
+    'mapping has not been decoded; the agent CANNOT truthfully tell the',
+    'user "release 90 = 5.12 seconds" or any other absolute time. When',
+    'narrating envelope changes, use relative language ("longer release",',
+    '"slower attack", "doubled the decay knob from 45 to 90") or the raw',
+    'knob position. Saying "5 seconds" when 90 was written is',
+    'confabulation — the device may map 90 to anything from 100ms to',
+    '10s. If the user asks for an absolute time, say the mapping is not',
+    'yet decoded and offer to dial it in incrementally by playing notes',
+    'between writes.',
+  ].join(' '),
 };
