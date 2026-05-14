@@ -52,7 +52,7 @@ interface CliOpts {
 }
 
 function parseCli(argv: string[]): CliOpts {
-  const opts: CliOpts = { ports: ['am4', 'axefx2'] };
+  const opts: CliOpts = { ports: ['am4', 'axefx2', 'hydrasynth'] };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--port') opts.ports = [argv[++i]];
@@ -422,6 +422,72 @@ async function verifyAxefx2(client: Client): Promise<void> {
   }
 }
 
+async function verifyHydrasynth(client: Client): Promise<void> {
+  console.log('\n── Hydrasynth ────────────────────────────────────────────────');
+
+  // describe_device — sanity + verify v0.4 agent_guidance carries the
+  // Session 73 confabulation patches.
+  {
+    const r = await client.callTool({ name: 'describe_device', arguments: { port: 'hydrasynth' } });
+    const t = extractText(r);
+    let parsed: unknown;
+    try { parsed = JSON.parse(t); } catch { parsed = undefined; }
+    const caps = (parsed as { capabilities?: { preset_location_format?: string } })?.capabilities;
+    const guidance = (parsed as { agent_guidance?: Record<string, string> })?.agent_guidance;
+    record('describe_device returns capabilities', !isError(r) && !!caps, t.slice(0, 200));
+    record(
+      'agent_guidance carries audition_slot_honesty (Session 73 fix)',
+      !!guidance?.audition_slot_honesty && /working buffer/i.test(guidance.audition_slot_honesty),
+      `present=${!!guidance?.audition_slot_honesty}`,
+    );
+    record(
+      'agent_guidance carries envelope_time_units (Session 73 fix)',
+      !!guidance?.envelope_time_units && /knob units|not.*(milliseconds|seconds)/i.test(guidance.envelope_time_units),
+      `present=${!!guidance?.envelope_time_units}`,
+    );
+    record(
+      'agent_guidance carries device_precondition (NRPN TX/RX hint)',
+      !!guidance?.device_precondition && /NRPN/i.test(guidance.device_precondition),
+      `present=${!!guidance?.device_precondition}`,
+    );
+  }
+
+  // get_active_patch — Hydrasynth's canonical read primitive (the
+  // device has no SysEx response for individual param queries, so
+  // unified get_param is intentionally not supported on Hydrasynth).
+  {
+    const r = await client.callTool({
+      name: 'hydra_get_active_patch',
+      arguments: {},
+    });
+    const t = extractText(r);
+    record('hydra_get_active_patch returns bank+patch', !isError(r) && /bank|patch/i.test(t), t.slice(0, 200));
+  }
+
+  // Audition apply_patch via hydra_apply_patch — slot omitted means
+  // the tool navigates to H128 scratch and dumps the patch to that
+  // working buffer. NOT a flash save. The audition_slot_honesty
+  // guidance prevents the agent from narrating this as "saved to H128"
+  // — but the response itself can mention H128 as the navigation
+  // target (factual). We only fail if the response uses save-intent
+  // wording.
+  {
+    const r = await client.callTool({
+      name: 'hydra_apply_patch',
+      arguments: {
+        params: [{ name: 'amplevel', value: 90 }],
+      },
+    });
+    const t = extractText(r);
+    record('hydra_apply_patch (working-buffer audition) succeeds', !isError(r), t.slice(0, 400));
+    record(
+      'hydra_apply_patch response does NOT claim flash save',
+      !isError(r) && !/saved to flash|persisted to|wrote to flash|stored in flash/i.test(t),
+      t.slice(0, 400),
+    );
+  }
+}
+
 // ── Main ───────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -460,19 +526,30 @@ async function main(): Promise<void> {
 
     const hasAm4 = /am4/i.test(portsText);
     const hasAxefx = /axe[- ]fx/i.test(portsText);
+    const hasHydra = /hydrasynth|hydra/i.test(portsText);
 
     if (opts.ports.includes('am4')) {
       if (!hasAm4) {
-        record('AM4 port discovered', false, 'No "AM4" substring in list_midi_ports output');
+        console.log('\n── AM4 ───────────────────────────────────────────────────────');
+        console.log('  ⊘ AM4 not visible in list_midi_ports — skipping checks.');
       } else {
         await verifyAm4(client);
       }
     }
     if (opts.ports.includes('axefx2')) {
       if (!hasAxefx) {
-        record('Axe-Fx II port discovered', false, 'No "Axe-Fx" substring in list_midi_ports output');
+        console.log('\n── Axe-Fx II ─────────────────────────────────────────────────');
+        console.log('  ⊘ Axe-Fx II not visible in list_midi_ports — skipping checks.');
       } else {
         await verifyAxefx2(client);
+      }
+    }
+    if (opts.ports.includes('hydrasynth')) {
+      if (!hasHydra) {
+        console.log('\n── Hydrasynth ────────────────────────────────────────────────');
+        console.log('  ⊘ Hydrasynth not visible in list_midi_ports — skipping checks.');
+      } else {
+        await verifyHydrasynth(client);
       }
     }
 
