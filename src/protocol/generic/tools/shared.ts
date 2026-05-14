@@ -18,13 +18,33 @@ export const PORT_DESC =
   'registered device (e.g. "AM4 MIDI 1"). Call list_midi_ports to see ' +
   'connected ports; call describe_device(port) to confirm capabilities.';
 
-export function asText(payload: unknown): { content: { type: 'text'; text: string }[] } {
-  return {
-    content: [{
-      type: 'text',
-      text: typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2),
-    }],
-  };
+/**
+ * Shape a unified-surface tool result. Returns both:
+ *   - `content` — human-readable text (the stringified payload), kept
+ *     for back-compat with agents that read text responses verbatim.
+ *   - `structuredContent` — the typed object payload, per the 2025
+ *     MCP spec. Agents that consume structuredContent get the typed
+ *     object directly instead of having to re-parse a JSON string.
+ *
+ * String payloads (already textual — no structure) skip structuredContent.
+ */
+export function asText(payload: unknown): {
+  content: { type: 'text'; text: string }[];
+  structuredContent?: Record<string, unknown>;
+} {
+  if (typeof payload === 'string') {
+    return { content: [{ type: 'text', text: payload }] };
+  }
+  const text = JSON.stringify(payload, null, 2);
+  // structuredContent must be a JSON object (record). Arrays and
+  // primitives don't qualify per the spec — only emit the field when
+  // the payload is a plain object.
+  const isPlainObject = typeof payload === 'object'
+    && payload !== null
+    && !Array.isArray(payload);
+  return isPlainObject
+    ? { content: [{ type: 'text', text }], structuredContent: payload as Record<string, unknown> }
+    : { content: [{ type: 'text', text }] };
 }
 
 export function asError(err: unknown): { content: { type: 'text'; text: string }[]; isError: true } {
