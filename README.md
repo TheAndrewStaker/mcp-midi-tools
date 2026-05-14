@@ -44,7 +44,7 @@ no manual re-routing in AxeEdit required. Multi-scene authoring
 > 30-minute capture sessions per the
 > [community workflow](./docs/_private/HARDWARE-TASKS-AXEFX3.md) take
 > the III from "scaffolded" to feature parity with the AM4 + Axe-Fx II
-> support. Plug a III into the server today and it'll greet you; when
+> support. Plug an Axe-Fx III into the server today and it'll greet you; when
 > you're ready to contribute, the issue tracker is the entry point.
 
 Two surfaces cover the common path; a third covers device-specific
