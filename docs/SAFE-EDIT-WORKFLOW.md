@@ -204,11 +204,23 @@ Source: `scripts/mcp-test-safe-edit-scenarios.ts`.
 ## Failure modes documented
 
 - **Front-panel edits we can't see.** Devices without a decoded
-  dirty-broadcast (Hydrasynth) won't trigger the dirty flag for
-  edits the user made on the device itself. The `save_authorized`
-  guard still catches save-intent ambiguity. The
-  `on_active_preset_edited` guard simply isn't available on
-  those devices — agents know via tool descriptions.
+  dirty-broadcast (Hydrasynth and AM4 both fall in this bucket as
+  of Session 74 HW-107) won't trigger the dirty flag for edits the
+  user made on the device itself. **AM4 specifically:** an HW-107
+  capture with AM4-Edit closed produced ZERO inbound MIDI bytes
+  during front-panel knob turns, bypass toggles, and scene switches
+  over 58 seconds. The device does not broadcast on edits — AM4-Edit
+  detects them by continuously polling state, which would compete
+  with the MCP server's real work and is not implemented. The
+  `save_authorized` guard still catches save-intent ambiguity. The
+  `on_active_preset_edited` guard catches AGENT-made edits (every
+  set_param / apply_preset / set_block on AM4 marks the buffer
+  dirty), but cannot catch a knob the user just turned on the
+  hardware. Honest scope: if the user has been editing on the front
+  panel and tells the agent "load A1", they should save on the
+  device first OR pass `on_active_preset_edited: "discard"`. Agents
+  know via the AM4 `agent_guidance.relative_change` block and
+  describe_device.
 
 - **Device save we can't see.** If the user presses SAVE on the
   device's own front panel (not via the agent), the working buffer
@@ -229,7 +241,9 @@ Source: `scripts/mcp-test-safe-edit-scenarios.ts`.
   — reference implementation of the warn/discard/save-first guard
 - `src/fractal/axe-fx-ii/midi.ts` — device-sourced dirty
   classification (state-broadcast listener)
-- `docs/_private/HARDWARE-TASKS-AM4.md` HW-107 — open task for
-  AM4's device-sourced dirty signal
+- `docs/_private/HARDWARE-TASKS-AM4.md` HW-107 — closed Session 74:
+  AM4 doesn't broadcast on front-panel edits, full stop. The
+  code-side classifier on outbound writes is the only viable signal;
+  front-panel edits are documented as out-of-scope above.
 - `docs/_private/STATE.md` Session 68 — full history of the
   Axe-Fx II implementation

@@ -50,9 +50,10 @@ visible in your Claude chat. You see the refusal text yourself.
 
 ### Gate 2 — dirty-buffer warning
 
-If you've been editing a preset (turning knobs, applying tweaks, anything
-that mutates the working buffer) and the AI tries to navigate to a
-different preset, the server refuses with a structured warning:
+If the AI has been editing a preset (set_param, apply_preset, anything
+that mutates the working buffer through the MCP server) and then tries
+to navigate to a different preset, the server refuses with a structured
+warning:
 
 > REFUSING TO NAVIGATE: location M03 ("Mesa Lead") has unsaved
 > working-buffer edits.
@@ -65,9 +66,24 @@ different preset, the server refuses with a structured warning:
 >     on_active_preset_edited="discard"
 
 You see this message in chat. The AI is supposed to ASK you which one;
-you tell it, and only then does it retry. This catches "I was about to
-save my new lead tone but the AI loaded a different preset and lost
-it" — the most expensive failure mode for a working musician.
+you tell it, and only then does it retry. This catches "the AI was
+building my new lead tone but loaded a different preset and lost it" —
+the most expensive failure mode for a working musician.
+
+**Scope honesty — knobs you turn yourself.** This gate catches edits
+the AI makes through the MCP server. Edits you make directly on the
+device's front panel (turning knobs, toggling bypass, switching
+scenes from the hardware) are NOT detected on AM4 or Hydrasynth.
+The Axe-Fx II broadcasts its dirty state, so it catches both kinds.
+AM4 and Hydrasynth do not — we verified by capture (HW-107, Session
+74): the AM4 emits zero MIDI bytes when you turn a knob, and there's
+no broadcast for us to listen for. Practical advice: **if you've
+been editing on the device's front panel, save on the device before
+asking the AI to load a different preset.** Or just tell the AI
+"discard my front-panel edits, then load A1" — the AI will pass
+`on_active_preset_edited: "discard"` and proceed. The gate is
+fail-safe in the agent-driven path; not magic in the human-driven
+path.
 
 ### Gate 3 — multi-preset overwrite warning
 

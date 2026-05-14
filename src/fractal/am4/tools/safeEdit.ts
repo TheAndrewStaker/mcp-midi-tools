@@ -34,7 +34,13 @@ import type { DirtyGuardResult, OnEditedMode } from '@/server/shared/safeEdit.js
 import type { MidiConnection } from '@/fractal/am4/midi.js';
 import { formatLocationDisplay, parseLocationCode } from '@/fractal/am4/locations.js';
 import { sendReadAndParse, readPresetName } from '@/server/shared/readOps.js';
-import { buildSaveToLocation } from '@/fractal/am4/setParam.js';
+import { buildRequestActiveBufferDump, buildSaveToLocation } from '@/fractal/am4/setParam.js';
+import { receivePresetDumpStream } from '@/fractal/am4/presetDump.js';
+import {
+  cacheFingerprint,
+  fingerprintDump,
+  getCachedFingerprint,
+} from '@/fractal/am4/bufferFingerprint.js';
 
 export const AM4_DIRTY_LABEL = AM4_LABEL;
 
@@ -44,6 +50,53 @@ const LOCATION_STATE_PID_HIGH = 0x000a;
 
 /** Time we wait for an AM4 save-ack before assuming the wire is stuck. */
 const SAVE_ACK_TIMEOUT_MS = 500;
+
+/** Time we wait for a working-buffer dump response (12 KB stream). */
+const BUFFER_DUMP_TIMEOUT_MS = 1500;
+
+/**
+ * Capture a fresh fingerprint of the AM4 working buffer and cache it
+ * under the given location index. Called after every CLEAN transition
+ * (post-save, post-switch) so future dirty-gate checks have a
+ * known-good baseline to compare against.
+ *
+ * Best-effort: if the dump fails (port stuck, timeout, etc.) we
+ * silently skip — the next gate check will see no cache and proceed
+ * without front-panel verification, fail-safe rather than blocking
+ * the user's navigation on a non-critical side task.
+ */
+export async function refreshAM4Fingerprint(
+  conn: MidiConnection,
+  locationIndex: number,
+): Promise<void> {
+  try {
+    const streamPromise = receivePresetDumpStream(conn, { timeoutMs: BUFFER_DUMP_TIMEOUT_MS });
+    conn.send(buildRequestActiveBufferDump());
+    const stream = await streamPromise;
+    const hash = fingerprintDump(stream.chunkBytes);
+    cacheFingerprint(locationIndex, hash);
+  } catch {
+    // Best-effort — see jsdoc.
+  }
+}
+
+/**
+ * Read the current working-buffer fingerprint from the device. Used
+ * in the dirty gate to detect front-panel edits the code-side
+ * classifier can't see (AM4 emits zero unsolicited MIDI on knob turns
+ * — confirmed Session 74 HW-107). Returns undefined when the dump
+ * fails so the caller can gracefully degrade rather than block.
+ */
+async function readAM4Fingerprint(conn: MidiConnection): Promise<string | undefined> {
+  try {
+    const streamPromise = receivePresetDumpStream(conn, { timeoutMs: BUFFER_DUMP_TIMEOUT_MS });
+    conn.send(buildRequestActiveBufferDump());
+    const stream = await streamPromise;
+    return fingerprintDump(stream.chunkBytes);
+  } catch {
+    return undefined;
+  }
+}
 
 export function markAM4Dirty(): void {
   markDirty(AM4_LABEL);
@@ -74,22 +127,77 @@ export async function guardActiveAM4BufferOrSave(
   conn: MidiConnection,
   mode: OnEditedMode,
 ): Promise<DirtyGuardResult> {
+  // Front-panel-edit detection. AM4 emits zero unsolicited MIDI on
+  // knob turns (Session 74 HW-107), so the code-side classifier
+  // (markAM4Dirty wired into our writes) is blind to user edits made
+  // directly on the device. Lazy fingerprint check: when our
+  // classifier reads clean, dump the working buffer and compare to
+  // the last cached fingerprint for the active preset. If they
+  // differ, the buffer has been edited outside our control.
+  //
+  // Only fires when the classifier already reads clean — if we know
+  // we're dirty, we skip the dump and use the existing warning path.
+  // First-visit-per-location has no cache: we proceed without the
+  // check (the post-switch cache refresh sets the baseline for next
+  // time).
+  let activeIndexForFingerprint: number | undefined;
   if (!isAM4Dirty()) {
-    return { proceed: true };
+    if (mode === 'discard') {
+      // The user already opted to discard — skip the dump round-trip.
+      return { proceed: true };
+    }
+    try {
+      const parsed = await sendReadAndParse(conn, LOCATION_STATE_PID_LOW, LOCATION_STATE_PID_HIGH);
+      const idx = parsed.asUInt32LE();
+      if (idx >= 0 && idx <= 103) activeIndexForFingerprint = idx;
+    } catch {
+      activeIndexForFingerprint = undefined;
+    }
+    if (activeIndexForFingerprint === undefined) {
+      // Can't read the active location — proceed (degrade gracefully).
+      return { proceed: true };
+    }
+    const cached = getCachedFingerprint(activeIndexForFingerprint);
+    if (!cached) {
+      // First-visit baseline isn't set yet. Skip the front-panel check;
+      // the post-switch cache refresh will establish it for next time.
+      return { proceed: true };
+    }
+    const currentHash = await readAM4Fingerprint(conn);
+    if (currentHash === undefined) {
+      // Dump failed — proceed rather than block on a non-critical
+      // side check.
+      return { proceed: true };
+    }
+    if (currentHash === cached.hash) {
+      // Buffer matches the cached clean fingerprint — no front-panel
+      // edits since we last established the baseline.
+      return { proceed: true };
+    }
+    // Hash mismatch → working buffer differs from the cached clean
+    // state. The user (or AM4-Edit running alongside us) edited the
+    // buffer through a channel we don't observe. Mark dirty so the
+    // shared refusal path below names the active preset and offers
+    // discard / save-first options.
+    markAM4Dirty();
+    // Fall through to the existing warning logic.
   }
+
   if (mode === 'discard') {
     return { proceed: true };
   }
 
   // Read active location for the warning text. If the read fails we
   // still surface a useful warning — we just can't name the slot.
-  let activeIndex: number | undefined;
-  try {
-    const parsed = await sendReadAndParse(conn, LOCATION_STATE_PID_LOW, LOCATION_STATE_PID_HIGH);
-    const idx = parsed.asUInt32LE();
-    if (idx >= 0 && idx <= 103) activeIndex = idx;
-  } catch {
-    activeIndex = undefined;
+  let activeIndex: number | undefined = activeIndexForFingerprint;
+  if (activeIndex === undefined) {
+    try {
+      const parsed = await sendReadAndParse(conn, LOCATION_STATE_PID_LOW, LOCATION_STATE_PID_HIGH);
+      const idx = parsed.asUInt32LE();
+      if (idx >= 0 && idx <= 103) activeIndex = idx;
+    } catch {
+      activeIndex = undefined;
+    }
   }
 
   let activeName: string | undefined;

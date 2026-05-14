@@ -76,6 +76,7 @@ import {
   guardActiveAM4BufferOrSave,
   markAM4Clean,
   markAM4Dirty,
+  refreshAM4Fingerprint,
 } from '@/fractal/am4/tools/safeEdit.js';
 import { readPresetName } from '@/server/shared/readOps.js';
 import { recordInbound, sendAndAwaitAck } from '@/server/shared/wireOps.js';
@@ -254,6 +255,10 @@ async function runPostSaveSwitch(
       `to ${formatLocationDisplay(locationIndex)} manually on the AM4 to load it.`
     );
   }
+  // Save committed the working buffer to flash at this location; the
+  // buffer now matches the stored preset. Refresh the fingerprint
+  // cache so the next dirty-gate check can detect front-panel edits.
+  await refreshAM4Fingerprint(ctx.conn, locationIndex);
   return undefined;
 }
 
@@ -437,6 +442,12 @@ export const writer: DeviceWriter = {
       // buffer, so the buffer matches what's on flash — clean by
       // definition. Mirrors the markAM4Clean in runPostSaveSwitch.
       markAM4Clean();
+      // Refresh the working-buffer fingerprint cache so the next
+      // dirty-gate check can detect front-panel edits made between
+      // now and the next navigation attempt. Best-effort: failures
+      // are swallowed so the switch's success isn't penalized by a
+      // non-critical side task. See bufferFingerprint.ts.
+      await refreshAM4Fingerprint(ctx.conn, locationIndex);
     }
     return {
       op: 'switch_preset',
@@ -610,10 +621,14 @@ export const writer: DeviceWriter = {
         // Post-conditions for the safe-edit dirty signal: a save run
         // persists the working buffer to flash → clean. An audition
         // run leaves the working buffer mutated relative to flash →
-        // dirty. (Switch+apply on AM4 doesn't have a device-broadcast
-        // dirty signal yet; HW-107 pending.)
+        // dirty. (AM4 has no device-broadcast dirty signal; HW-107
+        // confirmed Session 74 the device is silent on front-panel
+        // edits — the fingerprint cache catches that case.)
         if (result.saved) {
           markAM4Clean();
+          // Refresh the fingerprint cache for the just-saved location
+          // so the next dirty-gate check can detect front-panel edits.
+          await refreshAM4Fingerprint(ctx.conn, locationIndex);
         } else {
           markAM4Dirty();
         }
