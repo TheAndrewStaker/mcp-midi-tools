@@ -46,14 +46,12 @@ function encode14(n: number): [number, number] {
 }
 
 /**
- * Identifies a parameter on the AM4. The two halves form a 28-bit ID;
- * AM4-Edit treats them as separate fields in the wire protocol, but we
- * model them as a unit because no use case mixes-and-matches.
+ * Re-export of the shared Fractal-protocol `ParamId` so existing AM4
+ * call sites keep working. New code that doesn't otherwise depend on
+ * AM4 should import directly from `@/fractal/shared/types.js`.
  */
-export interface ParamId {
-  pidLow: number;  // hdr0 — 14-bit
-  pidHigh: number; // hdr1 — 14-bit
-}
+import type { ParamId } from '@/fractal/shared/types.js';
+export type { ParamId };
 
 /** Build a 0x01 WRITE message setting `param` to a 32-bit float `value`. */
 export function buildSetFloatParam(param: ParamId, value: number): number[] {

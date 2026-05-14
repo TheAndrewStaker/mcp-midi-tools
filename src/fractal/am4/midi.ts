@@ -1,280 +1,65 @@
 /**
- * Generic MIDI port wrapper, used by the AM4 server today and the broader
- * "MCP MIDI Tools" surface (BK-030) tomorrow.
+ * AM4-specific MIDI helpers. Thin wrappers over the generic transport
+ * in `@/core/midi/transport.ts` plus the AM4 SysEx-aware inbound
+ * message describer used by every AM4 tool's diagnostic timeline.
  *
- * Wraps node-midi to:
- *   - find a port by name-substring match
- *   - enable SysEx (off by default in node-midi)
- *   - return promises for clean async/await usage
- *
- * Caller must call `close()` to release ports.
+ * Generic MIDI port enumeration / connect / hex helpers live in
+ * `@/core/midi/transport.ts`. Re-exported below until call sites are
+ * migrated to import from core directly.
  */
-import midi, { Input, Output } from 'midi';
 
-export interface MidiConnection {
-  send: (bytes: number[]) => void;
-  /**
-   * Last error thrown by the underlying `output.sendMessage` call, or
-   * `undefined` if the most recent send succeeded. node-midi's WinMM
-   * backend prints `MidiOutWinMM::sendMessage: error sending sysex
-   * message` to stderr and silently fails on a stale handle, which
-   * leaves the tool reporting "success" while 0/22 chunks land. Tools
-   * doing multi-message dumps (Hydrasynth patch, AM4 apply_preset)
-   * read this after each send to bail loudly on the first failure
-   * instead of looping through 22 broken writes. The Hydrasynth
-   * yungatita test (2026-05-12) is the case that drove this.
-   */
-  lastSendError?: Error;
-  /** Resolves with the next inbound SysEx message, or rejects on timeout. */
-  receiveSysEx: (timeoutMs?: number) => Promise<number[]>;
-  /**
-   * Wait for the first inbound SysEx that satisfies `predicate`. Non-matching
-   * messages are silently dropped until `timeoutMs` elapses. Register BEFORE
-   * the outgoing write so the response can't race ahead of the listener.
-   */
-  receiveSysExMatching: (
-    predicate: (bytes: number[]) => boolean,
-    timeoutMs?: number,
-  ) => Promise<number[]>;
-  /**
-   * Subscribe to ALL inbound messages (SysEx + non-SysEx). Returns an
-   * unsubscribe function. When `hasInput` is false (no input port found),
-   * the handler is registered but will never fire — diagnostic tools that
-   * report "n messages observed" stay safe to call.
-   */
-  onMessage: (handler: (bytes: number[]) => void) => () => void;
-  /**
-   * True when an input port was successfully opened. Diagnostic surfaces
-   * (the inbound-capture timeline in `apply_preset` / `set_param` / etc.)
-   * read this flag so they can say "no input port — capture is empty by
-   * construction" instead of silently reporting an empty timeline.
-   */
-  hasInput: boolean;
-  close: () => void;
-}
+import {
+  connect,
+  listMidiPorts as listMidiPortsGeneric,
+  type MidiConnection,
+  type MidiPortInfo as GenericMidiPortInfo,
+} from '@/core/midi/transport.js';
+
+export {
+  connect,
+  toHex,
+  type ConnectOptions,
+  type MidiConnection,
+} from '@/core/midi/transport.js';
+
+/** Substrings used to find AM4 ports — `am4` matches Windows/Mac, `fractal` covers some driver variants. */
+export const AM4_PORT_NEEDLES = ['am4', 'fractal'] as const;
 
 /**
  * Backwards-compat alias retained while the codebase migrates from the
- * single-device era. New code should use `MidiConnection`.
+ * single-device era. New code should use `MidiConnection` from
+ * `@/core/midi/transport`.
  */
 export type AM4Connection = MidiConnection;
 
-function findPortByName(
-  port: Input | Output,
-  needles: string[],
-): number {
-  for (let i = 0; i < port.getPortCount(); i++) {
-    const name = port.getPortName(i).toLowerCase();
-    if (needles.some((n) => name.includes(n.toLowerCase()))) return i;
-  }
-  return -1;
-}
-
-export interface MidiPortInfo {
-  index: number;
-  name: string;
-  direction: 'input' | 'output';
-  /** True when this port's name matched one of the supplied needles. */
-  matched: boolean;
-  /**
-   * Back-compat alias for `matched` against the AM4 needles. Stays populated
-   * when the default AM4 needles are used, so existing call sites that read
-   * `looksLikeAM4` keep working until they're migrated.
-   */
+/**
+ * AM4-flavored port info: the generic `MidiPortInfo` plus a
+ * `looksLikeAM4` flag tagged against the AM4 needle list. Existing
+ * call sites read `looksLikeAM4` directly; new code should pass the
+ * AM4 needles into `listMidiPorts` and read `matched` instead.
+ */
+export interface MidiPortInfo extends GenericMidiPortInfo {
   looksLikeAM4: boolean;
 }
 
-const AM4_PORT_NEEDLES = ['am4', 'fractal'] as const;
-
-function enumeratePorts(
-  port: Input | Output,
-  direction: 'input' | 'output',
-  needles: readonly string[],
-): MidiPortInfo[] {
-  const out: MidiPortInfo[] = [];
-  for (let i = 0; i < port.getPortCount(); i++) {
-    const name = port.getPortName(i);
-    const lower = name.toLowerCase();
-    const matched = needles.some((n) => lower.includes(n.toLowerCase()));
-    const looksLikeAM4 = AM4_PORT_NEEDLES.some((n) => lower.includes(n));
-    out.push({ index: i, name, direction, matched, looksLikeAM4 });
-  }
-  return out;
-}
-
 /**
- * List every MIDI input and output the OS exposes, without opening any
- * connection. Used by the `list_midi_ports` MCP tool, the "AM4 not found"
- * diagnostic, and (post-BK-030) any device-discovery flow that wants to
- * tag ports against its own name pattern.
- *
- * `needles` (default: AM4) controls which ports get `matched: true`. The
- * `looksLikeAM4` field always tags against the AM4 needles regardless of
- * what `needles` is, so AM4-specific call sites stay readable.
- *
- * Opens and immediately releases short-lived node-midi handles so a
- * subsequent `connect()` still sees a clean state.
+ * AM4-flavored port enumeration. Always tags `looksLikeAM4` against
+ * the AM4 needle list, regardless of what `needles` is passed.
+ * Defaults to the AM4 needles, so AM4-specific callers can call
+ * `listMidiPorts()` with no args.
  */
 export function listMidiPorts(
   needles: readonly string[] = AM4_PORT_NEEDLES,
 ): { inputs: MidiPortInfo[]; outputs: MidiPortInfo[] } {
-  const input = new midi.Input();
-  const output = new midi.Output();
-  try {
-    return {
-      inputs: enumeratePorts(input, 'input', needles),
-      outputs: enumeratePorts(output, 'output', needles),
-    };
-  } finally {
-    input.closePort();
-    output.closePort();
-  }
-}
-
-/**
- * Build the "no port found" error message. Lists what the OS does see so
- * the user can diagnose a typo / wrong-device situation. AM4-specific
- * install hints are appended only when the caller passes them via
- * `notFoundHints` — generic devices don't need the Fractal driver link.
- */
-function buildNotFoundError(
-  needles: readonly string[],
-  ins: string[],
-  outs: string[],
-  leadIn: string | undefined,
-  extraHints: string[],
-): Error {
-  const noPorts = ins.length === 0 && outs.length === 0;
-  const needleDesc = needles.map((n) => `"${n}"`).join(' or ');
-  const lines: string[] = [
-    leadIn ?? `No MIDI port matching ${needleDesc} found.`,
-    ...extraHints,
-  ];
-  if (noPorts) {
-    lines.push('No MIDI ports of any kind are visible — this usually means a MIDI driver is missing.');
-  } else {
-    lines.push(`MIDI ports the server can see (none matched ${needleDesc}):`);
-    lines.push('Inputs:');
-    lines.push(...(ins.length ? ins : ['  (none)']));
-    lines.push('Outputs:');
-    lines.push(...(outs.length ? outs : ['  (none)']));
-  }
-  return new Error(lines.join('\n'));
-}
-
-export interface ConnectOptions {
-  /**
-   * Case-insensitive substrings; the first port whose name contains any
-   * needle wins. Bidirectional — applied to both inputs and outputs.
-   */
-  needles: readonly string[];
-  /**
-   * Optional first line of the "not found" error. Defaults to a generic
-   * `No MIDI port matching ...` message; AM4 callers override it with
-   * `AM4 not found in the MIDI device list.` so the user sees the same
-   * familiar phrasing they always have.
-   */
-  notFoundLeadIn?: string;
-  /**
-   * Optional install / driver hints appended to the "not found" error.
-   * AM4 callers pass driver download + AM4-Edit exclusivity warnings;
-   * generic callers usually leave this empty.
-   */
-  notFoundHints?: string[];
-}
-
-/**
- * Open a MIDI input + output pair matching the given needles. Throws
- * with a diagnostic message listing visible ports if no match is found.
- */
-export function connect(opts: ConnectOptions): MidiConnection {
-  const input = new midi.Input();
-  const output = new midi.Output();
-
-  const inputPort = findPortByName(input, [...opts.needles]);
-  const outputPort = findPortByName(output, [...opts.needles]);
-
-  if (inputPort === -1 || outputPort === -1) {
-    const ins: string[] = [];
-    for (let i = 0; i < input.getPortCount(); i++) ins.push(`  [${i}] ${input.getPortName(i)}`);
-    const outs: string[] = [];
-    for (let i = 0; i < output.getPortCount(); i++) outs.push(`  [${i}] ${output.getPortName(i)}`);
-    throw buildNotFoundError(opts.needles, ins, outs, opts.notFoundLeadIn, opts.notFoundHints ?? []);
-  }
-
-  // Enable SysEx (false = don't ignore SysEx); ignore timing + active-sensing.
-  input.ignoreTypes(false, true, true);
-
-  const handlers = new Set<(bytes: number[]) => void>();
-  input.on('message', (_dt: number, bytes: number[]) => {
-    for (const h of handlers) h(bytes);
+  const both = listMidiPortsGeneric(needles);
+  const tag = (p: GenericMidiPortInfo): MidiPortInfo => ({
+    ...p,
+    looksLikeAM4: AM4_PORT_NEEDLES.some((n) => p.name.toLowerCase().includes(n)),
   });
-
-  input.openPort(inputPort);
-  output.openPort(outputPort);
-
-  // Track send errors on a separate cell so the `send` arrow can read /
-  // write without TS forward-reference issues; the conn object exposes
-  // the cell via a getter so callers see live state.
-  const sendErrCell: { value?: Error } = {};
-  const send = (bytes: number[]): void => {
-    try {
-      output.sendMessage(bytes);
-      sendErrCell.value = undefined;
-    } catch (err) {
-      sendErrCell.value = err instanceof Error ? err : new Error(String(err));
-      throw sendErrCell.value;
-    }
+  return {
+    inputs: both.inputs.map(tag),
+    outputs: both.outputs.map(tag),
   };
-  const conn: MidiConnection = {
-    send,
-    get lastSendError(): Error | undefined { return sendErrCell.value; },
-    receiveSysEx: (timeoutMs = 1000) =>
-      new Promise<number[]>((resolve, reject) => {
-        const timer = setTimeout(() => {
-          handlers.delete(handler);
-          reject(new Error(`Timeout waiting for SysEx response after ${timeoutMs}ms`));
-        }, timeoutMs);
-        const handler = (bytes: number[]) => {
-          if (bytes[0] !== 0xf0) return;
-          clearTimeout(timer);
-          handlers.delete(handler);
-          resolve(bytes);
-        };
-        handlers.add(handler);
-      }),
-    receiveSysExMatching: (predicate, timeoutMs = 1000) =>
-      new Promise<number[]>((resolve, reject) => {
-        const timer = setTimeout(() => {
-          handlers.delete(handler);
-          reject(new Error(`Timeout waiting for matching SysEx after ${timeoutMs}ms`));
-        }, timeoutMs);
-        const handler = (bytes: number[]) => {
-          if (bytes[0] !== 0xf0) return;
-          if (!predicate(bytes)) return;
-          clearTimeout(timer);
-          handlers.delete(handler);
-          resolve(bytes);
-        };
-        handlers.add(handler);
-      }),
-    onMessage: (handler) => {
-      handlers.add(handler);
-      return () => handlers.delete(handler);
-    },
-    // Today `connect()` always opens both Input and Output (and throws on
-    // either failure), so `hasInput` is always true here. The flag exists
-    // on the interface so diagnostic tools can branch without caring
-    // whether they're talking to AM4 (always bidirectional) or a future
-    // output-only device (some USB-MIDI driver configurations).
-    hasInput: true,
-    close: () => {
-      handlers.clear();
-      input.closePort();
-      output.closePort();
-    },
-  };
-  return conn;
 }
 
 /**
@@ -295,12 +80,18 @@ export function connectAM4(): MidiConnection {
   });
 }
 
-export function toHex(bytes: number[] | Uint8Array): string {
-  const arr = bytes instanceof Uint8Array ? Array.from(bytes) : bytes;
-  return arr.map((b) => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
-}
+// Register the AM4 connector with the shared connection registry as a
+// side effect of loading this module. Importing anything from `am4/midi.ts`
+// (or any module that transitively imports it) makes `ensureConnection(
+// AM4_LABEL)` route through `connectAM4()` automatically. Tools and
+// scripts that don't import this module fall back to the generic
+// substring connect — fine for ad-hoc port lookups.
+import { registerConnector, AM4_LABEL } from '@/server/shared/connections.js';
+registerConnector(AM4_LABEL, connectAM4);
 
 // -- AM4 inbound-message describer -----------------------------------------
+
+import { toHex } from '@/core/midi/transport.js';
 
 /**
  * AM4 SysEx envelope prefix: F0 00 01 74 15. Anything that doesn't start

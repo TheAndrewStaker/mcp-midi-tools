@@ -35,7 +35,7 @@ import {
     buildTimingClockStop,
     validateSysEx,
 } from '@/core/midi/messages.js';
-import { toHex } from '@/fractal/am4/midi.js';
+import { toHex } from '@/core/midi/transport.js';
 
 import { ensureConnection } from '@/server/shared/connections.js';
 

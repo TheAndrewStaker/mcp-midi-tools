@@ -30,7 +30,7 @@
  */
 
 import { fractalChecksum } from '@/fractal/shared/checksum.js';
-import type { MidiConnection } from '@/fractal/am4/midi.js';
+import type { MidiConnection } from '@/core/midi/transport.js';
 
 const SYSEX_START = 0xf0;
 const SYSEX_END = 0xf7;

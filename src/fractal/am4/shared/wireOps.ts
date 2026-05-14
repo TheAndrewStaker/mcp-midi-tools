@@ -20,10 +20,10 @@
  */
 
 import {
-    describeAm4InboundMessage,
     toHex,
     type MidiConnection,
-} from '@/fractal/am4/midi.js';
+} from '@/core/midi/transport.js';
+import { describeAm4InboundMessage } from '@/fractal/am4/midi.js';
 
 import {
     STALE_HANDLE_TIMEOUT_THRESHOLD,

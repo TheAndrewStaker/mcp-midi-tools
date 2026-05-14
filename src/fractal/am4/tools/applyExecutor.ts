@@ -31,7 +31,7 @@ import {
     resolveBlockType,
 } from '@/fractal/am4/blockTypes.js';
 import { formatLocationDisplay } from '@/fractal/am4/locations.js';
-import type { MidiConnection } from '@/fractal/am4/midi.js';
+import type { MidiConnection } from '@/core/midi/transport.js';
 
 import {
     STALE_HANDLE_TIMEOUT_THRESHOLD,
@@ -47,10 +47,10 @@ import {
     preflightApplicabilityWarning,
     resolveChannel,
     CHANNEL_BLOCKS,
-} from '@/server/shared/channels.js';
+} from '@/fractal/am4/shared/channels.js';
 import { checkApplicability } from '@/fractal/am4/applicability.js';
-import { resolveValue, suggestParamName } from '@/server/shared/paramHelpers.js';
-import { sendAndAwaitAck } from '@/server/shared/wireOps.js';
+import { resolveValue, suggestParamName } from '@/fractal/am4/shared/paramHelpers.js';
+import { sendAndAwaitAck } from '@/fractal/am4/shared/wireOps.js';
 import {
     buildSaveToLocation,
     buildSetBlockBypass,

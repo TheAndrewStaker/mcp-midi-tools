@@ -78,8 +78,8 @@ import {
   markAM4Dirty,
   refreshAM4Fingerprint,
 } from '@/fractal/am4/tools/safeEdit.js';
-import { readPresetName } from '@/server/shared/readOps.js';
-import { recordInbound, sendAndAwaitAck } from '@/server/shared/wireOps.js';
+import { readPresetName } from '@/fractal/am4/shared/readOps.js';
+import { recordInbound, sendAndAwaitAck } from '@/fractal/am4/shared/wireOps.js';
 import {
   CHANNEL_BLOCKS,
   channelLetter,
@@ -87,7 +87,7 @@ import {
   lastKnownType,
   observeWrittenParam,
   switchBlockChannel,
-} from '@/server/shared/channels.js';
+} from '@/fractal/am4/shared/channels.js';
 import { checkApplicability } from '@/fractal/am4/applicability.js';
 import type { ApplyPresetSkippedParam } from '@/fractal/am4/tools/applyExecutor.js';
 

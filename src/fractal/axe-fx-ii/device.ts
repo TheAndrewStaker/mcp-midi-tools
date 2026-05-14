@@ -60,9 +60,8 @@ import {
   FractalDevice,
   DeviceCapabilities,
   ReadResponse,
+  BaseParam,
 } from '@/fractal/shared/device.js';
-import type { Param } from '@/fractal/am4/params.js';
-import type { ParamId } from '@/fractal/am4/setParam.js';
 
 const NOT_YET = (): never => {
   throw new Error(
@@ -84,7 +83,7 @@ const CAPABILITIES: DeviceCapabilities = {
   presetLocationCount: 384,
 };
 
-const EMPTY_PARAM_REGISTRY: Readonly<Record<string, Param>> = Object.freeze({});
+const EMPTY_PARAM_REGISTRY: Readonly<Record<string, BaseParam>> = Object.freeze({});
 const EMPTY_BLOCK_TYPES: Readonly<Record<string, number>> = Object.freeze({});
 
 export const AXE_FX_II_DEVICE: FractalDevice = {

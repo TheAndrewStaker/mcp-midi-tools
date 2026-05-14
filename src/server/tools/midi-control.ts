@@ -7,14 +7,15 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import * as z from 'zod/v4';
 
-import { listMidiPorts } from '@/fractal/am4/midi.js';
+import { listMidiPorts } from '@/core/midi/transport.js';
+import { AM4_PORT_NEEDLES } from '@/fractal/am4/midi.js';
 
 import {
     AM4_LABEL,
     STALE_HANDLE_TIMEOUT_THRESHOLD,
     ensureConnection,
 } from '@/server/shared/connections.js';
-import { invalidateChannelCache } from '@/server/shared/channels.js';
+import { invalidateChannelCache } from '@/fractal/am4/shared/channels.js';
 
 export function registerMidiControlTools(server: McpServer): void {
     server.registerTool('list_midi_ports', {
@@ -41,7 +42,7 @@ export function registerMidiControlTools(server: McpServer): void {
         const needles = pattern === undefined
             ? undefined
             : Array.isArray(pattern) ? pattern : [pattern];
-        const { inputs, outputs } = listMidiPorts(needles);
+        const { inputs, outputs } = listMidiPorts(needles ?? AM4_PORT_NEEDLES);
         const isCustomPattern = needles !== undefined;
         const tagLabel = isCustomPattern ? `matches "${needles!.join('" / "')}"` : 'looks like the AM4';
         const format = (port: { index: number; name: string; matched: boolean }): string =>

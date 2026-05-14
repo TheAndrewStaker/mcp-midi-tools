@@ -46,7 +46,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
-import { listMidiPorts } from '@/fractal/am4/midi.js';
+import { listMidiPorts } from '@/core/midi/transport.js';
+import { AM4_PORT_NEEDLES } from '@/fractal/am4/midi.js';
 
 import { registerMidiControlTools } from '@/server/tools/midi-control.js';
 import { registerMidiPrimitiveTools } from '@/server/tools/midi-primitives.js';
@@ -183,9 +184,9 @@ async function main(): Promise<void> {
   // startup banner captures whatever state the server started with.
   console.error('MCP MIDI Control MCP server running on stdio.');
   try {
-    const { inputs, outputs } = listMidiPorts();
-    const am4In = inputs.find((p) => p.looksLikeAM4);
-    const am4Out = outputs.find((p) => p.looksLikeAM4);
+    const { inputs, outputs } = listMidiPorts(AM4_PORT_NEEDLES);
+    const am4In = inputs.find((p) => p.matched);
+    const am4Out = outputs.find((p) => p.matched);
     const verdict = am4In && am4Out
       ? `AM4 detected (in: "${am4In.name}", out: "${am4Out.name}")`
       : am4In || am4Out

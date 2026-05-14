@@ -16,7 +16,7 @@
  *   1 = no supported device, OR only partial (one direction missing)
  */
 
-import { listMidiPorts } from '@/fractal/am4/midi.js';
+import { listMidiPorts } from '@/core/midi/transport.js';
 
 interface DeviceFamily {
   label: string;

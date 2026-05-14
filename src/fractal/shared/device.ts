@@ -14,7 +14,7 @@
  * Designed 2026-05-04 (Session 47, Path C of multi-device roadmap).
  * v0.1.0 ships AM4 only; Axe-Fx II is the first follow-up.
  */
-import type { ParamId } from '@/fractal/am4/setParam.js';
+import type { ParamId } from '@/fractal/shared/types.js';
 
 /**
  * Minimal shape every device's parameter entry shares. Each device's

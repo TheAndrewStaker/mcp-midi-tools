@@ -33,7 +33,7 @@ import {
 } from '@/fractal/am4/setParam.js';
 
 import { ensureMidi } from '@/server/shared/connections.js';
-import { READ_RESPONSE_TIMEOUT_MS, sendReadAndParse } from '@/server/shared/readOps.js';
+import { READ_RESPONSE_TIMEOUT_MS, sendReadAndParse } from '@/fractal/am4/shared/readOps.js';
 
 // -- Device-state register addresses (HW-047, Session 43) -------------------
 //

@@ -2,18 +2,17 @@
  * Per-port MIDI connection registry shared by every tool family.
  *
  * The connection layer is keyed by `label` so the server can hold open
- * handles to multiple MIDI ports concurrently. AM4 tools default to
- * `AM4_LABEL`; the generic-MIDI primitives (`send_cc`, `send_note`, …)
- * pass their own `port` as the label so each device gets an independent
- * stale-handle counter and reconnect path.
+ * handles to multiple MIDI ports concurrently. Each device contributes
+ * its own connector factory via `registerConnector(label, factory)` at
+ * module-load time — typically a side-effect of the device's `midi.ts`
+ * being imported. Labels with no registered factory fall back to a
+ * generic substring connect against the label string itself.
  *
  * Extracted from `src/server/index.ts` during the server.ts split — the
- * shared module the rest of the tools depend on. Behavior is byte-exact
- * with the inline original; no semantic change.
+ * shared module the rest of the tools depend on.
  */
 
-import { connect, connectAM4, type MidiConnection } from '@/fractal/am4/midi.js';
-import { connectAxeFxII } from '@/fractal/axe-fx-ii/midi.js';
+import { connect, type MidiConnection } from '@/core/midi/transport.js';
 
 /**
  * Max time we wait for the device to echo a WRITE after we send it. The
@@ -43,6 +42,21 @@ interface RegistryEntry {
 
 const connections = new Map<string, RegistryEntry>();
 const connectionErrors = new Map<string, Error>();
+const connectorFactories = new Map<string, () => MidiConnection>();
+
+/**
+ * Register a device-specific connector factory. The factory is invoked
+ * the first time a tool calls `ensureConnection(label)` for the given
+ * label. Subsequent calls return the cached connection until a
+ * forced/stale reconnect.
+ *
+ * Devices register at module-load time (typically in their `midi.ts`)
+ * so the side effect happens whenever any code imports the device
+ * package — including the server boot path and isolated test scripts.
+ */
+export function registerConnector(label: string, factory: () => MidiConnection): void {
+    connectorFactories.set(label, factory);
+}
 
 /**
  * Call after a write/ack pair completes. Resets the stale-handle counter on
@@ -70,8 +84,11 @@ function closeMidiSafely(conn: MidiConnection | undefined): void {
  * Open or return a cached connection for `label`. The default label is
  * the AM4; future device packages will pass their own label.
  *
- * For non-AM4 labels, `label` itself is used as the port-name needle —
- * callers wanting a different needle can plumb a separate connect call.
+ * When the label has a registered connector factory, that factory is
+ * invoked. Otherwise the label itself is used as a port-name substring
+ * via the generic `connect()`. Devices needing a non-substring port
+ * discovery path (e.g. Axe-Fx II's "Axe-Fx II Port 1" with a space the
+ * label uses a dash for) must register a factory.
  */
 export function ensureConnection(
     label: string = AM4_LABEL,
@@ -89,18 +106,8 @@ export function ensureConnection(
     const cachedErr = connectionErrors.get(label);
     if (cachedErr) throw cachedErr;
     try {
-        // BK-051 Wave 2: Axe-Fx II uses a dedicated port discovery path —
-        // the `axe-fx-ii` connection_label does NOT substring-match against
-        // OS port names like "Axe-Fx II Port 1" (dash vs. space), so the
-        // generic `connect({needles:[label]})` fallback would fail
-        // silently. Per Q5 answer in `docs/_private/axefx2-descriptor-
-        // plan.md` § 9 (Session 66): special-case Axe-Fx II to invoke its
-        // own port-discovery helper.
-        const conn = label === AM4_LABEL
-            ? connectAM4()
-            : label === AXEFX2_LABEL
-                ? (connectAxeFxII() as unknown as MidiConnection)
-                : connect({ needles: [label] });
+        const factory = connectorFactories.get(label);
+        const conn = factory ? factory() : connect({ needles: [label] });
         connections.set(label, { conn, consecutiveTimeouts: 0 });
         return conn;
     } catch (err) {

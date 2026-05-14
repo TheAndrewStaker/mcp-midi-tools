@@ -32,14 +32,15 @@ import {
   type ParamKey,
 } from '@/fractal/am4/params.js';
 import { formatLocationDisplay } from '@/fractal/am4/locations.js';
-import { readPresetName, sendReadAndParse } from '@/server/shared/readOps.js';
+import { readPresetName, sendReadAndParse } from '@/fractal/am4/shared/readOps.js';
 import {
   CHANNEL_BLOCKS,
   switchBlockChannel,
-} from '@/server/shared/channels.js';
+} from '@/fractal/am4/shared/channels.js';
 import {
   LINEAGE_BLOCKS,
   formatLineageRecord,
+  loadLineage,
   runLineageLookup,
 } from '@/fractal/shared/lineageLookup.js';
 import { TYPE_APPLICABILITY } from '@/fractal/am4/typeApplicability.js';
@@ -268,5 +269,29 @@ export const reader: DeviceReader = {
       ok: true,
       text: `${result.hits.length} ${blockType} match(es)${result.hits.length > 10 ? ' (showing top 10)' : ''}:\n\n${blocks.join('\n\n')}`,
     };
+  },
+
+  lineageCorpus() {
+    // One text blob per block type containing every record in the
+    // corpus, each formatted with `formatLineageRecord`. Includes the
+    // applicable-knobs footer so the agent reading this resource gets
+    // the same context-rich view as a `lookup_lineage` reverse hit.
+    // include_quotes defaults to true (matching `lookupLineage`'s
+    // default), with a tight per-record cap of 3 quotes so the corpus
+    // blob stays under MCP resource size limits.
+    const out: Record<string, string> = {};
+    for (const blockType of LINEAGE_BLOCKS) {
+      const records = loadLineage(blockType);
+      if (records.length === 0) continue;
+      const blocks = records.map((rec) => {
+        const recordText = formatLineageRecord(rec, true, 3);
+        const knobs = formatApplicableKnobs(blockType, rec.am4Name);
+        return knobs
+          ? `── ${rec.am4Name} ──\n${recordText}\n${knobs}`
+          : `── ${rec.am4Name} ──\n${recordText}`;
+      });
+      out[blockType] = `${records.length} ${blockType} records:\n\n${blocks.join('\n\n')}`;
+    }
+    return out;
   },
 };

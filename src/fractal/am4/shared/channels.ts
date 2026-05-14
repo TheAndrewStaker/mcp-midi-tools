@@ -26,7 +26,7 @@ import {
     buildSetParam,
     isWriteEcho,
 } from '@/fractal/am4/setParam.js';
-import type { MidiConnection } from '@/fractal/am4/midi.js';
+import type { MidiConnection } from '@/core/midi/transport.js';
 
 import { WRITE_ECHO_TIMEOUT_MS, recordAckOutcome } from '@/server/shared/connections.js';
 

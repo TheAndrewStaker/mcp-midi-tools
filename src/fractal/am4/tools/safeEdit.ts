@@ -31,9 +31,9 @@ import { isDirty, markClean, markDirty } from '@/server/shared/bufferDirty.js';
 import { AM4_LABEL } from '@/server/shared/connections.js';
 import type { DirtyGuardResult, OnEditedMode } from '@/server/shared/safeEdit.js';
 
-import type { MidiConnection } from '@/fractal/am4/midi.js';
+import type { MidiConnection } from '@/core/midi/transport.js';
 import { formatLocationDisplay, parseLocationCode } from '@/fractal/am4/locations.js';
-import { sendReadAndParse, readPresetName } from '@/server/shared/readOps.js';
+import { sendReadAndParse, readPresetName } from '@/fractal/am4/shared/readOps.js';
 import { buildRequestActiveBufferDump, buildSaveToLocation } from '@/fractal/am4/setParam.js';
 import { receivePresetDumpStream } from '@/fractal/am4/presetDump.js';
 import {

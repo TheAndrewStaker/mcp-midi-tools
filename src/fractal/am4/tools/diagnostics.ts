@@ -22,10 +22,10 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import * as z from 'zod/v4';
 
-import { toHex } from '@/fractal/am4/midi.js';
+import { toHex } from '@/core/midi/transport.js';
 
 import { ensureMidi } from '@/server/shared/connections.js';
-import { recordInbound, formatInboundCapture } from '@/server/shared/wireOps.js';
+import { recordInbound, formatInboundCapture } from '@/fractal/am4/shared/wireOps.js';
 
 const AM4_MODE_SWITCH_BYTES: Record<'presets' | 'scenes' | 'effects' | 'amp' | 'tuner', number[]> = {
     presets: [0xf0, 0x00, 0x01, 0x74, 0x15, 0x12, 0x48, 0x4a, 0xf7],

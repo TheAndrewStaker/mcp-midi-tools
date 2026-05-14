@@ -40,8 +40,8 @@ import {
   buildSetParam,
   isWriteEcho,
 } from '@/fractal/am4/setParam.js';
-import { sendReadAndParse } from '@/server/shared/readOps.js';
-import { sendAndAwaitAck } from '@/server/shared/wireOps.js';
+import { sendReadAndParse } from '@/fractal/am4/shared/readOps.js';
+import { sendAndAwaitAck } from '@/fractal/am4/shared/wireOps.js';
 import { KNOWN_PARAMS, type Param, type ParamKey } from '@/fractal/am4/params.js';
 import { decode as am4Decode } from '@/fractal/am4/params.js';
 import { AMP_TYPES } from '@/fractal/am4/cacheEnums.js';

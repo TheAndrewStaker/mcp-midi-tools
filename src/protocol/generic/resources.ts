@@ -1,36 +1,35 @@
 /**
- * MCP resources for device agent guidance.
+ * MCP resources for device agent guidance + lineage corpora.
  *
  * Per-MCP-spec, **tools** are for actions and **resources** are for
- * data the agent might want to read independently. The static
- * `agent_guidance` blocks on each device descriptor (channel/scene
- * model, save-language anti-patterns, tempo discipline, applicability
- * rules, iconic-tone tables, etc.) are reference data — not actions.
- * They were shipped inside `describe_device.agent_guidance` because
- * MCP resources had no MCP-SDK convention for cross-device data at
- * the time the unified surface landed.
+ * data the agent might want to read independently. Two families of
+ * reference data are exposed here:
  *
- * Surfacing them as resources lets the agent:
- *   - Discover guidance topics via `resources/list` without burning a
- *     tool call.
- *   - Read a specific guidance block independently — load only the
- *     topics relevant to the current planning step.
- *   - Pin guidance docs in MCP-aware UIs (Claude Desktop's connector
- *     panel, etc.) the way users pin documentation.
+ *   - `guidance://<deviceId>/<topic>` — the static `agent_guidance`
+ *     blocks on each device descriptor (channel/scene model, save-
+ *     language anti-patterns, tempo discipline, applicability rules,
+ *     iconic-tone tables, etc.). Shipped before MCP resources had
+ *     SDK conventions for cross-device data; back-compat surface on
+ *     `describe_device.agent_guidance` stays for now.
  *
- * URI scheme: `guidance://<deviceId>/<topic>` (e.g.
- * `guidance://am4/save_language`, `guidance://hydrasynth/envelope_time_units`).
- * Static — one resource registration per (device, topic) pair at
- * server startup.
+ *   - `lineage://<deviceId>/<block-type>` — the Fractal-authored
+ *     lineage corpus per block type (amp / drive / reverb / delay /
+ *     compressor / phaser / chorus / flanger / wah). Each resource
+ *     is the full formatted corpus for that block type, suitable for
+ *     bulk loading into the agent's context when planning a build
+ *     against a specific block family. The `lookup_lineage` tool
+ *     stays for targeted queries against the same data.
  *
- * `describe_device` STILL returns the full `agent_guidance` map in its
- * response for back-compat with agents that haven't migrated to the
- * resources path. v0.5 may deprecate that field in favor of resources
- * once the SDK + Desktop client UX is stable.
+ * Both families let the agent:
+ *   - Discover topics/corpora via `resources/list` without burning
+ *     a tool call.
+ *   - Read a specific blob independently — load only the slice
+ *     relevant to the current planning step.
+ *   - Pin docs in MCP-aware UIs (Claude Desktop's connector panel,
+ *     etc.) the way users pin documentation.
  *
- * Lineage corpus is NOT yet exposed as resources — it needs a
- * descriptor extension (`reader.lineageCorpus()` returning the full
- * dataset per block type). Queued for next session.
+ * Static — one resource registration per (device, topic) and
+ * (device, block-type) pair at server startup.
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -55,38 +54,77 @@ function compactDeviceLabel(deviceId: string, displayName: string): string {
 
 export function registerDeviceResources(server: McpServer): void {
   for (const descriptor of listRegisteredDevices()) {
-    const guidance = descriptor.agent_guidance;
-    if (guidance === undefined) continue;
     const compactLabel = compactDeviceLabel(descriptor.id, descriptor.display_name);
-    for (const [topic, content] of Object.entries(guidance)) {
-      if (typeof content !== 'string' || content.length === 0) continue;
-      const uri = `guidance://${descriptor.id}/${topic}`;
-      // Internal name stays unique + technical so resources/list can be
-      // disambiguated unambiguously. Title is what users see in the
-      // Add-from dropdown — kept short by leading with the topic name
-      // (the part users actually care about) and using the compact
-      // device label.
-      const name = `${descriptor.display_name} — ${topic}`;
-      const title = `${topic}  (${compactLabel})`;
-      const description = firstSentence(content, 200);
-      server.registerResource(
-        name,
-        uri,
-        {
-          title,
-          description,
-          mimeType: 'text/plain',
-        },
-        async (readUri) => ({
-          contents: [{
-            uri: typeof readUri === 'string' ? readUri : uri,
+
+    // agent_guidance — one resource per topic.
+    const guidance = descriptor.agent_guidance;
+    if (guidance !== undefined) {
+      for (const [topic, content] of Object.entries(guidance)) {
+        if (typeof content !== 'string' || content.length === 0) continue;
+        const uri = `guidance://${descriptor.id}/${topic}`;
+        // Internal name stays unique + technical so resources/list can be
+        // disambiguated unambiguously. Title is what users see in the
+        // Add-from dropdown — kept short by leading with the topic name
+        // (the part users actually care about) and using the compact
+        // device label.
+        const name = `${descriptor.display_name} — ${topic}`;
+        const title = `${topic}  (${compactLabel})`;
+        const description = firstSentence(content, 200);
+        server.registerResource(
+          name,
+          uri,
+          {
+            title,
+            description,
             mimeType: 'text/plain',
-            text: content,
-          }],
-        }),
-      );
+          },
+          async (readUri) => ({
+            contents: [{
+              uri: typeof readUri === 'string' ? readUri : uri,
+              mimeType: 'text/plain',
+              text: content,
+            }],
+          }),
+        );
+      }
+    }
+
+    // lineage corpus — one resource per block-type that has lineage data.
+    // Only AM4 ships lineage today; Axe-Fx II and Hydrasynth omit the
+    // reader.lineageCorpus method, so they skip this loop entirely.
+    const corpus = descriptor.reader.lineageCorpus?.();
+    if (corpus !== undefined) {
+      for (const [blockType, content] of Object.entries(corpus)) {
+        if (typeof content !== 'string' || content.length === 0) continue;
+        const uri = `lineage://${descriptor.id}/${blockType}`;
+        const name = `${descriptor.display_name} — ${blockType} lineage`;
+        const title = `${blockType} lineage  (${compactLabel})`;
+        const description = `Fractal-authored ${blockType} lineage corpus (${countRecords(content)} entries). Each entry covers the block's modeled source — manufacturer, model, era, signature tone characteristics.`;
+        server.registerResource(
+          name,
+          uri,
+          {
+            title,
+            description,
+            mimeType: 'text/plain',
+          },
+          async (readUri) => ({
+            contents: [{
+              uri: typeof readUri === 'string' ? readUri : uri,
+              mimeType: 'text/plain',
+              text: content,
+            }],
+          }),
+        );
+      }
     }
   }
+}
+
+/** Best-effort entry count for a corpus blob — reads "N <block-type> records:" header. */
+function countRecords(text: string): number {
+  const match = text.match(/^(\d+)\s+\S+\s+records:/);
+  return match ? Number(match[1]) : 0;
 }
 
 function firstSentence(text: string, maxLen: number): string {

@@ -292,3 +292,14 @@ export function connectAxeFxII(): AxeFxIIConnection {
     },
   };
 }
+
+// Register the Axe-Fx II connector with the shared connection registry
+// as a side effect of loading this module. `AxeFxIIConnection` is
+// structurally compatible with the generic `MidiConnection` interface
+// for the operations the connection pool performs (send / onMessage /
+// receiveSysExMatching / hasInput / close); the cast acknowledges the
+// missing `receiveSysEx` + `lastSendError` fields that Axe-Fx II tools
+// don't rely on.
+import type { MidiConnection } from '@/core/midi/transport.js';
+import { registerConnector, AXEFX2_LABEL } from '@/server/shared/connections.js';
+registerConnector(AXEFX2_LABEL, () => connectAxeFxII() as unknown as MidiConnection);

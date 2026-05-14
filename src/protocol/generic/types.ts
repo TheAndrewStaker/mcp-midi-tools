@@ -17,7 +17,7 @@
  * tool-surface contract that wraps any device (Fractal or otherwise).
  */
 
-import type { MidiConnection } from '@/fractal/am4/midi.js';
+import type { MidiConnection } from '@/core/midi/transport.js';
 
 // ── Canonical vocabulary ────────────────────────────────────────────
 
@@ -504,6 +504,22 @@ export interface DeviceReader {
   /** Educational/discovery lookup (Fractal lineage corpus, manufacturer
    *  catalog, etc.). Pure data lookup — no MIDI I/O. */
   lookupLineage?(query: LineageQuery): { ok: boolean; text: string };
+  /**
+   * Return the full lineage corpus this device exposes, keyed by
+   * block-type display name. Each value is a formatted text block
+   * suitable for `mimeType: 'text/plain'` resource delivery — i.e.
+   * the same shape `lookupLineage` returns but for the entire corpus
+   * of a block type rather than a single query.
+   *
+   * Returns undefined when the device has no lineage corpus. The
+   * `agent_guidance`-as-resources counterpart (`registerDeviceResources`
+   * in `resources.ts`) reads this to surface one resource per
+   * `(device, block-type)` pair via `lineage://<deviceId>/<block-type>`.
+   *
+   * Pure data — no MIDI I/O. Called at server boot during resource
+   * registration.
+   */
+  lineageCorpus?(): Readonly<Record<string, string>> | undefined;
 }
 
 /**

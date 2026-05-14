@@ -40,7 +40,7 @@ import {
   TOTAL_LOCATIONS,
   formatLocationCode,
 } from '@/fractal/am4/locations.js';
-import type { MidiConnection } from '@/fractal/am4/midi.js';
+import type { MidiConnection } from '@/core/midi/transport.js';
 
 /**
  * Inter-message pacing on factory restore. The Fractal Presets Update
