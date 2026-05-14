@@ -12,6 +12,7 @@
     "sanity-probe": "tsx scripts/sanity-probe.ts",
     "state-probe": "tsx scripts/state-probe.ts",
     "channel-probe": "tsx scripts/channel-probe.ts",
+    "probe-amp-knobs": "tsx scripts/probe-amp-knob-applicability.ts",
     "sniff": "tsx scripts/sniff.ts",
     "diff-syx": "tsx scripts/diff-syx.ts",
     "scrape-wiki": "tsx scripts/scrape-wiki.ts",
