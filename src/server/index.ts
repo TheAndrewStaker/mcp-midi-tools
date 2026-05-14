@@ -63,6 +63,7 @@ import { registerHydrasynthTools, describeHydrasynthPortStatus } from '@/asm/hyd
 // Sessions B onward register the unified MCP tools (set_param,
 // get_param, …) that route through the dispatcher.
 import { registerDevice as registerMcpDevice } from '@/protocol/generic/registry.js';
+import { registerDeviceResources } from '@/protocol/generic/resources.js';
 import { registerUnifiedTools } from '@/protocol/generic/tools.js';
 import { AM4_DESCRIPTOR } from '@/fractal/am4/descriptor.js';
 import { AXEFX2_DESCRIPTOR } from '@/fractal/axe-fx-ii/descriptor.js';
@@ -166,6 +167,10 @@ registerMcpDevice(AM4_DESCRIPTOR);
 // unified surface; legacy hydra_* tools still register in parallel.
 registerMcpDevice(HYDRASYNTH_DESCRIPTOR);
 registerUnifiedTools(server);
+// Expose each device's agent_guidance topics as MCP resources so the
+// agent can pull individual topics on demand instead of always
+// receiving the full agent_guidance bag via describe_device.
+registerDeviceResources(server);
 
 // -- Start ------------------------------------------------------------------
 

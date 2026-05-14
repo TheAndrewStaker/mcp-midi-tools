@@ -222,6 +222,30 @@ async function main(): Promise<void> {
   }
   console.log(`✓ list_midi_ports accepts custom pattern argument`);
 
+  // Exercise MCP resources — agent_guidance is exposed as resources
+  // per-device per-topic. Confirms resources/list returns the expected
+  // shape and a known topic is readable.
+  const resourcesListResp = await request('resources/list', {});
+  if (resourcesListResp.error) {
+    throw new Error(`resources/list error: ${resourcesListResp.error.message}`);
+  }
+  const resources = (resourcesListResp.result as { resources: { uri: string }[] }).resources ?? [];
+  const guidanceResources = resources.filter((r) => r.uri.startsWith('guidance://'));
+  if (guidanceResources.length === 0) {
+    throw new Error(`resources/list returned no guidance:// resources`);
+  }
+  const sampleUri = guidanceResources.find((r) => r.uri.startsWith('guidance://am4/'))?.uri;
+  if (!sampleUri) {
+    throw new Error(`no guidance://am4/* resources found`);
+  }
+  const readResp = await request('resources/read', { uri: sampleUri });
+  if (readResp.error) throw new Error(`resources/read(${sampleUri}) error: ${readResp.error.message}`);
+  const contents = (readResp.result as { contents: { text?: string }[] }).contents;
+  if (!contents || contents.length === 0 || !contents[0].text || contents[0].text.length === 0) {
+    throw new Error(`resources/read(${sampleUri}) returned empty content`);
+  }
+  console.log(`✓ resources/list returned ${guidanceResources.length} guidance resources; ${sampleUri} readable`);
+
   // Exercise unified list_params — doesn't touch MIDI. Confirms the
   // dispatcher routes port='am4' correctly and the catalog reaches
   // the MCP response.
