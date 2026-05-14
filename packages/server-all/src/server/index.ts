@@ -68,6 +68,7 @@ import { registerDeviceResources } from '@mcp-midi-control/core/protocol-generic
 import { registerUnifiedTools } from '@mcp-midi-control/core/protocol-generic/tools.js';
 import { AM4_DESCRIPTOR } from '@mcp-midi-control/am4/descriptor.js';
 import { AXEFX2_DESCRIPTOR } from '@mcp-midi-control/axe-fx-ii/descriptor.js';
+import { AXEFX3_DESCRIPTOR } from '@mcp-midi-control/axe-fx-iii/device.js';
 import { HYDRASYNTH_DESCRIPTOR } from '@mcp-midi-control/hydrasynth-explorer/descriptor.js';
 
 // -- Server setup -----------------------------------------------------------
@@ -155,10 +156,22 @@ registerHydrasynthTools(server);    // 12 hydra_* tools
 // surfaces, the legacy tools carry the long device-specific guidance
 // the LLM relies on, and the unified surface is the architectural seed
 // for Wave 2 (Axe-Fx II + Hydrasynth descriptors).
-// Order matters — Axe-Fx II registers BEFORE AM4 so the more-specific
-// `/axe-?fx/i` regex fires first against port names like "Fractal Axe-Fx
-// II Port 1". AM4's `/Fractal/i` regex stays as a catch-all. Per Q4
-// answer in `docs/_private/axefx2-descriptor-plan.md` § 9 (Session 66).
+// Order matters — register MORE SPECIFIC port_match regexes FIRST per
+// the registration-order tiebreaking decision in DECISIONS.md row 40.
+//
+//   1. Axe-Fx III  /axe-?fx ?iii/i   (most specific — wins on "Axe-Fx III")
+//   2. Axe-Fx II   /axe-?fx/i        (would also match III if III didn't win first)
+//   3. AM4         /Fractal/i        (catch-all for the modern Fractal family)
+//   4. Hydrasynth  /hydrasynth/i     (different vendor — order doesn't matter for it)
+//
+// 🟡 Axe-Fx III is a community-beta descriptor (BK-015): scaffolded from
+// Fractal's published "Axe-Fx III MIDI for Third-Party Devices" v1.4 PDF
+// and AxeEdit III editor assets, but NOT yet hardware-verified end-to-end
+// (no project maintainer owns an Axe-Fx III). Read + navigation tools
+// work per spec; write tools (set_param, apply_preset, save_preset) refuse
+// with structured "pending capture" errors until a community contributor
+// runs the USBPcap workflow in docs/_private/HARDWARE-TASKS-AXEFX3.md.
+registerMcpDevice(AXEFX3_DESCRIPTOR);
 registerMcpDevice(AXEFX2_DESCRIPTOR);
 registerMcpDevice(AM4_DESCRIPTOR);
 // Hydrasynth registers after the Fractal devices — its port_match

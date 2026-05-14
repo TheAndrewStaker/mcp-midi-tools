@@ -25,6 +25,7 @@ export const WRITE_ECHO_TIMEOUT_MS = 300;
 
 export const AM4_LABEL = 'am4';
 export const AXEFX2_LABEL = 'axe-fx-ii';
+export const AXEFX3_LABEL = 'axe-fx-iii';
 
 /**
  * How many ack-less writes we tolerate before assuming the MIDI handle is

@@ -1,19 +1,14 @@
 {
-  "name": "@mcp-midi-control/server-all",
+  "name": "@mcp-midi-control/axe-fx-iii",
   "version": "0.1.0",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
-  "main": "./dist/server/index.js",
   "exports": {
     "./*": "./dist/*"
   },
   "dependencies": {
-    "@mcp-midi-control/am4": "*",
-    "@mcp-midi-control/axe-fx-ii": "*",
-    "@mcp-midi-control/axe-fx-iii": "*",
     "@mcp-midi-control/core": "*",
-    "@mcp-midi-control/hydrasynth-explorer": "*",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "midi": "^2.0.0",
     "zod": "^4.4.2"

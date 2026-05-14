@@ -33,6 +33,20 @@ Cab + Reverb" in chat saves an audible preset on a fresh-empty slot,
 no manual re-routing in AxeEdit required. Multi-scene authoring
 (distinct per-scene bypass + channel state) is hardware-verified too.
 
+> **🟡 Axe-Fx III — community beta.** The Axe-Fx III protocol layer is
+> scaffolded from Fractal's published "Axe-Fx III MIDI for Third-Party
+> Devices" v1.4 PDF and the AxeEdit III editor assets (47-block roster
+> verified). Device identification, `describe_device`, `switch_preset`,
+> and `switch_scene` work today; write tools (set_param, apply_preset,
+> save_preset) refuse with structured "pending community capture"
+> errors because Fractal deliberately omits per-block parameter IDs
+> from the public spec. **III owners: we need your help.** Five
+> 30-minute capture sessions per the
+> [community workflow](./docs/_private/HARDWARE-TASKS-AXEFX3.md) take
+> the III from "scaffolded" to feature parity with the AM4 + Axe-Fx II
+> support. Plug a III into the server today and it'll greet you; when
+> you're ready to contribute, the issue tracker is the entry point.
+
 Two surfaces cover the common path; a third covers device-specific
 edge cases:
 
@@ -120,6 +134,7 @@ quick-start](#generic-midi-quick-start) below.
 - At least one registered MIDI device connected by USB. Currently
   registered: **Fractal AM4** ([USB driver](https://www.fractalaudio.com/am4-downloads/)),
   **Fractal Axe-Fx II XL+** (Q8.02 firmware, hardware-verified),
+  **Fractal Axe-Fx III** (🟡 community beta — see Status above),
   **ASM Hydrasynth Explorer** (firmware 1.5.x). Unregistered USB MIDI
   devices still work through the generic-MIDI primitives.
 - A Claude client that supports MCP — [Claude Desktop](https://claude.ai/download),
