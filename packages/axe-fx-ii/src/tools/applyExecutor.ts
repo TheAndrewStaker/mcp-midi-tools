@@ -193,9 +193,44 @@ export function buildApplyPresetAtOps(
   };
   const resolved: ResolvedEntry[] = [];
   const idsSeen = new Set<string>();
+  // BK-054: shunt support in explicit-routing mode. Shunts aren't in
+  // AXE_FX_II_BLOCKS (they're pass-through cells, not effects), so
+  // `findBlock("shunt")` would throw. Instead, synthesize a unique
+  // shunt descriptor per occurrence: SHUNT_BASE_ID..SHUNT_BASE_ID+35
+  // are reserved for shunt instances by the device firmware (Session
+  // 71 wire capture). Re-using the same blockId across positions
+  // triggers the device's "move on duplicate" behavior, so each
+  // shunt cell gets a distinct id.
+  let shuntCounter = 0;
+  const SHUNT_BASE_ID_LOCAL = 200;
+  const SHUNT_MAX = 36;
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i];
-    const target = findBlock(b.block);
+    const isShunt =
+      (typeof b.block === 'string' && b.block.trim().toLowerCase() === 'shunt') ||
+      (typeof b.block === 'number' && b.block >= 200 && b.block <= 235);
+    let target: AxeFxIIBlock;
+    if (isShunt) {
+      if (shuntCounter >= SHUNT_MAX) {
+        throw new Error(
+          `blocks[${i}]: too many shunts (max ${SHUNT_MAX} per preset — firmware reserves blockIds ${SHUNT_BASE_ID_LOCAL}..${SHUNT_BASE_ID_LOCAL + SHUNT_MAX - 1}).`,
+        );
+      }
+      const shuntId =
+        typeof b.block === 'number'
+          ? b.block
+          : SHUNT_BASE_ID_LOCAL + shuntCounter;
+      target = {
+        id: shuntId,
+        name: `Shunt ${shuntCounter + 1}`,
+        groupCode: 'SHUNT',
+        canBypass: false,
+        availableOnAX8: false,
+      };
+      shuntCounter++;
+    } else {
+      target = findBlock(b.block);
+    }
 
     // Resolve row/col. Explicit-routing mode requires both on every
     // block. Legacy mode lets them default to (2, i+1).

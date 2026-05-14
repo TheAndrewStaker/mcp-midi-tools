@@ -228,6 +228,54 @@ check(
   badIdRejected ? badIdError.slice(0, 80) : 'no error thrown',
 );
 
+// ─────────────────────────────────────────────────────────────────
+// Case 5: shunt-synthesis (BK-054 audible-preset extension).
+// Shunts aren't in AXE_FX_II_BLOCKS — the executor synthesizes a
+// block descriptor with a unique id per occurrence (200..235) so the
+// "Cab through shunts to OUTPUT" path can be expressed in explicit-
+// routing mode. Otherwise the only way to reach col 12 is the legacy
+// auto-chain mode, which can't co-exist with parallel chains.
+// ─────────────────────────────────────────────────────────────────
+console.log('\nCase 5 — shunt synthesis with unique blockIds');
+
+const withShunts: ApplyPresetAtInput = {
+  preset_number: 666,
+  blocks: [
+    { id: 'amp',      block: 'Amp 1',  row: 2, col: 1 },
+    { id: 'shunt_2',  block: 'shunt',  row: 2, col: 2 },
+    { id: 'shunt_3',  block: 'shunt',  row: 2, col: 3 },
+    { id: 'shunt_4',  block: 'shunt',  row: 2, col: 4 },
+  ],
+  routing: [
+    { from: 'amp',     to: 'shunt_2' },
+    { from: 'shunt_2', to: 'shunt_3' },
+    { from: 'shunt_3', to: 'shunt_4' },
+  ],
+};
+
+const shuntOps = buildApplyPresetAtOps(withShunts, { wire: true });
+const shuntPlaces = shuntOps.filter((o) => o.kind === 'place_block');
+check(
+  'shunt block_type resolves without throwing',
+  shuntPlaces.length === 4,
+  `got ${shuntPlaces.length} place_block ops (expected 4)`,
+);
+check(
+  'three shunt placements emitted with distinct summaries',
+  shuntPlaces.filter((o) => /SHUNT|Shunt/.test(o.summary)).length === 3,
+  `got ${shuntPlaces.filter((o) => /SHUNT|Shunt/.test(o.summary)).length} shunt placements (expected 3)`,
+);
+// Confirm the synthesized block IDs are unique (the cells would
+// silently collapse otherwise — the AxeEdit Session-71 capture
+// documented this: re-using one shunt ID across cells clears earlier
+// placements as a side effect).
+const shuntCableEdges = shuntOps.filter((o) => o.kind === 'cable');
+check(
+  'three cables emitted (matches routing[].length)',
+  shuntCableEdges.length === 3,
+  `got ${shuntCableEdges.length} cables`,
+);
+
 console.log('');
 if (failed > 0) {
   console.error(`✗ ${failed} check(s) FAILED.`);
