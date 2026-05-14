@@ -19,6 +19,12 @@ INSTALL (3 steps)
 That's it. Ask Claude something like "Using mcp-midi-tools, list the
 MIDI ports you can see" to confirm the AM4 is reachable.
 
+If the AM4 tools don't appear, or Claude says it can't find the AM4,
+double-click verify-midi.cmd. It asks the OS directly which MIDI
+devices it sees and tells you whether your gear is reachable —
+useful for ruling out a driver / cable / power issue before
+troubleshooting Claude Desktop.
+
 WILL THIS WRECK MY PRESETS?
 ---------------------------
 

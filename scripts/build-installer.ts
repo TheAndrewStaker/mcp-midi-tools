@@ -115,8 +115,9 @@ async function main() {
   fs.copyFileSync(cachedNodeExe, path.join(STAGING, 'node.exe'));
 
   // Installer wrappers (root of the bundle so users see them after
-  // extracting): setup.cmd / uninstall.cmd / instructions.txt.
-  for (const f of ['setup.cmd', 'uninstall.cmd', 'instructions.txt']) {
+  // extracting): setup.cmd / uninstall.cmd / verify-midi.cmd /
+  // instructions.txt.
+  for (const f of ['setup.cmd', 'uninstall.cmd', 'verify-midi.cmd', 'instructions.txt']) {
     fs.copyFileSync(path.join(PROJECT_ROOT, 'installer', f), path.join(STAGING, f));
   }
   // PowerShell helpers go under install/ to keep the root tidy.
