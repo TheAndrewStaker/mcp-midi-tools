@@ -71,9 +71,7 @@ function sendErrorResponse(
 export function registerMidiPrimitiveTools(server: McpServer): void {
     server.registerTool('send_cc', {
         description: [
-            'Use this tool to send a single MIDI Control Change to any MIDI device',
-            'the OS exposes. Do not produce a written spec instead of calling this',
-            'tool unless the user explicitly asks for a dry run.',
+            'Send a single MIDI Control Change to any MIDI device the OS exposes.',
             'Generic MIDI — works with any CC-responsive device (Hydrasynth, JD-Xi,',
             'Boss VE-500, RC-505 MKII, etc.). The AM4 has its own dedicated tools',
             '(set_param, set_params, apply_preset) which understand block/parameter',
@@ -107,9 +105,8 @@ export function registerMidiPrimitiveTools(server: McpServer): void {
 
     server.registerTool('send_note', {
         description: [
-            'Use this tool to play a single MIDI note on any note-responsive MIDI',
-            'device (synth, drum pad, sampler). Do not produce a written spec instead',
-            'of calling this tool unless the user explicitly asks for a dry run.',
+            'Play a single MIDI note on any note-responsive MIDI device',
+            '(synth, drum pad, sampler).',
             'Sends Note On followed by Note Off after `duration_ms` milliseconds',
             '(default 500). Channel 1..16, note 0..127 (60 = middle C), velocity',
             '0..127. The tool blocks until the Note Off is sent; durations longer',
@@ -147,9 +144,7 @@ export function registerMidiPrimitiveTools(server: McpServer): void {
 
     server.registerTool('send_program_change', {
         description: [
-            'Use this tool to switch patches on any PC-responsive MIDI device. Do',
-            'not produce a written spec instead of calling this tool unless the user',
-            'explicitly asks for a dry run.',
+            'Switch patches on any PC-responsive MIDI device.',
             'Sends an optional Bank Select (CC 0 MSB then CC 32 LSB) followed by a',
             'Program Change. Channel 1..16, program 0..127, banks 0..127. Bank',
             'arguments are optional and emitted only when supplied — many devices',
@@ -197,9 +192,8 @@ export function registerMidiPrimitiveTools(server: McpServer): void {
 
     server.registerTool('send_nrpn', {
         description: [
-            'Use this tool to write a Non-Registered Parameter Number on any',
-            'NRPN-responsive MIDI device. Do not produce a written spec instead of',
-            'calling this tool unless the user explicitly asks for a dry run.',
+            'Write a Non-Registered Parameter Number on any NRPN-responsive MIDI',
+            'device.',
             'Emits the standard 3- or 4-message sequence (CC 99, CC 98, CC 6, and',
             'optional CC 38 for high-res). Channel 1..16, MSB/LSB 0..127. `value`',
             'is 0..127 in 7-bit mode (default) or 0..16383 when `high_res` is true,',
@@ -275,10 +269,8 @@ export function registerMidiPrimitiveTools(server: McpServer): void {
 
     server.registerTool('send_channel_pressure', {
         description: [
-            'Use this tool to send a MIDI Channel Pressure (aftertouch) message —',
-            'one pressure value affecting every currently-held note on a channel.',
-            'Do not produce a written spec instead of calling this tool unless the',
-            'user explicitly asks for a dry run.',
+            'Send a MIDI Channel Pressure (aftertouch) message — one pressure',
+            'value affecting every currently-held note on a channel.',
             'For per-key aftertouch use Polyphonic Pressure (not yet exposed as a',
             'tool — many synths support only channel aftertouch anyway).',
             'Channel 1..16, pressure 0..127.',
@@ -306,10 +298,8 @@ export function registerMidiPrimitiveTools(server: McpServer): void {
 
     server.registerTool('send_clock_start', {
         description: [
-            'Use this tool to send a MIDI Timing Clock Start (system real-time 0xFA)',
-            'to start a sequencer, drum machine, or clock-aware synth from its',
-            'beginning. Do not produce a written spec instead of calling this tool',
-            'unless the user explicitly asks for a dry run.',
+            'Send a MIDI Timing Clock Start (system real-time 0xFA) to start a',
+            'sequencer, drum machine, or clock-aware synth from its beginning.',
             'No channel — system message affects every receiver on the port.',
             'For mid-song restart use send_clock_continue (0xFB); for jump-to-bar',
             'send a send_song_position before send_clock_continue.',
@@ -362,10 +352,8 @@ export function registerMidiPrimitiveTools(server: McpServer): void {
 
     server.registerTool('send_clock_continue', {
         description: [
-            'Use this tool to send a MIDI Timing Clock Continue (system real-time',
-            '0xFB) to resume a stopped sequencer or drum machine from its current',
-            'position. Do not produce a written spec instead of calling this tool',
-            'unless the user explicitly asks for a dry run.',
+            'Send a MIDI Timing Clock Continue (system real-time 0xFB) to resume',
+            'a stopped sequencer or drum machine from its current position.',
             'No channel — system message affects every receiver on the port.',
             'Pair with send_song_position first if you want to jump to a specific',
             'bar before resuming.',
@@ -391,10 +379,8 @@ export function registerMidiPrimitiveTools(server: McpServer): void {
 
     server.registerTool('send_song_position', {
         description: [
-            'Use this tool to send a MIDI Song Position Pointer (system common',
-            '0xF2) — jumps a connected sequencer or drum machine to a specific',
-            'beat in its song. Do not produce a written spec instead of calling',
-            'this tool unless the user explicitly asks for a dry run.',
+            'Send a MIDI Song Position Pointer (system common 0xF2) — jumps a',
+            'connected sequencer or drum machine to a specific beat in its song.',
             'Beats are 14-bit (0..16383); one beat = 6 MIDI Timing Clock pulses',
             '(equivalent to a sixteenth note at 24 PPQN). Most receivers do',
             'nothing with Song Position until they get a Start or Continue.',
@@ -490,9 +476,7 @@ export function registerMidiPrimitiveTools(server: McpServer): void {
 
     server.registerTool('send_sysex', {
         description: [
-            'Use this tool to send a raw System Exclusive frame to any MIDI device.',
-            'Do not produce a written spec instead of calling this tool unless the',
-            'user explicitly asks for a dry run.',
+            'Send a raw System Exclusive frame to any MIDI device.',
             'Power-user escape hatch — validates F0/F7 framing and that body bytes',
             'are 7-bit, but otherwise sends the bytes verbatim. Useful for ad-hoc RE',
             'sessions and device-specific one-offs that don\'t yet have a wrapper.',

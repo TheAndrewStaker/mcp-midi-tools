@@ -78,9 +78,7 @@ export function registerMidiControlTools(server: McpServer): void {
 
     server.registerTool('reconnect_midi', {
         description: [
-            'Use this tool to reset the server\'s MIDI connection when writes stop',
-            'acking. Do not produce a written spec instead of calling this tool',
-            'unless the user explicitly asks for a dry run.',
+            'Reset the server\'s MIDI connection when writes stop acking.',
             'Force the server to close its cached MIDI connection and open a fresh',
             'one. Use this if writes stop getting ack\'d — typically after a USB',
             'replug, the AM4 power-cycling, or any other event that leaves the',

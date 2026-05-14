@@ -70,9 +70,59 @@ import { HYDRASYNTH_DESCRIPTOR } from '@/asm/hydrasynth-explorer/descriptor.js';
 
 // -- Server setup -----------------------------------------------------------
 
+/**
+ * Server-level instructions — sent once at the MCP `initialize`
+ * handshake, ahead of any tool call. Cross-cutting agent contracts
+ * that apply to the entire MIDI tool surface live here instead of
+ * being copy-pasted into every tool description.
+ */
+const SERVER_INSTRUCTIONS = [
+  'mcp-midi-tools is a USB MIDI control server for Fractal AM4, Fractal',
+  'Axe-Fx II XL+, ASM Hydrasynth Explorer, and any generic MIDI device the',
+  'OS exposes. Pick tools by intent, not by name length.',
+  '',
+  'DEFAULT BEHAVIOR — call the tools, do not write specs.',
+  'When the user asks for an audible change on connected hardware (build a',
+  'tone, tweak a param, switch a preset, switch a scene, save a patch), USE',
+  'THE TOOLS. Do not produce a written spec / preset doc / parameter table',
+  'instead of calling the tools unless the user explicitly asked for a dry',
+  'run, design exercise, or "what would the params look like" preview.',
+  'Audible-change requests are tool-call requests by default.',
+  '',
+  'SESSION-START SETUP — call describe_device(port) ONCE.',
+  'Before the first tone-building or apply_preset call against a device,',
+  'call describe_device({port}) once. The response carries device-specific',
+  'agent_guidance (channel/scene model, applicability rules, iconic-amp',
+  'shortcuts, enum-name conventions, tempo-sync discipline, save-language',
+  'anti-patterns, read-vs-navigate constraints) — load it into context',
+  'and refer to it while planning. Skipping this is the #1 cause of "the',
+  'AI changed something but it doesn\'t sound right."',
+  '',
+  'TWO TOOL SURFACES — prefer unified.',
+  'The unified surface (apply_preset, set_param, get_param, switch_preset,',
+  'save_preset, switch_scene, set_block, set_bypass, set_params, get_params,',
+  'list_params, lookup_lineage, scan_locations, describe_device, rename,',
+  'apply_setlist, restore_defaults) routes via the `port` argument and works',
+  'against any registered device. Use unified by default. Device-namespaced',
+  'tools (am4_*, axefx2_*, hydra_*) survive only for capabilities the unified',
+  'surface does not yet cover (Axe-Fx II grid layout, Hydrasynth full-patch',
+  'NRPN dump). Reach for them only when the unified surface lacks the',
+  'specific operation you need.',
+  '',
+  'SAVE LANGUAGE — strict vocabulary list.',
+  'Persisting to flash is destructive and gated. Only set save_authorized=',
+  'true when the user used explicit save vocab: save, store, keep, put on,',
+  'persist, commit to flash. State descriptions ("I want X to have a copy',
+  'of Y", "make X look/sound like Y", "create at X based on Y") describe',
+  'the desired audition state, NOT save intent — leave save_authorized=false',
+  'and audition. When ambiguous, audition and ASK before persisting.',
+].join('\n');
+
 const server = new McpServer({
   name: 'mcp-midi-tools',
   version: '0.1.0',
+}, {
+  instructions: SERVER_INSTRUCTIONS,
 });
 
 // -- Generic-MIDI tool families (any device) --------------------------------
