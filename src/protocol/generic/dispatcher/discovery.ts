@@ -24,17 +24,27 @@ import { resolveBlockName } from './resolvers.js';
 export function describeDevice(port: string): {
   device: string;
   id: string;
-  capabilities: DeviceDescriptor['capabilities'];
+  capabilities: Omit<DeviceDescriptor['capabilities'], 'preset_location_format'> & {
+    preset_location_format?: string;
+  };
   canonical_terms: DeviceDescriptor['canonical_terms'];
   blocks: readonly string[];
   block_types: readonly string[];
   agent_guidance?: DeviceDescriptor['agent_guidance'];
 } {
   const desc = requireDevice(port);
+  // RegExp objects serialize to `{}` through JSON.stringify, so MCP agents
+  // reading describe_device see an empty capability instead of the actual
+  // pattern. Surface the regex source as a string so the field is
+  // human-readable in the wire response.
+  const { preset_location_format, ...restCapabilities } = desc.capabilities;
   return {
     device: desc.display_name,
     id: desc.id,
-    capabilities: desc.capabilities,
+    capabilities: {
+      ...restCapabilities,
+      preset_location_format: preset_location_format?.source,
+    },
     canonical_terms: desc.canonical_terms,
     blocks: Object.keys(desc.blocks),
     block_types: desc.block_types ? Object.keys(desc.block_types) : [],
