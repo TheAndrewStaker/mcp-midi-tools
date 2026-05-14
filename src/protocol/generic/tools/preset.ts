@@ -90,7 +90,7 @@ export function registerPresetTools(server: McpServer): void {
         'Optional navigation target. With save_authorized=false (default), the tool navigates to the target and applies — audition mode, no save. With save_authorized=true, it also saves (destructive). Without target_location, the apply hits whatever location is currently active in the working buffer.',
       ),
       save_authorized: SAVE_AUTHORIZED_SCHEMA.describe(
-        'Set to true ONLY when the user used explicit save-language ("save", "store", "keep", "put on", "persist"). Bare "build a preset at X" / "make me a tone on X" is audition-language and MUST leave this false (or omitted). With target_location set, false = audition at target, true = save at target.',
+        'Set to true ONLY when the user used explicit save-language: "save", "store", "keep", "put on", "persist", "commit to flash". ANTI-PATTERNS — these are AUDITION language, NOT save: "build a preset at X", "make me a tone on X", "design a preset at X", "I want X to have a copy of Y", "make X look/sound like Y", "create a [thing] based on [other thing] at X". State descriptions ("I want X to be Z") describe the desired end state, not whether to persist — interpret as audition unless the user adds save vocab. When ambiguous, audition (false) and ASK before saving — saves are destructive; auditions are reversible by switching presets. With target_location set: false = audition at target, true = save at target.',
       ),
       on_active_preset_edited: ON_EDITED_SCHEMA.describe(ON_EDITED_DESCRIPTION),
     },

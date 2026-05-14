@@ -234,9 +234,10 @@ export function prepareApplyPresetWrites(
                     paramName,
                     reason:
                         `Does not apply on ${canonicalBlock}.type wire ${activeWire} ` +
-                        `(real-amp parity — e.g. AB763 Deluxe Reverb Vibrato has Bass/Treble ` +
-                        `only, no Mid). Call list_params(${canonicalBlock}) to see which knobs ` +
-                        `the active type exposes.`,
+                        `(real-gear parity — the active type does not expose this knob; ` +
+                        `the AM4 silently no-ops writes to it). Call ` +
+                        `list_params(${canonicalBlock}) to see which knobs the active type ` +
+                        `exposes.`,
                 });
                 return null;
             }

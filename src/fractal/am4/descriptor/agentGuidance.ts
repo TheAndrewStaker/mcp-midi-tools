@@ -13,6 +13,22 @@
  */
 
 export const AM4_AGENT_GUIDANCE: Readonly<Record<string, string>> = {
+  read_requires_navigation: [
+    'IMPORTANT — AM4 cannot read the contents of an arbitrary stored',
+    'preset without first navigating to it. scan_locations reads the',
+    'NAMES of stored presets remotely (works without navigation), but',
+    'get_param / get_params / get_block_layout / get_active_scene only',
+    'read the WORKING BUFFER, which holds whichever preset is currently',
+    'active on the device. To read U1\'s contents (block layout, amp',
+    'type, gain, etc.), call switch_preset({location:"U1"}) first; the',
+    'device loads U1 into the working buffer, then your reads target',
+    'U1. Plan for this latency cost up front: a "copy U1 and modify it"',
+    'workflow needs one switch_preset before any read sequence.',
+    'Hardware constraint (no read-arbitrary-preset SysEx exists), not a',
+    'tool limitation we can remove. Captured Session 74 — there is no',
+    'wire path for indirect preset reads, period.',
+  ].join(' '),
+
   volume_language: [
     'When the user says "louder / quieter / more reverb", pick the right knob:',
     '`amp.gain` is INPUT DRIVE (changes character), `amp.master` is amp master',
