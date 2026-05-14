@@ -1,0 +1,67 @@
+name: Protocol reverse-engineering finding
+description: You decoded something new about a supported device's MIDI protocol.
+title: "[RE] "
+labels: [reverse-engineering, documentation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when you've decoded an envelope, action byte, parameter
+        ID, or other protocol detail that isn't in `docs/SYSEX-MAP*.md`
+        yet. Even partial decodes are welcome — flag them with what's
+        confirmed vs. assumed.
+
+  - type: dropdown
+    id: device
+    attributes:
+      label: Device
+      options:
+        - Fractal AM4
+        - Fractal Axe-Fx II XL+
+        - ASM Hydrasynth Explorer
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: subject
+    attributes:
+      label: What did you decode?
+      placeholder: "AM4 function 0x01 action 0x3a = preset checksum response"
+    validations:
+      required: true
+
+  - type: textarea
+    id: bytes
+    attributes:
+      label: Wire bytes
+      description: |
+        Paste hex of the request + response. If it's a capture file,
+        link to it.
+      render: text
+      placeholder: |
+        Request:  F0 00 01 74 15 01 3A 00 ... F7
+        Response: F0 00 01 74 15 01 3A 00 66 0F 0D 00 ... F7
+    validations:
+      required: true
+
+  - type: textarea
+    id: method
+    attributes:
+      label: How did you verify it?
+      description: |
+        Capture session ID, what you toggled on the device, what changed
+        in the response, how many independent samples confirm.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: confidence
+    attributes:
+      label: Confidence
+      options:
+        - "Byte-exact / multiple captures agree"
+        - "Plausible / one capture supports it"
+        - "Hypothesis / wants more confirmation"
+    validations:
+      required: true

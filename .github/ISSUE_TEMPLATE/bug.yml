@@ -1,0 +1,75 @@
+name: Bug report
+description: Something doesn't work as expected on connected hardware.
+title: "[bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. The more we know about
+        your setup the faster we can confirm.
+
+  - type: dropdown
+    id: device
+    attributes:
+      label: Affected device
+      description: Which device is the bug on?
+      options:
+        - Fractal AM4
+        - Fractal Axe-Fx II XL+ (Q8.02)
+        - ASM Hydrasynth Explorer (1.5.x)
+        - Generic MIDI (send_cc / send_sysex / etc.)
+        - Other / multiple
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: mcp-midi-tools version
+      description: From package.json or the release ZIP filename.
+      placeholder: v0.1.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduce
+      description: |
+        What did you say to Claude / what tool was called / what happened?
+        Include the tool name + arguments if you can see them in the
+        Claude Desktop tool panel.
+      placeholder: |
+        1. Opened Claude Desktop, started a new chat.
+        2. Said "build me a clean Plexi tone at G3".
+        3. Got <error / unexpected output / silent failure>.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+      description: What did you expect, and what actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / response text
+      description: |
+        Paste the tool response Claude got. If Claude Desktop's MCP log
+        has stderr lines from the server, include those too.
+      render: text
+    validations:
+      required: false
+
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: Windows 11
+    validations:
+      required: true
