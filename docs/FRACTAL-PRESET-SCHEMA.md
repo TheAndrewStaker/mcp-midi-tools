@@ -1,16 +1,21 @@
-# Fractal Preset Schema — design proposal
+# Fractal Preset Schema — shipped contract
 
-**Status:** draft (Session 73). Not implemented yet. Discussion + iteration
-before code.
+**Status: shipped.** v0.1 contract (BK-051, Session 63, 2026-05-11) +
+v0.4 routing extensions (BK-054, Session 76, 2026-05-14). The runtime
+types live in `packages/core/src/protocol-generic/types.ts:PresetSpec`
+and the device-level translations in each device's descriptor under
+`packages/<device>/src/descriptor/`. Hardware-verified end-to-end on
+AM4 + Axe-Fx II XL+ (live launch-verify 24/24); BK-054 cross-row
+cabling audited via golden + audition test against live Axe-Fx II.
 
-This document proposes the canonical data structure for "a Fractal
-preset" — one shape that covers every Fractal guitar processor:
+This document is the canonical reference for "a Fractal preset" — one
+shape that covers every Fractal guitar processor:
 
-- **AM4** (linear, 4 slots, A/B/C/D channels, 4 scenes)
-- **Axe-Fx II / II XL / II XL+** (4×12 grid, X/Y channels, 8 scenes)
-- **Axe-Fx III** (4×14 grid, A/B/C/D channels, 8 scenes)
-- **FM9** (4×14 grid, A/B/C/D channels, 8 scenes)
-- **FM3** (4×4 grid, A/B/C/D channels, 8 scenes)
+- **AM4** (linear, 4 slots, A/B/C/D channels, 4 scenes) — shipped
+- **Axe-Fx II / II XL / II XL+** (4×12 grid, X/Y channels, 8 scenes) — shipped
+- **Axe-Fx III** (4×14 grid, A/B/C/D channels, 8 scenes) — schema-ready; descriptor pending (BK-015 community beta)
+- **FM9** (4×14 grid, A/B/C/D channels, 8 scenes) — schema-ready; descriptor pending
+- **FM3** (4×4 grid, A/B/C/D channels, 8 scenes) — schema-ready; descriptor pending
 
 Hydrasynth and other non-Fractal devices are **out of scope** — their
 domain model differs enough (NRPN modulation matrix, patch-based
@@ -444,23 +449,58 @@ With FractalPreset shipped:
 
 ---
 
-## Recommendation
+## Shipped — implementation milestones
 
-Ship this in v0.4, alongside the `axefx2_set_cell_routing` MCP tool
-exposure. Implementation order:
+All milestones below shipped through Session 76 (2026-05-14):
 
-1. Extend `PresetSpec` types with `instance`, `id`, `routing` fields
-   (back-compat preserved).
-2. Wire descriptor translators for AM4 + Axe-Fx II.
-3. Add `routing` walk to `applyExecutor` (existing fn 0x06 primitives
-   suffice).
-4. Hardware test: wet/dry split on Axe-Fx II slot 610.
-5. Hardware test: dual-amp parallel preset on slot 611.
-6. Document with worked examples in this file (replace "design
-   proposal" with "shipped contract").
+1. ✅ `PresetSpec` extended with `instance`, `id`, `routing` fields
+   (back-compat preserved). Lives in
+   `packages/core/src/protocol-generic/types.ts:265-363`.
+2. ✅ Descriptor translators wired for AM4 + Axe-Fx II XL+. AM4 rejects
+   `routing[]` + `instance≠1` (linear device contract); Axe-Fx II
+   accepts both and walks the routing edges.
+3. ✅ `routing` walk in `applyExecutor`
+   (`packages/axe-fx-ii/src/tools/applyExecutor.ts:414-490`). Validates
+   adjacent-column constraint + block-id references before any wire
+   write fires.
+4. ✅ Shunt synthesis (BK-054 follow-on, Session 76) —
+   `block_type: "shunt"` (or numeric id 200..235) resolves to a
+   synthetic block with a unique id per occurrence. Required for
+   audible wet/dry presets that reach the OUTPUT terminator at col 12.
+5. ✅ Unit golden — `scripts/verify-axe-fx-ii-routing.ts` (5 cases:
+   wet/dry parallel, legacy linear, adjacent-column rejection,
+   unknown block id rejection, shunt synthesis). Wired into
+   `npm test`.
+6. ✅ Hardware audition — `launch-verify` exercises a wet/dry split
+   end-to-end through `StdioClientTransport` → dispatcher → descriptor
+   → wire → device acks. Same wire path Claude Desktop uses.
 
-Effort estimate: 1 focused session (~6 hours) for steps 1-4 + the
-hardware tests.
+**Hardware sign-off remaining (founder, manual):** save the wet/dry +
+shunts spec from the README to a slot on a live Axe-Fx II and audibly
+confirm parallel routing produces a wider stereo image than series
+routing of the same blocks.
+
+## Per-device capability adaptation
+
+Each device's `DeviceDescriptor` declares which schema fields it
+accepts. The dispatcher consults the descriptor's capability flags
+to refuse unsupported combinations BEFORE any wire write fires, with
+structured error codes (`routing_not_supported`,
+`capability_not_supported`, `instance_not_supported`).
+
+| Field | AM4 | Axe-Fx II XL+ | Axe-Fx III (planned) | FM3 / FM9 (planned) |
+|---|---|---|---|---|
+| `slots[].slot` accepts | `1..4` integer | `1..12` int OR `{row, col}` | `{row, col}` 4×14 | 4×4 / 4×14 grid |
+| Channels | `A`/`B`/`C`/`D` | `X`/`Y` only | `A`/`B`/`C`/`D` | `A`/`B`/`C`/`D` |
+| `scenes[]` count | 1..4 | 1..8 | 1..8 | 1..8 |
+| `routing[]` | **rejected** | accepted | will accept | will accept |
+| `instance` | only `1` | `1..N` | `1..N` | `1..N` |
+| `block_type: "shunt"` | n/a | accepted (post BK-054) | will accept | will accept |
+| `landingScene` | scene 1..4 | scene 1..8 | scene 1..8 | scene 1..8 |
+
+When a new Fractal device gets a descriptor, its capability flags get
+filled in here and the schema "just works" — zero new MCP tools, zero
+schema changes.
 
 ---
 
