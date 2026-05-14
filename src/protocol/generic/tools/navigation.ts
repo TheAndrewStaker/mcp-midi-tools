@@ -38,7 +38,8 @@ export function registerNavigationTools(server: McpServer): void {
       'before issuing this after a session of building, especially if any',
       'set_param / set_block writes are still un-persisted.',
       'Location format depends on the device — call describe_device to see',
-      'the preset_location_format regex (AM4: A01..Z04; Axe-Fx II: 0..383;',
+      'the preset_location_format regex (AM4: A1..Z4 unpadded matching the',
+      'device display; Axe-Fx II: 1..16384 1-indexed front-panel slot;',
       'Hydrasynth: A1..H8). Pass either the string form or a numeric index.',
     ].join(' '),
     inputSchema: {

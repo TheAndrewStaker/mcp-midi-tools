@@ -431,8 +431,9 @@ export const writer: DeviceWriter = {
 
   // ── Execute: apply preset ─────────────────────────────────────────
 
-  async applyPreset(ctx, spec: PresetSpec, target?: LocationRef): Promise<ApplyResult> {
+  async applyPreset(ctx, spec: PresetSpec, target?: LocationRef, options?): Promise<ApplyResult> {
     const startMs = Date.now();
+    const shouldSave = options?.save ?? false;
     let translated: ApplyPresetAtInput | ApplyPresetInput;
     try {
       translated = translateSpec(spec);
@@ -453,15 +454,22 @@ export const writer: DeviceWriter = {
       // parseAxeFxIILocation returns wire (0-indexed); the executor's
       // internal `preset_number` field IS wire.
       const presetNumber = parseAxeFxIILocation(target);
-      const ops = buildApplyPresetAtOps(
+      const fullOps = buildApplyPresetAtOps(
         { ...translated, preset_number: presetNumber },
         { wire: true },
       );
+      // Audition-at-target mode strips the trailing STORE op so the
+      // build lives in the working buffer at the target, unsaved.
+      // Reversible by switching presets. The switch_preset head op
+      // still runs — that's the navigation the user asked for.
+      const ops = shouldSave ? fullOps : fullOps.filter((op) => op.kind !== 'save');
       const result = await runApplyPresetAtOps(ctx.conn, ops);
+      const slot = presetNumber + 1;
       return {
         ok: result.ok,
         steps: ops.length,
         duration_ms: result.elapsedMs,
+        saved: shouldSave && result.ok,
         failed_step: result.lastNack
           ? {
               index: 0,
@@ -471,6 +479,10 @@ export const writer: DeviceWriter = {
           : undefined,
         warning: !result.ok && !result.lastNack
           ? `STORE_PRESET did not ack within ${STORE_RESPONSE_TIMEOUT_MS}ms — save state unknown.`
+          : !shouldSave && result.ok
+          ? `Auditioning at display slot ${slot} — working buffer only, not saved. ` +
+            `Reversible by switching presets. Call save_preset({port:'axe-fx-ii', location:${slot}}) ` +
+            `when the user explicitly asks to save / keep / persist.`
           : undefined,
       };
     }
@@ -694,6 +706,13 @@ export const writer: DeviceWriter = {
 // scene's per-block bypass + channel state).
 
 function translateSpec(spec: PresetSpec): ApplyPresetInput {
+  // v0.4 routing-walk landed (BK-054 step 4). When `spec.routing` is
+  // present, every block must specify slot:{row,col} explicitly and the
+  // executor emits one fn 0x06 cable per edge. When omitted, the
+  // legacy row-2 auto-chain pipeline runs — back-compat for every
+  // pre-v0.4 caller and golden.
+  const explicitRouting = spec.routing !== undefined && spec.routing.length > 0;
+
   // Sort slots by grid column so the executor builds the chain
   // left-to-right. Per Section 6, all rows must be row 2 (auto-routing
   // limitation).
@@ -706,14 +725,17 @@ function translateSpec(spec: PresetSpec): ApplyPresetInput {
   const blocks: ApplyPresetAtInput['blocks'] = [];
   for (const s of sorted) {
     let row: number;
+    let col: number | undefined;
     if (typeof s.slot === 'object') {
       row = s.slot.row;
+      col = s.slot.col;
     } else {
-      row = 2; // legacy linear-style — assume row 2
+      row = 2;
+      col = s.slot;
     }
-    if (row !== 2) {
+    if (!explicitRouting && row !== 2) {
       throw new Error(
-        `slot row=${row}: Axe-Fx II grid placement is row-2-only in MVP (multi-row routing not yet decoded). Pass slot: { row: 2, col: N } for every block.`,
+        `slot row=${row}: without an explicit routing[] array, Axe-Fx II placement is row-2-only (auto-chain mode wires row 2 left-to-right). Either move every block to row 2, or supply spec.routing for explicit cabling.`,
       );
     }
 
@@ -753,6 +775,11 @@ function translateSpec(spec: PresetSpec): ApplyPresetInput {
       bypass: s.bypassed,
       channel,
       params,
+      // v0.4: thread id / row / col through. Auto-id derives from the
+      // block_type slug when the caller didn't supply one.
+      id: s.id ?? `${s.block_type.toLowerCase()}${s.instance !== undefined && s.instance !== 1 ? `_${s.instance}` : ''}`,
+      row,
+      col,
     });
   }
 
@@ -805,10 +832,18 @@ function translateSpec(spec: PresetSpec): ApplyPresetInput {
     scene = spec.landingScene - 1;
   }
 
+  // v0.4: thread routing[] through. Caller IDs must match the auto-
+  // derived or explicit ids on blocks[]; the executor cross-checks and
+  // errors clearly if a routing edge references a non-existent block.
+  const routing: ApplyPresetAtInput['routing'] | undefined = spec.routing && spec.routing.length > 0
+    ? spec.routing.map((e) => ({ from: e.from, to: e.to, connect: e.connect }))
+    : undefined;
+
   return {
     blocks,
     scene,
     scenes,
+    routing,
     landingScene: spec.landingScene,
     name: spec.name,
   };

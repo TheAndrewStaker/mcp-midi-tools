@@ -56,14 +56,56 @@ export interface ApplyConn {
  * (one entry at a time) and axefx2_apply_setlist (array of entries).
  * Mirrors the inputSchema of apply_preset_at minus the zod wrappers.
  */
+/**
+ * One placed block in a preset spec. v0.4 adds optional `id`, `row`,
+ * `col` for explicit-routing builds (parallel chains, FX loops, wet/dry
+ * splits). When omitted, the legacy row-2 sequential placement applies.
+ */
+export interface ApplyPresetAtBlockEntry {
+  block: string | number;
+  bypass?: boolean;
+  channel?: 'X' | 'Y';
+  params?: Record<string, number>;
+  /**
+   * v0.4: stable identifier for this block within the preset. Routing
+   * edges reference blocks by id. When omitted, auto-derived as
+   * `<block_lower>_<instance?? 1>` (e.g. amp_1, drive_2).
+   */
+  id?: string;
+  /** v0.4: grid row 1..4. Omitted → row 2 (legacy linear-chain placement). */
+  row?: number;
+  /**
+   * v0.4: grid column 1..12. Omitted → sequential position in the
+   * blocks[] array (legacy behavior). When routing is supplied, every
+   * block MUST have an explicit col.
+   */
+  col?: number;
+}
+
+/**
+ * v0.4: explicit cable between two placed blocks. Resolved by `id`
+ * (auto-derived if omitted) at op-build time. `dstCol` MUST equal
+ * `srcCol + 1` — the device rejects off-column cables.
+ */
+export interface ApplyPresetAtRoutingEdge {
+  from: string;
+  to: string;
+  /** Add the cable (default true) or remove it. */
+  connect?: boolean;
+}
+
 export interface ApplyPresetAtInput {
   preset_number: number;
-  blocks: Array<{
-    block: string | number;
-    bypass?: boolean;
-    channel?: 'X' | 'Y';
-    params?: Record<string, number>;
-  }>;
+  blocks: ApplyPresetAtBlockEntry[];
+  /**
+   * v0.4: explicit cabling. When supplied, the executor:
+   *   1. Places each block at its explicit (row, col) — every entry in
+   *      `blocks` must include `row` and `col`.
+   *   2. Skips the auto-shunt-extension and auto-row-2-cabling.
+   *   3. Emits a fn 0x06 SET_CELL_ROUTING write for each edge.
+   * When omitted, the legacy row-2 linear-chain pipeline runs.
+   */
+  routing?: ApplyPresetAtRoutingEdge[];
   /**
    * Single-scene shortcut — switch to this scene (0..7) before writing
    * block params. Kept for back-compat with pre-Session-68 callers.
@@ -130,26 +172,92 @@ export function buildApplyPresetAtOps(
   input: ApplyPresetAtInput,
   opts: BuildOptions = {},
 ): ApplyPresetAtOp[] {
-  const { preset_number, blocks, scene, name } = input;
+  const { preset_number, blocks, scene, name, routing } = input;
   const wireMode = opts.wire ?? false;
+  const explicitRouting = routing !== undefined && routing.length > 0;
 
   // 1. Resolve blocks (catches typos before any op is built).
+  // v0.4: each resolved entry now carries its (row, col) and `id` so
+  // explicit-routing builds can address blocks by id and place them
+  // away from row 2. Legacy callers (no explicit row/col on any block,
+  // no routing array) auto-fill row=2, col=index+1 — byte-identical to
+  // the pre-v0.4 behavior.
   type ResolvedEntry = {
     target: AxeFxIIBlock;
     bypass?: boolean;
     channel?: AxeFxIIChannel;
     params?: Record<string, number>;
+    id: string;
+    row: number;
+    col: number;
   };
   const resolved: ResolvedEntry[] = [];
-  for (const b of blocks) {
+  const idsSeen = new Set<string>();
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
     const target = findBlock(b.block);
+
+    // Resolve row/col. Explicit-routing mode requires both on every
+    // block. Legacy mode lets them default to (2, i+1).
+    let row: number;
+    let col: number;
+    if (explicitRouting) {
+      if (b.row === undefined || b.col === undefined) {
+        throw new Error(
+          `blocks[${i}] (${target.name}): routing[] supplied, so every block needs explicit row + col. Pass slot:{row,col} on every PresetSpec.slots entry.`,
+        );
+      }
+      row = b.row;
+      col = b.col;
+    } else {
+      row = b.row ?? 2;
+      col = b.col ?? (i + 1);
+    }
+    if (!Number.isInteger(row) || row < 1 || row > 4) {
+      throw new Error(`blocks[${i}] (${target.name}): row ${row} out of range (1..4).`);
+    }
+    if (!Number.isInteger(col) || col < 1 || col > 12) {
+      throw new Error(`blocks[${i}] (${target.name}): col ${col} out of range (1..12).`);
+    }
+
+    // Resolve id. Explicit wins; auto-derive from `<lower_name>_1` or
+    // `<lower_name>_N` based on whether this is the first instance of
+    // that block type in the spec.
+    let id = b.id;
+    if (id === undefined) {
+      const baseSlug = target.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+      // If only one instance of this slug exists in the entire blocks[]
+      // array, the auto-derived id is just the slug. If multiple, the
+      // auto-derive includes a 1-indexed counter — but then the schema
+      // requires the caller to disambiguate by supplying explicit ids
+      // (we can't pick a stable counter from inspection alone). For
+      // now: error if the same auto-slug shows up twice without explicit ids.
+      id = baseSlug;
+    }
+    if (idsSeen.has(id)) {
+      throw new Error(
+        `blocks[${i}] (${target.name}): block id "${id}" is already used by an earlier block. ` +
+        `Two blocks of the same block_type need explicit \`id\` fields to disambiguate ` +
+        `(e.g. id:"rhythm_amp" + id:"lead_amp" for two Amp instances).`,
+      );
+    }
+    idsSeen.add(id);
+
     resolved.push({
       target,
       bypass: b.bypass,
       channel: b.channel as AxeFxIIChannel | undefined,
       params: b.params as Record<string, number> | undefined,
+      id,
+      row,
+      col,
     });
   }
+
+  // Set of (row, col) cells the user explicitly placed — used by the
+  // clear-cell pre-pass to skip cells we're about to overwrite.
+  const placedCells = new Set<string>();
+  for (const r of resolved) placedCells.add(`${r.row},${r.col}`);
 
   // 2. Pre-validate every param + value.
   interface PendingParamWrite {
@@ -237,7 +345,7 @@ export function buildApplyPresetAtOps(
   for (let row = 1; row <= 4; row++) {
     for (let col = 1; col <= 12; col++) {
       // Skip cells we're about to place INTO — placement overwrites.
-      if (row === 2 && col >= 1 && col <= blocks.length) continue;
+      if (placedCells.has(`${row},${col}`)) continue;
       ops.push({
         kind: 'clear_cell',
         bytes: buildSetGridCell({ row, col, blockId: 0 }),
@@ -248,13 +356,14 @@ export function buildApplyPresetAtOps(
     }
   }
 
-  // Place blocks left-to-right so each one auto-routes from upstream.
-  for (let i = 0; i < resolved.length; i++) {
-    const r = resolved[i];
+  // Place every resolved block at its (row, col). Legacy mode populates
+  // row 2 cols 1..N; v0.4 explicit-routing mode places blocks at any
+  // (row, col) the caller specified.
+  for (const r of resolved) {
     ops.push({
       kind: 'place_block',
-      bytes: buildSetGridCell({ row: 2, col: i + 1, blockId: r.target.id }),
-      summary: `PLACE ${r.target.name} at row 2 col ${i + 1}`,
+      bytes: buildSetGridCell({ row: r.row, col: r.col, blockId: r.target.id }),
+      summary: `PLACE ${r.target.name} at row ${r.row} col ${r.col}`,
       awaitResponse: 'set_grid_cell',
     });
   }
@@ -302,29 +411,82 @@ export function buildApplyPresetAtOps(
   // blockIds 200, 201, 202, 203, 204, 205 — one unique instance per
   // cell.
   const SHUNT_BASE_ID = 200;
-  // Pass 1: place all shunts (content blocks were placed above).
-  for (let col = resolved.length + 1; col <= 12; col++) {
-    // Number shunts left-to-right starting at SHUNT 1 = 200.
-    const shuntIndex = col - resolved.length;
-    const shuntBlockId = SHUNT_BASE_ID + (shuntIndex - 1);
-    ops.push({
-      kind: 'place_block',
-      bytes: buildSetGridCell({ row: 2, col, blockId: shuntBlockId }),
-      summary: `PLACE SHUNT ${shuntIndex} (id ${shuntBlockId}) at row 2 col ${col}`,
-      awaitResponse: 'set_grid_cell',
-    });
-  }
-  // Pass 2: cable every adjacent pair in row 2 — content blocks AND
-  // shunts. Col 1 (first cell) receives input from the implicit INPUT
-  // column and needs no cable. All other cells (cols 2..12) need a
-  // cable from their left neighbor.
-  for (let col = 2; col <= 12; col++) {
-    ops.push({
-      kind: 'cable',
-      bytes: buildSetCellRouting({ srcRow: 2, srcCol: col - 1, dstRow: 2, dstCol: col, connect: true }),
-      summary: `CABLE row 2 col ${col - 1} → row 2 col ${col}`,
-      awaitResponse: 'set_cell_routing',
-    });
+  if (explicitRouting) {
+    // v0.4 explicit-routing mode. The agent supplied the full topology
+    // via routing[]; we trust it verbatim. Auto-shunt-extension and
+    // row-2 auto-cabling are SKIPPED — the caller is responsible for
+    // any shunts and cables needed to reach col 12 (OUTPUT terminator).
+    //
+    // Each routing edge becomes one fn 0x06 SET_CELL_ROUTING write.
+    // We resolve src/dst by block id (the auto-derived `<slug>` or
+    // explicit `id` field), look up their (row, col) from `resolved`,
+    // and emit the cable.
+    const blocksById = new Map(resolved.map((r) => [r.id, r]));
+    for (let i = 0; i < routing!.length; i++) {
+      const edge = routing![i];
+      const src = blocksById.get(edge.from);
+      const dst = blocksById.get(edge.to);
+      if (src === undefined) {
+        throw new Error(
+          `routing[${i}].from="${edge.from}": no block with that id. ` +
+          `Known ids: ${Array.from(blocksById.keys()).join(', ')}`,
+        );
+      }
+      if (dst === undefined) {
+        throw new Error(
+          `routing[${i}].to="${edge.to}": no block with that id. ` +
+          `Known ids: ${Array.from(blocksById.keys()).join(', ')}`,
+        );
+      }
+      if (dst.col !== src.col + 1) {
+        throw new Error(
+          `routing[${i}] (${edge.from} → ${edge.to}): src col ${src.col} → dst col ${dst.col} not adjacent. ` +
+          `The device requires dst_col = src_col + 1. ` +
+          `Insert a shunt at the intermediate column(s), or check the placement.`,
+        );
+      }
+      const connect = edge.connect ?? true;
+      ops.push({
+        kind: 'cable',
+        bytes: buildSetCellRouting({
+          srcRow: src.row, srcCol: src.col,
+          dstRow: dst.row, dstCol: dst.col,
+          connect,
+        }),
+        summary: `${connect ? 'CABLE' : 'UNCABLE'} ${edge.from} (R${src.row}C${src.col}) → ${edge.to} (R${dst.row}C${dst.col})`,
+        awaitResponse: 'set_cell_routing',
+      });
+    }
+  } else {
+    // Legacy row-2 auto-chain mode. Pre-v0.4 callers don't supply
+    // routing[]; we auto-extend with shunts to col 12 and cable every
+    // adjacent pair on row 2. Byte-identical to the pre-v0.4
+    // behavior — every existing test (slot 600/601/602/608/609) stays
+    // green.
+    //
+    // Pass 1: place all shunts (content blocks were placed above).
+    for (let col = resolved.length + 1; col <= 12; col++) {
+      const shuntIndex = col - resolved.length;
+      const shuntBlockId = SHUNT_BASE_ID + (shuntIndex - 1);
+      ops.push({
+        kind: 'place_block',
+        bytes: buildSetGridCell({ row: 2, col, blockId: shuntBlockId }),
+        summary: `PLACE SHUNT ${shuntIndex} (id ${shuntBlockId}) at row 2 col ${col}`,
+        awaitResponse: 'set_grid_cell',
+      });
+    }
+    // Pass 2: cable every adjacent pair in row 2 — content blocks AND
+    // shunts. Col 1 (first cell) receives input from the implicit INPUT
+    // column and needs no cable. All other cells (cols 2..12) need a
+    // cable from their left neighbor.
+    for (let col = 2; col <= 12; col++) {
+      ops.push({
+        kind: 'cable',
+        bytes: buildSetCellRouting({ srcRow: 2, srcCol: col - 1, dstRow: 2, dstCol: col, connect: true }),
+        summary: `CABLE row 2 col ${col - 1} → row 2 col ${col}`,
+        awaitResponse: 'set_cell_routing',
+      });
+    }
   }
 
   if (scene !== undefined) {

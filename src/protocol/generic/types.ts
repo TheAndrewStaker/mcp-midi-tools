@@ -263,7 +263,14 @@ export interface BlockChange {
 }
 
 export interface PresetSpec {
-  /** Per-slot block placement + per-channel params. Device-validated. */
+  /**
+   * Per-slot block placement + per-channel params. Device-validated.
+   *
+   * v0.4: extended with optional `id` and `instance` fields per block
+   * for multi-instance routing on grid devices. AM4 (linear, single-
+   * instance per type) ignores both; the existing slot+block_type
+   * shape continues to work unchanged for back-compat.
+   */
   slots: readonly PresetSlotSpec[];
   /** Per-scene channel/bypass selections. Devices without scenes ignore this. */
   scenes?: readonly SceneSpec[];
@@ -276,6 +283,25 @@ export interface PresetSpec {
    * field on the removed `axefx2_apply_preset_at` / `axefx2_apply_setlist`.
    */
   landingScene?: number;
+  /**
+   * v0.4: explicit routing edges for grid devices. Each edge cables a
+   * source block's output into a destination block's input.
+   *
+   * Block references use the `id` field on the source / destination
+   * `slots[]` entries; when `id` is omitted, the descriptor auto-
+   * derives one from `<block_type>_<instance>` (e.g. `amp_1`,
+   * `drive_2`). Two blocks of the same type WITHOUT `instance` are
+   * ambiguous — the descriptor errors during validation.
+   *
+   * Linear devices (AM4) error if this field is set: routing is
+   * implicit by slot order. Grid devices (Axe-Fx II/III, FM*) use
+   * this verbatim when present, OR infer a row-2 linear chain when
+   * omitted (current Level 1 behavior).
+   *
+   * See `docs/FRACTAL-PRESET-SCHEMA.md` for the wet/dry and dual-amp
+   * worked examples.
+   */
+  routing?: readonly RoutingEdge[];
 }
 
 export interface PresetSlotSpec {
@@ -283,6 +309,25 @@ export interface PresetSlotSpec {
   block_type: string;
   params?: Readonly<Record<string, Readonly<Record<string, number | string>>>>;  // channel → params
   bypassed?: boolean;
+  /**
+   * v0.4: stable identifier for this block within the preset. Used by
+   * `routing` edges and `scenes[].channels` / `scenes[].bypassed` to
+   * reference this specific block when multiple instances of the same
+   * type exist (e.g. `id: "rhythm_amp"` vs `id: "lead_amp"`).
+   *
+   * When omitted, the descriptor auto-derives `<block_type>_<instance>`
+   * (e.g. `amp_1`, `drive_2`). Explicit ids are recommended for any
+   * preset with two instances of the same block_type — auto-derived
+   * ids are stable but harder to read in routing edges.
+   */
+  id?: string;
+  /**
+   * v0.4: instance number (1-indexed) for grid devices that support
+   * multiple of the same block type (Axe-Fx II/III: "Amp 1" + "Amp 2";
+   * AM4 has just "the amp"). Defaults to 1. AM4 rejects anything other
+   * than 1 with `capability_not_supported`.
+   */
+  instance?: number;
 }
 
 export interface SceneSpec {
@@ -294,6 +339,29 @@ export interface SceneSpec {
   name?: string;
 }
 
+/**
+ * v0.4: a directed cable between two placed blocks. Source and target
+ * are block ids (explicit `id` or auto-derived `<block_type>_<instance>`
+ * from the entry in `PresetSpec.slots`).
+ *
+ * Grid devices translate each edge into a `fn 0x06 SET_CELL_ROUTING`
+ * write (Axe-Fx II) — the dst cell's input mask gets a bit set for
+ * each src row that feeds it. `connect: false` removes the cable; the
+ * default is `true` (add).
+ */
+export interface RoutingEdge {
+  /** Source block id (or auto-derived `<block_type>_<instance>`). */
+  from: string;
+  /** Destination block id. */
+  to: string;
+  /**
+   * Add the cable (default) or remove it. Removing edges is for
+   * surgical routing tweaks; whole-preset builds typically don't need
+   * `connect: false`.
+   */
+  connect?: boolean;
+}
+
 export interface ApplyResult {
   ok: boolean;
   steps: number;
@@ -301,6 +369,28 @@ export interface ApplyResult {
   failed_step?: { index: number; description: string; error: string };
   /** Optional warning carried through to the LLM (e.g. unack count) when ok=true. */
   warning?: string;
+  /**
+   * For target-location applies: whether the save step ran AND acked.
+   * Audition-at-target mode (save:false) sets this to false. For
+   * working-buffer-only applies (no target), undefined.
+   */
+  saved?: boolean;
+}
+
+/**
+ * Optional behavior knobs for `apply_preset` when `target_location` is
+ * supplied. Working-buffer-only mode (no target) ignores these.
+ */
+export interface ApplyPresetOptions {
+  /**
+   * True = run switch + apply + save (persists to the target location,
+   * destructive). False = run switch + apply only (audition at the
+   * target; reversible by switching presets). Defaults to false: the
+   * dispatcher gates save on explicit save-language from the user.
+   *
+   * Setlist flows (apply_setlist) imply save and never pass false.
+   */
+  save?: boolean;
 }
 
 export interface SetlistEntrySpec {
@@ -466,7 +556,12 @@ export interface DeviceWriter {
   setParams?(ctx: DispatchCtx, ops: readonly WriteOp[]): Promise<BatchWriteResult>;
   setBlock?(ctx: DispatchCtx, slot: SlotRef, change: BlockChange): Promise<WriteResult>;
   setBypass?(ctx: DispatchCtx, block: string, bypassed: boolean): Promise<WriteResult>;
-  applyPreset?(ctx: DispatchCtx, spec: PresetSpec, target?: LocationRef): Promise<ApplyResult>;
+  applyPreset?(
+    ctx: DispatchCtx,
+    spec: PresetSpec,
+    target?: LocationRef,
+    options?: ApplyPresetOptions,
+  ): Promise<ApplyResult>;
   applySetlist?(
     ctx: DispatchCtx,
     entries: readonly SetlistEntrySpec[],

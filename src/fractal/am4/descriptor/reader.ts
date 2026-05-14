@@ -42,8 +42,99 @@ import {
   formatLineageRecord,
   runLineageLookup,
 } from '@/fractal/shared/lineageLookup.js';
+import { TYPE_APPLICABILITY } from '@/fractal/am4/typeApplicability.js';
+import { checkApplicability } from '@/fractal/am4/applicability.js';
+import {
+  AMP_TYPES,
+  COMPRESSOR_TYPES,
+  DELAY_TYPES,
+  DRIVE_TYPES,
+  REVERB_TYPES,
+} from '@/fractal/am4/cacheEnums.js';
 
 import { parseAm4Location } from './schema.js';
+
+/**
+ * Map a lineage block type → its wire-index enum array. Used by the
+ * lineage applicability annotation to look up the wire index from the
+ * `am4Name` field on the record.
+ *
+ * Returns undefined for block types that don't have a type enum (most
+ * filter / modulation blocks — those records exist but applicability
+ * filtering wouldn't add value).
+ */
+function typeEnumFor(blockType: string): readonly string[] | undefined {
+  switch (blockType) {
+    case 'amp':        return AMP_TYPES;
+    case 'drive':      return DRIVE_TYPES;
+    case 'reverb':     return REVERB_TYPES;
+    case 'delay':      return DELAY_TYPES;
+    case 'compressor': return COMPRESSOR_TYPES;
+    default:           return undefined;
+  }
+}
+
+/**
+ * Tone-building knobs typically displayed on each block's front-panel
+ * "main page" — the ones a tone-builder reaches for first. We surface
+ * applicability for these in the lookup_lineage annotation to keep the
+ * output focused on what the agent needs to decide whether to write a
+ * param. The full applicability matrix for every internal param is
+ * available via list_params.
+ */
+const FRONT_PANEL_PARAMS: Record<string, readonly string[]> = {
+  amp:        ['type', 'gain', 'bass', 'mid', 'treble', 'presence', 'master', 'level', 'depth'],
+  drive:      ['type', 'drive', 'tone', 'level', 'mix'],
+  reverb:     ['type', 'mix', 'time', 'predelay', 'size', 'low_cut', 'high_cut'],
+  delay:      ['type', 'time', 'tempo', 'feedback', 'mix', 'low_cut', 'high_cut'],
+  compressor: ['type', 'amount', 'attack', 'release', 'level'],
+};
+
+/**
+ * For a single lineage record, return a human-readable summary of which
+ * front-panel knobs apply on this specific block-type wire index. Lets
+ * the agent reason about "does this amp have a master?" without a
+ * separate list_params call — the answer is right next to the
+ * basedOn / lineage data the lookup already returns.
+ *
+ * Returns `undefined` when applicability annotation isn't meaningful
+ * (block type without a type enum, or am4Name not found in the enum).
+ */
+function formatApplicableKnobs(blockType: string, am4Name: string): string | undefined {
+  const enumValues = typeEnumFor(blockType);
+  if (enumValues === undefined) return undefined;
+  const wireIndex = enumValues.indexOf(am4Name);
+  if (wireIndex < 0) return undefined;
+  const knobs = FRONT_PANEL_PARAMS[blockType];
+  if (knobs === undefined) return undefined;
+
+  const applies: string[] = [];
+  const doesNotApply: string[] = [];
+  for (const knob of knobs) {
+    const key = `${blockType}.${knob}`;
+    if (!(key in TYPE_APPLICABILITY)) continue;
+    const result = checkApplicability(key, {
+      currentTypes: { [blockType]: wireIndex },
+    });
+    if (result.applicable === true) applies.push(knob);
+    else if (result.applicable === false) doesNotApply.push(knob);
+    // 'unknown' → omit; we can't make a strong claim either way.
+  }
+  if (applies.length === 0 && doesNotApply.length === 0) return undefined;
+
+  const lines: string[] = [];
+  if (applies.length > 0) {
+    lines.push(`frontPanelKnobs: ${applies.join(', ')}`);
+  }
+  if (doesNotApply.length > 0) {
+    lines.push(
+      `notExposed: ${doesNotApply.join(', ')}  ` +
+      `(real-amp parity — these knobs do NOT exist on this model; the AM4 silently no-ops writes to them; ` +
+      `do not include in apply_preset / set_params calls when this type is active)`,
+    );
+  }
+  return lines.join('\n');
+}
 
 // ── Reader adapter ──────────────────────────────────────────────────
 //
@@ -161,11 +252,18 @@ export const reader: DeviceReader = {
     }
     const withQuotes = query.include_quotes ?? true;
     if (result.shape === 'forward') {
-      return { ok: true, text: formatLineageRecord(result.hits[0].record, withQuotes) };
+      const baseText = formatLineageRecord(result.hits[0].record, withQuotes);
+      const knobs = formatApplicableKnobs(blockType, result.hits[0].record.am4Name);
+      return { ok: true, text: knobs ? `${baseText}\n${knobs}` : baseText };
     }
-    const blocks = result.hits.map(
-      (h) => `── ${'am4Name' in h ? h.am4Name : '?'} ──\n${formatLineageRecord(h.record, withQuotes, 3)}`,
-    );
+    const blocks = result.hits.map((h) => {
+      const am4Name = 'am4Name' in h ? h.am4Name : '?';
+      const recordText = formatLineageRecord(h.record, withQuotes, 3);
+      const knobs = formatApplicableKnobs(blockType, am4Name);
+      return knobs
+        ? `── ${am4Name} ──\n${recordText}\n${knobs}`
+        : `── ${am4Name} ──\n${recordText}`;
+    });
     return {
       ok: true,
       text: `${result.hits.length} ${blockType} match(es)${result.hits.length > 10 ? ' (showing top 10)' : ''}:\n\n${blocks.join('\n\n')}`,

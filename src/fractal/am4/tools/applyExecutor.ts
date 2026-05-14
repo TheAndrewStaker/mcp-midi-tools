@@ -42,11 +42,13 @@ import {
     channelLetter,
     invalidateChannelCache,
     lastKnownChannel,
+    lastKnownType,
     observeWrittenParam,
     preflightApplicabilityWarning,
     resolveChannel,
     CHANNEL_BLOCKS,
 } from '@/server/shared/channels.js';
+import { checkApplicability } from '@/fractal/am4/applicability.js';
 import { resolveValue, suggestParamName } from '@/server/shared/paramHelpers.js';
 import { sendAndAwaitAck } from '@/server/shared/wireOps.js';
 import {
@@ -72,6 +74,25 @@ export type ApplyPresetPreparedWrite =
     | { kind: 'scene_channel'; block: string; index: number; sceneIndex: number; bytes: number[] }
     | { kind: 'bypass'; block: string; bypassed: boolean; sceneIndex: number; bytes: number[] }
     | { kind: 'scene_name'; sceneIndex: number; name: string; bytes: number[] };
+
+/**
+ * A param-write the validator dropped because its applies_only_when
+ * gate excludes the active (or in-batch) block type. The wire write
+ * was NEVER sent — surfaced to the caller so its response can name
+ * exactly what didn't land, instead of letting the agent claim a write
+ * landed that the device silently no-op'd.
+ *
+ * Example: `{type: "Deluxe Verb Vibrato", mid: 6}` — the AB763 Vibrato
+ * channel has Bass/Treble only, no Mid. The mid write would have been
+ * acked by the device and produced no audible change; the gate skips
+ * it and the response says "dropped amp.mid because Deluxe Verb
+ * Vibrato has no Mid knob."
+ */
+export interface ApplyPresetSkippedParam {
+    block: string;
+    paramName: string;
+    reason: string;
+}
 
 export interface ApplyPresetSlotInput {
     position: number;
@@ -111,11 +132,16 @@ export interface ApplyPresetInput {
  */
 export function prepareApplyPresetWrites(
     input: ApplyPresetInput,
-): { prepared: ApplyPresetPreparedWrite[]; nameWriteBytes: number[] | undefined } {
+): {
+    prepared: ApplyPresetPreparedWrite[];
+    nameWriteBytes: number[] | undefined;
+    skipped: ApplyPresetSkippedParam[];
+} {
     const { slots, name, scenes, landingScene } = input;
     // --- Validation pass (no MIDI yet) ---
     const seenPositions = new Set<number>();
     const prepared: ApplyPresetPreparedWrite[] = [];
+    const skipped: ApplyPresetSkippedParam[] = [];
     // Track placed (non-"none") blocks so the scene-bypass-default pass can
     // emit implicit `bypass=false` writes for blocks the agent placed but
     // didn't explicitly bypass in a configured scene. Founder-driven
@@ -127,12 +153,35 @@ export function prepareApplyPresetWrites(
     // to active matches that intent and avoids stale-state leakage.
     const placedBlocks = new Map<string, number>();
 
+    // In-batch type-gating context: when the same apply_preset call
+    // contains `params.type` AND knob writes, the agent's intent is the
+    // post-change type. Track resolved type writes per block as we
+    // prepare them; refuse subsequent knob writes whose applicability
+    // gate excludes that type. Catches the 2026-05-13 Z4 Fender test
+    // case: `params: { type: "Deluxe Verb Vibrato", mid: 6 }` — the AB763
+    // Vibrato channel has no Mid knob, AM4 silently no-ops the write.
+    // Without this gate the agent sees a successful ack and reports the
+    // mid value to the user; the device shows the previous mid.
+    const inBatchTypes: Record<string, number> = {};
+
+    /**
+     * Build a single param write, OR return `null` when the validator
+     * decides to skip the write (because the param doesn't apply on
+     * the active block type — see applicability gate below). Hard
+     * errors (unknown param name, out-of-range value) still throw —
+     * those are caller mistakes, not silent-no-op risks.
+     *
+     * On skip, the reason is pushed to the shared `skipped` list and
+     * surfaced in the apply_preset response so the agent reports
+     * "dropped amp.mid because Deluxe Verb Vibrato has no Mid knob"
+     * instead of claiming the write landed.
+     */
     const buildParamWrite = (
         at: string,
         canonicalBlock: string,
         paramName: string,
         value: number | string,
-    ): Extract<ApplyPresetPreparedWrite, { kind: 'param' }> => {
+    ): Extract<ApplyPresetPreparedWrite, { kind: 'param' }> | null => {
         const literalKey = `${canonicalBlock}.${paramName}` as ParamKey;
         let key: ParamKey;
         if (literalKey in KNOWN_PARAMS) {
@@ -158,6 +207,44 @@ export function prepareApplyPresetWrites(
             resolved = resolveValue(param, value);
         } catch (err) {
             throw new Error(`${at}: ${err instanceof Error ? err.message : String(err)}`);
+        }
+        // Applicability gate. Skip for the type write itself (the type
+        // can never be gated against itself); enforce for every other
+        // param against the in-batch type (preferred — known to be
+        // accurate, since type writes are ordered first in this loop)
+        // or the cross-call lastKnownType cache when no in-batch type
+        // is set.
+        //
+        // Soft behavior: drop the param, record the skip, let the rest
+        // of the apply continue. The skip list surfaces in the response
+        // so the agent can honestly report what didn't land instead of
+        // pretending the silent no-op was a successful write.
+        if (paramName !== 'type' && paramName !== 'mode') {
+            const effectiveTypes: Record<string, number> = {
+                ...lastKnownType,
+                ...inBatchTypes,
+            };
+            const check = checkApplicability(`${canonicalBlock}.${paramName}`, {
+                currentTypes: effectiveTypes,
+            });
+            if (check.applicable === false) {
+                const activeWire = effectiveTypes[canonicalBlock];
+                skipped.push({
+                    block: canonicalBlock,
+                    paramName,
+                    reason:
+                        `Does not apply on ${canonicalBlock}.type wire ${activeWire} ` +
+                        `(real-amp parity — e.g. AB763 Deluxe Reverb Vibrato has Bass/Treble ` +
+                        `only, no Mid). Call list_params(${canonicalBlock}) to see which knobs ` +
+                        `the active type exposes.`,
+                });
+                return null;
+            }
+        }
+        // Record type writes for downstream applicability checks in the
+        // same batch. Resolved value is the post-encode wire enum index.
+        if (paramName === 'type' || paramName === 'mode') {
+            inBatchTypes[canonicalBlock] = Math.round(resolved);
         }
         const enumNameFor = (idx: number): string | undefined =>
             (param.enumValues as Record<number, string> | undefined)?.[idx];
@@ -238,7 +325,11 @@ export function prepareApplyPresetWrites(
                 a === 'type' ? -1 : b === 'type' ? 1 : 0,
             );
             for (const [paramName, value] of ordered) {
-                prepared.push(buildParamWrite(at, canonicalBlock, paramName, value));
+                const write = buildParamWrite(at, canonicalBlock, paramName, value);
+                if (write !== null) prepared.push(write);
+                // null = applicability gate dropped the param; the
+                // skip is already in `skipped[]`. The remaining writes
+                // in this slot still go through.
             }
         }
 
@@ -276,9 +367,14 @@ export function prepareApplyPresetWrites(
                     a === 'type' ? -1 : b === 'type' ? 1 : 0,
                 );
                 for (const [paramName, value] of orderedChannelEntries) {
-                    prepared.push(
-                        buildParamWrite(`${at} channels.${letter}.${paramName}`, canonicalBlock, paramName, value),
+                    const write = buildParamWrite(
+                        `${at} channels.${letter}.${paramName}`,
+                        canonicalBlock,
+                        paramName,
+                        value,
                     );
+                    if (write !== null) prepared.push(write);
+                    // null = applicability skip; reason already in `skipped[]`.
                 }
             }
         }
@@ -473,7 +569,7 @@ export function prepareApplyPresetWrites(
         }
     }
 
-    return { prepared, nameWriteBytes };
+    return { prepared, nameWriteBytes, skipped };
 }
 
 /**
@@ -610,12 +706,23 @@ export function formatApplyPresetResult(result: ApplyPresetWireResult): {
     return { header, stateLines, lines };
 }
 
-// --- apply-preset-at composite (switch + apply + save) ---
+// --- apply-preset-at composite (switch + apply + optional save) ---
 
 export type ApplyPresetAtSuccess = {
     ok: true;
     location: string;
     applied: { slots: ApplyPresetSlotInput[]; scenes: ApplyPresetSceneInput[]; name: string };
+    /** True when the save step ran AND acked. False = audition only (working buffer at target). */
+    saved: boolean;
+    /**
+     * Param writes the validator dropped because their applies_only_when
+     * gate excluded the active (or in-batch) block type. Empty list =
+     * everything in the spec landed. Non-empty = those params were not
+     * sent over the wire; the response surfaces them so the caller can
+     * honestly tell the user what didn't apply (vs claiming success on a
+     * silent device no-op).
+     */
+    skipped: ApplyPresetSkippedParam[];
     wallTimeMs: number;
 };
 export type ApplyPresetAtFailure = {
@@ -627,11 +734,27 @@ export type ApplyPresetAtFailure = {
 };
 export type ApplyPresetAtResult = ApplyPresetAtSuccess | ApplyPresetAtFailure;
 
+export interface RunApplyPresetAtOptions {
+    /**
+     * When true (default), the executor runs switch + apply + save. When
+     * false, only switch + apply runs — the preset lives in the working
+     * buffer at the target location and is reversible by switching
+     * presets. The user explicitly saves with `save_preset` (or by re-
+     * calling apply_preset with save:true).
+     */
+    save?: boolean;
+}
+
 /**
- * Run the full switch + apply + save sequence for one entry. Validates the
- * preset shape via `prepareApplyPresetWrites` before any wire writes
- * (matching `am4_apply_preset`'s up-front rejection). Reused by both
- * `am4_apply_preset_at` (single entry) and `am4_apply_setlist` (loop).
+ * Run the switch + apply + (optional) save sequence for one entry.
+ * Validates the preset shape via `prepareApplyPresetWrites` before any
+ * wire writes (matching `am4_apply_preset`'s up-front rejection). Reused
+ * by both `apply_preset(target_location)` (single entry) and
+ * `apply_setlist` (loop).
+ *
+ * `options.save` (default true) controls the save step. Setlist flows
+ * always save (multi-preset intent implies save). Single-preset audition
+ * passes `save: false`.
  *
  * On any failure the function captures which primitive failed (the `step`
  * field) so callers can surface "switch failed at G2" vs "save failed at
@@ -641,13 +764,16 @@ export async function runApplyPresetAt(
     conn: MidiConnection,
     locationIndex: number,
     preset: ApplyPresetInput,
+    options: RunApplyPresetAtOptions = {},
 ): Promise<ApplyPresetAtResult> {
+    const shouldSave = options.save ?? true;
     const startMs = Date.now();
     const shortLocation = formatLocationDisplay(locationIndex);
     let prepared: ApplyPresetPreparedWrite[];
     let nameWriteBytes: number[] | undefined;
+    let skipped: ApplyPresetSkippedParam[];
     try {
-        ({ prepared, nameWriteBytes } = prepareApplyPresetWrites(preset));
+        ({ prepared, nameWriteBytes, skipped } = prepareApplyPresetWrites(preset));
     } catch (err) {
         return {
             ok: false,
@@ -683,6 +809,25 @@ export async function runApplyPresetAt(
         };
     }
 
+    if (!shouldSave) {
+        // Audition-at-target: leave the working buffer at the target,
+        // unsaved. Reversible by switching presets. The save step is
+        // skipped entirely — caller invokes save_preset when the user
+        // explicitly asks to persist.
+        return {
+            ok: true,
+            location: shortLocation,
+            applied: {
+                slots: preset.slots,
+                scenes: preset.scenes ?? [],
+                name: preset.name ?? '',
+            },
+            saved: false,
+            skipped,
+            wallTimeMs: Date.now() - startMs,
+        };
+    }
+
     const saveBytes = buildSaveToLocation(locationIndex);
     const saveResult = await sendAndAwaitAck(conn, saveBytes, isCommandAck);
     if (!saveResult.acked) {
@@ -703,6 +848,8 @@ export async function runApplyPresetAt(
             scenes: preset.scenes ?? [],
             name: preset.name ?? '',
         },
+        saved: true,
+        skipped,
         wallTimeMs: Date.now() - startMs,
     };
 }

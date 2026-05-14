@@ -47,8 +47,11 @@ export function asError(err: unknown): { content: { type: 'text'; text: string }
 // ── PresetSpec zod schemas (shared by apply_preset + apply_setlist) ─
 
 export const presetSlotShape = z.object({
-  slot: z.number().int().min(1).describe(
-    'Slot index (1-based) on linear devices. Grid devices use {row,col} — Wave 2.',
+  slot: z.union([
+    z.number().int().min(1),
+    z.object({ row: z.number().int().min(1), col: z.number().int().min(1) }),
+  ]).describe(
+    'Slot location. Linear devices (AM4): 1-based slot index 1..4. Grid devices (Axe-Fx II): {row,col} 1-based, or a bare number as shorthand for {row:2, col:N} (row-2 linear chain).',
   ),
   block_type: z.string().describe(
     'Block to place (e.g. "amp", "drive", "reverb", "none"). See describe_device.block_types.',
@@ -60,6 +63,12 @@ export const presetSlotShape = z.object({
     'Per-channel params: { "A": { gain: 6, bass: 5 }, "D": { gain: 8 } }. Channel keys match describe_device.capabilities.channel_names.',
   ),
   bypassed: z.boolean().optional(),
+  id: z.string().optional().describe(
+    'v0.4: stable identifier for this block, used by routing edges and scene maps. Default: auto-derived `<block_type>_<instance>` (e.g. amp_1). Required when two blocks of the same type exist in the same preset.',
+  ),
+  instance: z.number().int().min(1).optional().describe(
+    'v0.4: instance number on grid devices that support multiple of the same block type (Amp 1, Amp 2). Default 1. AM4 only accepts 1.',
+  ),
 });
 
 export const presetSceneShape = z.object({
@@ -73,6 +82,18 @@ export const presetSceneShape = z.object({
   name: z.string().max(32).optional(),
 });
 
+export const routingEdgeShape = z.object({
+  from: z.string().describe(
+    'Source block id. Either the explicit `id` on a slots[] entry, or the auto-derived `<block_type>_<instance>` (e.g. amp_1, drive_2).',
+  ),
+  to: z.string().describe(
+    'Destination block id. Same naming rules as `from`.',
+  ),
+  connect: z.boolean().optional().describe(
+    'true (default) adds the cable; false removes it.',
+  ),
+});
+
 export const presetShape = z.object({
   slots: z.array(presetSlotShape).min(1),
   scenes: z.array(presetSceneShape).optional(),
@@ -81,5 +102,8 @@ export const presetShape = z.object({
     'Scene the device lands on after the build (1-indexed, device-clamped). ' +
     'Default 1. Lets the agent preview a specific scene-section ' +
     '(e.g. land on solo scene for an immediate lead test). Devices without scenes ignore this.',
+  ),
+  routing: z.array(routingEdgeShape).optional().describe(
+    'v0.4: explicit routing edges for grid devices (parallel chains, FX loops, wet/dry splits). When omitted on a grid device, the descriptor infers a row-2 linear chain. Linear devices (AM4) reject this field — they route implicitly by slot order. See docs/FRACTAL-PRESET-SCHEMA.md for worked examples.',
   ),
 });

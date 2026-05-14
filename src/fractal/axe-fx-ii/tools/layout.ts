@@ -9,10 +9,13 @@ import * as z from 'zod/v4';
 import { BLOCK_BY_ID } from '@/fractal/axe-fx-ii/blockTypes.js';
 import {
   buildGetGridLayout,
+  buildSetCellRouting,
   buildSetGridCell,
   isGetGridLayoutResponse,
+  isSetCellRoutingResponse,
   isSetGridCellResponse,
   parseGetGridLayoutResponse,
+  parseSetCellRoutingResponse,
   parseSetGridCellResponse,
 } from '@/fractal/axe-fx-ii/setParam.js';
 
@@ -258,6 +261,130 @@ export function registerAxeFxIILayoutTools(server: McpServer): void {
           ` downstream cells — if you modified an existing chain, you` +
           ` may need to re-place downstream blocks to restore their` +
           ` input masks.`,
+      }],
+    };
+  });
+
+  server.registerTool('axefx2_set_cell_routing', {
+    description: [
+      'Add or remove a cable between two adjacent-column grid cells on',
+      'the Axe-Fx II — the wire-level write AxeEdit fires when you',
+      'click-drag a cable between cells. Sends fn 0x06 SET_CELL_ROUTING.',
+      '',
+      'WHAT IT DOES:',
+      '  - With `connect: true` (default), sets a bit in the destination',
+      '    cell\'s input mask so the destination cell receives signal',
+      '    from the source cell\'s row.',
+      '  - With `connect: false`, clears that bit.',
+      '',
+      'WHEN TO USE:',
+      '  - Parallel chains: cable a single source row into multiple',
+      '    destination rows (wet/dry splits, doubled drives, stereo',
+      '    splits). After placing the destination blocks at different',
+      '    rows of the same column, call this tool once per cable.',
+      '  - FX loops: cable from row 1 of one column into row 3 of the',
+      '    next column (or any cross-row pair).',
+      '  - Mergers: cable multiple source rows into a single destination',
+      '    cell (e.g. dry path on row 2, delay on row 1, reverb on row',
+      '    3, all cabled into a mixer block at row 2 of the next col).',
+      '  - Surgical edits: remove a cable without re-doing the layout.',
+      '',
+      'CONSTRAINTS:',
+      '  - `dstCol` MUST equal `srcCol + 1`. The device only allows',
+      '    cables between adjacent columns. Off-column cables (col 2 →',
+      '    col 5) are rejected — the device sends a NACK.',
+      '  - Cross-row cables are fine: row 1 → row 3 is allowed.',
+      '  - The source and destination cells must already hold blocks',
+      '    (or shunts) — cabling to/from an empty cell is a no-op on',
+      '    the audible signal even if the device acks.',
+      '',
+      'POSITION CONVENTION:',
+      '  - `srcRow` / `dstRow`: 1..4 (1-indexed).',
+      '  - `srcCol`: 1..11. `dstCol`: 2..12.',
+      '  - Internal wire encoding: col-major cell index = (col-1)*4 +',
+      '    (row-1). The tool handles the conversion.',
+      '',
+      'PREFERRED HIGH-LEVEL ALTERNATIVE:',
+      '  - `apply_preset` with a `routing: [...]` array does this for',
+      '    you across an entire preset build — one call places every',
+      '    block AND wires every cable. Use this single-cable tool for',
+      '    incremental tweaks to an existing layout.',
+      '',
+      'Status: 🟢 hardware-decoded on Q8.02 XL+ (Session 70, 2026-05-13).',
+      'Wire format byte-exact against AxeEdit\'s outbound capture.',
+    ].join('\n'),
+    inputSchema: {
+      srcRow: z.number().int().min(1).max(4).describe(
+        'Source row 1..4 (the cell the cable comes FROM).',
+      ),
+      srcCol: z.number().int().min(1).max(11).describe(
+        'Source column 1..11 (must be one less than dstCol).',
+      ),
+      dstRow: z.number().int().min(1).max(4).describe(
+        'Destination row 1..4 (the cell the cable goes TO).',
+      ),
+      dstCol: z.number().int().min(2).max(12).describe(
+        'Destination column 2..12. MUST equal srcCol + 1 (device rejects off-column cables).',
+      ),
+      connect: z.boolean().optional().describe(
+        'true (default) adds the cable; false removes it.',
+      ),
+    },
+  }, async ({ srcRow, srcCol, dstRow, dstCol, connect }) => {
+    const cable = connect ?? true;
+    let bytes: number[];
+    try {
+      bytes = buildSetCellRouting({ srcRow, srcCol, dstRow, dstCol, connect: cable });
+    } catch (err) {
+      return {
+        content: [{
+          type: 'text',
+          text: err instanceof Error ? err.message : String(err),
+        }],
+        isError: true,
+      };
+    }
+
+    const c = ensureConn();
+    const responsePromise = c.receiveSysExMatching(
+      isSetCellRoutingResponse,
+      GET_RESPONSE_TIMEOUT_MS,
+    );
+    c.send(bytes);
+
+    const action = cable ? 'Added' : 'Removed';
+    const cableLabel = `R${srcRow}C${srcCol} → R${dstRow}C${dstCol}`;
+    let ackText: string;
+    try {
+      const ack = await responsePromise;
+      const parsed = parseSetCellRoutingResponse(ack);
+      if (parsed.ok) {
+        ackText =
+          `Device ACK: 0x64 echoed_fn=0x06 result_code=0x00 (OK).\n` +
+          `Recv (${ack.length}B): ${toHex(ack)}`;
+      } else {
+        ackText =
+          `Device NACK: 0x64 echoed_fn=0x06 result_code=0x` +
+          `${parsed.resultCode.toString(16).padStart(2, '0')} ` +
+          `(NOT OK — frame parsed, write rejected).\n` +
+          `Recv (${ack.length}B): ${toHex(ack)}\n` +
+          `Common cause: dstCol !== srcCol+1, or one of the cells is empty.`;
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      ackText =
+        `No 0x64 ACK arrived within ${GET_RESPONSE_TIMEOUT_MS}ms: ${msg}.\n` +
+        `The SET_CELL_ROUTING bytes were sent; verify with axefx2_get_grid_layout.`;
+    }
+
+    return {
+      content: [{
+        type: 'text',
+        text:
+          `${action} cable ${cableLabel}.\n` +
+          `Wire (${bytes.length}B): ${toHex(bytes)}\n\n` +
+          ackText + '\n\n' +
+          `Next step: axefx2_get_grid_layout shows the destination cell's input mask.`,
       }],
     };
   });

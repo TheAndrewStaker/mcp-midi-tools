@@ -121,24 +121,28 @@ export function checkApplicability(
 ): ApplicabilityCheck {
   const a = TYPE_APPLICABILITY[blockDotName];
   if (!a) return { applicable: 'unknown' };
-  if (a.always) return { applicable: true };
-  // Strictly gated: need a current-type match. Each gate's typeEnum is
-  // the parameterName of the gate enum (e.g. DELAY_TYPE). Gate's
-  // values is the wire-index list. We map the gate's typeEnum to the
-  // friendly block (most gates resolve to the same block as the param;
-  // rare cross-block gates fall through to 'unknown' rather than
-  // misreport).
+  // Truly universal — no gates at all → applies to every type.
+  if (a.gates.length === 0) {
+    return a.always ? { applicable: true } : { applicable: 'unknown' };
+  }
+  // 2026-05-13 founder-test correction. Original interpretation: if
+  // `a.always === true`, the param applies on every type regardless of
+  // gates ("gates list is informational, special-case pages only"). The
+  // 5F8 Tweed Normal test surfaced that this is wrong for some
+  // metadata-extracted params — amp.master shows `always: true` with a
+  // large primary-type gates list, but the gates list is the AUTHORITATIVE
+  // set of types that expose the param. Wire 185 (5F8 Tweed Normal) is
+  // not in the master gates list; the AM4 silently no-ops master writes
+  // on this amp model. Old interpretation let the write through and
+  // claimed success; new interpretation refuses.
+  //
+  // Concretely: when primary-type gates exist (DISTORT_TYPE / FUZZ_TYPE
+  // / etc.), the active type MUST be in the gate list. Sub-mode gates
+  // (CABINET_MODE, DISTORT_MODE_1, …) are still informational — we
+  // don't track sub-mode state so we can't enforce against them.
   const block = blockDotName.split('.')[0];
   const activeIndex = ctx.currentTypes?.[block];
   if (activeIndex === undefined) return { applicable: 'unknown' };
-  // HW-054: distinguish primary-type gates (DISTORT_TYPE / FUZZ_TYPE /
-  // etc., the enum we track via lastKnownType[<block>.type]) from
-  // sub-mode gates (CABINET_MODE, DISTORT_MODE_1, REVERB_BASETYPE on
-  // amp/reverb expert pages, etc.) that we don't track. Only primary-
-  // type gates can fail the check; if all gates are sub-mode, return
-  // 'unknown' so apply_preset doesn't fire a false-positive advisory
-  // (e.g. amp.type itself is gated by CABINET_MODE=[0], which used to
-  // misfire by comparing the amp.type wire index against [0]).
   let hasPrimaryGate = false;
   for (const g of a.gates) {
     if (!isGateForBlock(g.typeEnum, block)) continue;
@@ -146,7 +150,16 @@ export function checkApplicability(
     hasPrimaryGate = true;
     if (g.values.includes(activeIndex)) return { applicable: true };
   }
-  if (!hasPrimaryGate) return { applicable: 'unknown' };
+  if (!hasPrimaryGate) {
+    // Only sub-mode gates — can't enforce; treat as applicable if
+    // `always: true` (the universal-with-special-pages case) or unknown
+    // otherwise (caller's fallback is "let the write through with a
+    // warning" — see preflightApplicabilityWarning).
+    return a.always ? { applicable: true } : { applicable: 'unknown' };
+  }
+  // Primary-type gates exist AND the active type is NOT in any of
+  // them → the param doesn't apply on this type. Refuse the write
+  // rather than letting the device silently no-op it.
   return { applicable: false, gates: a.gates };
 }
 

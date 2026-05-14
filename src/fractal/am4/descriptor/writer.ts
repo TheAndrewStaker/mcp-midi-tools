@@ -72,15 +72,45 @@ import {
   type ApplyPresetSlotInput,
 } from '@/fractal/am4/tools/applyExecutor.js';
 import { loadFactoryBank, sendFactoryRestore } from '@/fractal/am4/factoryBank.js';
-import { guardActiveAM4BufferOrSave } from '@/fractal/am4/tools/safeEdit.js';
+import {
+  guardActiveAM4BufferOrSave,
+  markAM4Clean,
+} from '@/fractal/am4/tools/safeEdit.js';
 import { readPresetName } from '@/server/shared/readOps.js';
 import { recordInbound, sendAndAwaitAck } from '@/server/shared/wireOps.js';
 import {
   CHANNEL_BLOCKS,
   channelLetter,
   invalidateChannelCache,
+  lastKnownType,
+  observeWrittenParam,
   switchBlockChannel,
 } from '@/server/shared/channels.js';
+import { checkApplicability } from '@/fractal/am4/applicability.js';
+import type { ApplyPresetSkippedParam } from '@/fractal/am4/tools/applyExecutor.js';
+
+/**
+ * Render a skip list (params the applicability gate dropped) into a
+ * single human-readable warning string. Returns `undefined` when the
+ * list is empty so the writer can omit the warning instead of carrying
+ * a trailing "Skipped 0 params" line.
+ *
+ * Surfaced by apply_preset's response so the agent can honestly tell
+ * the user which knobs were dropped from the build (e.g. "amp.mid on
+ * Deluxe Verb Vibrato — no Mid knob on that amp model"). Without this
+ * the agent would claim the writes landed; the device silently no-ops
+ * them and the user wonders why their tweaks aren't audible.
+ */
+function formatSkippedNote(skipped: readonly ApplyPresetSkippedParam[]): string | undefined {
+  if (skipped.length === 0) return undefined;
+  const lines = skipped.map((s) => `  - ${s.block}.${s.paramName}: ${s.reason}`);
+  return (
+    `Dropped ${skipped.length} param${skipped.length === 1 ? '' : 's'} ` +
+    `that don't apply on the active block type${skipped.length === 1 ? '' : 's'} ` +
+    `(would have been silently no-op'd on the device):\n${lines.join('\n')}\n` +
+    `The rest of the build landed; report these as "not applied" to the user.`
+  );
+}
 import {
   formatLocationCode,
   formatLocationDisplay,
@@ -99,12 +129,35 @@ import { parseAm4Location } from './schema.js';
  * input.
  */
 function specToApplyInput(spec: PresetSpec): ApplyPresetInput {
+  // v0.4: linear devices route implicitly by slot order. Routing edges
+  // are a grid-device concept; surfacing them on AM4 means the caller's
+  // mental model is wrong (probably ported a wet/dry grid spec into an
+  // AM4 call). Error early with a clear message rather than silently
+  // ignoring — the silent path would let the user think they have a
+  // parallel chain on a device that can't do one.
+  if (spec.routing !== undefined && spec.routing.length > 0) {
+    throw new DispatchError(
+      'capability_not_supported',
+      'Fractal AM4',
+      `apply_preset on Fractal AM4 does not accept routing edges — AM4 routes implicitly by slot order (slots 1→2→3→4). Drop the routing array, or pick a grid device (Axe-Fx II) for parallel chains / wet-dry splits.`,
+    );
+  }
   const slots: ApplyPresetSlotInput[] = spec.slots.map((s) => {
     if (typeof s.slot !== 'number') {
       throw new DispatchError(
         'capability_not_supported',
         'Fractal AM4',
         `apply_preset on Fractal AM4 uses linear slots — pass slot as a 1..4 integer, not {row,col}.`,
+      );
+    }
+    // v0.4: AM4 has one instance of each block type. Reject anything
+    // other than 1 (or omitted) so the caller gets a clear "this is a
+    // single-instance device" message instead of silent misbehavior.
+    if (s.instance !== undefined && s.instance !== 1) {
+      throw new DispatchError(
+        'capability_not_supported',
+        'Fractal AM4',
+        `apply_preset on Fractal AM4 has one instance per block type (instance=${s.instance} requested for ${s.block_type}). Drop the instance field — AM4 doesn't expose Amp 1 / Amp 2 / etc.`,
       );
     }
     const channels: Record<string, Record<string, number | string>> = {};
@@ -150,6 +203,57 @@ function specToApplyInput(spec: PresetSpec): ApplyPresetInput {
   }
 
   return { slots, name: spec.name, scenes, landingScene };
+}
+
+/**
+ * After a successful save_preset, switch the active location to the
+ * just-saved target so the user sees and hears what they saved. Runs
+ * the standard buffer-dirty gate first — a successful save marks the
+ * buffer clean (by definition: working buffer was just persisted to
+ * the target, so they match), so the gate passes; but if some race
+ * left the dirty flag set, surface a warning rather than clobbering.
+ *
+ * Returns `undefined` on success, or a warning string when the post-
+ * save switch couldn't be performed cleanly. Callers append the
+ * warning to their result rather than reporting a save failure — the
+ * save itself succeeded.
+ */
+async function runPostSaveSwitch(
+  ctx: DispatchCtx,
+  locationIndex: number,
+): Promise<string | undefined> {
+  // The save just persisted the working buffer to the target — the
+  // buffer and the target match. Clean by definition. (Mirrors
+  // safeEdit.ts:144 in the save-active-first path.)
+  markAM4Clean();
+
+  // Belt-and-suspenders: run the dirty gate anyway, so the switch
+  // never silently overwrites unsaved edits. After the markClean
+  // above this should always pass; the gate is here so a future
+  // device-sourced dirty signal (HW-107) automatically catches
+  // races between save-ack and switch-issue.
+  const guard = await guardActiveAM4BufferOrSave(ctx.conn, 'warn');
+  if (!guard.proceed) {
+    return (
+      `Saved, but active location did NOT switch to ${formatLocationDisplay(locationIndex)} ` +
+      `because the buffer-dirty gate refused. ${guard.warningText ?? ''} ` +
+      `Call switch_preset({port:'am4', location:'${formatLocationDisplay(locationIndex)}'}) ` +
+      `with on_active_preset_edited='discard' or 'save_active_first' to complete the move.`
+    );
+  }
+
+  const switchBytes = buildSwitchPreset(locationIndex);
+  const switchResult = await sendAndAwaitAck(ctx.conn, switchBytes, isWriteEcho);
+  // New preset = new channel layout; existing cache is stale.
+  invalidateChannelCache();
+  if (!switchResult.acked) {
+    return (
+      `Saved, but the follow-up switch to ${formatLocationDisplay(locationIndex)} ` +
+      `didn't ack within the write-echo timeout. The save persisted; navigate ` +
+      `to ${formatLocationDisplay(locationIndex)} manually on the AM4 to load it.`
+    );
+  }
+  return undefined;
 }
 
 export const writer: DeviceWriter = {
@@ -199,6 +303,15 @@ export const writer: DeviceWriter = {
       channelSwitched = switchResult.switched;
     }
     const result = await sendAndAwaitAck(ctx.conn, bytes, isWriteEcho);
+    if (result.acked) {
+      // Keep lastKnownType / lastKnownChannel current so cross-call
+      // applicability checks (set_param after a separate amp.type write)
+      // and channel tracking see fresh values. Type-gated refusal logic
+      // lives below in setParams (in-batch context); this observer is
+      // the only thing that catches a type write done in an isolated
+      // call.
+      observeWrittenParam(block, name, value);
+    }
     const enumName = param.unit === 'enum'
       ? (param.enumValues as Record<number, string> | undefined)?.[value]
       : undefined;
@@ -227,12 +340,71 @@ export const writer: DeviceWriter = {
     const writes: WriteResult[] = [];
     let acked_count = 0;
     let unacked_count = 0;
+
+    // In-batch type-gating context. When the agent batches a type write
+    // and a knob write in the same set_params call (e.g. amp.type=
+    // "5F8 Tweed Normal" followed by amp.master=5), the second write
+    // would silently corrupt unrelated state on a model where the knob
+    // doesn't exist — AM4 amp models without master_volume reuse the
+    // master register for amp.gain, so amp.master=5 overwrites
+    // amp.gain=3 to gain=5. Refuse rather than warn: the batch knows
+    // exactly what type just landed and can be deterministic.
+    //
+    // Cross-call gating (set_params after a separate amp.type write)
+    // still relies on observeWrittenParam → lastKnownType, set by
+    // setParam above; an isolated knob write only sees a warning, not
+    // a refusal, because the cache may be stale.
+    const inBatchTypes: Record<string, number> = {};
+
     for (const op of ops) {
+      const isTypeOp = op.name === 'type' || op.name === 'mode';
+
+      // Refusal gate runs BEFORE the wire op. Skipped for type writes
+      // themselves (they're never type-gated against themselves), and
+      // for ops where the param isn't strictly gated.
+      if (!isTypeOp) {
+        const effectiveTypes: Record<string, number> = {
+          ...lastKnownType,
+          ...inBatchTypes,
+        };
+        const check = checkApplicability(`${op.block}.${op.name}`, {
+          currentTypes: effectiveTypes,
+        });
+        if (check.applicable === false) {
+          const activeIndex = effectiveTypes[op.block];
+          writes.push({
+            op: 'set_param',
+            target: `${op.block}.${op.name}`,
+            block: op.block,
+            name: op.name,
+            acked: false,
+            warning:
+              `Skipped (does not apply): ${op.block}.${op.name} is not exposed on ` +
+              `${op.block}.type wire ${activeIndex}. The device would silently no-op ` +
+              `this write (or, on some types, the register is reused for a different ` +
+              `param — e.g. amp.master writes to amp.gain on amps without a master ` +
+              `knob). Report this to the user as "not applied" and skip in the next ` +
+              `iteration. Call list_params(${op.block}) to see which knobs apply on ` +
+              `the current type.`,
+          });
+          unacked_count++;
+          continue;
+        }
+      }
+
       try {
         const r = await writer.setParam!(ctx, op.block, op.name, op.value as number, op.channel);
         writes.push(r);
-        if (r.acked) acked_count++;
-        else unacked_count++;
+        if (r.acked) {
+          acked_count++;
+          if (isTypeOp) {
+            // Future ops in this batch can be gated against the type
+            // that just landed, not the type that was active before.
+            inBatchTypes[op.block] = Math.round(op.value as number);
+          }
+        } else {
+          unacked_count++;
+        }
       } catch (err) {
         writes.push({
           op: 'set_param',
@@ -256,7 +428,7 @@ export const writer: DeviceWriter = {
     invalidateChannelCache();
     return {
       op: 'switch_preset',
-      target: formatLocationCode(locationIndex),
+      target: formatLocationDisplay(locationIndex),
       acked: result.acked,
       warning: result.acked
         ? 'Any unsaved working-buffer edits were discarded. Channel cache cleared.'
@@ -273,7 +445,7 @@ export const writer: DeviceWriter = {
       if (!renameResult.acked) {
         return {
           op: 'save_preset',
-          target: formatLocationCode(locationIndex),
+          target: formatLocationDisplay(locationIndex),
           acked: false,
           warning: `Rename to "${name}" didn't ack — save skipped to avoid persisting the old name.`,
         };
@@ -281,13 +453,36 @@ export const writer: DeviceWriter = {
     }
     const saveBytes = buildSaveToLocation(locationIndex);
     const saveResult = await sendAndAwaitAck(ctx.conn, saveBytes, isCommandAck);
+    if (!saveResult.acked) {
+      return {
+        op: 'save_preset',
+        target: formatLocationDisplay(locationIndex),
+        acked: false,
+        warning:
+          `Save to ${formatLocationDisplay(locationIndex)} sent but no ack — verify by loading another location and coming back.`,
+      };
+    }
+
+    // Switch the active location to the just-saved target so the user
+    // sees and hears what they saved. Without this, the active
+    // location stayed at whatever-was-active-before-the-save and the
+    // user assumed the save targeted the wrong location (the
+    // 2026-05-13 founder-test confusion). Routes through the same
+    // dirty gate switch_preset uses; after a successful save the
+    // buffer is clean by definition (markAM4Clean fires below the
+    // ack path), so the gate passes — but if some race left it
+    // dirty, surface that instead of clobbering.
+    const switchTrouble = await runPostSaveSwitch(ctx, locationIndex);
+    const baseWarning = name
+      ? `Saved "${name}" to ${formatLocationDisplay(locationIndex)}.`
+      : `Working buffer saved to ${formatLocationDisplay(locationIndex)}.`;
     return {
       op: 'save_preset',
-      target: formatLocationCode(locationIndex),
-      acked: saveResult.acked,
-      warning: saveResult.acked
-        ? (name ? `Saved "${name}" to ${formatLocationCode(locationIndex)}.` : `Working buffer saved to ${formatLocationCode(locationIndex)}.`)
-        : `Save to ${formatLocationCode(locationIndex)} sent but no ack — verify by loading another location and coming back.`,
+      target: formatLocationDisplay(locationIndex),
+      acked: true,
+      warning: switchTrouble
+        ? `${baseWarning} ${switchTrouble}`
+        : `${baseWarning} Active location switched to ${formatLocationDisplay(locationIndex)}.`,
     };
   },
 
@@ -383,8 +578,9 @@ export const writer: DeviceWriter = {
     prepareApplyPresetWrites(input);
   },
 
-  async applyPreset(ctx, spec: PresetSpec, target): Promise<ApplyResult> {
+  async applyPreset(ctx, spec: PresetSpec, target, options): Promise<ApplyResult> {
     const input = specToApplyInput(spec);
+    const shouldSave = options?.save ?? false;
 
     const startMs = Date.now();
     if (target !== undefined) {
@@ -392,15 +588,24 @@ export const writer: DeviceWriter = {
       const capture = recordInbound(ctx.conn);
       let result;
       try {
-        result = await runApplyPresetAt(ctx.conn, locationIndex, input);
+        result = await runApplyPresetAt(ctx.conn, locationIndex, input, { save: shouldSave });
       } finally {
         capture.unsubscribe();
       }
       if (result.ok) {
+        const auditionNote = result.saved
+          ? undefined
+          : `Auditioning at ${formatLocationDisplay(locationIndex)} — working buffer only, not saved. ` +
+            `Reversible by switching presets. Call save_preset({port:'am4', location:'${formatLocationDisplay(locationIndex)}'}) ` +
+            `when the user explicitly asks to save / keep / persist.`;
+        const skipNote = formatSkippedNote(result.skipped);
+        const warning = [auditionNote, skipNote].filter((s) => s !== undefined).join(' ');
         return {
           ok: true,
-          steps: spec.slots.length + (spec.scenes?.length ?? 0) + 2,
+          steps: spec.slots.length + (spec.scenes?.length ?? 0) + (shouldSave ? 2 : 1),
           duration_ms: result.wallTimeMs,
+          saved: result.saved,
+          warning: warning.length > 0 ? warning : undefined,
         };
       }
       return {
@@ -418,8 +623,9 @@ export const writer: DeviceWriter = {
     // Working-buffer-only path: validate + run wires, no switch/save.
     let prepared;
     let nameWriteBytes;
+    let skipped: ApplyPresetSkippedParam[];
     try {
-      ({ prepared, nameWriteBytes } = prepareApplyPresetWrites(input));
+      ({ prepared, nameWriteBytes, skipped } = prepareApplyPresetWrites(input));
     } catch (err) {
       return {
         ok: false,
@@ -435,13 +641,16 @@ export const writer: DeviceWriter = {
     } finally {
       capture.unsubscribe();
     }
+    const ackNote = wireResult.unacked > 0
+      ? `${wireResult.unacked} of ${wireResult.totalWrites} writes did not ack within timeout — verify on the AM4 display or call reconnect_midi.`
+      : undefined;
+    const skipNote = formatSkippedNote(skipped);
+    const warning = [ackNote, skipNote].filter((s) => s !== undefined).join(' ');
     return {
       ok: wireResult.unacked === 0,
       steps: wireResult.totalWrites,
       duration_ms: Date.now() - startMs,
-      warning: wireResult.unacked > 0
-        ? `${wireResult.unacked} of ${wireResult.totalWrites} writes did not ack within timeout — verify on the AM4 display or call reconnect_midi.`
-        : undefined,
+      warning: warning.length > 0 ? warning : undefined,
     };
   },
 
@@ -465,7 +674,7 @@ export const writer: DeviceWriter = {
         throw new DispatchError(
           'bad_location',
           'Fractal AM4',
-          `entries[${i}] (location ${formatLocationCode(locationIndex)}): appears more than once in the batch; each location may appear at most once per call.`,
+          `entries[${i}] (location ${formatLocationDisplay(locationIndex)}): appears more than once in the batch; each location may appear at most once per call.`,
         );
       }
       seenLocations.add(locationIndex);
@@ -479,7 +688,7 @@ export const writer: DeviceWriter = {
         throw new DispatchError(
           'value_out_of_range',
           'Fractal AM4',
-          `entries[${i}] (location ${formatLocationCode(locationIndex)}): ${err instanceof Error ? err.message : String(err)}`,
+          `entries[${i}] (location ${formatLocationDisplay(locationIndex)}): ${err instanceof Error ? err.message : String(err)}`,
         );
       }
       resolved.push({

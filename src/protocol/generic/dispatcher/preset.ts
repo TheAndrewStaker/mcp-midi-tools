@@ -68,19 +68,18 @@ export async function executeApplyPreset(args: {
   if (descriptor.writer.validatePreset !== undefined) {
     descriptor.writer.validatePreset(args.spec, args.target_location);
   }
-  // Safe-edit gates fire only when target_location is set (i.e. the
-  // tool is doing an atomic switch+apply+save). Working-buffer-only
-  // mode has no destructive blast radius and no navigation.
-  if (args.target_location !== undefined) {
-    if (args.save_authorized !== true) {
-      throw new DispatchError(
-        'save_authorization_required',
-        descriptor.display_name,
-        `apply_preset(target_location=${JSON.stringify(args.target_location)}) is destructive and ` +
-          `requires save_authorized=true. Use apply_preset WITHOUT target_location for audition.`,
-      );
-    }
-  }
+  // Safe-edit contract for target_location:
+  //   - The buffer-dirty gate ALWAYS runs (target_location implies the
+  //     active location is about to change, so unsaved edits would be
+  //     lost without the gate).
+  //   - The save step requires explicit save_authorized=true. Without
+  //     it, the executor runs switch + apply only ("audition at
+  //     target" — working buffer holds the new build at the target
+  //     location; reversible by switching presets).
+  //
+  // Working-buffer-only mode (no target_location) skips both gates:
+  // no navigation, no save, the user's audition stays at the current
+  // active location.
   const ctx = openCtx(descriptor);
   if (args.target_location !== undefined && descriptor.writer.guardActiveBufferOrSave) {
     const mode = args.on_active_preset_edited ?? 'warn';
@@ -93,7 +92,10 @@ export async function executeApplyPreset(args: {
       );
     }
   }
-  const result = await descriptor.writer.applyPreset(ctx, args.spec, args.target_location);
+  const options = args.target_location !== undefined
+    ? { save: args.save_authorized === true }
+    : undefined;
+  const result = await descriptor.writer.applyPreset(ctx, args.spec, args.target_location, options);
   return { ...result, device: descriptor.display_name };
 }
 
