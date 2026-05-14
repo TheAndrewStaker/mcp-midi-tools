@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * MCP MIDI Tools — MCP server (stdio).
+ * MCP MIDI Control — MCP server (stdio).
  *
  * The boot + register-loop. One `register*Tools(server)` call per
  * supported device, plus a couple of generic-MIDI primitive families.
@@ -31,9 +31,9 @@
  * build + config-file detection + idempotent merge), or hand-edit
  * `%APPDATA%\Claude\claude_desktop_config.json` after `npm run build`:
  *
- *   "mcp-midi-tools": {
+ *   "mcp-midi-control": {
  *     "command": "node",
- *     "args": ["C:\\\\dev\\\\mcp-midi-tools\\\\dist\\\\server\\\\index.js"],
+ *     "args": ["C:\\\\dev\\\\mcp-midi-control\\\\dist\\\\server\\\\index.js"],
  *     "env": {}
  *   }
  *
@@ -78,7 +78,7 @@ import { HYDRASYNTH_DESCRIPTOR } from '@/asm/hydrasynth-explorer/descriptor.js';
  * being copy-pasted into every tool description.
  */
 const SERVER_INSTRUCTIONS = [
-  'mcp-midi-tools is a USB MIDI control server for Fractal AM4, Fractal',
+  'mcp-midi-control is a USB MIDI control server for Fractal AM4, Fractal',
   'Axe-Fx II XL+, ASM Hydrasynth Explorer, and any generic MIDI device the',
   'OS exposes. Pick tools by intent, not by name length.',
   '',
@@ -120,7 +120,7 @@ const SERVER_INSTRUCTIONS = [
 ].join('\n');
 
 const server = new McpServer({
-  name: 'mcp-midi-tools',
+  name: 'mcp-midi-control',
   version: '0.1.0',
 }, {
   instructions: SERVER_INSTRUCTIONS,
@@ -181,7 +181,7 @@ async function main(): Promise<void> {
   // The port enumeration mirrors what list_midi_ports would return at
   // this moment; if the user reports "AM4 not connected" later, the
   // startup banner captures whatever state the server started with.
-  console.error('MCP MIDI Tools MCP server running on stdio.');
+  console.error('MCP MIDI Control MCP server running on stdio.');
   try {
     const { inputs, outputs } = listMidiPorts();
     const am4In = inputs.find((p) => p.looksLikeAM4);

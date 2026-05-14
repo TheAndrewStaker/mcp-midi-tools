@@ -2,13 +2,13 @@
 /**
  * scripts/build-installer.ts
  *
- * Build the MCP MIDI Tools release bundle for v0.1.0.
+ * Build the MCP MIDI Control release bundle for v0.1.0.
  *
  * Output:
  *   build/staging/                              -- bundle contents (also reused
  *                                                  if/when the Inno Setup .exe
  *                                                  installer ships in v0.2)
- *   build/dist/mcp-midi-tools-v<version>.zip    -- shippable ZIP (this is
+ *   build/dist/mcp-midi-control-v<version>.zip    -- shippable ZIP (this is
  *                                                  what users download)
  *
  * Steps performed:
@@ -65,13 +65,13 @@ const NODE_CACHE = path.join(BUILD_DIR, 'node-cache');
 const NODE_DIR_NAME = `node-v${NODE_VERSION}-${NODE_ARCH}`;
 const NODE_ZIP_NAME = `${NODE_DIR_NAME}.zip`;
 const NODE_DOWNLOAD_URL = `https://nodejs.org/dist/v${NODE_VERSION}/${NODE_ZIP_NAME}`;
-const RELEASE_DIR_NAME = `mcp-midi-tools-v${VERSION}`;
+const RELEASE_DIR_NAME = `mcp-midi-control-v${VERSION}`;
 const RELEASE_ZIP_PATH = path.join(DIST_DIR, `${RELEASE_DIR_NAME}.zip`);
 
 const cleanFlag = process.argv.includes('--clean');
 
 async function main() {
-  console.log(`[build] MCP MIDI Tools installer staging — bundling Node v${NODE_VERSION}`);
+  console.log(`[build] MCP MIDI Control installer staging — bundling Node v${NODE_VERSION}`);
 
   // 1. Clean staging (always); optionally clean node-cache.
   if (fs.existsSync(STAGING)) {

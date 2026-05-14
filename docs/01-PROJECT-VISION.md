@@ -1,4 +1,4 @@
-# MCP MIDI Tools — Project Vision
+# MCP MIDI Control — Project Vision
 
 ## One-Line Pitch
 Talk to Claude, get authentic guitar tones instantly loaded onto your Fractal AM4.

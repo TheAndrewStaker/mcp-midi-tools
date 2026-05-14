@@ -1,4 +1,4 @@
-MCP MIDI Tools v0.1.0
+MCP MIDI Control v0.1.0
 =====================
 
 A local MCP server that lets Claude Desktop talk to your USB MIDI
@@ -15,10 +15,10 @@ INSTALL (3 steps)
 2. Double-click setup.cmd. A console window opens, registers this
    folder with Claude Desktop, and waits for you to press a key.
 
-3. Open Claude Desktop. Start a new chat. The mcp-midi-tools server
+3. Open Claude Desktop. Start a new chat. The mcp-midi-control server
    appears in the connector panel (the + button near the chat input).
 
-That's it. Ask Claude something like "Using mcp-midi-tools, list the
+That's it. Ask Claude something like "Using mcp-midi-control, list the
 MIDI ports you can see" to confirm your gear is reachable.
 
 If your gear's tools don't appear, or Claude says it can't find the
@@ -50,7 +50,7 @@ No, and the safety is enforced by the server, not by trust in the AI:
 For the full safety model + what to say to the AI to get the result
 you want, read SAFETY-FOR-MUSICIANS.md in the docs folder of the
 GitHub repo:
-https://github.com/TheAndrewStaker/mcp-midi-tools/blob/main/docs/SAFETY-FOR-MUSICIANS.md
+https://github.com/TheAndrewStaker/mcp-midi-control/blob/main/docs/SAFETY-FOR-MUSICIANS.md
 
 REQUIREMENTS
 ------------
@@ -75,7 +75,7 @@ FAQ
 
 Q: Windows says "this file came from another computer." Is it safe?
 A: Yes. v0.1.0 ships unsigned to keep the project free; the source is
-   open at https://github.com/TheAndrewStaker/mcp-midi-tools and you
+   open at https://github.com/TheAndrewStaker/mcp-midi-control and you
    can read every line including the install scripts. To dismiss the
    warning, right-click the downloaded ZIP, choose Properties, tick
    Unblock, then extract.
@@ -113,6 +113,6 @@ for the full trademark statement.
 LINKS
 -----
 
-- Source + issues: https://github.com/TheAndrewStaker/mcp-midi-tools
-- Safety guide:    https://github.com/TheAndrewStaker/mcp-midi-tools/blob/main/docs/SAFETY-FOR-MUSICIANS.md
+- Source + issues: https://github.com/TheAndrewStaker/mcp-midi-control
+- Safety guide:    https://github.com/TheAndrewStaker/mcp-midi-control/blob/main/docs/SAFETY-FOR-MUSICIANS.md
 - Forum thread:    [link goes in the launch post]

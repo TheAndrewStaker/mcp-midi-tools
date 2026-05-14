@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-rem MCP MIDI Tools v0.1.0 — setup script.
+rem MCP MIDI Control v0.1.0 — setup script.
 rem
 rem Run this once after extracting the ZIP. It writes an entry into
 rem Claude Desktop's claude_desktop_config.json so the tools appear in
@@ -11,7 +11,7 @@ set "INSTALL_DIR=%~dp0"
 if "%INSTALL_DIR:~-1%"=="\" set "INSTALL_DIR=%INSTALL_DIR:~0,-1%"
 
 echo.
-echo MCP MIDI Tools v0.1.0 — setup
+echo MCP MIDI Control v0.1.0 — setup
 echo Install location: %INSTALL_DIR%
 echo.
 
@@ -28,7 +28,7 @@ echo Setup complete.
 echo.
 echo Next:
 echo   1. If Claude Desktop is running, fully quit it (system tray right-click then Quit).
-echo   2. Reopen Claude Desktop. The MCP MIDI Tools server appears in the connector panel.
+echo   2. Reopen Claude Desktop. The MCP MIDI Control server appears in the connector panel.
 echo   3. Make sure your AM4 USB driver is installed: https://www.fractalaudio.com/am4-downloads/
 echo.
 pause

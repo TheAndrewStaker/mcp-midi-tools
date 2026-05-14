@@ -1,4 +1,4 @@
-# Idempotently add or update the mcp-midi-tools entry inside
+# Idempotently add or update the mcp-midi-control entry inside
 # Claude Desktop's claude_desktop_config.json files.
 #
 # Detects both Claude Desktop variants:
@@ -115,18 +115,18 @@ foreach ($claudeDir in $candidates) {
         env = [pscustomobject]@{}
     }
 
-    # Add or update mcp-midi-tools.
-    if ($config.mcpServers.PSObject.Properties.Name -contains 'mcp-midi-tools') {
-        $config.mcpServers.'mcp-midi-tools' = $serverEntry
+    # Add or update mcp-midi-control.
+    if ($config.mcpServers.PSObject.Properties.Name -contains 'mcp-midi-control') {
+        $config.mcpServers.'mcp-midi-control' = $serverEntry
     } else {
-        $config.mcpServers | Add-Member -NotePropertyName 'mcp-midi-tools' -NotePropertyValue $serverEntry -Force
+        $config.mcpServers | Add-Member -NotePropertyName 'mcp-midi-control' -NotePropertyValue $serverEntry -Force
     }
 
     # Write back as UTF-8 without BOM (matches what Claude Desktop expects).
     $json = $config | ConvertTo-Json -Depth 32
     [System.IO.File]::WriteAllText($configPath, $json, [System.Text.UTF8Encoding]::new($false))
 
-    Write-Host "Wrote mcp-midi-tools entry to $configPath"
+    Write-Host "Wrote mcp-midi-control entry to $configPath"
     $writtenAny = $true
 }
 

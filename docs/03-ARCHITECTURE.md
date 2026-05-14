@@ -1,4 +1,4 @@
-# Architecture — MCP MIDI Tools
+# Architecture — MCP MIDI Control
 
 ## System Overview
 
@@ -237,7 +237,7 @@ Flat index mapping (for internal use):
 
 ## Repo Structure
 ```
-mcp-midi-tools/
+mcp-midi-control/
   src/
     server/         — MCP server, tool definitions
     protocol/       — SysEx encoder/decoder, block maps

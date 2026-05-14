@@ -12,10 +12,10 @@ that prove the tool works and build up your fluency.
 
 ## Conversation 1 — make sure it sees the device
 
-Open a new Claude Desktop chat. Confirm `mcp-midi-tools` is enabled in
+Open a new Claude Desktop chat. Confirm `mcp-midi-control` is enabled in
 the connector panel (look for the `+` near the chat input). Then ask:
 
-> Using mcp-midi-tools, list the MIDI ports you can see and tell me
+> Using mcp-midi-control, list the MIDI ports you can see and tell me
 > if my AM4 is detected.
 
 What you should see: Claude calls `list_midi_ports`, reports something

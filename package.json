@@ -1,5 +1,5 @@
 {
-  "name": "mcp-midi-tools",
+  "name": "mcp-midi-control",
   "version": "0.1.0",
   "description": "Talk to Claude, control your MIDI gear. Local MCP server with first-class Fractal AM4 support.",
   "private": true,

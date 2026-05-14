@@ -1,7 +1,7 @@
 # scripts/
 
 Dev-time tooling for this project. Not shipped to end users — the
-installer bundle (`build/dist/mcp-midi-tools-v*.zip`) only contains
+installer bundle (`build/dist/mcp-midi-control-v*.zip`) only contains
 `dist/` + Node + production deps. These scripts run via `tsx` against
 the TypeScript source.
 

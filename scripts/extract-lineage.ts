@@ -1,5 +1,5 @@
 /**
- * MCP MIDI Tools — Model Lineage Extractor (P3-007)
+ * MCP MIDI Control — Model Lineage Extractor (P3-007)
  *
  * Parses Fractal Audio's wiki scrape + Blocks Guide PDF-text into
  * per-type lineage records, cross-referenced against the canonical

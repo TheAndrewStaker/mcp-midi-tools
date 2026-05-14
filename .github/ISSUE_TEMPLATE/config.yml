@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Safety question (what the AI can/can't do to my presets)
-    url: https://github.com/TheAndrewStaker/mcp-midi-tools/blob/main/docs/SAFETY-FOR-MUSICIANS.md
+    url: https://github.com/TheAndrewStaker/mcp-midi-control/blob/main/docs/SAFETY-FOR-MUSICIANS.md
     about: Read this first if you're worried about losing presets to the AI.
   - name: Getting started (first day conversations)
-    url: https://github.com/TheAndrewStaker/mcp-midi-tools/blob/main/docs/GETTING-STARTED.md
+    url: https://github.com/TheAndrewStaker/mcp-midi-control/blob/main/docs/GETTING-STARTED.md
     about: Copy-pasteable prompts and what to expect.

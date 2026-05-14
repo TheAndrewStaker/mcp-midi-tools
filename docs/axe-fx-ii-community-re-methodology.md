@@ -3,7 +3,7 @@
 How earlier third-party developers reverse-engineered the Fractal
 Audio MIDI SysEx protocol — the capture techniques, the open-source
 artefacts, the gaps still in the public corpus, and what
-`mcp-midi-tools` does that pushes the state of the art forward.
+`mcp-midi-control` does that pushes the state of the art forward.
 
 This is a snapshot of the public landscape as of 2026-05. Useful for
 new contributors who want to know where existing community knowledge
@@ -399,7 +399,7 @@ defined subset". Where we improve on it:
 
 ### Byte-exact golden test harness
 
-`mcp-midi-tools` runs three goldens on every preflight:
+`mcp-midi-control` runs three goldens on every preflight:
 
 - **`verify-pack`** — packed-float pack/unpack round-trip (10 amp
   gain / EQ samples).

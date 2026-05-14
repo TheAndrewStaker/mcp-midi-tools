@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for the request. mcp-midi-tools' design is built to take
+        Thanks for the request. mcp-midi-control' design is built to take
         new devices via the `DeviceDescriptor` pattern — see
         `docs/MULTI-DEVICE-ROADMAP.md` for the porting guide and
         `src/asm/hydrasynth-explorer/` for a reference descriptor that

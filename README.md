@@ -1,8 +1,8 @@
-# MCP MIDI Tools
+# MCP MIDI Control
 
 Talk to Claude. Control your MIDI gear.
 
-MCP MIDI Tools is a local [Model Context Protocol](https://modelcontextprotocol.io)
+MCP MIDI Control is a local [Model Context Protocol](https://modelcontextprotocol.io)
 (MCP) server that lets Claude drive USB MIDI hardware in plain English.
 First-class support today for the **Fractal Audio AM4**, **Fractal
 Axe-Fx II XL+**, and **ASM Hydrasynth Explorer** — block layout, amp/
@@ -141,7 +141,7 @@ confirm each device is visible to the server.
 
 ### From the release ZIP (recommended)
 
-1. Download `mcp-midi-tools-v0.1.0.zip` from [the latest release](https://github.com/TheAndrewStaker/mcp-midi-tools/releases/latest).
+1. Download `mcp-midi-control-v0.1.0.zip` from [the latest release](https://github.com/TheAndrewStaker/mcp-midi-control/releases/latest).
 2. Right-click the ZIP, choose Properties, tick **Unblock**, then
    click OK. (Windows tags downloaded files with a "came from another
    computer" flag; unblocking now avoids per-file warnings later.)
@@ -152,7 +152,7 @@ confirm each device is visible to the server.
 5. Double-click `setup.cmd` inside the extracted folder. A console
    window opens, registers the server with Claude Desktop, and waits
    for a keypress.
-6. Open Claude Desktop. The mcp-midi-tools server appears in the
+6. Open Claude Desktop. The mcp-midi-control server appears in the
    connector panel (the + button near the chat input).
 
 To uninstall: double-click `uninstall.cmd` to remove the entry from
@@ -177,8 +177,8 @@ then delete the extracted folder.
 Clone the repo, install dependencies, and run the hardware smoke test:
 
 ```bash
-git clone https://github.com/TheAndrewStaker/mcp-midi-tools.git
-cd mcp-midi-tools
+git clone https://github.com/TheAndrewStaker/mcp-midi-control.git
+cd mcp-midi-control
 npm install
 npm run preflight    # typecheck + protocol goldens + MCP smoke test
 npm run write-test   # changes amp gain on the device — confirms MIDI path
@@ -234,15 +234,15 @@ Desktop's config and add the entry below.
 If the file doesn't exist, create it. If both Windows variants of
 Claude Desktop are installed, edit both files. macOS users replace
 the Windows path in the JSON below with their `dist/server/index.js`
-absolute path (e.g. `/Users/you/code/mcp-midi-tools/dist/server/index.js`)
+absolute path (e.g. `/Users/you/code/mcp-midi-control/dist/server/index.js`)
 and use forward slashes.
 
 ```json
 {
   "mcpServers": {
-    "mcp-midi-tools": {
+    "mcp-midi-control": {
       "command": "node",
-      "args": ["C:\\path\\to\\mcp-midi-tools\\dist\\server\\index.js"],
+      "args": ["C:\\path\\to\\mcp-midi-control\\dist\\server\\index.js"],
       "env": {}
     }
   }
@@ -270,7 +270,7 @@ button → Connectors** in a new chat.
 From your project directory, after `npm run build`:
 
 ```bash
-claude mcp add mcp-midi-tools -- node C:\path\to\mcp-midi-tools\dist\server\index.js
+claude mcp add mcp-midi-control -- node C:\path\to\mcp-midi-control\dist\server\index.js
 ```
 
 Then start `claude` and the tools are available in your session.
@@ -286,7 +286,7 @@ npm run server   # tsx-based, picks up source changes immediately
 For wiring into another MCP client (cwd-agnostic):
 
 ```bash
-node C:\path\to\mcp-midi-tools\dist\server\index.js
+node C:\path\to\mcp-midi-control\dist\server\index.js
 ```
 
 The server speaks MCP over stdio in either case.
@@ -318,7 +318,7 @@ The JSON shape is near-universal across hosts:
 ```json
 {
   "mcpServers": {
-    "mcp-midi-tools": {
+    "mcp-midi-control": {
       "command": "node",
       "args": ["/path/to/dist/server/index.js"]
     }
@@ -343,7 +343,7 @@ drivers) are the same regardless of host.
 
 1. Open a new chat in your Claude client. Make sure the AM4 is powered
    on and connected by USB.
-2. Ask: **"Using mcp-midi-tools, list the MIDI ports you can see."**
+2. Ask: **"Using mcp-midi-control, list the MIDI ports you can see."**
    Claude calls `list_midi_ports` and reports a verdict like *"AM4
    detected (in: AM4, out: AM4)"*. If it says the AM4 isn't visible,
    replug the USB cable.

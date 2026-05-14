@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Post-install MIDI device check for MCP MIDI Tools.
+ * Post-install MIDI device check for MCP MIDI Control.
  *
  * Invoked by `installer/verify-midi.cmd` after the user runs setup.cmd.
  * Asks node-midi directly which ports the OS is exposing, classifies
@@ -51,7 +51,7 @@ const allNeedles = FAMILIES.flatMap((f) => f.needles);
 const { inputs, outputs } = listMidiPorts(allNeedles);
 
 console.log('');
-console.log('MCP MIDI Tools — MIDI device check');
+console.log('MCP MIDI Control — MIDI device check');
 console.log('');
 
 const detected: DeviceFamily[] = [];
@@ -108,7 +108,7 @@ if (detected.length > 0) {
   console.log(`Result: ${names} fully connected.`);
   console.log('');
   console.log('Next: open Claude Desktop and try:');
-  console.log('  "Using mcp-midi-tools, list the MIDI ports you can see."');
+  console.log('  "Using mcp-midi-control, list the MIDI ports you can see."');
   console.log('');
   process.exit(0);
 }

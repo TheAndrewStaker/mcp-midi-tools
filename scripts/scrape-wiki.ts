@@ -1,5 +1,5 @@
 /**
- * MCP MIDI Tools — Fractal Audio Wiki Scraper
+ * MCP MIDI Control — Fractal Audio Wiki Scraper
  *
  * Fetches all AM4-relevant wiki pages and saves them as markdown
  * files in docs/wiki/. Uses MediaWiki's ?action=raw endpoint to

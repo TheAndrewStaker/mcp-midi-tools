@@ -1,4 +1,4 @@
-# Idempotently REMOVE the mcp-midi-tools entry from Claude Desktop's
+# Idempotently REMOVE the mcp-midi-control entry from Claude Desktop's
 # claude_desktop_config.json files. Called from the Inno Setup uninstaller.
 #
 # Walks the same candidate locations as merge-mcp-config.ps1. If a config
@@ -36,16 +36,16 @@ foreach ($configPath in $candidates) {
         continue
     }
 
-    if ($config.mcpServers.PSObject.Properties.Name -notcontains 'mcp-midi-tools') {
+    if ($config.mcpServers.PSObject.Properties.Name -notcontains 'mcp-midi-control') {
         continue
     }
 
-    $config.mcpServers.PSObject.Properties.Remove('mcp-midi-tools')
+    $config.mcpServers.PSObject.Properties.Remove('mcp-midi-control')
 
     $json = $config | ConvertTo-Json -Depth 32
     [System.IO.File]::WriteAllText($configPath, $json, [System.Text.UTF8Encoding]::new($false))
 
-    Write-Host "Removed mcp-midi-tools entry from $configPath"
+    Write-Host "Removed mcp-midi-control entry from $configPath"
 }
 
 exit 0

@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-rem MCP MIDI Tools v0.1.0 — post-install MIDI device check.
+rem MCP MIDI Control v0.1.0 — post-install MIDI device check.
 rem
 rem Asks the OS what MIDI devices it can see and reports whether the
 rem AM4, Axe-Fx II, or Hydrasynth is visible. Bypasses Claude Desktop

@@ -4,7 +4,7 @@
  *
  * Side-branch exploratory work — see CLAUDE.md and
  * `memory/feedback_am4_depth_gates_wave_expansion.md`. This module
- * registers the hydra_* tool family on the shared mcp-midi-tools
+ * registers the hydra_* tool family on the shared mcp-midi-control
  * server alongside the AM4 + Axe-Fx II surfaces.
  *
  * `registerHydrasynthTools(server)` composes the per-family
@@ -64,7 +64,7 @@ export function registerHydrasynthTools(server: McpServer): void {
 //
 // `npx tsx src/asm/hydrasynth-explorer/server.ts` still works for
 // one-off testing of the Hydrasynth tools in isolation, without
-// running the full mcp-midi-tools server. Production launch path is
+// running the full mcp-midi-control server. Production launch path is
 // the main server registering both AM4 and Hydrasynth tools.
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';

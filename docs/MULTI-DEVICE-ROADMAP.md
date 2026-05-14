@@ -1,7 +1,7 @@
 # Multi-device roadmap
 
 > **Status (2026-05-04):** Plan-of-record, not yet implemented. v0.1.0
-> ships as a single repo (`mcp-midi-tools`) carrying both the framework
+> ships as a single repo (`mcp-midi-control`) carrying both the framework
 > and the Fractal AM4 device pack together. The split into a framework
 > repo + per-device pack repos is queued for v0.2, after one Wave 1
 > expansion (Axe-Fx II) has validated the framework boundary.
@@ -43,9 +43,9 @@ JD-Xi).
 
 | Tier | Responsibility | Examples | Shipped as |
 |---|---|---|---|
-| **L1 — MCP project** (this repo) | The ONLY MCP layer. MCP server scaffolding, tool registration, port management, General-MIDI primitive MCP tools, display-first API conventions, vendor-specific MCP wrappers (`apply_preset` / `set_param` / etc. for each device the project supports). Imports vendor protocol packages and exposes their primitives as MCP tools. | `mcp-midi-tools` | One repo, one npm package |
+| **L1 — MCP project** (this repo) | The ONLY MCP layer. MCP server scaffolding, tool registration, port management, General-MIDI primitive MCP tools, display-first API conventions, vendor-specific MCP wrappers (`apply_preset` / `set_param` / etc. for each device the project supports). Imports vendor protocol packages and exposes their primitives as MCP tools. | `mcp-midi-control` | One repo, one npm package |
 | **L2 — Vendor protocol packages** | Pure MIDI / protocol decoders for one vendor's product family. NO MCP. Each package contains: SysEx envelope + checksum + shared encoding helpers (vendor-level), per-device protocol decoder + parameter registry + applicability data + lineage records (per-device subdirs within the vendor package). | `fractal-midi` (AM4 + Axe-Fx II + Axe-Fx III + FM9 + FM3 + VP4), `asm-midi` (Hydrasynth family), `roland-midi` (RC-505 + VE-500 + SPD-SX + JD-Xi) | One repo per vendor, one npm package per vendor |
-| **L3 — User distribution** | Bundles `mcp-midi-tools` + native deps + Claude Desktop config setup. End-user-installable artifact. | Today: `setup.cmd` ZIP (per [memory](../../Users/Steph/.claude/projects/C--dev-am4-tone-agent/memory/project_distribution_model.md)); future: signed `.exe` (P5 milestones) | Separate repo for distribution form |
+| **L3 — User distribution** | Bundles `mcp-midi-control` + native deps + Claude Desktop config setup. End-user-installable artifact. | Today: `setup.cmd` ZIP (per [memory](../../Users/Steph/.claude/projects/C--dev-am4-tone-agent/memory/project_distribution_model.md)); future: signed `.exe` (P5 milestones) | Separate repo for distribution form |
 
 L2 is pure code/data, no native deps, npm-friendly, Apache-2.0. The MCP
 project depends on whichever vendor packages it wants to support — it's
@@ -87,7 +87,7 @@ refactor. Per-device subdirectories within `fractal/` so adding
 Axe-Fx II later is a sibling folder.
 
 ```
-github.com/TheAndrewStaker/mcp-midi-tools          ← single repo (rename from am4-tone-agent)
+github.com/TheAndrewStaker/mcp-midi-control          ← single repo (rename from am4-tone-agent)
 └── src/
     ├── server/                          ← MCP server entrypoint, stays
     │   └── index.ts
@@ -123,11 +123,11 @@ generic families.
 ### After Phase 2 split (target for v0.2 or first Fractal expansion)
 
 ```
-github.com/TheAndrewStaker/mcp-midi-tools          ← MCP project (this repo)
+github.com/TheAndrewStaker/mcp-midi-control          ← MCP project (this repo)
 github.com/TheAndrewStaker/fractal-midi            ← Fractal protocol family (extracted)
 github.com/TheAndrewStaker/asm-midi                ← ASM protocol family (Wave 1, BK-031)
 github.com/TheAndrewStaker/roland-midi             ← Roland/Boss protocol family (later)
-github.com/TheAndrewStaker/mcp-midi-tools-installer ← L3 distribution (later)
+github.com/TheAndrewStaker/mcp-midi-control-installer ← L3 distribution (later)
 ```
 
 `fractal-midi` would expose subpaths per device:
@@ -139,18 +139,18 @@ import { fractalChecksum } from 'fractal-midi/shared';
 
 Naming conventions:
 
-- MCP project: `mcp-midi-tools` (per [BK-029](04-BACKLOG.md), decided 2026-04-19).
+- MCP project: `mcp-midi-control` (per [BK-029](04-BACKLOG.md), decided 2026-04-19).
 - Vendor protocol packages: `<vendor>-midi` (e.g. `fractal-midi`,
   `asm-midi`, `roland-midi`). NO `mcp-` prefix — these aren't MCP
   packages, they're MIDI protocol libraries that anyone can consume.
 - Distribution: separate, branded if/when needed.
 - **Product names never include device names** (per [memory](../../Users/Steph/.claude/projects/C--dev-am4-tone-agent/memory/project_multi_repo_architecture.md)). The MCP project is the product; vendor packages are reusable libraries.
 
-## Boundary — what stays in mcp-midi-tools vs what moves to vendor packages
+## Boundary — what stays in mcp-midi-control vs what moves to vendor packages
 
 This is the load-bearing decision the directory restructure encodes.
 
-### L1 mcp-midi-tools (this repo, the MCP layer)
+### L1 mcp-midi-control (this repo, the MCP layer)
 
 Everything that knows about MCP, plus everything that's MIDI-generic
 across vendors:
@@ -253,7 +253,7 @@ is fine while AM4 hardens.
 
 ### Phase 0 — Already done (2026-04-19 → 2026-05-04)
 
-- [x] Decide framework name (`mcp-midi-tools`, BK-029).
+- [x] Decide framework name (`mcp-midi-control`, BK-029).
 - [x] Rename `package.json` `name` field.
 - [x] Build out General-MIDI primitives (BK-030) so the name isn't aspirational.
 - [x] Decide multi-repo OSS architecture in principle ([memory](../../Users/Steph/.claude/projects/C--dev-am4-tone-agent/memory/project_multi_repo_architecture.md)).
@@ -263,12 +263,12 @@ is fine while AM4 hardens.
 - [ ] Restructure `src/` into `src/core/` + `src/fractal/{shared,am4}/`.
       Mechanical move, no API change. Preflight catches regressions.
       `src/server/` stays at top level (MCP entrypoint).
-- [x] `mcp-midi-tools` GitHub repo created (empty, ready to receive
-      the rebranded codebase). https://github.com/TheAndrewStaker/mcp-midi-tools
+- [x] `mcp-midi-control` GitHub repo created (empty, ready to receive
+      the rebranded codebase). https://github.com/TheAndrewStaker/mcp-midi-control
 - [ ] Publish this roadmap doc as the architectural reference for
       launch posts ("here's where it's going").
 - [ ] Push current repo (after restructure + rename + cleanup) as the
-      first commit of `mcp-midi-tools`. Old `am4-tone-agent` repo can
+      first commit of `mcp-midi-control`. Old `am4-tone-agent` repo can
       either redirect or be archived. Founder decides between
       "fresh-history rebrand" and "git filter-repo'd preservation".
 
@@ -280,17 +280,17 @@ the AM4 surface is mature enough that splitting earns its keep.
 - [ ] Extract `src/fractal/` into its own repo: `fractal-midi`.
       Pure protocol package, no MCP. Subpaths per device
       (`fractal-midi/am4`, `fractal-midi/axe-fx-ii`).
-- [ ] Update `mcp-midi-tools` to depend on `fractal-midi` as an npm
+- [ ] Update `mcp-midi-control` to depend on `fractal-midi` as an npm
       package instead of a local subdir.
-- [ ] Add Axe-Fx II MCP tool wrappers in `mcp-midi-tools` that
+- [ ] Add Axe-Fx II MCP tool wrappers in `mcp-midi-control` that
       consume `fractal-midi/axe-fx-ii` primitives.
 - [ ] First non-Fractal vendor package. If founder goes Hydrasynth
       next: create `asm-midi` repo, add Hydrasynth MCP wrappers in
-      `mcp-midi-tools`.
+      `mcp-midi-control`.
 
 ### Phase 3 — Multi-vendor + community (post-v0.2)
 
-Once `mcp-midi-tools` consumes 2+ vendor packages and the contract is
+Once `mcp-midi-control` consumes 2+ vendor packages and the contract is
 published, external contributors can author vendor packages without
 touching the MCP project. The plan is:
 
@@ -299,7 +299,7 @@ touching the MCP project. The plan is:
   already exists for AM4; generalize for other devices).
 - Conformance test suite (golden writes + reads against captures)
   any vendor package must pass before being listed.
-- "Approved vendor packages" registry in the `mcp-midi-tools` README,
+- "Approved vendor packages" registry in the `mcp-midi-control` README,
   pinned versions per release.
 
 ## Open questions (revisit at Phase 2)
@@ -325,7 +325,7 @@ touching the MCP project. The plan is:
 Even though the split itself doesn't ship in v0.1.0, having this
 roadmap committed lets the launch post say:
 
-> "v0.1.0 is `mcp-midi-tools` with Fractal AM4 support — the MCP layer
+> "v0.1.0 is `mcp-midi-control` with Fractal AM4 support — the MCP layer
 > is the product, AM4 is the first device. Axe-Fx II support extends
 > the same Fractal protocol code (queued as v0.2). Hydrasynth Explorer
 > and Roland/Boss device families are queued behind that. The Fractal

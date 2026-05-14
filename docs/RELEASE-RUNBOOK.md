@@ -47,7 +47,7 @@ Acceptance:
 - `build/staging/dist/server/index.js` exists.
 - `build/staging/setup.cmd`, `build/staging/uninstall.cmd`, and
   `build/staging/install/{merge,unmerge}-mcp-config.ps1` all present.
-- `build/dist/mcp-midi-tools-v0.1.0.zip` exists (typically 25–40 MB
+- `build/dist/mcp-midi-control-v0.1.0.zip` exists (typically 25–40 MB
   compressed; staging is 50–80 MB uncompressed).
 
 If it fails:
@@ -77,7 +77,7 @@ different config path that the merge script also handles).
 
 Test sequence:
 
-- [ ] Copy `mcp-midi-tools-v0.1.0.zip` to the VM (or download it from
+- [ ] Copy `mcp-midi-control-v0.1.0.zip` to the VM (or download it from
       a draft GitHub release).
 - [ ] Right-click the ZIP → Properties → tick **Unblock** → OK. Verify
       the warning behavior matches what `instructions.txt` describes.
@@ -87,20 +87,20 @@ Test sequence:
 - [ ] Double-click `setup.cmd`. A console window opens, runs the
       merge script, and waits for a key.
 - [ ] Open `%APPDATA%\Claude\claude_desktop_config.json` in a text
-      editor. Confirm `mcpServers["mcp-midi-tools"]` entry exists with
+      editor. Confirm `mcpServers["mcp-midi-control"]` entry exists with
       `command` pointing at the extracted `node.exe` and `args[0]` at
       the extracted `dist\server\index.js`. Paths must match the
       actual extract location.
-- [ ] Open Claude Desktop. Start a new chat. The MCP MIDI Tools
+- [ ] Open Claude Desktop. Start a new chat. The MCP MIDI Control
       connector appears in the tools panel.
 - [ ] Plug in the AM4 (or have it plugged in beforehand).
-- [ ] Ask Claude: *"Using mcp-midi-tools, list the MIDI ports you can
+- [ ] Ask Claude: *"Using mcp-midi-control, list the MIDI ports you can
       see."* Expect AM4 to be detected.
 - [ ] Ask Claude one full iconic-tone prompt (e.g. *"Build me a clean
       Fender tone with a touch of spring reverb on Z04."*). Watch the
       AM4 display update.
 - [ ] Verify uninstall: double-click `uninstall.cmd`, confirm the
-      `mcp-midi-tools` entry is gone from
+      `mcp-midi-control` entry is gone from
       `claude_desktop_config.json` (other MCP servers intact), then
       delete the extracted folder.
 - [ ] Optional: rerun setup.cmd from a different extracted folder
@@ -149,7 +149,7 @@ review.
 
 - [ ] On GitHub: Releases → Draft a new release.
 - [ ] Choose tag `v0.1.0`. Title: `v0.1.0 — public launch`.
-- [ ] Attach `build/dist/mcp-midi-tools-v0.1.0.zip`.
+- [ ] Attach `build/dist/mcp-midi-control-v0.1.0.zip`.
 - [ ] Body: short release notes (what's in, what's not, link to the
       forum thread once posted). Draft is fine — can be edited after
       publishing.

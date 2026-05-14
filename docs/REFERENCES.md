@@ -1,4 +1,4 @@
-# External References — MCP MIDI Tools
+# External References — MCP MIDI Control
 
 Primary sources available locally or online, what they cover, and when to consult each.
 Update this file whenever a new reference is added to the project.

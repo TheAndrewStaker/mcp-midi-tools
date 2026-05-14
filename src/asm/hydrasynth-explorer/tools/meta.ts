@@ -127,7 +127,7 @@ server.registerTool('hydra_get_active_patch', {
 }
 
 /**
- * Optional startup port-scan. The main mcp-midi-tools server may call
+ * Optional startup port-scan. The main mcp-midi-control server may call
  * this during its own startup to log a "Hydrasynth detected at port [N]"
  * line for observability. Returns the verdict string instead of writing
  * to stderr so the caller controls output.

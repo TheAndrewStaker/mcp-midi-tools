@@ -26,7 +26,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: mcp-midi-tools version
+      label: mcp-midi-control version
       description: From package.json or the release ZIP filename.
       placeholder: v0.1.0
     validations:

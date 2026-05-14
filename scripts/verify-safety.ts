@@ -273,7 +273,7 @@ if (!bankBytes || !bankFingerprints) {
 // ---------------------------------------------------------------------------
 
 console.log('\nBackup filesystem layer:');
-const tmp = mkdtempSync(join(tmpdir(), 'mcp-midi-tools-backup-'));
+const tmp = mkdtempSync(join(tmpdir(), 'mcp-midi-control-backup-'));
 try {
   const bytes = new Uint8Array(PRESET_DUMP_LEN);
   for (let i = 0; i < bytes.length; i++) bytes[i] = i & 0xff;

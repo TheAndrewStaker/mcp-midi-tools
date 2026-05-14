@@ -1,5 +1,5 @@
 /**
- * MCP MIDI Tools — Verify the cracked SET_PARAM encoding
+ * MCP MIDI Control — Verify the cracked SET_PARAM encoding
  *
  * Hypothesis (from Ghidra reverse-engineering of FUN_140156d10 / FUN_140156af0
  * in AM4-Edit.exe, session 05): the value field is a standard sliding-window

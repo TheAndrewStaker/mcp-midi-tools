@@ -5,7 +5,7 @@
  * repo for the first time can:
  *
  *   git clone …
- *   cd mcp-midi-tools
+ *   cd mcp-midi-control
  *   npm install
  *   npm run setup-claude-desktop   # this script
  *   # restart Claude Desktop, done
@@ -63,7 +63,7 @@ if (!existsSync(MERGE_SCRIPT)) {
     process.exit(1);
 }
 
-console.log(`Registering mcp-midi-tools with Claude Desktop…`);
+console.log(`Registering mcp-midi-control with Claude Desktop…`);
 console.log(`  install dir: ${PROJECT_ROOT}`);
 console.log(`  entry:       ${ENTRY_JS}`);
 console.log();

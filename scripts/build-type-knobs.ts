@@ -1,5 +1,5 @@
 /**
- * MCP MIDI Tools — TYPE-KNOBS wiki-derived rows generator (HW-033)
+ * MCP MIDI Control — TYPE-KNOBS wiki-derived rows generator (HW-033)
  *
  * Reads `src/knowledge/{block}-lineage.json` and emits a per-type table
  * row for each entry whose `controls` field was populated by

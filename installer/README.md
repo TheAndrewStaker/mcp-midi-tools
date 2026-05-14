@@ -26,7 +26,7 @@ shape row.
 - `instructions.txt` — bundled at the ZIP root. Plain-text
   walkthrough for users browsing the extracted folder.
 - `merge-mcp-config.ps1` — bundled at `install/` inside the ZIP.
-  Idempotently adds the `mcp-midi-tools` entry to Claude Desktop's
+  Idempotently adds the `mcp-midi-control` entry to Claude Desktop's
   `claude_desktop_config.json`, preserving any other MCP servers the
   user has configured. Handles both the direct-download and Microsoft
   Store variants of Claude Desktop.
@@ -49,7 +49,7 @@ npm run build:installer
 This compiles TypeScript, downloads + caches the pinned Node version,
 populates `build/staging/` with `node.exe` + `dist/` + production-only
 `node_modules/` + the wrappers above, then packages it into
-`build/dist/mcp-midi-tools-v0.1.0.zip` (~25–40 MB compressed). See
+`build/dist/mcp-midi-control-v0.1.0.zip` (~25–40 MB compressed). See
 `docs/RELEASE-RUNBOOK.md` for the full release flow including smoke
 testing.
 
@@ -63,7 +63,7 @@ testing.
    ```
    Or open `installer.iss` in the Inno Setup IDE and press F9 (Build
    then Run) or Ctrl+F9 (Build only).
-4. The installer lands at `build/dist/mcp-midi-tools-setup-v<version>.exe`.
+4. The installer lands at `build/dist/mcp-midi-control-setup-v<version>.exe`.
 
 ## Troubleshooting
 
