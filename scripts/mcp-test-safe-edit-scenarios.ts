@@ -1,36 +1,23 @@
 /**
- * Cross-device regression suite for the safe-edit contract documented
- * in `docs/SAFE-EDIT-WORKFLOW.md` § "Test scenarios — what every device
- * must pass."
+ * ⚠ DEPRECATED — pre-v0.4. Drives the v0.3 device-namespaced tools
+ * (am4_apply_preset_at, axefx2_apply_preset_at, …) which were removed
+ * in the v0.3 → v0.4 migration. The non-destructive refusal scenarios
+ * (S3a: apply-at-slot, no save_authorized → REFUSAL) also no longer
+ * reflect v0.4 contract: apply_preset with target_location and
+ * save_authorized=false now AUDITIONS AT TARGET (no save), it does
+ * NOT refuse.
  *
- * Drives the shipped MCP server (dist/server/index.js) via
- * StdioClientTransport — the same JSON-RPC path Claude Desktop uses.
- * Every assertion runs against the same code an in-Desktop agent would
- * trigger, including tool input validation, response formatting, and
- * the gate wiring inside each tool handler.
+ * REPLACEMENT for non-destructive scenarios: scripts/launch-verification.ts
+ * (npm run launch-verify). That harness drives the v0.4 unified surface
+ * (apply_preset, switch_preset, set_param) and covers the surviving
+ * refusal scenarios — dirty-buffer gate on switch_preset for both
+ * Fractal devices, plus AM4 routing/instance contract rejections and
+ * skip-with-warning on type-gated params.
  *
- * SCENARIOS COVERED (from SAFE-EDIT-WORKFLOW.md):
- *   1. clean + "build a tone at slot X"     → working-buffer tool works
- *   2. clean + "save to X"                  → apply-at-slot succeeds (--write)
- *   3a. clean + apply-at-slot (no auth)     → REFUSAL (save-auth gate)
- *   3b. dirty + apply-at-slot (with auth)   → REFUSAL (dirty gate)        [--write]
- *   5.  dirty + setlist                     → REFUSAL (dirty gate)        [--write]
- *   6.  clean + switch_preset               → succeeds                     [--write]
- *   7.  dirty + switch_preset               → REFUSAL (dirty gate)        [--write]
- *
- *   Scenario 4 (clean + setlist success) is destructive across multiple
- *   slots and outside the regression-suite scope — covered by separate
- *   founder-driven setlist tests.
- *
- * EXIT CODES:
- *   0 — every applicable scenario passed
- *   1 — at least one assertion failed
- *   2 — server failed to spawn / handshake
- *
- * USAGE:
- *   npm run mcp-test-safe-edit                    # refusal scenarios only
- *   npm run mcp-test-safe-edit -- --write         # all scenarios (hardware required)
- *   npm run mcp-test-safe-edit -- --device am4    # restrict to one device
+ * Destructive scenarios from the original SAFE-EDIT-WORKFLOW.md
+ * (clean + save-to-X happy path, dirty + setlist refusal) are not yet
+ * ported to the v0.4 surface. When that port lands, this file can be
+ * deleted.
  */
 
 import path from 'node:path';
@@ -343,6 +330,18 @@ async function runHardwareScenarios(client: Client, dev: DeviceProfile, destruct
 // ── Main ───────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
+  console.log('⚠  DEPRECATED — pre-v0.4 safe-edit regression suite.');
+  console.log('');
+  console.log('This harness drives the v0.3 device-namespaced tools');
+  console.log('(am4_apply_preset_at, axefx2_apply_preset_at) which were');
+  console.log('removed in the v0.3 → v0.4 migration. Non-destructive');
+  console.log('refusal scenarios have moved to scripts/launch-verification.ts:');
+  console.log('');
+  console.log('  npm run launch-verify');
+  console.log('');
+  console.log('No scenarios ran.');
+  if (!process.env.LEGACY_SAFE_EDIT_RUN) return;
+
   const opts = parseCli(process.argv);
 
   console.log(`Safe-edit contract regression suite`);
