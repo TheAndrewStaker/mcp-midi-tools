@@ -1,0 +1,19 @@
+{
+  "name": "@mcp-midi-control/axe-fx-ii",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    "./*": "./dist/*"
+  },
+  "dependencies": {
+    "@mcp-midi-control/core": "*",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "midi": "^2.0.0",
+    "zod": "^4.4.2"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  }
+}

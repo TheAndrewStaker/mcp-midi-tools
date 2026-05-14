@@ -55,7 +55,7 @@
  * Output is a table of (block, scene, intent, raw_u32). Founder
  * cross-references with audio truth and replies with the mapping.
  */
-import { connectAM4 } from '@/fractal/am4/midi.js';
+import { connectAM4 } from '@mcp-midi-control/am4/midi.js';
 import {
   buildReadParam,
   buildSetBlockBypass,
@@ -63,8 +63,8 @@ import {
   buildSwitchScene,
   isReadResponse,
   parseReadResponse,
-} from '@/fractal/am4/setParam.js';
-import { BLOCK_TYPE_VALUES } from '@/fractal/am4/blockTypes.js';
+} from '@mcp-midi-control/am4/setParam.js';
+import { BLOCK_TYPE_VALUES } from '@mcp-midi-control/am4/blockTypes.js';
 
 const BYPASS_PID_HIGH = 0x0003;
 // Held long enough that audio truth and the front panel can be observed

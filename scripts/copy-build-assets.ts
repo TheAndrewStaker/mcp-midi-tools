@@ -1,22 +1,29 @@
 /**
  * Post-build asset copier. tsc compiles .ts → .js but doesn't copy
  * data files (.json, etc.) into the dist/ tree. The MCP server reads
- * lineage data at runtime via `fs.readFileSync('dist/fractal/shared/
+ * lineage data at runtime via `fs.readFileSync('<dist>/fractal-shared/
  * lineage/<block>-lineage.json')`, so the JSON files have to be
  * present alongside the compiled .js. This script mirrors them.
  *
- * Run via `npm run build` (chained after tsc + tsc-alias).
+ * Workspace layout (post-Phase-B):
+ *   packages/core/src/fractal-shared/lineage/*.json
+ *   → packages/core/dist/fractal-shared/lineage/*.json
+ *
+ * Run via `npm run build` (chained after the per-package tsc builds).
  */
 import { readdirSync, statSync, copyFileSync, mkdirSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
 
-const SRC_ROOT = 'src';
-const DIST_ROOT = 'dist';
+interface AssetCopy {
+  src: string;
+  dst: string;
+}
 
-// Globs to copy. Each entry is a directory under SRC_ROOT whose
-// non-.ts files should be mirrored to DIST_ROOT.
-const ASSET_DIRS = [
-  'fractal/shared/lineage',
+const COPIES: AssetCopy[] = [
+  {
+    src: 'packages/core/src/fractal-shared/lineage',
+    dst: 'packages/core/dist/fractal-shared/lineage',
+  },
 ];
 
 function copyTree(srcDir: string, distDir: string): number {
@@ -47,9 +54,7 @@ function safeExists(p: string): boolean {
 }
 
 let total = 0;
-for (const rel of ASSET_DIRS) {
-  const src = join(SRC_ROOT, rel);
-  const dst = join(DIST_ROOT, rel);
+for (const { src, dst } of COPIES) {
   const n = copyTree(src, dst);
   console.log(`  copied ${n} file(s) from ${src} → ${dst}`);
   total += n;

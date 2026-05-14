@@ -13,7 +13,7 @@
  * Run:  npx tsx scripts/verify-describe-inbound.ts
  */
 
-import { describeAm4InboundMessage } from '@/fractal/am4/midi.js';
+import { describeAm4InboundMessage } from '@mcp-midi-control/am4/midi.js';
 
 function bytes(hex: string): number[] {
   const stripped = hex.replace(/\s+/g, '');

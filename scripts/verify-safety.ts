@@ -21,26 +21,26 @@ import { join } from 'node:path';
 import {
   formatLocationCode,
   parseLocationCode,
-} from '@/fractal/am4/locations.js';
+} from '@mcp-midi-control/am4/locations.js';
 import {
   PRESET_DUMP_LEN,
   parsePresetBank,
   parsePresetDump,
   serializePresetDump,
-} from '@/fractal/am4/presetDump.js';
+} from '@mcp-midi-control/am4/presetDump.js';
 import {
   fingerprintPresetDump,
   loadFactoryFingerprints,
-} from '@/fractal/am4/safety/factoryFingerprints.js';
+} from '@mcp-midi-control/am4/safety/factoryFingerprints.js';
 import {
   LocationStatusCache,
   type DumpLocationFn,
-} from '@/fractal/am4/safety/locationStatus.js';
+} from '@mcp-midi-control/am4/safety/locationStatus.js';
 import {
   listBackups,
   readBackup,
   writeBackup,
-} from '@/fractal/am4/safety/backup.js';
+} from '@mcp-midi-control/am4/safety/backup.js';
 
 const BANK_PATH = 'samples/factory/AM4-Factory-Presets-1p01.syx';
 const SINGLE_PATH = 'samples/factory/A01-original.syx';

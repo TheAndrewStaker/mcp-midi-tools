@@ -21,7 +21,7 @@ import {
   wrapSysex,
   unwrapSysex,
   __internal,
-} from '@/asm/hydrasynth-explorer/sysexEnvelope.js';
+} from '@mcp-midi-control/hydrasynth-explorer/sysexEnvelope.js';
 
 interface Case {
   label: string;

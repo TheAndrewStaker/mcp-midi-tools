@@ -55,8 +55,8 @@ import {
     parseStorePresetResponse,
     unpackValue16,
     wireToDisplay,
-} from '@/fractal/axe-fx-ii/setParam.js';
-import { fractalChecksum } from '@/fractal/shared/checksum.js';
+} from '@mcp-midi-control/axe-fx-ii/setParam.js';
+import { fractalChecksum } from '@mcp-midi-control/core/fractal-shared/checksum.js';
 
 let failures = 0;
 

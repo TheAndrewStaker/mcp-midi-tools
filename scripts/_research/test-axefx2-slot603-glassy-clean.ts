@@ -23,19 +23,19 @@
  *   - Audio flows when founder plays a note
  */
 
-import { connectAxeFxII, type AxeFxIIConnection } from '@/fractal/axe-fx-ii/midi.js';
+import { connectAxeFxII, type AxeFxIIConnection } from '@mcp-midi-control/axe-fx-ii/midi.js';
 import {
   buildGetGridLayout,
   buildSwitchPreset,
   isGetGridLayoutResponse,
   parseGetGridLayoutResponse,
   type GridCell,
-} from '@/fractal/axe-fx-ii/setParam.js';
+} from '@mcp-midi-control/axe-fx-ii/setParam.js';
 import {
   buildApplyPresetAtOps,
   runApplyPresetAtOps,
   type ApplyConn,
-} from '@/fractal/axe-fx-ii/tools/applyExecutor.js';
+} from '@mcp-midi-control/axe-fx-ii/tools/applyExecutor.js';
 
 const SLOT_603_DISPLAY = 603;
 const SLOT_603_WIRE = 602; // 0-based wire preset number

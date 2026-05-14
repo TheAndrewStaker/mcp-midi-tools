@@ -20,8 +20,8 @@
 import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
-import { unpackFloat32LE } from '@/fractal/shared/packValue.js';
-import { KNOWN_PARAMS } from '@/fractal/am4/params.js';
+import { unpackFloat32LE } from '@mcp-midi-control/core/fractal-shared/packValue.js';
+import { KNOWN_PARAMS } from '@mcp-midi-control/am4/params.js';
 
 interface KnobInput {
   label: string;

@@ -44,7 +44,7 @@ import {
   splitIntoChunks,
   concatChunks,
   unmappedPatchOffsets,
-} from '@/asm/hydrasynth-explorer/patchEncoder.js';
+} from '@mcp-midi-control/hydrasynth-explorer/patchEncoder.js';
 
 interface Case {
   label: string;

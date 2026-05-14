@@ -37,7 +37,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
-const ENTRY_JS = path.join(PROJECT_ROOT, 'dist', 'server', 'index.js');
+const ENTRY_JS = path.join(PROJECT_ROOT, 'packages', 'server-all', 'dist', 'server', 'index.js');
 const MERGE_SCRIPT = path.join(PROJECT_ROOT, 'installer', 'merge-mcp-config.ps1');
 
 if (process.platform !== 'win32') {

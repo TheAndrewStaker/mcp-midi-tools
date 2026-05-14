@@ -43,8 +43,8 @@
  *   5. Signal "HW-048 done" + saved path + the starting channel.
  *      (The script restores the starting channel at the end.)
  */
-import { connectAM4, describeAm4InboundMessage, toHex } from '@/fractal/am4/midi.js';
-import { buildReadParam, buildSetParam } from '@/fractal/am4/setParam.js';
+import { connectAM4, describeAm4InboundMessage, toHex } from '@mcp-midi-control/am4/midi.js';
+import { buildReadParam, buildSetParam } from '@mcp-midi-control/am4/setParam.js';
 
 const RESPONSE_WINDOW_MS = 500;
 const CHANNEL_REG = { pidLow: 0x003a, pidHigh: 0x07d2 };

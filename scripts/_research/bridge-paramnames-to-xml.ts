@@ -22,9 +22,9 @@
 //   src/protocol/parameterBridge.ts          (committed; consumed by server)
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { PARAM_NAMES, type ParamNameEntry } from '@/fractal/am4/paramNames.js';
-import { EDITOR_CONTROLS } from '@/fractal/am4/editorControlLabels.js';
-import { PARAMETER_NAME_TO_CACHE_ID } from '@/fractal/am4/variantResolverTables.js';
+import { PARAM_NAMES, type ParamNameEntry } from '@mcp-midi-control/am4/paramNames.js';
+import { EDITOR_CONTROLS } from '@mcp-midi-control/am4/editorControlLabels.js';
+import { PARAMETER_NAME_TO_CACHE_ID } from '@mcp-midi-control/am4/variantResolverTables.js';
 
 const OUT_JSON = 'samples/captured/decoded/labels/bridge-report.json';
 const OUT_MD   = 'samples/captured/decoded/labels/bridge-report.md';

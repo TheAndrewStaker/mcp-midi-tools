@@ -26,13 +26,13 @@
  * Run: npx tsx scripts/probe-axefx2-routing.ts
  */
 
-import { connectAxeFxII } from '@/fractal/axe-fx-ii/midi.js';
+import { connectAxeFxII } from '@mcp-midi-control/axe-fx-ii/midi.js';
 import {
   buildGetGridLayout,
   buildSwitchPreset,
   isGetGridLayoutResponse,
   parseGetGridLayoutResponse,
-} from '@/fractal/axe-fx-ii/setParam.js';
+} from '@mcp-midi-control/axe-fx-ii/setParam.js';
 
 function toHex(bytes: readonly number[]): string {
   return bytes.map((b) => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');

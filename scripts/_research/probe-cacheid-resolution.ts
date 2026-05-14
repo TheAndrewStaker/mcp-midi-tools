@@ -1,4 +1,4 @@
-import { resolveAllCacheIds, PARAMETER_NAME_TO_CACHE_ID } from '@/fractal/am4/variantResolverTables.js';
+import { resolveAllCacheIds, PARAMETER_NAME_TO_CACHE_ID } from '@mcp-midi-control/am4/variantResolverTables.js';
 
 console.log('DELAY_OFFSET:', resolveAllCacheIds('delay', 'DELAY_OFFSET'));
 console.log('DELAY_SPLICETIME:', resolveAllCacheIds('delay', 'DELAY_SPLICETIME'));

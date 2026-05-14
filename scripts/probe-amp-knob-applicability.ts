@@ -35,18 +35,18 @@
  * MISMATCH so the script can be wired into a regression harness later.
  */
 
-import { connectAM4 } from '@/fractal/am4/midi.js';
+import { connectAM4 } from '@mcp-midi-control/am4/midi.js';
 import {
   buildSetParam,
   isWriteEcho,
-} from '@/fractal/am4/setParam.js';
-import { sendReadAndParse } from '@/fractal/am4/shared/readOps.js';
-import { sendAndAwaitAck } from '@/fractal/am4/shared/wireOps.js';
-import { KNOWN_PARAMS, type Param, type ParamKey } from '@/fractal/am4/params.js';
-import { decode as am4Decode } from '@/fractal/am4/params.js';
-import { AMP_TYPES } from '@/fractal/am4/cacheEnums.js';
-import { TYPE_APPLICABILITY } from '@/fractal/am4/typeApplicability.js';
-import { checkApplicability } from '@/fractal/am4/applicability.js';
+} from '@mcp-midi-control/am4/setParam.js';
+import { sendReadAndParse } from '@mcp-midi-control/am4/shared/readOps.js';
+import { sendAndAwaitAck } from '@mcp-midi-control/am4/shared/wireOps.js';
+import { KNOWN_PARAMS, type Param, type ParamKey } from '@mcp-midi-control/am4/params.js';
+import { decode as am4Decode } from '@mcp-midi-control/am4/params.js';
+import { AMP_TYPES } from '@mcp-midi-control/am4/cacheEnums.js';
+import { TYPE_APPLICABILITY } from '@mcp-midi-control/am4/typeApplicability.js';
+import { checkApplicability } from '@mcp-midi-control/am4/applicability.js';
 
 const ICONIC_KNOBS = ['gain', 'bass', 'mid', 'treble', 'presence', 'master', 'level', 'depth'];
 

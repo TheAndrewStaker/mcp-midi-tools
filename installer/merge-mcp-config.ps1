@@ -30,23 +30,32 @@ if (-not (Test-Path $InstallDir)) {
 
 # Two layouts are supported — the script auto-detects:
 #
-#   1. v0.1.0 installer ZIP layout:
-#      $InstallDir\node.exe           (bundled Node runtime)
-#      $InstallDir\dist\server\index.js
-#
-#   2. Source-install layout (developer running `npm run setup-claude-
+#   1. Source-install layout (developer running `npm run setup-claude-
 #      desktop` after `npm run build`):
-#      $InstallDir\dist\server\index.js
+#      $InstallDir\packages\server-all\dist\server\index.js
 #      (no bundled node.exe; uses the system `node` on PATH)
 #
-# `tsc-alias` rewrites the `@/` path aliases at build time, so either
-# layout produces a fully self-resolving dist/ — no path-alias gotchas
-# at Claude Desktop launch.
+#   2. v0.1.x installer ZIP layout (planned — rework pending after the
+#      workspace split; the legacy single-`dist\` layout below still
+#      ships with v0.1.0 ZIPs built before the rework):
+#      $InstallDir\node.exe           (bundled Node runtime)
+#      $InstallDir\packages\server-all\dist\server\index.js
+#         OR (legacy v0.1.0 ZIP)
+#      $InstallDir\dist\server\index.js
+#
+# Each package is built independently to its own `dist/`; cross-package
+# imports resolve through `node_modules` symlinks created by npm
+# workspaces. No path-alias rewriting happens at build time.
 
-$entryJs = Join-Path $InstallDir 'dist\server\index.js'
+$workspaceEntry = Join-Path $InstallDir 'packages\server-all\dist\server\index.js'
+$legacyEntry = Join-Path $InstallDir 'dist\server\index.js'
 
-if (-not (Test-Path $entryJs)) {
-    Write-Error "Server entry point not found at $entryJs. Did you run ``npm run build`` first?"
+if (Test-Path $workspaceEntry) {
+    $entryJs = $workspaceEntry
+} elseif (Test-Path $legacyEntry) {
+    $entryJs = $legacyEntry
+} else {
+    Write-Error "Server entry point not found at $workspaceEntry (nor legacy $legacyEntry). Did you run ``npm run build`` first?"
     exit 1
 }
 

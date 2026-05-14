@@ -7,7 +7,7 @@
  * Main Levels register family (preset.level / preset.balance / scene_level).
  */
 import fs from 'fs';
-import { unpackValue } from '@/fractal/shared/packValue.js';
+import { unpackValue } from '@mcp-midi-control/core/fractal-shared/packValue.js';
 
 const file = process.argv[2];
 if (!file) {

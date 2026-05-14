@@ -21,19 +21,19 @@ import {
   isReadResponse,
   parseGetPresetNameResponse,
   parseReadResponse,
-} from '@/fractal/am4/setParam.js';
-import { KNOWN_PARAMS } from '@/fractal/am4/params.js';
-import { BLOCK_TYPE_VALUES, BLOCK_NAMES_BY_VALUE } from '@/fractal/am4/blockTypes.js';
-import { parseLocationCode } from '@/fractal/am4/locations.js';
+} from '@mcp-midi-control/am4/setParam.js';
+import { KNOWN_PARAMS } from '@mcp-midi-control/am4/params.js';
+import { BLOCK_TYPE_VALUES, BLOCK_NAMES_BY_VALUE } from '@mcp-midi-control/am4/blockTypes.js';
+import { parseLocationCode } from '@mcp-midi-control/am4/locations.js';
 import {
   PRESET_DUMP_LEN,
-} from '@/fractal/am4/presetDump.js';
+} from '@mcp-midi-control/am4/presetDump.js';
 import {
   getFactoryRestoreMessages,
   getFactoryPresetBytes,
-} from '@/fractal/am4/factoryBank.js';
+} from '@mcp-midi-control/am4/factoryBank.js';
 import { existsSync, readFileSync } from 'node:fs';
-import { resolveBankPath } from '@/fractal/am4/factoryBank.js';
+import { resolveBankPath } from '@mcp-midi-control/am4/factoryBank.js';
 
 function hex(arr: number[]): string {
   return arr.map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -1415,8 +1415,8 @@ console.log(`${decodePass}/${decodeCases.length} read-response decode cases pass
 // log10 (per cache typecode). Verifies `decode()` produces the right
 // display value against the empirical Sultans-of-Swing readback values.
 // (KNOWN_PARAMS already imported at top of file; only `decode` is new.)
-import { decode } from '@/fractal/am4/params.js';
-import type { Param } from '@/fractal/am4/params.js';
+import { decode } from '@mcp-midi-control/am4/params.js';
+import type { Param } from '@mcp-midi-control/am4/params.js';
 type DecodeCase = { key: string; internal: number; expect: number; tol: number };
 const decodeRuleCases: DecodeCase[] = [
   // Empirical from Sultans-of-Swing test (Session 43 cont):
@@ -2338,7 +2338,7 @@ console.log(
 // correlation. Lineage data is sourced from the project's existing
 // src/fractal/shared/lineage/*-lineage.json files so the goldens stay
 // byte-stable across runs.
-import { runLineageLookup, type LineageLookupAsk } from '@/fractal/shared/lineageLookup.js';
+import { runLineageLookup, type LineageLookupAsk } from '@mcp-midi-control/core/fractal-shared/lineageLookup.js';
 
 type LineagesGoldenCase = {
   label: string;

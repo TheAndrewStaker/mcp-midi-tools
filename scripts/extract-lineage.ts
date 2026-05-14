@@ -28,7 +28,7 @@ import { fileURLToPath } from 'url';
 import {
   AMP_TYPES, DRIVE_TYPES, REVERB_TYPES, DELAY_TYPES, COMPRESSOR_TYPES,
   CHORUS_TYPES, FLANGER_TYPES, PHASER_TYPES, WAH_TYPES,
-} from '@/fractal/am4/cacheEnums.js';
+} from '@mcp-midi-control/am4/cacheEnums.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');

@@ -21,8 +21,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { KNOWN_PARAMS } from '@/fractal/am4/params.js';
-import type { Param } from '@/fractal/am4/params.js';
+import { KNOWN_PARAMS } from '@mcp-midi-control/am4/params.js';
+import type { Param } from '@mcp-midi-control/am4/params.js';
 
 interface CacheRec {
   offset: number;

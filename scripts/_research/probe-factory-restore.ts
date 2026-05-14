@@ -53,17 +53,17 @@ import {
   PRESET_DUMP_LEN,
   parsePresetBank,
   type ParsedPresetDump,
-} from '@/fractal/am4/presetDump.js';
+} from '@mcp-midi-control/am4/presetDump.js';
 import {
   TOTAL_LOCATIONS,
   formatLocationCode,
   parseLocationCode,
-} from '@/fractal/am4/locations.js';
+} from '@mcp-midi-control/am4/locations.js';
 import {
   buildGetPresetName,
   parseGetPresetNameResponse,
-} from '@/fractal/am4/setParam.js';
-import type { MidiConnection } from '@/fractal/am4/midi.js';
+} from '@mcp-midi-control/am4/setParam.js';
+import type { MidiConnection } from '@mcp-midi-control/am4/midi.js';
 
 const BANK_PATH = 'samples/factory/AM4-Factory-Presets-1p01.syx';
 
@@ -539,7 +539,7 @@ async function main(): Promise<number> {
     console.log(`!!! This OVERWRITES whatever is currently stored at every slot in that range. !!!`);
     console.log('!!! Make sure no other tool / probe / AM4-Edit session is talking to the device. !!!\n');
 
-    const { connectAM4 } = await import('@/fractal/am4/midi.js');
+    const { connectAM4 } = await import('@mcp-midi-control/am4/midi.js');
     const conn = connectAM4();
     const failures: { slot: string; message: string; pre: string; post: string }[] = [];
     const unverified: { slot: string; message: string; pre: string; post: string }[] = [];
@@ -644,7 +644,7 @@ async function main(): Promise<number> {
   // Lazy-import the MIDI helper so the dry-run path never loads node-midi
   // at all (matters when the founder runs `--help` or peeks at the file
   // structure on a machine without the native build set up).
-  const { connectAM4 } = await import('@/fractal/am4/midi.js');
+  const { connectAM4 } = await import('@mcp-midi-control/am4/midi.js');
   const conn = connectAM4();
   let verifyExitCode = 0;
   try {

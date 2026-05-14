@@ -25,14 +25,14 @@
  * SETUP: Axe-Fx II plugged in. Claude Desktop CLOSED.
  */
 
-import { connectAxeFxII, type AxeFxIIConnection } from '@/fractal/axe-fx-ii/midi.js';
+import { connectAxeFxII, type AxeFxIIConnection } from '@mcp-midi-control/axe-fx-ii/midi.js';
 import {
   buildGetGridLayout,
   buildSwitchPreset,
   isGetGridLayoutResponse,
   parseGetGridLayoutResponse,
   type GridCell,
-} from '@/fractal/axe-fx-ii/setParam.js';
+} from '@mcp-midi-control/axe-fx-ii/setParam.js';
 
 function toHex(bytes: readonly number[]): string {
   return bytes.map((b) => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');

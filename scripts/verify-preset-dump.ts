@@ -25,7 +25,7 @@ import {
   parsePresetBank,
   parsePresetDump,
   serializePresetDump,
-} from '@/fractal/am4/presetDump.js';
+} from '@mcp-midi-control/am4/presetDump.js';
 
 const BANK_PATH = 'samples/factory/AM4-Factory-Presets-1p01.syx';
 const SINGLE_PATH = 'samples/factory/A01-original.syx';

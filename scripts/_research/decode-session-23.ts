@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { unpackValue } from '@/fractal/shared/packValue.js';
+import { unpackValue } from '@mcp-midi-control/core/fractal-shared/packValue.js';
 
 const files = process.argv.slice(2);
 

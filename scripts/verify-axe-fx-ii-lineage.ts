@@ -26,7 +26,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
-const LINEAGE_DIR = path.join(ROOT, 'src', 'fractal', 'shared', 'lineage');
+const LINEAGE_DIR = path.join(ROOT, 'packages', 'core', 'src', 'fractal-shared', 'lineage');
 
 interface AxeFxIIRecord {
     axefx2Name: string;

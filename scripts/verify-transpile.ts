@@ -2,9 +2,9 @@
  * Verify the IR transpiler emits one correct SET_PARAM message per entry.
  * Run:  npx tsx scripts/verify-transpile.ts
  */
-import { buildSetParam } from '@/fractal/am4/setParam.js';
-import { transpile } from '@/fractal/am4/ir/transpile.js';
-import type { WorkingBufferIR } from '@/fractal/am4/ir/preset.js';
+import { buildSetParam } from '@mcp-midi-control/am4/setParam.js';
+import { transpile } from '@mcp-midi-control/am4/ir/transpile.js';
+import type { WorkingBufferIR } from '@mcp-midi-control/am4/ir/preset.js';
 
 function hex(arr: number[]): string {
   return arr.map((b) => b.toString(16).padStart(2, '0')).join('');

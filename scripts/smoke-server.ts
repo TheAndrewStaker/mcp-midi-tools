@@ -20,7 +20,7 @@ interface JsonRpc {
 }
 
 async function main(): Promise<void> {
-  const child = spawn('npx', ['tsx', 'src/server/index.ts'], {
+  const child = spawn('npx', ['tsx', 'packages/server-all/src/server/index.ts'], {
     stdio: ['pipe', 'pipe', 'pipe'],
     shell: process.platform === 'win32', // Windows needs shell=true for npx
   });

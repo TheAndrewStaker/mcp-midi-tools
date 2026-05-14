@@ -1,4 +1,4 @@
-import { checkApplicability } from '@/fractal/am4/applicability.js';
+import { checkApplicability } from '@mcp-midi-control/am4/applicability.js';
 
 console.log('right_post_delay, no current types:',
   JSON.stringify(checkApplicability('delay.right_post_delay', {})));

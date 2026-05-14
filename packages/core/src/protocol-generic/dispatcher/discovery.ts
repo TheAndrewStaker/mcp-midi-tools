@@ -1,0 +1,158 @@
+/**
+ * Discovery executors — pure-introspection helpers that surface device
+ * schema and lineage corpus without any MIDI I/O.
+ *
+ * Routes for the `describe_device`, `list_params`, and `lookup_lineage`
+ * MCP tools.
+ */
+
+import {
+  DispatchError,
+  type DeviceDescriptor,
+} from '../types.js';
+
+import { requireDevice } from './core.js';
+import { resolveBlockName } from './resolvers.js';
+
+/**
+ * Pure descriptor-introspection helper for `describe_device`. No I/O —
+ * returns the registered capabilities + canonical terms + block roster.
+ * The dynamic identity (firmware version, model byte echo) comes from
+ * `send_identity_request` (BK-049 Layer 0) and is merged on top of this
+ * by the tool handler when available.
+ */
+export function describeDevice(port: string): {
+  device: string;
+  id: string;
+  capabilities: Omit<DeviceDescriptor['capabilities'], 'preset_location_format'> & {
+    preset_location_format?: string;
+  };
+  canonical_terms: DeviceDescriptor['canonical_terms'];
+  blocks: readonly string[];
+  block_types: readonly string[];
+  agent_guidance?: DeviceDescriptor['agent_guidance'];
+} {
+  const desc = requireDevice(port);
+  // RegExp objects serialize to `{}` through JSON.stringify, so MCP agents
+  // reading describe_device see an empty capability instead of the actual
+  // pattern. Surface the regex source as a string so the field is
+  // human-readable in the wire response.
+  const { preset_location_format, ...restCapabilities } = desc.capabilities;
+  return {
+    device: desc.display_name,
+    id: desc.id,
+    capabilities: {
+      ...restCapabilities,
+      preset_location_format: preset_location_format?.source,
+    },
+    canonical_terms: desc.canonical_terms,
+    blocks: Object.keys(desc.blocks),
+    block_types: desc.block_types ? Object.keys(desc.block_types) : [],
+    agent_guidance: desc.agent_guidance,
+  };
+}
+
+/**
+ * Pure introspection for `list_params(port, block?, name?)`. When `name`
+ * is supplied AND the param is an enum, the response carries the full
+ * enum table — collapses the legacy `*_list_enum_values` tools into the
+ * same surface per BK-051 audit (Session 63).
+ */
+export interface ListParamsEntry {
+  block: string;
+  name: string;
+  display_name: string;
+  unit: string;
+  display_min?: number;
+  display_max?: number;
+  has_aliases?: readonly string[];
+  enum_values?: Readonly<Record<number, string>>;
+  /** Manufacturer UI label (e.g. AM4-Edit's "Master Volume" for `amp.master`). */
+  host_label?: string;
+  /** Firmware-internal symbolic identifier (e.g. `DISTORT_MASTER`). */
+  parameter_name?: string;
+  /**
+   * Per-block-type applicability annotation when the param is type-gated
+   * (e.g. "applies only when amp.type ∈ [Plexi100W, 1959SLP]"). Absent
+   * when the param applies universally. Load-bearing for type-gated
+   * params on AM4 — writing a gated param on an incompatible type
+   * silently no-ops on the device.
+   */
+  applies_only_when?: string;
+}
+
+export function listParams(args: { port: string; block?: string; name?: string }): {
+  device: string;
+  blocks: readonly string[];
+  params: readonly ListParamsEntry[];
+} {
+  const desc = requireDevice(args.port);
+  const entries: ListParamsEntry[] = [];
+  const wantBlock = args.block !== undefined
+    ? resolveBlockName(desc, args.block)
+    : undefined;
+  for (const [block, schema] of Object.entries(desc.blocks)) {
+    if (wantBlock !== undefined && block !== wantBlock) continue;
+    const aliasReverse: Record<string, string[]> = {};
+    for (const [alias, canonical] of Object.entries(schema.aliases ?? {})) {
+      aliasReverse[canonical] ??= [];
+      aliasReverse[canonical].push(alias);
+    }
+    for (const [name, param] of Object.entries(schema.params)) {
+      if (args.name !== undefined && name !== args.name) continue;
+      const aliasList = aliasReverse[name];
+      const includeEnum =
+        args.name !== undefined && param.enum_values !== undefined;
+      entries.push({
+        block,
+        name,
+        display_name: param.display_name,
+        unit: param.unit,
+        display_min: param.display_min,
+        display_max: param.display_max,
+        has_aliases: aliasList && aliasList.length > 0 ? aliasList : undefined,
+        enum_values: includeEnum ? param.enum_values : undefined,
+        host_label: param.host_label,
+        parameter_name: param.parameter_name,
+        applies_only_when: param.applies_only_when,
+      });
+    }
+  }
+  return {
+    device: desc.display_name,
+    blocks: Object.keys(desc.blocks),
+    params: entries,
+  };
+}
+
+/**
+ * Pure lookup for `lookup_lineage`. No MIDI I/O — purely a query against
+ * the descriptor's static lineage corpus.
+ */
+export function executeLookupLineage(args: {
+  port: string;
+  block_type: string;
+  name?: string;
+  real_gear?: string;
+  manufacturer?: string;
+  model?: string;
+  include_quotes?: boolean;
+}): { device: string; ok: boolean; text: string } {
+  const descriptor = requireDevice(args.port);
+  if (!descriptor.capabilities.supports_lineage) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `${descriptor.display_name} does not have a lineage corpus.`,
+    );
+  }
+  if (descriptor.reader.lookupLineage === undefined) {
+    throw new DispatchError(
+      'capability_not_supported',
+      descriptor.display_name,
+      `lookup_lineage is not implemented for ${descriptor.display_name}.`,
+    );
+  }
+  const result = descriptor.reader.lookupLineage(args);
+  return { ...result, device: descriptor.display_name };
+}

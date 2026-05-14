@@ -25,7 +25,7 @@ from day one.
 ## Status
 
 v0.1.0 — first public release. The protocol layer is hardware-verified
-across Fractal AM4, Axe-Fx II XL+, and ASM Hydrasynth Explorer; **57
+across Fractal AM4, Axe-Fx II XL+, and ASM Hydrasynth Explorer; **58
 MCP tools** are live; every wire-level tool ships with byte-exact
 goldens against real captures. Axe-Fx II preset authoring is
 audio-confirmed end-to-end on Q8.02 firmware — building "Comp + Amp +
@@ -33,28 +33,27 @@ Cab + Reverb" in chat saves an audible preset on a fresh-empty slot,
 no manual re-routing in AxeEdit required. Multi-scene authoring
 (distinct per-scene bypass + channel state) is hardware-verified too.
 
-Tools split across three surfaces:
+Two surfaces cover the common path; a third covers device-specific
+edge cases:
 
-- **Unified surface (17 tools)** — port-dispatched, device-agnostic.
-  `set_param(port, block, name, value)`, `get_param`, `apply_preset`,
-  `apply_setlist`, `switch_preset`, `save_preset`, `switch_scene`,
-  `set_block`, `set_bypass`, `set_params`, `get_params`, `list_params`,
-  `describe_device`, `rename`, `scan_locations`, `lookup_lineage`,
-  `restore_defaults`. Same tool name works against any registered
-  device — the `port` argument picks the device. Adding a new device
-  means writing a `DeviceDescriptor`; no new tools. **This is the
-  surface to learn first** — it's the v0.3+ contract.
-- **Device-namespaced surface (~27 tools)** — `am4_*`, `axefx2_*`,
-  `hydra_*` prefixes. Used to be much larger; v0.3 removed redundancy
-  by migrating per-device behavioral guidance into
-  `describe_device(port).agent_guidance`. The tools that survive each
-  carry unique semantics with no unified equivalent (Axe-Fx II's
-  `axefx2_get_grid_layout` for the 4×12 routing grid, Hydrasynth's
-  `hydra_apply_patch` for its full NRPN-style patch dump, etc.).
+- **Unified surface (17 tools)** — `set_param`, `get_param`,
+  `apply_preset`, `apply_setlist`, `switch_preset`, `save_preset`,
+  `switch_scene`, `set_block`, `set_bypass`, `set_params`,
+  `get_params`, `list_params`, `describe_device`, `rename`,
+  `scan_locations`, `lookup_lineage`, `restore_defaults`. Port-
+  dispatched and device-agnostic — same tool name, every registered
+  device. **This is the surface to learn first**; it's the v0.3+
+  contract. Adding a new device means writing a `DeviceDescriptor`,
+  not new tools.
 - **Generic-MIDI primitives (13 tools)** — `send_cc`, `send_note`,
   `send_program_change`, `send_nrpn`, `send_sysex`, plus `send_panic`,
   `send_pitch_bend`, `send_clock_*`, etc. Work against any USB MIDI
-  device the OS exposes.
+  device the OS exposes, including ones with no registered descriptor.
+- **Device-namespaced tools (~25 tools, `am4_*` / `axefx2_*` /
+  `hydra_*`)** — kept for capabilities the unified contract doesn't
+  yet cover (Axe-Fx II's 4×12 grid, Hydrasynth's NRPN patch dump,
+  per-device state reads). Documented in the
+  [device-namespaced appendix](#appendix--device-namespaced-tools).
 
 > **Your presets stay safe.** Every save is gated behind explicit
 > user save-intent language; the server refuses silent saves and
@@ -89,9 +88,11 @@ Once connected, Claude can:
   Klon?"* / *"Which amp on the AM4 is inspired by a Matchless DC-30?"*
 - **Switch presets.** *"Load A01."*
 
-Under the hood Claude picks one of 57 tools and sends SysEx (or CC /
-NRPN / etc.) to the device. Tool round-trips land in roughly 30–60 ms;
-whole-preset builds take under a second.
+Under the hood Claude reaches for one of the 17 unified-surface tools
+(or one of the 13 generic-MIDI primitives if the device isn't a
+registered one) and sends SysEx, CC, or NRPN to the device. Tool
+round-trips land in roughly 30–60 ms; whole-preset builds take under
+a second.
 
 The unified surface (`set_param`, `get_param`, `apply_preset`,
 `switch_preset`, `save_preset`, `switch_scene`, `set_block`,
@@ -233,8 +234,9 @@ Desktop's config and add the entry below.
 
 If the file doesn't exist, create it. If both Windows variants of
 Claude Desktop are installed, edit both files. macOS users replace
-the Windows path in the JSON below with their `dist/server/index.js`
-absolute path (e.g. `/Users/you/code/mcp-midi-control/dist/server/index.js`)
+the Windows path in the JSON below with their
+`packages/server-all/dist/server/index.js` absolute path (e.g.
+`/Users/you/code/mcp-midi-control/packages/server-all/dist/server/index.js`)
 and use forward slashes.
 
 ```json
@@ -242,7 +244,7 @@ and use forward slashes.
   "mcpServers": {
     "mcp-midi-control": {
       "command": "node",
-      "args": ["C:\\path\\to\\mcp-midi-control\\dist\\server\\index.js"],
+      "args": ["C:\\path\\to\\mcp-midi-control\\packages\\server-all\\dist\\server\\index.js"],
       "env": {}
     }
   }
@@ -260,17 +262,18 @@ button → Connectors** in a new chat.
 
 > **Why not `npx tsx <src/...>`?** It looks tempting (no build step!)
 > but Claude Desktop spawns the MCP server with cwd set to
-> `C:\Windows\System32`, so `tsx` can't find the project's
-> `tsconfig.json` and the `@/` path aliases fail to resolve.
-> `node dist/server/index.js` works because `tsc-alias` rewrites
-> the aliases to relative paths at build time.
+> `C:\Windows\System32`, so `tsx` can't find the project's workspace
+> tsconfigs and intra-package imports fail to resolve. Pointing
+> Claude Desktop at the built `packages/server-all/dist/server/index.js`
+> sidesteps that — every cross-package import resolves through
+> `node_modules` symlinks created by npm workspaces.
 
 ### Option 2 — Claude Code (CLI)
 
 From your project directory, after `npm run build`:
 
 ```bash
-claude mcp add mcp-midi-control -- node C:\path\to\mcp-midi-control\dist\server\index.js
+claude mcp add mcp-midi-control -- node C:\path\to\mcp-midi-control\packages\server-all\dist\server\index.js
 ```
 
 Then start `claude` and the tools are available in your session.
@@ -286,7 +289,7 @@ npm run server   # tsx-based, picks up source changes immediately
 For wiring into another MCP client (cwd-agnostic):
 
 ```bash
-node C:\path\to\mcp-midi-control\dist\server\index.js
+node C:\path\to\mcp-midi-control\packages\server-all\dist\server\index.js
 ```
 
 The server speaks MCP over stdio in either case.
@@ -320,7 +323,7 @@ The JSON shape is near-universal across hosts:
   "mcpServers": {
     "mcp-midi-control": {
       "command": "node",
-      "args": ["/path/to/dist/server/index.js"]
+      "args": ["/path/to/packages/server-all/dist/server/index.js"]
     }
   }
 }
@@ -368,14 +371,23 @@ If step 3 works, you're done. Move on to building full presets.
 
 ---
 
-## The 57 tools at a glance
+## The tool surface
 
-### Unified surface (17) — port-dispatched, device-agnostic
+Claude reaches for one of two cross-device tool families almost all
+the time: the **unified surface** for any registered device (AM4,
+Axe-Fx II, Hydrasynth), and the **generic-MIDI primitives** for any
+other USB MIDI gear. Together that's 30 tools — the surface a guitarist
+actually needs to learn. The device-namespaced tools (`am4_*`,
+`axefx2_*`, `hydra_*`) are a smaller surface kept for capabilities the
+unified contract doesn't yet cover — they're documented in the
+[device-namespaced appendix](#appendix--device-namespaced-tools) at
+the end.
 
-Same tool name works against every registered device. Pass `port` to
-select which device (id, display_name, or any MIDI port-name substring
-match). Adding a new device means writing a schema descriptor + wire
-adapter; no new tools.
+### Unified surface (17 tools) — same name, every device
+
+Pass `port` to select which device (id, display_name, or any MIDI
+port-name substring match). Adding a new device means writing a schema
+descriptor + wire adapter; no new tools.
 
 | Tool | What it does |
 |---|---|
@@ -397,62 +409,15 @@ adapter; no new tools.
 | `lookup_lineage(port, block_type, query)` | Authored lineage data — real-hardware inspiration, manufacturer/model, developer quotes. AM4 + Axe-Fx II ship lineage corpora. |
 | `restore_defaults(port, from, to?)` | Reset a single location or inclusive range to factory state. Capability-gated; only devices with `supports_factory_restore=true` (currently AM4) honor it. |
 
-### Device-namespaced — surviving tools (v0.3)
+### Generic MIDI primitives (13 tools)
 
-v0.3 removed redundancy. The device-namespaced tools that still ship
-are the ones with semantics the unified surface doesn't cover yet —
-device-state reads, grid-specific writes, raw-protocol probes. Use
-the unified `apply_preset`, `set_param`, `switch_preset`, etc. for
-everything else; pass `port='am4' | 'axe-fx-ii' | 'hydrasynth'` to
-target a device.
-
-**AM4 (5 tools)** — device-state reads + non-destructive working-buffer dump.
-
-| Tool | What it does |
-|---|---|
-| `am4_get_active_location` | Read the currently-loaded preset location (A01–Z04). |
-| `am4_get_active_scene` | Read which scene (1..4) is currently selected. |
-| `am4_get_block_layout` | Read what's in each of the four signal-chain slots. |
-| `am4_get_block_bypass` | Read whether a block is bypassed in the active scene. |
-| `am4_request_active_buffer_dump` | Non-destructive full working-buffer dump (advanced; for protocol RE). |
-
-**Axe-Fx II XL+ (9 tools)** — grid reads, cell-level placement, raw-protocol probes.
-
-| Tool | What it does |
-|---|---|
-| `axefx2_get_active_preset_number` | Read the currently-loaded preset number. |
-| `axefx2_get_preset_name` | Read the active preset's stored name. |
-| `axefx2_get_grid_layout` | Read the 4×12 routing grid — block ID + input mask per cell. |
-| `axefx2_get_block_channel` | Read which channel (X / Y) a block is currently on. |
-| `axefx2_set_block_channel` | Switch a block's channel (X / Y). |
-| `axefx2_set_block_at_cell` | Place a single block at a specific `(row, col)`. Multi-row placement is exposed here; cross-row cabling is not yet (Level 4 in the roadmap). |
-| `axefx2_test_apply` | Working-buffer apply + chain-integrity verify in one call. Returns `ok=true` only if every cell past col 1 has a non-zero routing mask. |
-| `axefx2_probe_sysex` | Raw SysEx send + inbound capture. Developer tool for protocol RE. |
-| `axefx2_reconnect_midi` | Force-reopen the Axe-Fx II MIDI handle. |
-
-**ASM Hydrasynth Explorer (11 tools)** — patch-based architecture (no scenes); NRPN-driven engine.
-
-| Tool | What it does |
-|---|---|
-| `hydra_apply_init` | Dump the factory INIT patch via SysEx (resets the active patch to defaults). |
-| `hydra_apply_init_to` | Same as `hydra_apply_init`, targeting a named slot. |
-| `hydra_apply_patch` | Build a full patch with sparse overrides on top of the factory INIT buffer. Optional `save: true` (gated by `save_authorized`). |
-| `hydra_set_param` | Set a system CC (master volume, mod wheel, sustain). 7 system params only. |
-| `hydra_set_engine_param` | Set one of 1175 engine params (oscillators / filters / envelopes / FX) via NRPN. |
-| `hydra_set_engine_params` | Batch engine-param write — same shape as `hydra_set_engine_param`. |
-| `hydra_set_macro` | Set a macro (1..8) value. |
-| `hydra_play_note` | Send a Note On + Note Off pair to the device for audition. |
-| `hydra_get_active_patch` | Read the active patch's bank/slot indices. |
-| `hydra_navigate_to` | Navigate to a specific Bank/Patch on the device. |
-| `hydra_reconnect_midi` | Force-reopen the Hydrasynth MIDI handle. |
-
-### Generic MIDI primitives (13)
-
-Work with any USB MIDI device the OS exposes. Channels are 1..16 at the
-tool boundary (musician convention); the wire layer converts to 0..15
-once. Reach for these primitives when the target device doesn't have a
-registered descriptor yet, or when you want to send raw MIDI rather
-than addressing named params.
+Work with any USB MIDI device the OS exposes — registered or not.
+Channels are 1..16 at the tool boundary (musician convention); the
+wire layer converts to 0..15 once. Reach for these when the target
+device doesn't have a registered descriptor yet, or when you want
+to send raw MIDI rather than addressing named params. Conversational
+examples in [Generic MIDI quick-start](#generic-midi-quick-start)
+below.
 
 | Tool | What it does |
 |---|---|
@@ -579,52 +544,59 @@ the test scenarios every device must pass.
 
 ## Project layout
 
+The source is organized as five npm workspace packages under
+`packages/`. Each package builds independently to its own `dist/`
+and depends on `@mcp-midi-control/core` for cross-device foundations.
+
 ```
-src/
-├── server/                       # MCP server boot
-│   ├── index.ts                  # one register*Tools(server) call per
-│   │                             #   device + 2 generic-MIDI families
-│   ├── shared/                   # cross-tool helpers (connection registry,
-│   │                             #   channel cache, wire-op timeline,
-│   │                             #   readOps, paramHelpers)
-│   └── tools/                    # device-AGNOSTIC tool families
-│       ├── midi-primitives.ts    #   send_cc / _note / _program_change /
-│       │                         #   _nrpn / _sysex (any MIDI device)
-│       └── midi-control.ts       #   list_midi_ports / reconnect_midi
-├── fractal/                      # Fractal Audio devices
-│   ├── am4/                      # AM4
-│   │   ├── tools/                #   AM4 MCP tool surface (split by
-│   │   │   ├── index.ts          #     family — apply.ts is 1633 LOC)
-│   │   │   ├── apply.ts          #   index.ts exports registerAM4Tools()
-│   │   │   ├── read.ts
-│   │   │   ├── write.ts
-│   │   │   ├── navigation.ts
-│   │   │   ├── factory.ts
-│   │   │   ├── lookup.ts
-│   │   │   ├── lookup-lineage.ts
-│   │   │   └── diagnostics.ts
-│   │   └── (params, setParam, blockTypes, locations,
-│   │        factoryBank, midi.ts, …)
-│   ├── axe-fx-ii/                # Axe-Fx II XL+
-│   │   ├── tools.ts              #   single-file tool surface
-│   │   └── (params, setParam, blockTypes, midi.ts, …)
-│   └── shared/                   # cross-Fractal helpers (lineage data, …)
-├── asm/
-│   └── hydrasynth-explorer/      # ASM Hydrasynth (single-file tool surface)
-└── core/                         # generic-MIDI message builders (used by
-                                  #   the device-agnostic send_* tools)
+packages/
+├── core/                         # @mcp-midi-control/core
+│   └── src/
+│       ├── midi/                 #   node-midi transport + message builders
+│       ├── fractal-shared/       #   checksum, packValue, device base,
+│       │                         #     lineageLookup + lineage JSON data
+│       ├── protocol-generic/     #   dispatcher + unified tool surface
+│       └── server-shared/        #   connection registry, safeEdit,
+│                                 #     bufferDirty
+├── am4/                          # @mcp-midi-control/am4
+│   └── src/
+│       ├── tools/                #   AM4 MCP tool surface (split by family)
+│       └── (params, setParam, blockTypes, locations,
+│            factoryBank, midi.ts, descriptor/, …)
+├── axe-fx-ii/                    # @mcp-midi-control/axe-fx-ii
+│   └── src/
+│       ├── tools/                #   Axe-Fx II XL+ tool surface
+│       └── (params, setParam, blockTypes, midi.ts, descriptor/, …)
+├── hydrasynth-explorer/          # @mcp-midi-control/hydrasynth-explorer
+│   └── src/
+│       ├── tools/                #   Hydrasynth tool surface (single-file
+│       │                         #     pattern; NRPN-driven engine)
+│       └── (params, encoding.ts, sysexEnvelope.ts, midi.ts, …)
+└── server-all/                   # @mcp-midi-control/server-all
+    └── src/
+        ├── server/               #   MCP server boot
+        │   ├── index.ts          #     one register*Tools(server) call
+        │   │                     #     per device + 2 generic-MIDI families
+        │   └── tools/            #   device-AGNOSTIC tool families
+        │       ├── midi-primitives.ts   # send_cc / _note / _nrpn / _sysex
+        │       └── midi-control.ts      # list_midi_ports / reconnect_midi
+        ├── cli/                  #   verify-midi.ts entry point
+        └── fractal-registry/     #   v0.1.1+ scaffolding for runtime
+                                  #     device-identify
+
 docs/                             # protocol reference, decisions, research
 samples/captured/                 # RE captures + decoded cache data (gitignored)
 scripts/                          # probes, verifiers, smoke test
 ```
 
-**Adding a new device.** Drop your wire layer + tool surface under
-`src/<vendor>/<device>/`, export a `register<Device>Tools(server)` that
-adds your tools to the MCP server, and register it in
-`src/server/index.ts`. Single-file tool surface (axefx2 / hydrasynth
-pattern) is the default; multi-file with an `index.ts` aggregator (AM4
-pattern) is for devices with a tool family large enough that one file
-becomes unwieldy.
+**Adding a new device.** Stand up a new workspace package under
+`packages/<vendor>-<device>/` (mirror axe-fx-ii's layout). Implement
+a `DeviceDescriptor`, register it in
+`packages/server-all/src/server/index.ts`, and add the package as a
+dependency in `packages/server-all/package.json`. The unified tool
+surface (`set_param`, `apply_preset`, etc.) automatically dispatches
+to your device once the descriptor is registered — no new tools
+needed.
 
 - [`docs/03-ARCHITECTURE.md`](./docs/03-ARCHITECTURE.md) — system overview
   + per-layer responsibilities.
@@ -633,6 +605,61 @@ becomes unwieldy.
   Axe-Fx II wire protocol reference.
 - [`docs/DECISIONS.md`](./docs/DECISIONS.md) — non-obvious architectural
   + library choices, with rationale and rejected alternatives.
+
+---
+
+## Appendix — Device-namespaced tools
+
+The 25 device-namespaced tools (`am4_*`, `axefx2_*`, `hydra_*`) are
+the ones with semantics the unified surface doesn't yet cover —
+device-state reads, grid-specific writes, raw-protocol probes. Most
+day-one tone-building won't need them: `apply_preset`, `set_param`,
+`switch_preset`, etc. on the unified surface handle the common path.
+Reach for these when you need device-specific introspection or
+hardware that has no cross-device equivalent (e.g. the Axe-Fx II
+4×12 routing grid). Pass `port='am4' | 'axe-fx-ii' | 'hydrasynth'`
+to target a device on any unified tool.
+
+### AM4 (5 tools) — device-state reads + non-destructive working-buffer dump
+
+| Tool | What it does |
+|---|---|
+| `am4_get_active_location` | Read the currently-loaded preset location (A01–Z04). |
+| `am4_get_active_scene` | Read which scene (1..4) is currently selected. |
+| `am4_get_block_layout` | Read what's in each of the four signal-chain slots. |
+| `am4_get_block_bypass` | Read whether a block is bypassed in the active scene. |
+| `am4_request_active_buffer_dump` | Non-destructive full working-buffer dump (advanced; for protocol RE). |
+
+### Axe-Fx II XL+ (10 tools) — grid reads, cell-level placement, raw-protocol probes
+
+| Tool | What it does |
+|---|---|
+| `axefx2_get_active_preset_number` | Read the currently-loaded preset number. |
+| `axefx2_get_preset_name` | Read the active preset's stored name. |
+| `axefx2_get_grid_layout` | Read the 4×12 routing grid — block ID + input mask per cell. |
+| `axefx2_get_block_channel` | Read which channel (X / Y) a block is currently on. |
+| `axefx2_set_block_channel` | Switch a block's channel (X / Y). |
+| `axefx2_set_block_at_cell` | Place a single block at a specific `(row, col)`. Multi-row placement is exposed here. |
+| `axefx2_set_cell_routing` | Add or remove a cable between two adjacent-column grid cells. Cross-row cables (parallel chains, FX loops, mergers) are supported. |
+| `axefx2_test_apply` | Working-buffer apply + chain-integrity verify in one call. Returns `ok=true` only if every cell past col 1 has a non-zero routing mask. |
+| `axefx2_probe_sysex` | Raw SysEx send + inbound capture. Developer tool for protocol RE. |
+| `axefx2_reconnect_midi` | Force-reopen the Axe-Fx II MIDI handle. |
+
+### ASM Hydrasynth Explorer (11 tools) — patch-based architecture (no scenes); NRPN-driven engine
+
+| Tool | What it does |
+|---|---|
+| `hydra_apply_init` | Dump the factory INIT patch via SysEx (resets the active patch to defaults). |
+| `hydra_apply_init_to` | Same as `hydra_apply_init`, targeting a named slot. |
+| `hydra_apply_patch` | Build a full patch with sparse overrides on top of the factory INIT buffer. Optional `save: true` (gated by `save_authorized`). |
+| `hydra_set_param` | Set a system CC (master volume, mod wheel, sustain). 7 system params only. |
+| `hydra_set_engine_param` | Set one of 1175 engine params (oscillators / filters / envelopes / FX) via NRPN. |
+| `hydra_set_engine_params` | Batch engine-param write — same shape as `hydra_set_engine_param`. |
+| `hydra_set_macro` | Set a macro (1..8) value. |
+| `hydra_play_note` | Send a Note On + Note Off pair to the device for audition. |
+| `hydra_get_active_patch` | Read the active patch's bank/slot indices. |
+| `hydra_navigate_to` | Navigate to a specific Bank/Patch on the device. |
+| `hydra_reconnect_midi` | Force-reopen the Hydrasynth MIDI handle. |
 
 ---
 

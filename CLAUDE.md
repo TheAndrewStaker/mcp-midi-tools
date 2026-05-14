@@ -325,19 +325,21 @@ right" report when the question is "did the write actually land."
 
 ## Rebuilding for Claude Desktop testing
 
-Claude Desktop launches this MCP server from the **compiled `dist/`
-build** (`node dist/server/index.js` per `claude_desktop_config.json`),
-not the TypeScript source. The dist is loaded into Node once when the
-child process spawns; overwriting source files on disk does NOT reach
-the live MCP server.
+Claude Desktop launches this MCP server from the **compiled
+workspace build** (`node packages/server-all/dist/server/index.js`
+per `claude_desktop_config.json`), not the TypeScript source. The
+dist is loaded into Node once when the child process spawns;
+overwriting source files on disk does NOT reach the live MCP server.
 
 **If the founder will test your changes via a Claude Desktop conversation
 (any `*_get_*` / `*_set_*` / `*_apply_*` / etc. MCP tool call), you MUST
 do all three of these or the test will run against stale code:**
 
-1. **`npm run preflight`** — typecheck + goldens pass.
-2. **`npm run build`** — rebuild dist (`tsc -p tsconfig.build.json` +
-   `tsc-alias` + asset copy). The new dist is what Claude Desktop loads.
+1. **`npm run preflight`** — per-package typecheck + goldens pass.
+2. **`npm run build`** — rebuilds every package in dependency order
+   (`@mcp-midi-control/core` → `@mcp-midi-control/am4|axe-fx-ii|
+   hydrasynth-explorer` → `@mcp-midi-control/server-all`) and copies
+   lineage JSON into `packages/core/dist/fractal-shared/lineage/`.
 3. **Tell the founder to fully quit and relaunch Claude Desktop.** Just
    closing the window keeps the MCP server child alive in the tray — it
    has to be a full quit. The relaunch respawns the child from the new
@@ -528,7 +530,7 @@ Edit: `%APPDATA%\Claude\claude_desktop_config.json`
   "mcpServers": {
     "mcp-midi-control": {
       "command": "node",
-      "args": ["C:\\path\\to\\mcp-midi-control\\dist\\server\\index.js"],
+      "args": ["C:\\path\\to\\mcp-midi-control\\packages\\server-all\\dist\\server\\index.js"],
       "env": {}
     }
   }

@@ -9,7 +9,7 @@
 
 import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
-import { unpackValueChunked } from '@/fractal/shared/packValue.js';
+import { unpackValueChunked } from '@mcp-midi-control/core/fractal-shared/packValue.js';
 
 const path = process.argv[2];
 if (!path) { console.error('Usage: decode-preset-name-reads.ts <txt>'); process.exit(1); }

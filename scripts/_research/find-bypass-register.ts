@@ -38,13 +38,13 @@
  * Run:
  *   npx tsx scripts/find-bypass-register.ts
  */
-import { connectAM4 } from '@/fractal/am4/midi.js';
+import { connectAM4 } from '@mcp-midi-control/am4/midi.js';
 import {
   buildReadParam,
   buildSetBlockBypass,
   isReadResponse,
   parseReadResponse,
-} from '@/fractal/am4/setParam.js';
+} from '@mcp-midi-control/am4/setParam.js';
 
 const BLOCK_PID_LOW = 0x0042; // reverb
 const BLOCK_LABEL = 'reverb';

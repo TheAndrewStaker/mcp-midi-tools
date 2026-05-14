@@ -18,7 +18,7 @@ import {
   FILTER_TYPES,
   GEQ_TYPES,
   GATE_TYPES,
-} from '@/fractal/am4/cacheEnums.js';
+} from '@mcp-midi-control/am4/cacheEnums.js';
 
 const data = JSON.parse(readFileSync('samples/captured/decoded/labels/type-applicability.json', 'utf8'));
 

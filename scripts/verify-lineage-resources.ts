@@ -12,7 +12,7 @@ import path from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
-const SERVER_ENTRY = path.resolve(process.cwd(), 'dist', 'server', 'index.js');
+const SERVER_ENTRY = path.resolve(process.cwd(), 'packages', 'server-all', 'dist', 'server', 'index.js');
 
 const EXPECTED_AM4_LINEAGE_BLOCKS = [
   'amp', 'drive', 'reverb', 'delay', 'compressor',

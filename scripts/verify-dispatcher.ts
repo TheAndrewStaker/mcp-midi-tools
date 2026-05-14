@@ -25,23 +25,23 @@ import {
   resolveBlockName,
   resolveParamName,
   resolveChannel,
-} from '@/protocol/generic/dispatcher.js';
+} from '@mcp-midi-control/core/protocol-generic/dispatcher.js';
 import {
   listRegisteredDevices,
   registerDevice as registerMcpDevice,
   resolveDevice,
-} from '@/protocol/generic/registry.js';
-import { DispatchError } from '@/protocol/generic/types.js';
-import { AM4_DESCRIPTOR } from '@/fractal/am4/descriptor.js';
-import { buildSetParam } from '@/fractal/am4/setParam.js';
-import { prepareApplyPresetWrites } from '@/fractal/am4/tools/applyExecutor.js';
-import { AXEFX2_DESCRIPTOR } from '@/fractal/axe-fx-ii/descriptor.js';
+} from '@mcp-midi-control/core/protocol-generic/registry.js';
+import { DispatchError } from '@mcp-midi-control/core/protocol-generic/types.js';
+import { AM4_DESCRIPTOR } from '@mcp-midi-control/am4/descriptor.js';
+import { buildSetParam } from '@mcp-midi-control/am4/setParam.js';
+import { prepareApplyPresetWrites } from '@mcp-midi-control/am4/tools/applyExecutor.js';
+import { AXEFX2_DESCRIPTOR } from '@mcp-midi-control/axe-fx-ii/descriptor.js';
 import {
   buildSetBlockParameterValue,
   buildStorePreset,
   buildSwitchPreset,
   displayToWire,
-} from '@/fractal/axe-fx-ii/setParam.js';
+} from '@mcp-midi-control/axe-fx-ii/setParam.js';
 
 function hex(arr: number[]): string {
   return arr.map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -726,7 +726,7 @@ console.log('\nHydrasynth descriptor introspection:');
 
 // Register the Hydrasynth descriptor explicitly here — verify-dispatcher
 // is a stand-alone script that doesn't go through server/index.ts boot.
-const { HYDRASYNTH_DESCRIPTOR } = await import('@/asm/hydrasynth-explorer/descriptor.js');
+const { HYDRASYNTH_DESCRIPTOR } = await import('@mcp-midi-control/hydrasynth-explorer/descriptor.js');
 registerMcpDevice(HYDRASYNTH_DESCRIPTOR);
 
 const hydraDesc = describeDevice('hydrasynth');

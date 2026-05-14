@@ -40,13 +40,13 @@
  * Run:
  *   npx tsx scripts/probe-bypass-action-0d.ts
  */
-import { connectAM4 } from '@/fractal/am4/midi.js';
+import { connectAM4 } from '@mcp-midi-control/am4/midi.js';
 import {
   buildReadParam,
   buildSetBlockBypass,
   buildSwitchScene,
-} from '@/fractal/am4/setParam.js';
-import { BLOCK_TYPE_VALUES } from '@/fractal/am4/blockTypes.js';
+} from '@mcp-midi-control/am4/setParam.js';
+import { BLOCK_TYPE_VALUES } from '@mcp-midi-control/am4/blockTypes.js';
 
 const BYPASS_PID_HIGH = 0x0003;
 const READ_ACTION = 0x0d;

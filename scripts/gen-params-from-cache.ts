@@ -38,9 +38,9 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { PARAM_NAMES, type ParamNameEntry } from '@/fractal/am4/paramNames.js';
-import { GENERATED_PARAM_NAMES } from '@/fractal/am4/paramNamesGenerated.js';
-import type { Unit } from '@/fractal/am4/params.js';
+import { PARAM_NAMES, type ParamNameEntry } from '@mcp-midi-control/am4/paramNames.js';
+import { GENERATED_PARAM_NAMES } from '@mcp-midi-control/am4/paramNamesGenerated.js';
+import type { Unit } from '@mcp-midi-control/am4/params.js';
 
 /**
  * Merge hand-curated `paramNames.ts` with the resolver-derived
