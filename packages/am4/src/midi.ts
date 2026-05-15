@@ -11,9 +11,12 @@
 import {
   connect,
   listMidiPorts as listMidiPortsGeneric,
+  mockConnect,
   type MidiConnection,
   type MidiPortInfo as GenericMidiPortInfo,
+  type MockResponder,
 } from '@mcp-midi-control/core/midi/transport.js';
+import { fractalChecksum } from '@mcp-midi-control/core/fractal-shared/checksum.js';
 
 export {
   connect,
@@ -66,8 +69,18 @@ export function listMidiPorts(
  * Open a connection to the AM4. Thin wrapper around `connect()` that
  * supplies the AM4-specific name needles and the install/driver hints
  * users hit during AM4 onboarding.
+ *
+ * When `MCP_MOCK_TRANSPORT=1` is set in the environment, returns a
+ * mock connection backed by `am4MockResponder` (no USB). Lets the
+ * agent-regression harness exercise the full dispatcher pipeline
+ * (display → wire encoding, channel switching, validator-layer error
+ * envelopes, applyExecutor) against in-memory state. Real-hardware
+ * release-gate tests (launch-verify, Desktop e2e) ignore the flag.
  */
 export function connectAM4(): MidiConnection {
+  if (process.env.MCP_MOCK_TRANSPORT === '1') {
+    return mockConnect({ responder: am4MockResponder });
+  }
   return connect({
     needles: AM4_PORT_NEEDLES,
     notFoundLeadIn: 'AM4 not found in the MIDI device list. Common causes:',
@@ -79,6 +92,78 @@ export function connectAM4(): MidiConnection {
     ],
   });
 }
+
+/**
+ * AM4-specific mock response synthesizer. Given an outgoing SysEx
+ * frame, returns the inbound responses the AM4 would emit.
+ *
+ * Recognized shapes (see `setParam.ts` for outgoing layouts, this file's
+ * `describeAm4InboundMessage` for inbound ack envelopes):
+ *
+ *   - 0x01 PARAM_RW + action=0x0001 (WRITE) → 64-byte write-echo
+ *     (hdr4=0x0028). Satisfies `isWriteEcho` predicate.
+ *   - 0x01 PARAM_RW + action≠WRITE (save/rename/preset-switch) →
+ *     18-byte command-ack (hdr4=0x0000). Satisfies `isCommandAck`.
+ *   - 0x12 mode switch → no response (write-only, no ack expected).
+ *   - 0x01 PARAM_RW + action=0x0026 (READ) → 64-byte READ response,
+ *     same shape as the write-echo (hdr4=0x0028, dummy 40-byte
+ *     value descriptor). Sufficient for `get_param` to resolve;
+ *     the value won't reflect real state (no in-memory state model
+ *     yet — added if/when read-back tests need it).
+ *
+ * Predicate-only correctness: the AM4 ack predicates check structural
+ * fields (envelope + function + addressing + hdr4) but ignore the
+ * payload bytes. The mock fills the payload with zeros. If a future
+ * test needs a specific value read-back, extend this with an
+ * in-memory device-state map.
+ */
+const SYSEX_START = 0xf0;
+const SYSEX_END = 0xf7;
+const ACTION_WRITE_LO = 0x01; // 14-bit septet encoding of action 0x0001
+const HDR4_WRITE_ECHO_LO = 0x28; // hdr4 = 0x0028 (40-byte descriptor)
+
+export const am4MockResponder: MockResponder = (outgoing) => {
+  if (outgoing.length < 8) return [];
+  if (outgoing[0] !== SYSEX_START) return [];
+  // Envelope: F0 00 01 74 15 [fn] ...
+  if (outgoing[1] !== 0x00 || outgoing[2] !== 0x01 || outgoing[3] !== 0x74 || outgoing[4] !== 0x15) {
+    return [];
+  }
+  const fn = outgoing[5];
+  if (fn !== 0x01) return []; // mode switches (0x12) etc. are write-only — no ack
+  if (outgoing.length < 12) return [];
+  const actionLo = outgoing[10];
+  const actionHi = outgoing[11];
+  const isWriteAction = actionLo === ACTION_WRITE_LO && actionHi === 0x00;
+
+  if (isWriteAction) {
+    // 64-byte write-echo. Predicate isWriteEcho only checks bytes 0..15
+    // for structural fields — the 40-byte payload (bytes 16..55) is
+    // ignored. Zero-filled payload + correct header is sufficient.
+    const body: number[] = new Array<number>(62).fill(0);
+    body[0] = SYSEX_START;
+    // bytes 1..9: copy envelope + fn + pidLow + pidHigh from outgoing.
+    for (let i = 1; i <= 9; i++) body[i] = outgoing[i] ?? 0;
+    body[10] = ACTION_WRITE_LO;
+    body[11] = 0x00;
+    body[12] = 0x00;
+    body[13] = 0x00;
+    body[14] = HDR4_WRITE_ECHO_LO;
+    body[15] = 0x00;
+    // bytes 16..61: zero-filled payload — already initialized.
+    const cs = fractalChecksum(body);
+    return [[...body, cs, SYSEX_END]];
+  }
+
+  // 18-byte command-ack. Predicate isCommandAck requires exact length 18,
+  // bytes 0..11 copied from outgoing, bytes 12..15 all zero.
+  const ack: number[] = new Array<number>(16).fill(0);
+  ack[0] = SYSEX_START;
+  for (let i = 1; i <= 11; i++) ack[i] = outgoing[i] ?? 0;
+  // bytes 12..15 stay zero.
+  const cs = fractalChecksum(ack);
+  return [[...ack, cs, SYSEX_END]];
+};
 
 // Register the AM4 connector with the shared connection registry as a
 // side effect of loading this module. Importing anything from `am4/midi.ts`

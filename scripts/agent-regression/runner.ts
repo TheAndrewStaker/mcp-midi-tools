@@ -140,9 +140,18 @@ async function runCaseOnce(opts: RunOnceOptions): Promise<CaseResult> {
   // `claude.exe` is a real executable on Windows + a binary on Unix, so
   // spawn without shell:true. That avoids both the deprecation warning
   // and the argv-mangling that hits prompts with quotes / punctuation.
+  //
+  // `MCP_MOCK_TRANSPORT=1` propagates from this process into claude.exe
+  // and on into the MCP server child it spawns via --mcp-config. The
+  // server's connectXXX wrappers (am4/midi.ts etc.) short-circuit to
+  // an in-memory mock when the flag is set — no USB, no hardware
+  // required. Agent-regression cases all run against the mock by
+  // default; opt out via `--real-hardware` for the launch-verify-style
+  // wire-roundtrip test.
   const child = spawn('claude', args, {
     shell: false,
     stdio: ['pipe', 'pipe', 'inherit'],
+    env: { ...process.env, MCP_MOCK_TRANSPORT: process.env.AGENT_REGRESSION_REAL_HARDWARE === '1' ? '0' : '1' },
   });
   child.stdin.write(testCase.prompt);
   child.stdin.end();

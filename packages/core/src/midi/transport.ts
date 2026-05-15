@@ -102,6 +102,14 @@ function enumeratePorts(
  *
  * Opens and immediately releases short-lived node-midi handles so a
  * subsequent `connect()` still sees a clean state.
+ *
+ * Under `MCP_MOCK_TRANSPORT=1`, the real port list is augmented with
+ * synthetic AM4 / Axe-Fx II / Hydrasynth entries so callers that gate
+ * on visibility (the agent-regression hardware probe, the startup
+ * banner, the `list_midi_ports` MCP tool) treat the mock-backed
+ * devices as connected. Mock matches the device-specific connectXXX
+ * wrappers — each one short-circuits to `mockConnect` under the same
+ * env var.
  */
 export function listMidiPorts(
   needles: readonly string[] = [],
@@ -109,14 +117,43 @@ export function listMidiPorts(
   const input = new midi.Input();
   const output = new midi.Output();
   try {
-    return {
-      inputs: enumeratePorts(input, 'input', needles),
-      outputs: enumeratePorts(output, 'output', needles),
-    };
+    const inputs = enumeratePorts(input, 'input', needles);
+    const outputs = enumeratePorts(output, 'output', needles);
+    if (process.env.MCP_MOCK_TRANSPORT === '1') {
+      return {
+        inputs: [...inputs, ...mockPortEntries('input', needles, inputs.length)],
+        outputs: [...outputs, ...mockPortEntries('output', needles, outputs.length)],
+      };
+    }
+    return { inputs, outputs };
   } finally {
     input.closePort();
     output.closePort();
   }
+}
+
+/**
+ * Synthetic port entries injected when `MCP_MOCK_TRANSPORT=1`. Names
+ * match what each device's connectXXX wrapper would search for
+ * (`AM4_PORT_NEEDLES`, `AXE_FX_II_PORT_NEEDLES`, etc.) so the visibility
+ * gate trips for every mock-supported device.
+ */
+function mockPortEntries(
+  direction: 'input' | 'output',
+  needles: readonly string[],
+  baseIndex: number,
+): MidiPortInfo[] {
+  const dirSuffix = direction === 'input' ? 'In' : 'Out';
+  const fakeNames = [
+    `AM4 MIDI ${dirSuffix} (mock)`,
+    `Axe-Fx II MIDI ${dirSuffix} (mock)`,
+    `Hydrasynth MIDI ${dirSuffix} (mock)`,
+  ];
+  return fakeNames.map((name, i) => {
+    const lower = name.toLowerCase();
+    const matched = needles.length > 0 && needles.some((n) => lower.includes(n.toLowerCase()));
+    return { index: baseIndex + i, name, direction, matched };
+  });
 }
 
 /**
@@ -168,6 +205,111 @@ export interface ConnectOptions {
    * generic callers usually leave this empty.
    */
   notFoundHints?: string[];
+}
+
+/**
+ * Synthesize zero-or-more inbound SysEx messages in response to one
+ * outgoing message. Returned arrays are delivered to the connection's
+ * `onMessage` handlers (and therefore to any pending `receiveSysEx*`
+ * waiters) asynchronously, after a configurable latency.
+ *
+ * Per-device implementations live alongside each device's `midi.ts` —
+ * AM4 produces SET_PARAM write-echos and command-acks, Axe-Fx II
+ * produces parameter-value responses, etc. The core knows nothing
+ * about any protocol; it just wires the synthesizer into the
+ * connection.
+ */
+export type MockResponder = (outgoing: number[]) => number[][];
+
+export interface MockConnectOptions {
+  /** Device-specific response synthesizer. Receives every outbound message; returns inbound responses to inject. */
+  responder: MockResponder;
+  /** Simulated ack latency in ms. Default 30 (matches AM4 typical). */
+  ackLatencyMs?: number;
+}
+
+/**
+ * Mock MidiConnection — accepts writes without touching USB and feeds
+ * synthesized responses back through the same onMessage / receiveSysEx*
+ * channels real connections use. Per the 2026 MCP community pattern
+ * ("mock transport" — Fastio MCP testing guide), this replaces the
+ * lowest dependency layer with a deterministic stub while leaving the
+ * device dispatcher, schema validation, and encoding pipeline intact.
+ *
+ * Caller enables via env var on the device-specific connectXXX wrapper:
+ *
+ *   if (process.env.MCP_MOCK_TRANSPORT === '1') return mockConnect({
+ *     responder: am4MockResponder,
+ *   });
+ *
+ * Agent-regression cases that don't have hardware plugged in flip this
+ * flag and all set_param / apply_preset / etc. tools execute end-to-end
+ * against the in-memory mock — same code paths as the real device,
+ * minus the USB layer.
+ */
+export function mockConnect(opts: MockConnectOptions): MidiConnection {
+  const handlers = new Set<(bytes: number[]) => void>();
+  const ackLatencyMs = opts.ackLatencyMs ?? 30;
+  const sendErrCell: { value?: Error } = {};
+
+  const deliver = (bytes: number[]): void => {
+    // Snapshot handlers — handler may unsubscribe itself during delivery.
+    const snapshot = Array.from(handlers);
+    for (const h of snapshot) h([...bytes]);
+  };
+
+  const send = (bytes: number[]): void => {
+    sendErrCell.value = undefined;
+    const responses = opts.responder([...bytes]);
+    // Deliver after the simulated latency so receiveSysExMatching's
+    // ordering matches real hardware (the writer registers the
+    // predicate before send returns).
+    if (responses.length > 0) {
+      setTimeout(() => {
+        for (const r of responses) deliver(r);
+      }, ackLatencyMs);
+    }
+  };
+
+  return {
+    send,
+    get lastSendError(): Error | undefined { return sendErrCell.value; },
+    receiveSysEx: (timeoutMs = 1000) =>
+      new Promise<number[]>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          handlers.delete(handler);
+          reject(new Error(`Timeout waiting for SysEx response after ${timeoutMs}ms`));
+        }, timeoutMs);
+        const handler = (bytes: number[]) => {
+          if (bytes[0] !== 0xf0) return;
+          clearTimeout(timer);
+          handlers.delete(handler);
+          resolve(bytes);
+        };
+        handlers.add(handler);
+      }),
+    receiveSysExMatching: (predicate, timeoutMs = 1000) =>
+      new Promise<number[]>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          handlers.delete(handler);
+          reject(new Error(`Timeout waiting for matching SysEx after ${timeoutMs}ms`));
+        }, timeoutMs);
+        const handler = (bytes: number[]) => {
+          if (bytes[0] !== 0xf0) return;
+          if (!predicate(bytes)) return;
+          clearTimeout(timer);
+          handlers.delete(handler);
+          resolve(bytes);
+        };
+        handlers.add(handler);
+      }),
+    onMessage: (handler) => {
+      handlers.add(handler);
+      return () => handlers.delete(handler);
+    },
+    hasInput: true,
+    close: () => { handlers.clear(); },
+  };
 }
 
 /**
