@@ -74,8 +74,6 @@ import {
 import { loadFactoryBank, sendFactoryRestore } from '../factoryBank.js';
 import {
   guardActiveAM4BufferOrSave,
-  markAM4Clean,
-  markAM4Dirty,
   refreshAM4Fingerprint,
 } from '../tools/safeEdit.js';
 import { readPresetName } from '../shared/readOps.js';
@@ -242,41 +240,22 @@ function specToApplyInput(spec: PresetSpec): ApplyPresetInput {
 
 /**
  * After a successful save_preset, switch the active location to the
- * just-saved target so the user sees and hears what they saved. Runs
- * the standard buffer-dirty gate first — a successful save marks the
- * buffer clean (by definition: working buffer was just persisted to
- * the target, so they match), so the gate passes; but if some race
- * left the dirty flag set, surface a warning rather than clobbering.
+ * just-saved target so the user sees and hears what they saved.
+ *
+ * No dirty gate here: the user explicitly authorized the save, and the
+ * working buffer's contents now match the save target. Switching to
+ * target can't surprise them — there is nothing to lose. (The
+ * fingerprint gate exists to prevent SILENT data loss on navigation
+ * the user didn't ask for; that isn't this case.)
  *
  * Returns `undefined` on success, or a warning string when the post-
- * save switch couldn't be performed cleanly. Callers append the
- * warning to their result rather than reporting a save failure — the
- * save itself succeeded.
+ * save switch didn't ack. Callers append the warning to their result
+ * rather than reporting a save failure — the save itself succeeded.
  */
 async function runPostSaveSwitch(
   ctx: DispatchCtx,
   locationIndex: number,
 ): Promise<string | undefined> {
-  // The save just persisted the working buffer to the target — the
-  // buffer and the target match. Clean by definition. (Mirrors
-  // safeEdit.ts:144 in the save-active-first path.)
-  markAM4Clean();
-
-  // Belt-and-suspenders: run the dirty gate anyway, so the switch
-  // never silently overwrites unsaved edits. After the markClean
-  // above this should always pass; the gate is here so a future
-  // device-sourced dirty signal (HW-107) automatically catches
-  // races between save-ack and switch-issue.
-  const guard = await guardActiveAM4BufferOrSave(ctx.conn, 'warn');
-  if (!guard.proceed) {
-    return (
-      `Saved, but active location did NOT switch to ${formatLocationDisplay(locationIndex)} ` +
-      `because the buffer-dirty gate refused. ${guard.warningText ?? ''} ` +
-      `Call switch_preset({port:'am4', location:'${formatLocationDisplay(locationIndex)}'}) ` +
-      `with on_active_preset_edited='discard' or 'save_active_first' to complete the move.`
-    );
-  }
-
   const switchBytes = buildSwitchPreset(locationIndex);
   const switchResult = await sendAndAwaitAck(ctx.conn, switchBytes, isWriteEcho);
   // New preset = new channel layout; existing cache is stale.
@@ -290,7 +269,7 @@ async function runPostSaveSwitch(
   }
   // Save committed the working buffer to flash at this location; the
   // buffer now matches the stored preset. Refresh the fingerprint
-  // cache so the next dirty-gate check can detect front-panel edits.
+  // cache so the next dirty-gate check has a clean baseline.
   await refreshAM4Fingerprint(ctx.conn, locationIndex);
   return undefined;
 }
@@ -350,11 +329,6 @@ export const writer: DeviceWriter = {
       // the only thing that catches a type write done in an isolated
       // call.
       observeWrittenParam(block, name, value);
-      // Mark the working buffer dirty — AM4 doesn't broadcast a dirty
-      // signal (HW-107 pending), so the safe-edit gate relies on this
-      // code-side classifier. Without this, switch_preset and apply_
-      // preset with target_location would silently discard the edit.
-      markAM4Dirty();
     }
     const enumName = param.unit === 'enum'
       ? (param.enumValues as Record<number, string> | undefined)?.[value]
@@ -472,14 +446,12 @@ export const writer: DeviceWriter = {
     invalidateChannelCache();
     if (result.acked) {
       // Switching presets loads a stored preset into the working
-      // buffer, so the buffer matches what's on flash — clean by
-      // definition. Mirrors the markAM4Clean in runPostSaveSwitch.
-      markAM4Clean();
-      // Refresh the working-buffer fingerprint cache so the next
-      // dirty-gate check can detect front-panel edits made between
-      // now and the next navigation attempt. Best-effort: failures
-      // are swallowed so the switch's success isn't penalized by a
-      // non-critical side task. See bufferFingerprint.ts.
+      // buffer — the buffer matches flash. Refresh the fingerprint
+      // cache so the next dirty-gate check has a clean baseline
+      // (and can detect front-panel edits made before the next
+      // navigation). Best-effort: failures are swallowed so the
+      // switch's success isn't penalized by a non-critical side task.
+      // See bufferFingerprint.ts.
       await refreshAM4Fingerprint(ctx.conn, locationIndex);
     }
     return {
@@ -520,14 +492,10 @@ export const writer: DeviceWriter = {
     }
 
     // Switch the active location to the just-saved target so the user
-    // sees and hears what they saved. Without this, the active
-    // location stayed at whatever-was-active-before-the-save and the
-    // user assumed the save targeted the wrong location (the
-    // 2026-05-13 founder-test confusion). Routes through the same
-    // dirty gate switch_preset uses; after a successful save the
-    // buffer is clean by definition (markAM4Clean fires below the
-    // ack path), so the gate passes — but if some race left it
-    // dirty, surface that instead of clobbering.
+    // sees and hears what they saved. Without this, the active location
+    // stayed at whatever-was-active-before-the-save and the user
+    // assumed the save targeted the wrong location (the 2026-05-13
+    // founder-test confusion).
     const switchTrouble = await runPostSaveSwitch(ctx, locationIndex);
     const baseWarning = name
       ? `Saved "${name}" to ${formatLocationDisplay(locationIndex)}.`
@@ -590,7 +558,6 @@ export const writer: DeviceWriter = {
     }
     const bytes = buildSetBlockType(slot as 1 | 2 | 3 | 4, wire);
     const result = await sendAndAwaitAck(ctx.conn, bytes, isWriteEcho);
-    if (result.acked) markAM4Dirty();
     const displayName = BLOCK_NAMES_BY_VALUE[wire] ?? `0x${wire.toString(16)}`;
     return {
       op: 'set_block',
@@ -614,7 +581,6 @@ export const writer: DeviceWriter = {
     }
     const bytes = buildSetBlockBypass(wire, bypassed);
     const result = await sendAndAwaitAck(ctx.conn, bytes, isWriteEcho);
-    if (result.acked) markAM4Dirty();
     const stateWord = bypassed ? 'bypassed' : 'active';
     return {
       op: 'set_bypass',
@@ -651,19 +617,13 @@ export const writer: DeviceWriter = {
         capture.unsubscribe();
       }
       if (result.ok) {
-        // Post-conditions for the safe-edit dirty signal: a save run
-        // persists the working buffer to flash → clean. An audition
-        // run leaves the working buffer mutated relative to flash →
-        // dirty. (AM4 has no device-broadcast dirty signal; HW-107
-        // confirmed Session 74 the device is silent on front-panel
-        // edits — the fingerprint cache catches that case.)
+        // A save run persists the working buffer to flash, so the
+        // buffer matches the target. Refresh the cache so the next
+        // dirty-gate check has a clean baseline. An audition run
+        // leaves the buffer mutated relative to flash — no refresh,
+        // so the next gate check sees the mismatch.
         if (result.saved) {
-          markAM4Clean();
-          // Refresh the fingerprint cache for the just-saved location
-          // so the next dirty-gate check can detect front-panel edits.
           await refreshAM4Fingerprint(ctx.conn, locationIndex);
-        } else {
-          markAM4Dirty();
         }
         const auditionNote = result.saved
           ? undefined
@@ -718,12 +678,6 @@ export const writer: DeviceWriter = {
       : undefined;
     const skipNote = formatSkippedNote(skipped);
     const warning = [ackNote, skipNote].filter((s) => s !== undefined).join(' ');
-    if (wireResult.totalWrites > 0 && wireResult.unacked < wireResult.totalWrites) {
-      // Working-buffer-only apply mutated the buffer → dirty per the
-      // safe-edit contract. Even a partial apply is dirty if any
-      // write landed.
-      markAM4Dirty();
-    }
     return {
       ok: wireResult.unacked === 0,
       steps: wireResult.totalWrites,
@@ -1070,7 +1024,6 @@ export const writer: DeviceWriter = {
     const sceneIdx = Number(m[1]) - 1;
     const bytes = buildSetSceneName(sceneIdx, name);
     const result = await sendAndAwaitAck(ctx.conn, bytes, isCommandAck);
-    if (result.acked) markAM4Dirty();
     return {
       op: 'rename',
       target,

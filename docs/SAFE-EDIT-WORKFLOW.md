@@ -81,7 +81,7 @@ implementation strategy:
 
 | Capability | AM4 | Axe-Fx II | Hydrasynth |
 |---|---|---|---|
-| Device-sourced dirty signal | ❌ not exposed (HW-107 closed Session 74: zero MIDI bytes on front-panel edits; code-side classifier on outbound writes is the only viable signal) | ✅ via `0x74` state-broadcast | ❌ not exposed in MIDI |
+| Device-sourced dirty signal | ❌ not exposed (HW-107 closed Session 74: zero MIDI bytes on front-panel edits). Dirty gate polls the working-buffer fingerprint on the navigation seam — see `bufferFingerprint.ts` + `tools/safeEdit.ts`. | ✅ via `0x74` state-broadcast | ❌ not exposed in MIDI |
 | `on_active_preset_edited` guard | ✅ unified surface (`apply_preset`, `switch_preset`) | ✅ Session 68 | n/a (no dirty detection) |
 | `save_authorized` guard on apply-at-slot | ✅ unified `apply_preset(target_location, save_authorized)` | ✅ Session 68 | ✅ `hydra_apply_patch(save: true)` |
 | Multi-preset overwrite scan | ✅ `scan_locations` | ✅ `scan_locations` | n/a (different patch model) |
@@ -99,19 +99,28 @@ Three pieces, applied consistently:
 
 ### 1. Buffer-dirty tracking
 
-Where the device emits a state-broadcast that fires on edits (Axe-Fx
-II's `0x74`, AM4's TBD signal from HW-107), we listen passively and
-flip an in-memory `dirty[device]` flag. **Device-sourced and
-authoritative.** Implemented in `src/server/shared/bufferDirty.ts`.
+Three strategies depending on what the device exposes over MIDI:
 
-Where the device doesn't expose a dirty signal in MIDI (Hydrasynth),
-we don't try to fake it. The `save_authorized` guard still works,
-but `on_active_preset_edited` is omitted as `n/a` — agents know to
-ask the user before navigating away.
+**Device-sourced broadcast (Axe-Fx II).** The device emits a state-
+broadcast that fires on edits (`0x74` triple). We listen passively
+and flip an in-memory `dirty[device]` flag. Device-sourced and
+authoritative.
 
-`markClean` is wired on outbound `switch_preset` and `save_preset`
-across all devices (the device transitions to clean when we load
-stored bytes or commit working buffer to a slot).
+**Polled fingerprint (AM4).** HW-107 (Session 74) confirmed AM4
+emits zero unsolicited MIDI on front-panel edits — no push signal
+exists. Continuous polling (AM4-Edit does ~60 Hz) is too expensive
+for the MCP server. The dirty gate instead dumps the working buffer
+(HW-045) ONCE on the navigation seam, hashes it, and compares to the
+last cached "clean" fingerprint for the active location. Cache
+baselines are refreshed after every clean transition (post-switch,
+post-save). Catches our writes + front-panel knob turns + parallel-
+editor edits in one ~200 ms round-trip. Implemented in
+`packages/am4/src/bufferFingerprint.ts` + `tools/safeEdit.ts`.
+
+**No detection (Hydrasynth).** Device doesn't expose a dirty signal
+and the patch-buffer dump cost is prohibitive. We don't fake it.
+`save_authorized` guard still works; `on_active_preset_edited` is
+omitted as `n/a` — agents know to ask the user before navigating.
 
 ### 2. `on_active_preset_edited` guard
 
@@ -210,46 +219,51 @@ the backlog (BK-TBD).
 
 ## Failure modes documented
 
-- **Front-panel edits we can't see.** Devices without a decoded
-  dirty-broadcast (Hydrasynth and AM4 both fall in this bucket as
-  of Session 74 HW-107) won't trigger the dirty flag for edits the
-  user made on the device itself. **AM4 specifically:** an HW-107
-  capture with AM4-Edit closed produced ZERO inbound MIDI bytes
-  during front-panel knob turns, bypass toggles, and scene switches
-  over 58 seconds. The device does not broadcast on edits — AM4-Edit
-  detects them by continuously polling state, which would compete
-  with the MCP server's real work and is not implemented. The
-  `save_authorized` guard still catches save-intent ambiguity. The
-  `on_active_preset_edited` guard catches AGENT-made edits (every
-  set_param / apply_preset / set_block on AM4 marks the buffer
-  dirty), but cannot catch a knob the user just turned on the
-  hardware. Honest scope: if the user has been editing on the front
-  panel and tells the agent "load A1", they should save on the
-  device first OR pass `on_active_preset_edited: "discard"`. Agents
-  know via the AM4 `agent_guidance.relative_change` block and
-  describe_device.
+- **Front-panel edits on Hydrasynth.** No dirty detection at all —
+  the device doesn't broadcast and the patch-buffer dump cost is
+  prohibitive. `save_authorized` still catches save-intent
+  ambiguity; `on_active_preset_edited` is omitted. Honest scope:
+  agents ask the user before navigating.
+
+- **Front-panel edits between navigations on the same AM4 preset.**
+  The fingerprint refresh after a clean transition captures whatever
+  was on screen at that moment. If the user then turns a knob and
+  asks to navigate to a DIFFERENT preset, the gate catches the edit
+  (current hash ≠ cached). If the user turns a knob and asks to
+  navigate to the SAME preset (re-loading it), the gate compares
+  against the same cached baseline — the edit is detected. The
+  remaining gap: edits between two refresh points the user never
+  explicitly navigates between (e.g. silent state at the moment of
+  the cache refresh isn't checked against a prior baseline). In
+  practice this is closed by every clean transition the agent does.
 
 - **Device save we can't see.** If the user presses SAVE on the
-  device's own front panel (not via the agent), the working buffer
-  becomes clean on the device but our flag stays dirty. Result is
-  a false-positive warning on the next navigation — agent asks
-  the user, who confirms "no, I saved it" and chooses `'discard'`.
-  Fail-safe (extra confirmation) rather than fail-dangerous
-  (silent edit loss).
+  device's own front panel, the working buffer is now identical to
+  flash at the active location. The next navigation gate dumps the
+  buffer, compares to the cached fingerprint, and finds a mismatch
+  (cached pre-save state vs. current post-save state). Result is a
+  false-positive warning — agent asks, user says "I saved it"
+  → choose `'discard'`. Fail-safe (extra confirmation) rather than
+  fail-dangerous (silent edit loss).
 
-- **Server restart.** Dirty flag is in-memory, resets to clean on
-  server restart. Next write or device-broadcast will set it
-  correctly.
+- **Server restart.** Fingerprint cache is in-memory; resets on
+  restart. The first post-restart navigation has no baseline to
+  compare against and proceeds without checking. The post-navigation
+  refresh establishes the baseline for next time.
 
 ## References
 
-- `packages/core/src/server-shared/bufferDirty.ts` — shared dirty-flag tracker
+- `packages/core/src/server-shared/bufferDirty.ts` — shared dirty-flag tracker (Axe-Fx II uses this; AM4 doesn't — it uses the fingerprint cache instead)
 - `packages/axe-fx-ii/src/tools/shared.ts:guardActiveBufferOrSave`
   — reference implementation of the warn/discard/save-first guard
 - `packages/axe-fx-ii/src/midi.ts` — device-sourced dirty
   classification (state-broadcast listener)
+- `packages/am4/src/bufferFingerprint.ts` + `tools/safeEdit.ts` —
+  AM4 polled-fingerprint implementation
 - HW-107 — closed Session 74: AM4 doesn't broadcast on front-panel
-  edits, full stop. The code-side classifier on outbound writes is the
-  only viable signal; front-panel edits are documented as out-of-scope
-  above.
+  edits, full stop. The polled-fingerprint approach is the answer
+  to this finding, not a workaround pending replacement.
 - Session 68 — full history of the Axe-Fx II implementation
+- Session 78 — AM4 dirty gate simplified to always-poll (removed
+  the hybrid code-side classifier; fingerprint is the single source
+  of truth).

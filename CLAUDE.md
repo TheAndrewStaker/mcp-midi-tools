@@ -71,6 +71,14 @@ are catalogued in `docs/REFERENCES.md`. Check there first before searching
 the web — most common questions are answered by one of the local PDFs
 (all extracted to `.txt` for grep-ability).
 
+**Per-device spec quick-references** (read these before WebFetching
+or speculating about wire shapes):
+
+- **AM4** → `docs/SYSEX-MAP.md`
+- **Axe-Fx II** → `docs/SYSEX-MAP-AXE-FX-II.md`
+- **Axe-Fx III** → `docs/SYSEX-MAP-AXE-FX-III.md` (covers Fractal v1.4 PDF; extracted text at `docs/manuals/AxeFx3-MIDI-3rdParty.txt`)
+- **Hydrasynth** → `docs/HYDRASYNTH-SYSEX-MAP.md` (if present)
+
 ## AM4 SysEx Quick Reference
 
 ### Device ID
@@ -158,10 +166,17 @@ a dirty-state signal:
   `on_active_preset_edited` entirely. The `save_authorized` gate still
   applies. Document the limitation in tool descriptions so the agent
   asks the user before navigating instead of relying on the API gate.
-- **AM4's device-sourced dirty signal is pending HW-107 capture.**
-  Until that lands, AM4 uses a code-side send-classifier heuristic
-  (mark dirty on outbound write-class messages, clean on switch/save).
-  Drift-prone — temporary measure documented as such.
+- **AM4 has no device-sourced dirty signal.** HW-107 closed Session 74
+  as a negative finding: AM4 emits zero unsolicited MIDI on front-panel
+  edits, so there is no push signal to listen for. The dirty gate
+  instead polls the working buffer on the navigation seam: dump the
+  buffer (HW-045), hash it, compare to the last cached "clean"
+  fingerprint for the active location. Match → proceed; mismatch →
+  refuse / save-first / discard. Cache baselines are refreshed after
+  every clean transition (post-switch, post-save). One source of truth,
+  catches our writes + front-panel edits + parallel-editor edits in
+  one ~200 ms round-trip per navigation. See `bufferFingerprint.ts` +
+  `tools/safeEdit.ts`.
 
 ## Tool surface architecture
 
