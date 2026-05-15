@@ -162,4 +162,297 @@ export const AM4_CASES: AgentRegressionCase[] = [
       max_wall_seconds: 90,
     },
   },
+
+  // ── §2 surface coverage — no-hardware tier ──────────────────────
+  //
+  // These cases exercise the dispatcher's pure-introspection paths
+  // (describe_device, list_params, lookup_lineage, find_compatible_types)
+  // and the validator-layer error envelopes (unknown_param,
+  // value_out_of_range, bad_channel, capability_not_supported,
+  // unknown_block). Every failure mode below throws in resolvers.ts
+  // BEFORE openCtx is called — so the cases run identically whether
+  // AM4 is plugged in or not. Tag is `no-hardware` so they survive a
+  // release-gate run away from the bench.
+
+  // ── Discovery ───────────────────────────────────────────────────
+  {
+    id: 'am4-s2-discovery-describe',
+    device: 'am4',
+    tier: 'no-hardware',
+    description: '§2 discovery — "What can this AM4 do?" should answer via describe_device. Catches the regression where an agent freelances from training data instead of asking the device.',
+    prompt: 'What can this AM4 do? Tell me what blocks it has, how many scenes per preset, and how many channels per block.',
+    expectations: {
+      must_call: ['describe_device'],
+      max_tools: 3,
+      // No text_contains: agents that emit minimal text after the tool
+      // call (a short summary line, or nothing) still satisfy the
+      // intent — the must_call assertion covers correctness.
+      // Scenes-per-preset is 4; channels are A/B/C/D. Wrong wire-format
+      // talk (Axe-Fx X/Y, 8-scene) signals the agent fabricated.
+      text_not_contains: ['8 scene', 'X/Y', 'X and Y channel'],
+      max_wall_seconds: 60,
+    },
+  },
+  {
+    id: 'am4-s2-discovery-list-amp-types',
+    device: 'am4',
+    tier: 'no-hardware',
+    description: '§2 discovery — "What amp models does this support?" should route to list_params({block:"amp", name:"type"}) so the agent reads the live enum table. Catches "agent dumps training-data list verbatim".',
+    prompt: 'What amp models does this AM4 support? Just give me a count and a few examples — do not paste the entire list.',
+    expectations: {
+      must_call: ['list_params'],
+      max_tools: 4,
+      tool_call_validators: [{
+        tool: 'list_params',
+        check: (args) => {
+          // Need a block-and-name filter to get the enum table back —
+          // otherwise the agent is dumping the full param catalog
+          // (much larger payload, slower) instead of asking for the
+          // amp.type enum specifically.
+          const block = args.block as string | undefined;
+          const name = args.name as string | undefined;
+          if (block === 'amp' && name === 'type') return true;
+          // Acceptable fallback: list_params({block:'amp'}) plus a
+          // second call with name. Catches only the maximally-wasteful
+          // "list_params()" with no filter (returns every param on
+          // every block).
+          if (block === 'amp') return true;
+          return `list_params should be called with block:"amp" (and ideally name:"type") to get the amp enum table — got block=${String(block)} name=${String(name)}.`;
+        },
+      }],
+      // The amp list is 100+ entries; agent should summarize, not dump.
+      // Allow ~3000 chars of body content; flag obvious copy-paste of
+      // the JSON catalog by checking for a known long substring.
+      text_not_contains: ['"enum_values":'],
+      max_wall_seconds: 60,
+    },
+  },
+  {
+    id: 'am4-s2-discovery-lineage-jcm800',
+    device: 'am4',
+    tier: 'no-hardware',
+    description: '§2 discovery — "Look up the JCM800 amp lineage" should route to lookup_lineage. Confirms the lineage corpus is wired and the agent reaches for it instead of generating from training data. Session 78 sweep showed a softer prompt ("Tell me about the JCM800") let Sonnet skip the tool and answer from training — making the prompt explicit about the AM4 lineage data forces the tool call.',
+    prompt: 'Look up the JCM800 amp lineage on this AM4 — what real-world gear does Fractal say it models, and what does the manufacturer write about it?',
+    expectations: {
+      must_call: ['lookup_lineage'],
+      max_tools: 4,
+      tool_call_validators: [{
+        tool: 'lookup_lineage',
+        check: (args) => {
+          if (args.block_type !== 'amp') {
+            return `lookup_lineage block_type should be "amp", got ${String(args.block_type)}.`;
+          }
+          const needle = 'jcm800';
+          const fields = [args.name, args.real_gear, args.model]
+            .map((v) => (typeof v === 'string' ? v.toLowerCase() : ''))
+            .join(' ');
+          if (!fields.includes(needle)) {
+            return `lookup_lineage call did not reference "JCM800" in name/real_gear/model — got ${JSON.stringify({ name: args.name, real_gear: args.real_gear, model: args.model })}.`;
+          }
+          return true;
+        },
+      }],
+      max_wall_seconds: 60,
+    },
+  },
+  {
+    id: 'am4-s2-discovery-find-compatible-reverb',
+    device: 'am4',
+    tier: 'no-hardware',
+    description: '§2 discovery — "Which reverb types let me set a long decay?" should route to find_compatible_types({block:"reverb", params:["time"]}). This is the same workflow that powers the H1 regression fix — exercised in isolation here.',
+    prompt: 'Which reverb types on the AM4 expose a decay-time knob? I want a long, lush tail and the type matters.',
+    expectations: {
+      must_call: ['find_compatible_types'],
+      max_tools: 4,
+      tool_call_validators: [{
+        tool: 'find_compatible_types',
+        check: (args) => {
+          if (args.block !== 'reverb') {
+            return `find_compatible_types block should be "reverb", got ${String(args.block)}.`;
+          }
+          const params = args.params as unknown[] | undefined;
+          if (!Array.isArray(params) || !params.includes('time')) {
+            return `find_compatible_types params should include "time", got ${JSON.stringify(params)}.`;
+          }
+          return true;
+        },
+      }],
+      // The agent often references Hall as a NEGATIVE example ("Hall
+      // variants don't expose time — pick Plate or Spring"). That's
+      // the correct answer; we want to catch false POSITIVE claims
+      // (claiming Hall does expose time). The find_compatible_types
+      // result already excludes Hall — assert via a phrase only a
+      // false-positive would emit.
+      text_not_contains: [
+        'Hall, Large Deep exposes',
+        'Hall variants expose time',
+        'Hall, Large Deep has a time',
+      ],
+      max_wall_seconds: 60,
+    },
+  },
+
+  // ── Error envelopes (negative path) ─────────────────────────────
+  {
+    id: 'am4-s2-err-unknown-param',
+    device: 'am4',
+    tier: 'no-hardware',
+    description: '§2 error — `set amp.warmth to 5` should reject with unknown_param. Agent must not pretend it succeeded.',
+    prompt: 'Set the amp warmth to 5 on the AM4.',
+    expectations: {
+      must_call: ['set_param'],
+      max_tools: 5,
+      tool_call_validators: [{
+        tool: 'set_param',
+        check: (args, result) => {
+          if (args.block !== 'amp' || args.name !== 'warmth') {
+            return `set_param should have been called with amp.warmth (catching the unknown-param path), got block=${String(args.block)} name=${String(args.name)}.`;
+          }
+          if (result === undefined || !/not valid|unknown/i.test(result)) {
+            return `set_param amp.warmth result did not surface the rejection — got: ${result?.slice(0, 200)}.`;
+          }
+          return true;
+        },
+      }],
+      // False-success language only — phrases that imply the write
+      // succeeded. Bare "amp warmth to 5" appears in legitimate refusal
+      // text ("you asked to set amp warmth to 5, but…") so it's not a
+      // reliable signal. Constrain to past-tense / success verbs.
+      text_not_contains: ['warmth is now', 'warmth has been set', 'warmth was set', 'successfully set warmth', 'amp warmth is set'],
+      max_wall_seconds: 60,
+    },
+  },
+  {
+    id: 'am4-s2-err-value-out-of-range',
+    device: 'am4',
+    tier: 'no-hardware',
+    description: '§2 error — `set amp.gain to 12.5`: agent must surface that 12.5 is out of range (gain max = 10). Three acceptable paths: (a) call set_param and let the validator-layer reject, (b) check the descriptor first and refuse upfront, (c) refuse from training-data knowledge of AM4 gain bounds. The signal is no false-success narration, not any specific tool path.',
+    prompt: 'Set the amp gain to 12.5 on the AM4.',
+    expectations: {
+      // min_tools:0 — agent may refuse upfront with zero tool calls,
+      // which IS the correct behavior. The harness's value here is
+      // catching false-success narration, not forcing a tool path.
+      min_tools: 0,
+      max_tools: 5,
+      tool_call_validators: [{
+        // If the agent DOES fire set_param, the call must use 12.5 and
+        // the result must surface the range rejection. `optional:true`
+        // skips this validator when set_param wasn't called (refuse-
+        // upfront path).
+        tool: 'set_param',
+        optional: true,
+        check: (args, result) => {
+          if (args.block !== 'amp' || args.name !== 'gain') {
+            return `set_param called but targeted ${String(args.block)}.${String(args.name)} instead of amp.gain.`;
+          }
+          if (args.value !== 12.5 && args.value !== '12.5') {
+            return `set_param amp.gain value should be 12.5, got ${JSON.stringify(args.value)}.`;
+          }
+          if (result === undefined || !/out of range|max(imum)?|range \[/i.test(result)) {
+            return `set_param amp.gain=12.5 result did not surface a range rejection — got: ${result?.slice(0, 200)}.`;
+          }
+          return true;
+        },
+      }],
+      // Final text must reference the actual constraint (the max
+      // value or "out of range"). Catches "I tried and it worked!"
+      // hallucinations no matter which path the agent took.
+      text_contains: ['10'],
+      // Must not claim the 12.5 write succeeded.
+      text_not_contains: ['gain is now 12', 'set gain to 12', 'amp gain is at 12', 'set to 12.5'],
+      max_wall_seconds: 60,
+    },
+  },
+  {
+    id: 'am4-s2-err-bad-channel',
+    device: 'am4',
+    tier: 'no-hardware',
+    description: '§2 error — `set amp channel E gain to 6`: agent must surface that channel E does not exist (AM4 channels are A/B/C/D). Three acceptable paths: call set_param + let the validator reject, refuse after describe_device, or refuse from training-data knowledge. Test signal is no false-success narration, not tool path.',
+    prompt: 'Set amp channel E gain to 6 on the AM4.',
+    expectations: {
+      min_tools: 0,
+      max_tools: 5,
+      tool_call_validators: [{
+        tool: 'set_param',
+        optional: true,
+        check: (args, result) => {
+          if (args.block !== 'amp' || args.name !== 'gain') {
+            return `set_param called but targeted ${String(args.block)}.${String(args.name)} instead of amp.gain.`;
+          }
+          const channel = args.channel;
+          if (typeof channel !== 'string' || channel.toUpperCase() !== 'E') {
+            return `set_param channel should be "E" (the bad-channel request), got ${JSON.stringify(channel)}.`;
+          }
+          if (result === undefined || !/A\/B\/C\/D|not valid|bad.?channel/i.test(result)) {
+            return `set_param amp.gain channel=E result did not surface a bad-channel rejection — got: ${result?.slice(0, 200)}.`;
+          }
+          return true;
+        },
+      }],
+      // Drop text_contains: the agent's wording varies ("channels are
+      // A/B/C/D", "AM4 supports A through D", "no channel E exists",
+      // etc.) — predicting exact substrings is brittle. The signal we
+      // care about is the absence of false-success language below.
+      text_not_contains: ['channel E is now', 'set channel E', 'channel E gain is'],
+      max_wall_seconds: 60,
+    },
+  },
+  {
+    id: 'am4-s2-err-channel-on-non-channel-block',
+    device: 'am4',
+    tier: 'no-hardware',
+    description: '§2 error — `set chorus.rate channel:A` should reject with capability_not_supported (chorus has no channels). Critical: agent must NOT silently drop the channel arg and write to the active channel.',
+    prompt: 'Set the chorus channel A rate to 0.8 on the AM4.',
+    expectations: {
+      // The cleanest pass is: agent calls set_param with channel="A",
+      // sees the refusal, surfaces it. A more careful agent might
+      // call describe_device or list_params first; that's fine too.
+      must_call: ['set_param'],
+      max_tools: 6,
+      tool_call_validators: [{
+        tool: 'set_param',
+        check: (args, result) => {
+          if (args.block !== 'chorus' || args.name !== 'rate') {
+            return `set_param should target chorus.rate, got block=${String(args.block)} name=${String(args.name)}.`;
+          }
+          if (args.channel === undefined) {
+            return 'set_param dropped the channel argument silently — that is the regression this case guards against. Channel must be passed so the server can issue capability_not_supported.';
+          }
+          if (result === undefined || !/channel|capability/i.test(result)) {
+            return `set_param chorus.rate channel:A result did not mention channels/capability — got: ${result?.slice(0, 200)}.`;
+          }
+          return true;
+        },
+      }],
+      // Without an enforced refusal, agent would say "set chorus rate to 0.8".
+      text_not_contains: ['chorus channel A is now', 'channel A rate is set'],
+      max_wall_seconds: 60,
+    },
+  },
+  {
+    id: 'am4-s2-err-unknown-block',
+    device: 'am4',
+    tier: 'no-hardware',
+    description: '§2 error — `set oscillator.gain to 5`: agent must surface that AM4 has no oscillator block. Three acceptable paths: call set_param + let the validator reject, refuse after describe_device, or refuse from training-data knowledge.',
+    prompt: 'Set the oscillator gain to 5 on the AM4.',
+    expectations: {
+      min_tools: 0,
+      max_tools: 5,
+      tool_call_validators: [{
+        tool: 'set_param',
+        optional: true,
+        check: (args, result) => {
+          if (args.block !== 'oscillator') {
+            return `set_param was called but block:"${String(args.block)}" — odd given the prompt.`;
+          }
+          if (result === undefined || !/not valid|unknown.?block|Blocks?:/i.test(result)) {
+            return `set_param oscillator.gain result did not surface an unknown-block rejection — got: ${result?.slice(0, 200)}.`;
+          }
+          return true;
+        },
+      }],
+      text_not_contains: ['oscillator gain is now', 'set oscillator gain', 'oscillator has been set'],
+      max_wall_seconds: 60,
+    },
+  },
 ];

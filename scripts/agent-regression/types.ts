@@ -38,11 +38,19 @@ export interface ToolCallValidator {
    * (0-indexed). Otherwise runs against the first call.
    */
   call_index?: number;
+  /**
+   * When true, the validator silently passes if the tool was never
+   * called. Use for "if the agent fires this tool, verify args — but
+   * not calling it at all is also acceptable" semantics. Default
+   * false: a never-called tool fails the validator (legacy behavior,
+   * paired with a `must_call` entry).
+   */
+  optional?: boolean;
 }
 
 export interface Expectations {
-  /** Tools that MUST be called at least once. Bare names. */
-  must_call: readonly string[];
+  /** Tools that MUST be called at least once. Bare names. Omit when the case accepts multiple valid paths and verifies via tool_call_validators / text_contains. */
+  must_call?: readonly string[];
   /** Tools that MUST NOT be called. Bare names. */
   must_not_call?: readonly string[];
   /** Ceiling on total tool calls. Efficiency check. */

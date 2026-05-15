@@ -16,6 +16,25 @@ mirror — runs the same prompts unattended, captures the agent's tool
 sequence, asserts efficient + correct usage, and catches **silent
 no-op regressions** a human reading the chat would miss.
 
+## Tool surface — MCP-only via `--tools ""`
+
+Each `claude -p` invocation is launched with `--tools ""`, which removes
+every Claude Code built-in (Bash, Edit, Read, Grep, Glob, Skill, Task*,
+ToolSearch, WebFetch, etc.) from the agent's tool surface. MCP servers
+pass through independently via `--mcp-config`.
+
+This mirrors a Claude Desktop user's environment — Desktop users don't
+have Grep / Skill / TaskCreate either — and isolates the test to the
+quality of the MCP tool *descriptions* on this server. Without this
+filter, Sonnet sometimes fell back to grep'ing our local codebase
+("What amp models does this support?" → 11× Grep against `docs/`) or
+reaching for Claude Code's planning surface (`Skill → TaskCreate →
+TaskUpdate`), which made the harness test the wrong thing.
+
+`--allowedTools` (note: different flag) is permission-tier and was
+verified ineffective for surface filtering — per the Claude Code CLI
+docs, `--tools` is the one that filters what the model can see.
+
 The motivating example: in the H1 hero run, the agent picked
 `reverb.type = "Hall, Large Deep"`, wrote `reverb.time = 6`, the
 device ACKed the write, and the agent reported "Decay locked in at 6
@@ -71,23 +90,56 @@ block the gate. Override with `--max-retries=0` for CI-debug mode.
 1. Add an entry to the right `cases-<device>.ts` file. Required fields:
    `id`, `device`, `tier`, `description`, `prompt`, `expectations`.
 2. Pick the assertions:
-   - `must_call` — bare tool names that MUST appear.
+   - `must_call` — bare tool names that MUST appear (optional; omit when
+     the case accepts multiple valid paths).
+   - `min_tools` — floor on total tool calls. Default 1; set to 0 when
+     an upfront refusal is an acceptable agent path.
    - `max_tools` — efficiency ceiling.
    - `max_repeats` — per-tool retry ceiling (catches enum / type-mismatch loops).
    - `tool_call_validators` — argument-level predicates over a specific tool call.
+     Set `optional: true` on a validator that should silently pass when
+     the tool wasn't called — "if you fired this tool, verify args, but
+     not firing it is also acceptable."
    - `should_avoid_dropped_param_warning` — flag for the H1-silent-no-op class.
    - `text_not_contains` — guards against false-confidence narration.
 3. Run with `--verbose` once to see the actual tool sequence, tune the
    bounds, and commit.
 
+### Assertion-design rule of thumb
+
+Test for *behavior*, not *tool sequence*. Sonnet's correct response to
+"set amp gain to 12.5 on the AM4" might be:
+  (a) call `set_param` and let the validator-layer reject, OR
+  (b) read `describe_device` first and refuse upfront, OR
+  (c) refuse from training-data knowledge that AM4 gain caps at 10.
+All three are right answers. Forcing `must_call: ['set_param']` rejects
+(b) and (c) as failures, which is a harness bug — assertion was too
+prescriptive about the tool path. Prefer:
+  - `min_tools: 0` (allow zero-tool refusals when correct),
+  - `tool_call_validators` with `optional: true` (verify args IF the
+    tool was called),
+  - `text_not_contains` for false-success narration ("amp gain is now
+    12.5"), which catches the actual regression we care about.
+
 ## Tier-skipping
 
 - `tier: 'no-hardware'` cases run anywhere (descriptor introspection,
   schema validation, etc.).
-- `tier: 'hardware'` cases require the device. If the agent can't talk
-  to the hardware, the case will time out or surface a transport error
-  — surfaces as a fail. The harness does NOT auto-skip; pass
-  `--tier=no-hardware` in CI to scope to the safe set.
+- `tier: 'hardware'` cases require the device. At sweep startup the
+  harness probes `list_midi_ports`; hardware-tier cases whose device
+  isn't visible are skipped cleanly (release-gate stays green away
+  from the bench).
+- **Mid-sweep disconnect detection.** A hardware case that starts with
+  the device visible but loses it mid-run (USB blip, founder unplugs,
+  another worktree grabs the port) used to silently pass if its
+  validators only checked tool-call *arguments* — the agent made the
+  call with correct args, the tool returned a "device not found"
+  error, the validator never looked at the result. The harness now
+  scans every tool result on a hardware case for the device-not-found
+  envelope (matches `not found in the MIDI device list`, `AM4 not
+  visible`, `Axe-Fx II/III not found`, `Hydrasynth not found`, etc.)
+  and fails the case loudly with a "hardware unreachable mid-sweep"
+  diagnostic.
 
 ## Sonnet 4.6 default
 

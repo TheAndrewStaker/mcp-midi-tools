@@ -112,7 +112,8 @@ async function main(): Promise<void> {
   }
   cases = runnable;
 
-  console.log(`Running ${cases.length} case(s)${args.model !== undefined ? ` with model ${args.model}` : ''}${skipped.length > 0 ? `; skipping ${skipped.length} hardware case(s)` : ''}.\n`);
+  console.log(`Running ${cases.length} case(s)${args.model !== undefined ? ` with model ${args.model}` : ''}${skipped.length > 0 ? `; skipping ${skipped.length} hardware case(s)` : ''}.`);
+  console.log(`Surface: MCP-only via \`--tools ""\` (Desktop-fidelity — no Bash/Grep/Skill/Task).\n`);
 
   const results: CaseResult[] = [];
   for (const testCase of cases) {

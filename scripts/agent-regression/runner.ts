@@ -96,10 +96,28 @@ async function runCaseOnce(opts: RunOnceOptions): Promise<CaseResult> {
   //                                        Bypass is safe here because --strict-mcp-config already
   //                                        confines MCP to our server, and we explicitly deny the
   //                                        built-in side-effect tools below.
-  //   --disallowedTools Bash Edit Write... : deny built-ins so the agent can't escape the harness'
-  //                                        scope. If a prompt makes the agent reach for these, it's
-  //                                        a signal the prompt is too generic — fail rather than
-  //                                        silently let it grep our codebase.
+  //   --tools ""                         : restrict the agent to ONLY the MCP
+  //                                        server's tools. `--tools` filters
+  //                                        the TOOL SURFACE exposed to the
+  //                                        model (per Claude Code CLI docs);
+  //                                        `--allowedTools` only affects the
+  //                                        permission gate, NOT what the
+  //                                        agent can see. Passing `""`
+  //                                        disables every Claude Code
+  //                                        built-in (Bash, Edit, Read, Grep,
+  //                                        Glob, Skill, Task*, ToolSearch,
+  //                                        WebFetch, …); MCP servers pass
+  //                                        through independently via
+  //                                        --mcp-config. Verified Session 78:
+  //                                        the agent's `tools[]` init list
+  //                                        contains only `mcp__<server>__*`
+  //                                        entries after this flag.
+  //                                        Closer to a Desktop user's
+  //                                        toolset AND stable against future
+  //                                        Claude Code surface additions.
+  //   --permission-mode bypassPermissions: with the surface already filtered
+  //                                        to MCP-only, auto-approve every
+  //                                        call so the harness runs unattended.
   // The prompt itself is piped to stdin (not argv) so quotes and punctuation
   // don't need shell-escaping.
   const args = [
@@ -111,7 +129,12 @@ async function runCaseOnce(opts: RunOnceOptions): Promise<CaseResult> {
     '--mcp-config', MCP_CONFIG_PATH,
     '--model', model,
     '--permission-mode', 'bypassPermissions',
-    '--disallowedTools', 'Bash', 'Edit', 'Write', 'Read', 'NotebookEdit', 'WebFetch', 'WebSearch', 'Task',
+    // `--tools ""` removes every Claude Code built-in (Bash/Edit/Read/
+    // Grep/Glob/Skill/Task*/ToolSearch/etc.) from the agent's tool
+    // surface. MCP-server tools pass through independently via
+    // --mcp-config. Verified by inspecting the `tools[]` field on
+    // the system init event — empty arg = MCP-only surface.
+    '--tools', '',
   ];
 
   // `claude.exe` is a real executable on Windows + a binary on Unix, so
@@ -328,8 +351,9 @@ function applyAssertions(
     callsByName.set(c.short_name, list);
   }
 
-  // must_call
-  for (const tool of exp.must_call) {
+  // must_call (optional — omitted when the case accepts multiple paths
+  // and asserts via tool_call_validators / text_contains only).
+  for (const tool of exp.must_call ?? []) {
     if (!callsByName.has(tool)) {
       failures.push(`must_call: agent never called \`${tool}\``);
     }
@@ -375,6 +399,7 @@ function applyAssertions(
   for (const v of exp.tool_call_validators ?? []) {
     const matches = callsByName.get(v.tool);
     if (matches === undefined || matches.length === 0) {
+      if (v.optional === true) continue; // silently skip — tool wasn't called and that's OK
       failures.push(`tool_call_validators: \`${v.tool}\` was never called`);
       continue;
     }
@@ -401,8 +426,39 @@ function applyAssertions(
     }
   }
 
+  // Hardware-unreachable detection (Session 78). Hardware-tier cases that
+  // had hardware visible at sweep startup but lose it mid-sweep would
+  // otherwise pass silently — args-only validators ignore tool result
+  // errors. Scan every tool result for the device-not-found patterns the
+  // MCP layer emits (AM4 / Axe-Fx II/III / Hydrasynth use the same
+  // "not found in the MIDI device list" or "not visible" envelope) and
+  // fail loudly so the operator knows to re-plug.
+  if (testCase.tier === 'hardware') {
+    for (const c of tool_calls) {
+      if (c.result === undefined) continue;
+      if (HARDWARE_UNREACHABLE_PATTERN.test(c.result)) {
+        failures.push(
+          `hardware unreachable mid-sweep: \`${c.short_name}\` returned a device-not-found error. Re-plug the device and re-run. ` +
+          `(result snippet: ${c.result.slice(0, 120).replace(/\s+/g, ' ')})`,
+        );
+        break; // one diagnostic per case is enough
+      }
+    }
+  }
+
   return failures;
 }
+
+/**
+ * Pattern that matches the MCP layer's "device not connected" envelopes.
+ * Every Fractal / Hydrasynth descriptor's MIDI connect path throws a
+ * message containing one of these substrings when the named device isn't
+ * visible. Keep in sync with the lead-in strings in
+ * `packages/*​/src/midi.ts:notFoundLeadIn` and the list_midi_ports
+ * "AM4 not visible" fallback in `packages/server-all/src/server/index.ts`.
+ */
+const HARDWARE_UNREACHABLE_PATTERN: RegExp =
+  /not found in the MIDI device list|AM4 not visible|Axe-?Fx ?(II|III) not (found|visible)|Hydrasynth not (found|visible)|No MIDI port matching/i;
 
 // CLI: `tsx runner.ts <case-id>` — useful during case authoring.
 const isMain = import.meta.url === `file://${process.argv[1]?.replace(/\\/g, '/')}`
