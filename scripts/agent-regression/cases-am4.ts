@@ -69,7 +69,7 @@ export const AM4_CASES: AgentRegressionCase[] = [
       should_avoid_dropped_param_warning: true,
       // No false-confidence language about persisting — apply_preset is audition-only.
       text_not_contains: ['saved to Z', 'persisted to Z'],
-      max_wall_seconds: 150,
+      max_wall_seconds: 180,
     },
   },
 

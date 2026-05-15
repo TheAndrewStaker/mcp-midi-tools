@@ -1044,6 +1044,97 @@ assert(
   assert('buildSwitchPreset("I001") rejected (bank out of A..H range)', threw);
 }
 
+// ── apply_preset type-knob compatibility precheck (AM4) ────────────
+//
+// Structural fix for the H1 silent-no-op trap. The dispatcher pre-
+// validates that each slot's `type` enum value exposes every other
+// knob listed in the same slot — BEFORE any MIDI. If incompatible,
+// throws DispatchError(value_out_of_range) with `valid_options`
+// carrying the compatible type subset. The agent's natural error-
+// recovery picks one from the list and retries.
+
+console.log('\napply_preset type-knob compatibility precheck (AM4):');
+
+async function expectApplyPrecheckThrows(
+  label: string,
+  spec: { slots: { slot: number; block_type: string; params?: unknown }[] },
+  fragmentInMessage: string,
+  expectedValidOption?: string,
+): Promise<void> {
+  const { executeApplyPreset } = await import(
+    '@mcp-midi-control/core/protocol-generic/dispatcher.js'
+  );
+  try {
+    await executeApplyPreset({ port: 'am4', spec: spec as Parameters<typeof executeApplyPreset>[0]['spec'] });
+    failed++;
+    console.error(`  ✗ ${label}\n      expected DispatchError, got success`);
+  } catch (err) {
+    if (!(err instanceof DispatchError)) {
+      failed++;
+      console.error(`  ✗ ${label}\n      expected DispatchError, got: ${err instanceof Error ? err.message : String(err)}`);
+      return;
+    }
+    if (err.code !== 'value_out_of_range') {
+      failed++;
+      console.error(`  ✗ ${label}\n      expected code value_out_of_range, got ${err.code}: ${err.message}`);
+      return;
+    }
+    if (!err.message.includes(fragmentInMessage)) {
+      failed++;
+      console.error(`  ✗ ${label}\n      message missing "${fragmentInMessage}": ${err.message}`);
+      return;
+    }
+    if (expectedValidOption !== undefined) {
+      const opts = err.details?.valid_options ?? [];
+      if (!opts.some((o) => o.includes(expectedValidOption))) {
+        failed++;
+        console.error(`  ✗ ${label}\n      valid_options should include "${expectedValidOption}", got: ${JSON.stringify(opts)}`);
+        return;
+      }
+    }
+    passed++;
+  }
+}
+
+// The exact H1 trap: agent sends reverb.type="Hall, Large" + reverb.time=6.
+// Pre-fix: silent no-op on time. Post-fix: structured precheck rejects
+// with valid_options listing Plate/Spring/Echo/SFX variants.
+await expectApplyPrecheckThrows(
+  'reverb.type="Hall, Large" + reverb.time=6 — precheck rejects (Hall fixed-decay)',
+  { slots: [{ slot: 1, block_type: 'reverb', params: { A: { type: 'Hall, Large', time: 6, mix: 30 } } }] },
+  'doesn\'t expose all of [time, mix]',
+  'Plate',
+);
+
+// Same trap, flat-shape variant.
+await expectApplyPrecheckThrows(
+  'reverb.type="Hall, Large Deep" + reverb.time=6 (flat) — precheck rejects (no Hall variant exposes time)',
+  { slots: [{ slot: 1, block_type: 'reverb', params: { type: 'Hall, Large Deep', time: 6 } as Record<string, number | string> }] },
+  'doesn\'t expose',
+  'Plate',
+);
+
+// amp.master on non-master Vox AC30 — same silent-no-op trap class.
+await expectApplyPrecheckThrows(
+  'amp.type="Class-A 30W TB" + amp.master=5 — precheck rejects (AC30 has no master)',
+  { slots: [{ slot: 1, block_type: 'amp', params: { A: { type: 'Class-A 30W TB', gain: 3, master: 5 } } }] },
+  'doesn\'t expose',
+);
+
+// Positive case verified via findCompatibleTypes directly (calling
+// executeApplyPreset for a positive case would trigger an actual wire
+// write when AM4 is connected — not safe in a golden). The precheck
+// uses findCompatibleTypes internally; if Plate, Large is in the
+// compatible set, the precheck will pass on the H1 retry path.
+{
+  const r = findCompatibleTypes({ port: 'am4', block: 'reverb', params: ['time', 'mix'] });
+  assert(
+    'reverb time+mix compatibility — Plate, Large in compatible_types (precheck would PASS)',
+    r.applicability_known === true && r.compatible_types.includes('Plate, Large'),
+    `applicability_known=${r.applicability_known}, includes Plate, Large=${r.compatible_types.includes('Plate, Large')}`,
+  );
+}
+
 // ── find_compatible_types (AM4) ─────────────────────────────────────
 //
 // 2026-05-15 H1 + H2 traces (Sunday Morning + Verse Chorus Bridge Solo)
