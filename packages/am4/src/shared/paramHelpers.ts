@@ -32,6 +32,29 @@ import {
 export const DEFAULT_SCRATCH_LOCATION = 'Z04';
 
 /**
+ * Typed error for ambiguous-enum resolution. Carries the structured
+ * candidate list so the dispatcher / apply executor can populate
+ * `DispatchError.details.valid_options` instead of forcing the agent
+ * to regex the candidates out of the prose message.
+ *
+ * H2 Plexi-100W trace (2026-05-15) — agent sent `"Plexi 100W"`, hit
+ * the ambiguous-enum branch with 4 candidates, parsed them from the
+ * error prose, and retried with `"Plexi 100W High"`. Round-trip cost
+ * ~2 s + tokens; structured valid_options closes that gap.
+ */
+export class EnumAmbiguityError extends Error {
+    readonly candidates: readonly string[];
+    readonly value: string;
+    constructor(value: string, candidates: readonly string[], prefix = '') {
+        const list = candidates.map((c) => `"${c}"`).join(' / ');
+        super(`${prefix}"${value}" is ambiguous — matched ${candidates.length} entries: ${list}. Pick one verbatim.`);
+        this.name = 'EnumAmbiguityError';
+        this.candidates = candidates;
+        this.value = value;
+    }
+}
+
+/**
  * Suggest the closest known param key for an unknown name. Returns the
  * single best match within Levenshtein distance ≤ 2, scoped to the same
  * block so we don't suggest cross-block names. Returns undefined when no
@@ -114,15 +137,11 @@ export function resolveValue(param: Param, value: number | string): number {
             const candidates = typeof value === 'string'
                 ? findEnumCandidates(param, value)
                 : [];
-            let hint: string;
             if (candidates.length >= 2) {
-                const list = candidates.map((c) => `"${c.name}"`).join(' / ');
-                hint = `"${value}" is ambiguous — matched ${candidates.length} entries: ${list}. Pick one verbatim.`;
-            } else {
-                const samples = Object.values(param.enumValues ?? {}).slice(0, 8).join(', ');
-                hint = `"${value}" is not a valid ${param.block}.${param.name} value. First few valid names: ${samples}… (call list_enum_values for the full list).`;
+                throw new EnumAmbiguityError(String(value), candidates.map((c) => c.name));
             }
-            throw new Error(hint);
+            const samples = Object.values(param.enumValues ?? {}).slice(0, 8).join(', ');
+            throw new Error(`"${value}" is not a valid ${param.block}.${param.name} value. First few valid names: ${samples}… (call list_enum_values for the full list).`);
         }
         return resolved;
     }

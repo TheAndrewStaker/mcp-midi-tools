@@ -26,14 +26,31 @@
  * `@/fractal/am4/descriptor.js`; the directory split is internal.
  */
 
-import type { DeviceDescriptor } from '@mcp-midi-control/core/protocol-generic/types.js';
+import type {
+  CompatibleTypesQuery,
+  CompatibleTypesResult,
+  DeviceDescriptor,
+} from '@mcp-midi-control/core/protocol-generic/types.js';
 
+import { findCompatibleTypes as am4FindCompatibleTypes } from './applicability.js';
 import { TOTAL_LOCATIONS } from './locations.js';
 
 import { AM4_AGENT_GUIDANCE } from './descriptor/agentGuidance.js';
 import { buildBlocks, buildBlockTypes } from './descriptor/schema.js';
 import { reader } from './descriptor/reader.js';
 import { writer } from './descriptor/writer.js';
+
+function findCompatibleTypes(query: CompatibleTypesQuery): CompatibleTypesResult {
+  const r = am4FindCompatibleTypes(query.block, query.params);
+  return {
+    block: query.block,
+    params_queried: query.params,
+    compatible_types: r.compatible_types,
+    total_types: r.total_types,
+    applicability_known: r.applicability_known,
+    note: r.note,
+  };
+}
 
 export const AM4_DESCRIPTOR: DeviceDescriptor = {
   id: 'am4',
@@ -69,4 +86,5 @@ export const AM4_DESCRIPTOR: DeviceDescriptor = {
   reader,
   writer,
   agent_guidance: AM4_AGENT_GUIDANCE,
+  findCompatibleTypes,
 };

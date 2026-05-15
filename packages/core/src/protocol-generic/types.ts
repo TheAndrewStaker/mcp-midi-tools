@@ -691,6 +691,49 @@ export interface DeviceDescriptor {
    * Keys are device-defined; no enforced taxonomy.
    */
   agent_guidance?: Readonly<Record<string, string>>;
+
+  /**
+   * Optional pure-introspection method: return the subset of `block.type`
+   * enum values that expose every listed param. Backs the
+   * `find_compatible_types` MCP tool. Devices with structured
+   * per-type applicability data implement this; devices without it omit
+   * the method and the dispatcher falls back to returning the full type
+   * list with `applicability_known: false`.
+   */
+  findCompatibleTypes?: (query: CompatibleTypesQuery) => CompatibleTypesResult;
+}
+
+// ── find_compatible_types ───────────────────────────────────────────
+
+export interface CompatibleTypesQuery {
+  block: string;
+  /** Param names that the chosen type must expose. AND-semantics: every param. */
+  params: readonly string[];
+}
+
+export interface CompatibleTypesResult {
+  block: string;
+  params_queried: readonly string[];
+  /**
+   * Display names of types in the block's primary type enum that expose
+   * every listed param. Empty array means no type satisfies all params
+   * simultaneously — caller should narrow `params` or pick different knobs.
+   */
+  compatible_types: readonly string[];
+  /**
+   * Total count of types in the block's primary type enum. Useful for
+   * "filtered N → K compatible" telemetry in the agent's response.
+   */
+  total_types: number;
+  /**
+   * False when the device has no structured applicability data for this
+   * block (or for any of the listed params). In that case `compatible_types`
+   * is the full enum list (passthrough, no filtering) — caller should
+   * fall back to list_params + the free-form `applies_only_when` field.
+   */
+  applicability_known: boolean;
+  /** Free-form explanation when filtering was partial or unknown. */
+  note?: string;
 }
 
 // ── Error envelope ─────────────────────────────────────────────────

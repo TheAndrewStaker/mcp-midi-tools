@@ -47,6 +47,7 @@ export {
 export {
   describeDevice,
   executeLookupLineage,
+  findCompatibleTypes,
   listParams,
   type ListParamsEntry,
 } from './dispatcher/discovery.js';

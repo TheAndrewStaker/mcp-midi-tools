@@ -164,6 +164,129 @@ export function checkApplicability(
 }
 
 /**
+ * find_compatible_types: which `block.type` enum values expose every
+ * param in `paramNames`? Used by the unified-surface MCP tool of the
+ * same name so the agent can pick a type compatible with the knobs
+ * it plans to write, BEFORE apply_preset → no "dropped X param"
+ * warning round-trip.
+ *
+ * Algorithm: start with the full type enum, intersect down per param.
+ * Params with no applicability data, or only sub-mode gates (e.g.
+ * CABINET_MODE), can't narrow on the primary-type axis — skipped.
+ * Params with primary-type gates narrow the accepted-types set to the
+ * gate value list.
+ *
+ * Returns `applicability_known: false` when NONE of the listed params
+ * have primary-type gates — caller knows the result is the unfiltered
+ * full list and should treat it as "try and see" rather than "these
+ * are the only valid choices."
+ */
+export function findCompatibleTypes(
+  block: string,
+  paramNames: readonly string[],
+): {
+  compatible_types: readonly string[];
+  total_types: number;
+  applicability_known: boolean;
+  note?: string;
+} {
+  const typeEnum = primaryTypeEnumFor(block);
+  if (typeEnum === undefined) {
+    return {
+      compatible_types: [],
+      total_types: 0,
+      applicability_known: false,
+      note: `block "${block}" has no primary type enum`,
+    };
+  }
+  const enumDisplayNames = ENUM_LOOKUP[typeEnum] ?? [];
+  if (enumDisplayNames.length === 0) {
+    return {
+      compatible_types: [],
+      total_types: 0,
+      applicability_known: false,
+      note: `no display names registered for ${typeEnum}`,
+    };
+  }
+  const totalTypes = enumDisplayNames.length;
+
+  let accepted = new Set<number>(Array.from({ length: totalTypes }, (_, i) => i));
+  let anyPrimaryGateApplied = false;
+  const skippedParams: string[] = [];
+
+  for (const paramName of paramNames) {
+    const key = `${block}.${paramName}`;
+    const a = TYPE_APPLICABILITY[key];
+    if (a === undefined) {
+      skippedParams.push(`${paramName} (no applicability data — treated as always-on)`);
+      continue;
+    }
+    if (a.always && a.gates.length === 0) {
+      continue;
+    }
+    const exposedHere = new Set<number>();
+    let hasPrimaryGate = false;
+    for (const g of a.gates) {
+      if (g.typeEnum !== typeEnum) continue;
+      hasPrimaryGate = true;
+      for (const v of g.values) exposedHere.add(v);
+    }
+    if (!hasPrimaryGate) {
+      skippedParams.push(`${paramName} (only sub-mode gates — not narrowable on primary type)`);
+      continue;
+    }
+    anyPrimaryGateApplied = true;
+    accepted = new Set([...accepted].filter((idx) => exposedHere.has(idx)));
+    if (accepted.size === 0) break;
+  }
+
+  const compatibleNames: string[] = [...accepted]
+    .sort((a, b) => a - b)
+    .map((idx) => enumDisplayNames[idx])
+    .filter((n): n is string => n !== undefined);
+
+  const note = skippedParams.length > 0
+    ? `Skipped from narrowing: ${skippedParams.join('; ')}.`
+    : undefined;
+
+  return {
+    compatible_types: compatibleNames,
+    total_types: totalTypes,
+    applicability_known: anyPrimaryGateApplied,
+    note,
+  };
+}
+
+/**
+ * Primary type enum for each AM4 block — the enum the agent picks via
+ * `block.type` and that primary-type applicability gates filter on.
+ * Mirrors `isPrimaryTypeEnum` below but returns the enum NAME rather
+ * than a boolean (caller uses it to look up the display-name table).
+ *
+ * Returns undefined for blocks with no primary type enum (e.g. peq,
+ * volpan, ingate) — those exist as block_types but don't have a
+ * `type` selector knob users can pick.
+ */
+function primaryTypeEnumFor(block: string): string | undefined {
+  switch (block) {
+    case 'amp':        return 'DISTORT_TYPE';
+    case 'drive':      return 'FUZZ_TYPE';
+    case 'delay':      return 'DELAY_TYPE';
+    case 'reverb':     return 'REVERB_TYPE';
+    case 'chorus':     return 'CHORUS_TYPE';
+    case 'flanger':    return 'FLANGER_TYPE';
+    case 'phaser':     return 'PHASER_TYPE';
+    case 'wah':        return 'WAH_TYPE';
+    case 'compressor': return 'COMP_TYPE';
+    case 'geq':        return 'GEQ_TYPE';
+    case 'filter':     return 'FILTER_TYPE';
+    case 'tremolo':    return 'TREMOLO_TYPE';
+    case 'gate':       return 'GATE_TYPE';
+    default:           return undefined;
+  }
+}
+
+/**
  * Whether a typeEnum is the block's primary-type enum (the one we track
  * via `lastKnownType[<block>.type]`). Sub-mode enums (CABINET_MODE,
  * DISTORT_MODE_1, REVERB_BASETYPE, etc.) gate UI exposure but we don't

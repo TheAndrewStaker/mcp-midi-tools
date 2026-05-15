@@ -47,6 +47,21 @@ export function asText(payload: unknown): {
     : { content: [{ type: 'text', text }] };
 }
 
+/**
+ * Duck-typed structured-candidates check. Device packages throw their
+ * own typed errors (e.g. AM4's `EnumAmbiguityError`) that core can't
+ * `instanceof`-check without importing them. The shape contract is:
+ * `err.candidates: readonly string[]` is the structured candidate list
+ * the agent should pick from. When present, surface it as
+ * `Valid options:` in the response text (same shape DispatchError uses).
+ */
+function structuredCandidates(err: unknown): readonly string[] | undefined {
+  if (err === null || typeof err !== 'object') return undefined;
+  const c = (err as { candidates?: unknown }).candidates;
+  if (!Array.isArray(c)) return undefined;
+  return c.every((x) => typeof x === 'string') ? (c as string[]) : undefined;
+}
+
 export function asError(err: unknown): { content: { type: 'text'; text: string }[]; isError: true } {
   let text: string;
   if (err instanceof DispatchError) {
@@ -57,7 +72,12 @@ export function asError(err: unknown): { content: { type: 'text'; text: string }
     if (err.details?.retry_action) parts.push(err.details.retry_action);
     text = parts.join(' ');
   } else if (err instanceof Error) {
-    text = err.message;
+    const parts = [err.message];
+    const candidates = structuredCandidates(err);
+    if (candidates !== undefined && candidates.length > 0) {
+      parts.push(`Valid options: ${candidates.join(', ')}.`);
+    }
+    text = parts.join(' ');
   } else {
     text = String(err);
   }

@@ -15,6 +15,7 @@ import * as z from 'zod/v4';
 import {
   describeDevice,
   executeLookupLineage,
+  findCompatibleTypes,
   listParams,
 } from '../dispatcher.js';
 
@@ -65,6 +66,39 @@ export function registerDiscoveryTools(server: McpServer): void {
   }, async ({ port, block, name }) => {
     try {
       return asText(listParams({ port, block, name }));
+    } catch (err) {
+      return asError(err);
+    }
+  });
+
+  server.registerTool('find_compatible_types', {
+    description: [
+      'Given a block + a list of knob names you plan to write, return the',
+      'subset of `block.type` enum values that expose EVERY listed knob.',
+      'Use BEFORE apply_preset / set_param when you care about specific knobs',
+      '— e.g. "long-decay reverb" needs a reverb.type that exposes `time`.',
+      'Saves a "dropped X param" warning round-trip.',
+      'Example: find_compatible_types({port:"am4", block:"reverb", params:',
+      '["time"]}) → compatible_types = ["Hall, Large Deep", "Plate Long", …].',
+      'Pick from compatible_types[] for the apply_preset call.',
+      'Empty `compatible_types` means no single type exposes all listed knobs',
+      'simultaneously — drop a knob or pick different ones.',
+      'If `applicability_known` is false, the device descriptor has no',
+      'structured per-type data — `compatible_types` is the full type list',
+      '(no filtering). Fall back to list_params + `applies_only_when`.',
+      'AND-semantics across `params`: a type makes the list only if it',
+      'exposes EVERY listed param. Pure introspection — no MIDI I/O.',
+    ].join(' '),
+    inputSchema: {
+      port: z.string().describe(PORT_DESC),
+      block: z.string().describe('Block name (e.g. "reverb", "amp", "delay").'),
+      params: z.array(z.string()).min(1).describe(
+        'Knob names that the chosen type must expose. AND-semantics: every listed param must be exposed by the returned types. Examples: ["time"], ["time", "predelay"], ["master", "negative_feedback"].',
+      ),
+    },
+  }, async ({ port, block, params }) => {
+    try {
+      return asText(findCompatibleTypes({ port, block, params }));
     } catch (err) {
       return asError(err);
     }

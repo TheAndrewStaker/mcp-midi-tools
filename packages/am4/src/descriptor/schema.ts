@@ -33,6 +33,7 @@ import {
   type Param,
   type ParamKey,
 } from '../params.js';
+import { EnumAmbiguityError } from '../shared/paramHelpers.js';
 import { BLOCK_TYPE_VALUES, BLOCK_NAMES_BY_VALUE } from '../blockTypes.js';
 import {
   parseLocationCode,
@@ -70,8 +71,7 @@ export function makeEncode(param: Param): ParamSchema['encode'] {
           ? findEnumCandidates(param, value)
           : [];
         if (candidates.length >= 2) {
-          const list = candidates.map((c) => `"${c.name}"`).join(' / ');
-          throw new Error(`"${value}" is ambiguous — matched ${candidates.length} entries: ${list}. Pick one verbatim.`);
+          throw new EnumAmbiguityError(String(value), candidates.map((c) => c.name));
         }
         const samples = Object.values(param.enumValues ?? {}).slice(0, 8).join(', ');
         throw new Error(`"${value}" is not a valid ${param.block}.${param.name} value. First few valid names: ${samples}… (call list_enum_values for the full list).`);

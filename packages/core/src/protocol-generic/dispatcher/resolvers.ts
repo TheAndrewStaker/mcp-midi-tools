@@ -198,10 +198,22 @@ export function encodeValue(
       schema.unit === 'enum'
         ? (msg.toLowerCase().includes('ambiguous') ? 'ambiguous_enum_value' : 'unknown_enum_value')
         : 'value_out_of_range';
+    // Pull structured candidates off the underlying error (e.g. AM4's
+    // EnumAmbiguityError carries `.candidates`) so the agent can pick a
+    // verbatim choice from the response without re-parsing prose. See
+    // shared.ts:asError for the duck-typed shape contract.
+    const candidates: readonly string[] | undefined =
+      err !== null
+      && typeof err === 'object'
+      && Array.isArray((err as { candidates?: unknown }).candidates)
+      && (err as { candidates: unknown[] }).candidates.every((x) => typeof x === 'string')
+        ? (err as { candidates: string[] }).candidates
+        : undefined;
     throw new DispatchError(
       code,
       descriptor.display_name,
       `set_param: ${block}.${name} on ${descriptor.display_name} — ${msg}`,
+      candidates !== undefined ? { valid_options: candidates } : undefined,
     );
   }
 }

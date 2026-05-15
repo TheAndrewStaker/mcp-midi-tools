@@ -21,6 +21,7 @@ import * as z from 'zod/v4';
 import {
   describeDevice,
   encodeSetParam,
+  findCompatibleTypes,
   listParams,
   requireDevice,
   resolveBlockName,
@@ -1041,6 +1042,128 @@ assert(
   try { HYDRASYNTH_DESCRIPTOR.writer.buildSwitchPreset!('I001'); }
   catch { threw = true; }
   assert('buildSwitchPreset("I001") rejected (bank out of A..H range)', threw);
+}
+
+// ── find_compatible_types (AM4) ─────────────────────────────────────
+//
+// 2026-05-15 H1 + H2 traces (Sunday Morning + Verse Chorus Bridge Solo)
+// surfaced two preventable round-trips:
+//   - Agent set reverb.type="Hall, Large" then wrote reverb.time=6;
+//     time silently dropped because Hall, Large is fixed-decay.
+//   - Same for amp.master on Plexi 100W variants (non-master Marshalls).
+//
+// find_compatible_types({block, params:[...]}) returns the subset of
+// the block's type enum that exposes EVERY listed param. The agent
+// queries it before apply_preset, picks from compatible_types[], and
+// the "dropped X param" warning never fires.
+
+console.log('\nfind_compatible_types (AM4 applicability):');
+
+{
+  const r = findCompatibleTypes({ port: 'am4', block: 'reverb', params: ['time'] });
+  assert(
+    'reverb types exposing `time` filters down from full enum',
+    r.applicability_known === true && r.compatible_types.length > 0 && r.compatible_types.length < r.total_types,
+    `compatible=${r.compatible_types.length}/${r.total_types}, known=${r.applicability_known}`,
+  );
+  assert(
+    'reverb time-exposing list excludes "Hall, Large" (fixed-decay)',
+    !r.compatible_types.includes('Hall, Large'),
+    `compatible_types: ${r.compatible_types.slice(0, 10).join(', ')}…`,
+  );
+  // 2026-05-15 H1 trace finding: NO Hall variants expose reverb.time
+  // on AM4. Only Plate / Spring / Echo / SFX algorithms do. The H1 agent
+  // self-corrected to "Hall, Large Deep" and the device acked the write,
+  // but the value silently didn't apply — the agent reported success
+  // incorrectly. With find_compatible_types the agent would pick a
+  // Plate/Spring/Echo type for "long-decay reverb" instead.
+  assert(
+    'reverb time-exposing list excludes ALL Hall variants (Hall algorithms are fixed-decay)',
+    !r.compatible_types.some((t) => t.startsWith('Hall,')),
+    `unexpected Hall variants: ${r.compatible_types.filter((t) => t.startsWith('Hall,')).join(', ')}`,
+  );
+  assert(
+    'reverb time-exposing list includes Plate variants',
+    r.compatible_types.some((t) => t.startsWith('Plate,')),
+    `compatible Plate variants: ${r.compatible_types.filter((t) => t.startsWith('Plate,')).join(', ')}`,
+  );
+  assert(
+    'reverb time-exposing list includes Spring variants',
+    r.compatible_types.some((t) => t.startsWith('Spring,')),
+    `compatible Spring variants: ${r.compatible_types.filter((t) => t.startsWith('Spring,')).join(', ')}`,
+  );
+}
+
+{
+  // AM4 amp.master is gated against Plexi 100W variants (no-master-volume Marshalls).
+  // The compatible-types filter should narrow at least somewhat.
+  const r = findCompatibleTypes({ port: 'am4', block: 'amp', params: ['master'] });
+  assert(
+    'amp types exposing `master` narrows below full enum (excludes non-master heads)',
+    r.applicability_known === true && r.compatible_types.length < r.total_types,
+    `compatible=${r.compatible_types.length}/${r.total_types}`,
+  );
+}
+
+{
+  // Block with no primary-type enum → applicability_known: false.
+  // 'peq' falls in this bucket (PEQ has no single type-of-EQ enum).
+  const r = findCompatibleTypes({ port: 'am4', block: 'peq', params: ['type'] });
+  assert(
+    'peq (no primary type enum) → applicability_known: false',
+    r.applicability_known === false,
+    `applicability_known=${r.applicability_known}, note=${r.note ?? '(no note)'}`,
+  );
+}
+
+{
+  // Axe-Fx II has no findCompatibleTypes implementation — falls back to full type list.
+  const r = findCompatibleTypes({ port: 'axe-fx-ii', block: 'reverb', params: ['time'] });
+  assert(
+    'Axe-Fx II find_compatible_types falls back with applicability_known: false',
+    r.applicability_known === false,
+    `applicability_known=${r.applicability_known}`,
+  );
+}
+
+expectThrows(
+  'find_compatible_types({params:[]}) rejects empty params array',
+  () => findCompatibleTypes({ port: 'am4', block: 'reverb', params: [] }),
+  'value_out_of_range',
+);
+
+expectThrows(
+  'find_compatible_types({block:"oscillator"}) rejects unknown block',
+  () => findCompatibleTypes({ port: 'am4', block: 'oscillator', params: ['type'] }),
+  'unknown_block',
+);
+
+// ── Enum-ambiguity carries valid_options through DispatchError ──────
+//
+// H2 trace (2026-05-15): agent sent amp.type="Plexi 100W" which matched
+// 4 variants. The error response carried the candidates in prose. After
+// this fix the DispatchError.details.valid_options carries them
+// structurally so the agent picks a verbatim choice without re-parsing.
+
+console.log('\nEnum-ambiguity valid_options passthrough:');
+
+try {
+  encodeSetParam({ port: 'am4', block: 'amp', name: 'type', value: 'Plexi 100W' });
+  failed++;
+  console.error('  ✗ Plexi 100W ambiguity expected to throw');
+} catch (err) {
+  if (err instanceof DispatchError && err.code === 'ambiguous_enum_value') {
+    const opts = err.details?.valid_options;
+    const ok = Array.isArray(opts) && opts.length >= 2 && opts.every((o) => typeof o === 'string' && o.startsWith('Plexi 100W'));
+    assert(
+      'Plexi 100W ambiguity surfaces structured valid_options (Plexi 100W *)',
+      ok,
+      ok ? undefined : `opts=${JSON.stringify(opts)}`,
+    );
+  } else {
+    failed++;
+    console.error(`  ✗ Plexi 100W expected DispatchError(ambiguous_enum_value), got ${err instanceof Error ? err.message : String(err)}`);
+  }
 }
 
 // Reporting ───────────────────────────────────────────────────────

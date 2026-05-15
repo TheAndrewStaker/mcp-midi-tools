@@ -8,6 +8,7 @@
 
 import {
   DispatchError,
+  type CompatibleTypesResult,
   type DeviceDescriptor,
 } from '../types.js';
 
@@ -122,6 +123,55 @@ export function listParams(args: { port: string; block?: string; name?: string }
     device: desc.display_name,
     blocks: Object.keys(desc.blocks),
     params: entries,
+  };
+}
+
+/**
+ * Pure introspection for `find_compatible_types`. Given a block and a
+ * list of param names, return the subset of `block.type` enum values
+ * that expose every listed param.
+ *
+ * Devices implementing `descriptor.findCompatibleTypes` get the
+ * structured answer (AM4 — uses its per-type applicability table).
+ * Devices without it fall back to returning the full enum list with
+ * `applicability_known: false` so the agent can still see the type
+ * roster and treat the result as "unknown — try and see."
+ */
+export function findCompatibleTypes(args: {
+  port: string;
+  block: string;
+  params: readonly string[];
+}): CompatibleTypesResult & { device: string } {
+  const desc = requireDevice(args.port);
+  const canonicalBlock = resolveBlockName(desc, args.block);
+  if (args.params.length === 0) {
+    throw new DispatchError(
+      'value_out_of_range',
+      desc.display_name,
+      'find_compatible_types: params array must not be empty. Pass at least one param name to narrow by.',
+    );
+  }
+  if (desc.findCompatibleTypes !== undefined) {
+    const result = desc.findCompatibleTypes({
+      block: canonicalBlock,
+      params: args.params,
+    });
+    return { ...result, device: desc.display_name };
+  }
+  // Fallback: surface the type-enum list from descriptor.blocks[block].params.type
+  // with applicability_known=false so the agent knows no filtering happened.
+  const blockSchema = desc.blocks[canonicalBlock];
+  const typeParam = blockSchema?.params['type'];
+  const enumValues = typeParam?.enum_values;
+  const fullList = enumValues !== undefined ? Object.values(enumValues) : [];
+  return {
+    device: desc.display_name,
+    block: canonicalBlock,
+    params_queried: args.params,
+    compatible_types: fullList,
+    total_types: fullList.length,
+    applicability_known: false,
+    note: `${desc.display_name} has no structured applicability data for ${canonicalBlock} — returned the full type list. Fall back to list_params + the applies_only_when field.`,
   };
 }
 

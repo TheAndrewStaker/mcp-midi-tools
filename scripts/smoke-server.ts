@@ -174,6 +174,7 @@ async function main(): Promise<void> {
     'apply_preset',
     'apply_setlist',
     'describe_device',
+    'find_compatible_types',
     'get_param',
     'get_params',
     'list_params',

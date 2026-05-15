@@ -49,7 +49,7 @@ import {
     CHANNEL_BLOCKS,
 } from '../shared/channels.js';
 import { checkApplicability } from '../applicability.js';
-import { resolveValue, suggestParamName } from '../shared/paramHelpers.js';
+import { EnumAmbiguityError, resolveValue, suggestParamName } from '../shared/paramHelpers.js';
 import { sendAndAwaitAck } from '../shared/wireOps.js';
 import {
     buildSaveToLocation,
@@ -206,6 +206,11 @@ export function prepareApplyPresetWrites(
         try {
             resolved = resolveValue(param, value);
         } catch (err) {
+            if (err instanceof EnumAmbiguityError) {
+                // Preserve structured candidates through the slot-context
+                // prefix so asError can populate valid_options downstream.
+                throw new EnumAmbiguityError(err.value, err.candidates, `${at}: `);
+            }
             throw new Error(`${at}: ${err instanceof Error ? err.message : String(err)}`);
         }
         // Applicability gate. Skip for the type write itself (the type
