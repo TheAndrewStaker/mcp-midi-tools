@@ -25,8 +25,8 @@
  */
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import { KNOWN_PARAMS } from '../src/fractal/axe-fx-ii/params.js';
-import { BLOCK_BY_ID } from '../src/fractal/axe-fx-ii/blockTypes.js';
+import { KNOWN_PARAMS } from '@mcp-midi-control/axe-fx-ii/params.js';
+import { BLOCK_BY_ID } from '@mcp-midi-control/axe-fx-ii/blockTypes.js';
 
 const AXE_FX_II_PREFIX = [0xf0, 0x00, 0x01, 0x74, 0x07];
 
