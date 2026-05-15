@@ -179,18 +179,24 @@ preset IR.
 Working SysEx protocol reference, AM4-resolved. Updated after every sniff/probe
 session. First stop when encoding a message to send.
 
-### `docs/SESSIONS.md`
+### `docs/_private/SESSIONS.md` (gitignored)
 Chronological log of every reverse-engineering session with raw captures and
 decoded findings. Use to understand how a claim in SYSEX-MAP became confirmed.
+Local-only — operational scratch under `docs/_private/`.
 
-### `src/knowledge/*-lineage.json`
+### `packages/core/src/fractal-shared/lineage/*-lineage.json`
 Model lineage dictionaries generated from the wiki scrape + Blocks Guide PDF
-by `scripts/extract-lineage.ts`. One file per block (amp/drive/reverb/delay/
-cab). Each record carries `am4Name` (canonical from `cacheEnums.ts`),
-`inspiredBy` (with `source` tag), `description`, `fractalQuotes`, and
-block-specific metadata (family/powerTubes/matchingDynaCab for amps;
-categories/clipTypes for drives; creator prefix for cabs). Re-run via
-`npm run extract-lineage` whenever the wiki scrape is refreshed.
+by `scripts/extract-lineage.ts` and `scripts/extract-axe-fx-ii-lineage.ts`.
+One file per block (amp/drive/reverb/delay/cab/chorus/flanger/phaser/wah/
+compressor) for AM4, plus `axefx2-*-lineage.json` for Axe-Fx II. Each record
+carries the device-canonical name (e.g. `am4Name`), `inspiredBy` (with
+`source` tag), `description`, `fractalQuotes`, and block-specific metadata
+(family/powerTubes/matchingDynaCab for amps; categories/clipTypes for
+drives; creator prefix for cabs). Re-run via `npm run extract-lineage` /
+`npm run extract-axe-fx-ii-lineage` (or `npm run regen` for the full set)
+whenever the wiki scrape is refreshed. The build also copies these files
+into `packages/core/dist/fractal-shared/lineage/` via
+`scripts/copy-build-assets.ts`.
 
 Provenance policy: only Fractal-authored content is captured (Blocks Guide
 entries, wiki parentheticals, forum quotes attributed `[Fractal Audio]`).
