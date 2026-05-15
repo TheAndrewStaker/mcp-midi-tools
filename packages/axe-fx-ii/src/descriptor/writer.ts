@@ -742,21 +742,40 @@ function translateSpec(spec: PresetSpec): ApplyPresetInput {
     let channel: AxeFxIIChannel | undefined;
     let params: Record<string, number> | undefined;
     if (s.params) {
-      // PresetSpec.params is channel → name → value. Axe-Fx II has X/Y;
-      // collapse to the first present channel. If both X and Y are
-      // supplied, the executor doesn't currently walk both — flag and
-      // honor X.
-      const keys = Object.keys(s.params);
-      if (keys.length > 0) {
+      // PresetSpec.params accepts two shapes (unified schema): flat
+      // `{gain: 6}` (writes land on the currently-active channel) or
+      // channel-nested `{X: {gain: 6}, Y: {gain: 8}}`. Axe-Fx II has
+      // X/Y on every block, so flat = current-channel-write; nested =
+      // pick first present channel (X preferred). If both X and Y are
+      // supplied, the executor doesn't currently walk both — honor X.
+      const entries = Object.entries(s.params as Record<string, unknown>);
+      let nestedCount = 0;
+      let flatCount = 0;
+      for (const [, v] of entries) {
+        if (typeof v === 'object' && v !== null && !Array.isArray(v)) nestedCount++;
+        else flatCount++;
+      }
+      if (nestedCount > 0 && flatCount > 0) {
+        throw new Error(
+          `slots[${col ?? row}] (block ${s.block_type}): params mixes flat values and channel-nested objects. Use one shape per slot: flat \`{gain: 6}\` to write to the current channel, or channel-nested \`{X: {gain: 6}}\` to address X/Y explicitly.`,
+        );
+      }
+      if (nestedCount > 0) {
+        const keys = entries.map(([k]) => k);
         const preferred = keys.includes('X') ? 'X' : (keys.includes('Y') ? 'Y' : keys[0]);
         channel = preferred === 'X' || preferred === 'Y' ? (preferred as AxeFxIIChannel) : undefined;
-        const paramMap = s.params[preferred];
+        const paramMap = entries.find(([k]) => k === preferred)?.[1] as Record<string, number | string>;
         params = {};
         for (const [k, v] of Object.entries(paramMap)) {
           // Values are still display units here; descriptor's encode
           // closure runs them through display→wire BEFORE we hand off to
           // the executor with {wire: true}.
           params[k] = encodeParamForApply(s.block_type, k, v);
+        }
+      } else if (flatCount > 0) {
+        params = {};
+        for (const [k, v] of entries) {
+          params[k] = encodeParamForApply(s.block_type, k, v as number | string);
         }
       }
     }

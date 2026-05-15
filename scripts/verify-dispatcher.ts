@@ -17,6 +17,7 @@
  * Run:  npx tsx scripts/verify-dispatcher.ts
  */
 
+import * as z from 'zod/v4';
 import {
   describeDevice,
   encodeSetParam,
@@ -31,6 +32,7 @@ import {
   registerDevice as registerMcpDevice,
   resolveDevice,
 } from '@mcp-midi-control/core/protocol-generic/registry.js';
+import { presetShape } from '@mcp-midi-control/core/protocol-generic/tools/shared.js';
 import { DispatchError } from '@mcp-midi-control/core/protocol-generic/types.js';
 import { AM4_DESCRIPTOR } from '@mcp-midi-control/am4/descriptor.js';
 import { buildSetParam } from '@mcp-midi-control/am4/setParam.js';
@@ -474,6 +476,260 @@ expectApplyError(
   { slots: [{ position: 1, block_type: 'amp' }], name: 'x'.repeat(33) },
   'name',
 );
+
+// PresetSpec params-shape translation through specToApplyInput
+// (AM4 writer's validatePreset hook). Verifies both shapes route:
+//   - flat `{rate: 0.8}` on a non-channel block → executor params field
+//   - channel-nested `{A: {gain: 6}}` on a channel block → executor channels field
+//   - flat on channel block writes to the current channel
+//   - channel-nested on non-channel block REJECTS
+//   - mixed shapes (some primitive, some object) REJECTS at the dispatcher
+
+console.log('\nPresetSpec params-shape routing (AM4 unified surface):');
+
+function expectValidatePresetOk(label: string, spec: unknown): void {
+  try {
+    AM4_DESCRIPTOR.writer.validatePreset!(spec as Parameters<typeof AM4_DESCRIPTOR.writer.validatePreset>[0]);
+    passed++;
+  } catch (err) {
+    failed++;
+    console.error(`  ✗ ${label}\n      threw: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+function expectValidatePresetError(label: string, spec: unknown, fragment: string): void {
+  try {
+    AM4_DESCRIPTOR.writer.validatePreset!(spec as Parameters<typeof AM4_DESCRIPTOR.writer.validatePreset>[0]);
+    failed++;
+    console.error(`  ✗ ${label}\n      expected error, got success`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes(fragment)) {
+      passed++;
+    } else {
+      failed++;
+      console.error(`  ✗ ${label}\n      expected error to include "${fragment}", got: ${msg}`);
+    }
+  }
+}
+
+expectValidatePresetOk(
+  'flat params on non-channel block (filter)',
+  { slots: [{ slot: 1, block_type: 'filter', params: { type: 'Auto-Wah', mix: 100 } }] },
+);
+
+expectValidatePresetOk(
+  'flat params on non-channel block (chorus)',
+  { slots: [{ slot: 1, block_type: 'chorus', params: { rate: 0.8, depth: 35, mix: 40 } }] },
+);
+
+expectValidatePresetOk(
+  'channel-nested params on channel block (amp)',
+  { slots: [{ slot: 1, block_type: 'amp', params: { A: { gain: 6, bass: 5 }, D: { gain: 8 } } }] },
+);
+
+expectValidatePresetOk(
+  'flat params on channel block (amp) — writes to current channel',
+  { slots: [{ slot: 1, block_type: 'amp', params: { gain: 6, bass: 5 } }] },
+);
+
+expectValidatePresetError(
+  'channel-nested params on non-channel block (filter) — rejected',
+  { slots: [{ slot: 1, block_type: 'filter', params: { A: { type: 'Auto-Wah', mix: 100 } } }] },
+  "doesn't have channels",
+);
+
+expectValidatePresetError(
+  'mixed flat + nested params in one slot — rejected at dispatcher',
+  { slots: [{ slot: 1, block_type: 'amp', params: { gain: 6, A: { bass: 5 } } }] },
+  'mixes flat values and channel-nested objects',
+);
+
+// Full song-preset shape with mixed channel and non-channel blocks
+// (regression test for the 2026-05-14 Enter Sandman case that forced the
+// agent to fall back to set_params for filter/chorus).
+expectValidatePresetOk(
+  'Enter Sandman mixed shape — channel-nested amp + flat filter/chorus + channel-nested reverb',
+  {
+    slots: [
+      { slot: 1, block_type: 'filter', params: { type: 'Auto-Wah', mix: 100 } },
+      { slot: 2, block_type: 'amp', params: {
+        A: { type: 'USA MK V Green', gain: 3, bass: 5, mid: 5, treble: 6, presence: 4, master: 5 },
+        D: { type: 'USA MK IIC+', gain: 8, bass: 5, mid: 2.5, treble: 7.5, presence: 6, master: 6 },
+      } },
+      { slot: 3, block_type: 'chorus', params: { rate: 0.8, depth: 35, mix: 40 } },
+      { slot: 4, block_type: 'reverb', params: { A: { type: 'Room, Medium', mix: 20 } } },
+    ],
+    scenes: [
+      { scene: 1, channels: { amp: 'A', reverb: 'A' }, bypassed: { filter: true, chorus: false } },
+      { scene: 2, channels: { amp: 'D', reverb: 'A' }, bypassed: { filter: true, chorus: true } },
+      { scene: 3, channels: { amp: 'D', reverb: 'A' }, bypassed: { filter: false, chorus: true } },
+    ],
+  },
+);
+
+// ── Schema ↔ executor CONTRACT test (added 2026-05-14) ──────────────
+//
+// Why this layer exists: the Enter Sandman case landed in production
+// because the Zod schema for apply_preset and the AM4 executor disagreed
+// on what `slots[].params` could look like for non-channel blocks. The
+// schema said channel-nested only; the executor rejected channel-nested
+// on non-channel blocks. There was no single test that exercised the
+// full Zod-parse → dispatcher-translate → executor-validate pipeline.
+//
+// THIS contract test forecloses that whole class of bug: for every
+// block in every registered device, we synthesize a `slots[].params`
+// in the shape the agent would naturally send (flat for non-channel
+// blocks, channel-nested for channel blocks), parse it through the
+// REAL `presetShape` Zod schema the MCP tool uses, then route it
+// through the device's `validatePreset` hook (which calls
+// specToApplyInput + prepareApplyPresetWrites). If the schema accepts
+// the shape but the executor rejects it with a "wrong shape" message,
+// this test fails — the schema and executor are out of sync.
+//
+// We intentionally use a benign, schema-known param name per block
+// (drawn from the descriptor's actual block.params keys) so the test
+// fails ONLY on shape-contract regressions, not on stale param names.
+
+console.log('\nSchema ↔ executor shape contract (per device, per block):');
+
+const registered = listRegisteredDevices();
+
+for (const descriptor of registered) {
+  // Skip Axe-Fx III (refuses writes by design — capability_not_supported)
+  // and Hydrasynth (different surface, no slot-based apply_preset for
+  // its `patches` model).
+  if (descriptor.id !== 'am4' && descriptor.id !== 'axe-fx-ii') continue;
+  if (descriptor.writer.validatePreset === undefined) continue;
+
+  const channelBlocks = new Set(descriptor.capabilities.channel_blocks ?? []);
+  const channelNames = descriptor.capabilities.channel_names ?? ['A'];
+  // Only test blocks the device actually exposes as placeable. Some
+  // blocks (AM4's `ingate`) appear in the params schema for read-only
+  // discovery but aren't a valid block_type for apply_preset.
+  const placeableBlocks = descriptor.block_types !== undefined
+    ? new Set(Object.keys(descriptor.block_types))
+    : new Set(Object.keys(descriptor.blocks));
+
+  for (const [blockName, blockSchema] of Object.entries(descriptor.blocks)) {
+    if (!placeableBlocks.has(blockName)) continue;
+    if (blockName === 'none') continue;
+    // Pick a primitive param: prefer a non-enum knob so we don't have
+    // to know the enum vocabulary. Skip 'channel' / 'type' since those
+    // are special-cased downstream.
+    const candidateParam = Object.entries(blockSchema.params).find(
+      ([name, p]) =>
+        name !== 'channel'
+        && name !== 'type'
+        && name !== 'mode'
+        && (p.unit !== 'enum'),
+    );
+    if (!candidateParam) continue;
+    const [paramName, paramSchema] = candidateParam;
+    // Pick a representative value in the middle of the display range,
+    // falling back to 0 when the descriptor doesn't expose bounds.
+    const midValue = paramSchema.display_min !== undefined && paramSchema.display_max !== undefined
+      ? (paramSchema.display_min + paramSchema.display_max) / 2
+      : 0;
+
+    const blockIsChannelBlock = channelBlocks.has(blockName);
+    const firstChannel = channelNames[0];
+
+    if (blockIsChannelBlock) {
+      // Channel block: both flat AND nested shapes must parse and validate.
+      const flatSpec = {
+        slots: [{ slot: 1, block_type: blockName, params: { [paramName]: midValue } }],
+      };
+      const nestedSpec = {
+        slots: [{ slot: 1, block_type: blockName, params: { [firstChannel]: { [paramName]: midValue } } }],
+      };
+
+      const flatParsed = presetShape.safeParse(flatSpec);
+      assert(
+        `${descriptor.id}/${blockName}: flat params {${paramName}=${midValue}} parses via Zod`,
+        flatParsed.success,
+        flatParsed.success ? undefined : JSON.stringify((flatParsed as z.ZodSafeParseError<unknown>).error.issues),
+      );
+      const nestedParsed = presetShape.safeParse(nestedSpec);
+      assert(
+        `${descriptor.id}/${blockName}: nested params {${firstChannel}: {${paramName}=${midValue}}} parses via Zod`,
+        nestedParsed.success,
+        nestedParsed.success ? undefined : JSON.stringify((nestedParsed as z.ZodSafeParseError<unknown>).error.issues),
+      );
+      if (flatParsed.success) {
+        try {
+          descriptor.writer.validatePreset!(flatParsed.data);
+          passed++;
+        } catch (err) {
+          failed++;
+          console.error(`  ✗ ${descriptor.id}/${blockName}: flat params on channel block — executor rejected\n      ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+      if (nestedParsed.success) {
+        try {
+          descriptor.writer.validatePreset!(nestedParsed.data);
+          passed++;
+        } catch (err) {
+          failed++;
+          console.error(`  ✗ ${descriptor.id}/${blockName}: nested params on channel block — executor rejected\n      ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+    } else {
+      // Non-channel block: flat params must parse AND validate.
+      // Channel-nested params should be rejected by the executor with a
+      // clear "doesn't have channels" message (NOT silently accepted; NOT
+      // a Zod parse failure — the schema accepts both shapes).
+      const flatSpec = {
+        slots: [{ slot: 1, block_type: blockName, params: { [paramName]: midValue } }],
+      };
+      const flatParsed = presetShape.safeParse(flatSpec);
+      assert(
+        `${descriptor.id}/${blockName}: flat params {${paramName}=${midValue}} parses via Zod`,
+        flatParsed.success,
+        flatParsed.success ? undefined : JSON.stringify((flatParsed as z.ZodSafeParseError<unknown>).error.issues),
+      );
+      if (flatParsed.success) {
+        try {
+          descriptor.writer.validatePreset!(flatParsed.data);
+          passed++;
+        } catch (err) {
+          failed++;
+          console.error(`  ✗ ${descriptor.id}/${blockName}: flat params on non-channel block — executor rejected (THIS IS THE 2026-05-14 ENTER SANDMAN REGRESSION)\n      ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+
+      // AM4 explicitly rejects channel-nested params on non-channel blocks.
+      // Axe-Fx II accepts both because every block has X/Y, so we only
+      // gate this assertion on AM4.
+      if (descriptor.id === 'am4') {
+        const nestedSpec = {
+          slots: [{ slot: 1, block_type: blockName, params: { [firstChannel]: { [paramName]: midValue } } }],
+        };
+        const nestedParsed = presetShape.safeParse(nestedSpec);
+        assert(
+          `${descriptor.id}/${blockName}: nested params parse via Zod (schema accepts both shapes)`,
+          nestedParsed.success,
+          nestedParsed.success ? undefined : JSON.stringify((nestedParsed as z.ZodSafeParseError<unknown>).error.issues),
+        );
+        if (nestedParsed.success) {
+          try {
+            descriptor.writer.validatePreset!(nestedParsed.data);
+            failed++;
+            console.error(`  ✗ ${descriptor.id}/${blockName}: nested params on non-channel block — executor accepted (should reject with clear error)`);
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            if (msg.includes("doesn't have channels")) {
+              passed++;
+            } else {
+              failed++;
+              console.error(`  ✗ ${descriptor.id}/${blockName}: nested params on non-channel block — wrong error message\n      expected "doesn't have channels", got: ${msg}`);
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 // ── BK-051 Wave 2 — Axe-Fx II descriptor byte-equivalence ──────────
 //

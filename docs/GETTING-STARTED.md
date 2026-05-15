@@ -28,9 +28,8 @@ Before letting Claude touch anything, prove it can READ:
 
 > What preset is the AM4 currently on?
 
-Claude calls `am4_get_active_location` (or the unified `get_param`)
-and tells you the current location. Cross-check with the AM4's
-display.
+Claude calls `describe_device` or `get_param` and tells you the current
+location. Cross-check with the AM4's display.
 
 > What's the current scene number?
 
@@ -53,9 +52,9 @@ If you like what you hear:
 
 > Save this to Z04 and call it "Vox Light."
 
-That's save-language. Claude calls `am4_apply_preset_at` with
-`save_authorized: true`, the server's gate clears, and the tone
-persists to Z04 (the conventional scratch slot).
+That's save-language. Claude calls `apply_preset` with
+`target_location: "Z04"` and `save_authorized: true`, the server's gate
+clears, and the tone persists to Z04 (the conventional scratch slot).
 
 ## Conversation 4 — confirm the safety gate
 
@@ -87,9 +86,9 @@ to surface overwrites.
 >   - G04: ambient cleans with delay + plate reverb
 > Pre-flight scan G01-G04 first so I know what I'm overwriting.
 
-Watch the AI call `am4_scan_locations` first, surface "G01: Big
-Plexi, G02: empty, G03: ..." for your review, then proceed once
-you confirm. ~30 seconds wall time for 4 presets.
+Watch the AI call `scan_locations` first, surface "G01: Big Plexi,
+G02: empty, G03: ..." for your review, then proceed once you confirm.
+~30 seconds wall time for 4 presets.
 
 ## Conversation 6 — when something goes wrong
 

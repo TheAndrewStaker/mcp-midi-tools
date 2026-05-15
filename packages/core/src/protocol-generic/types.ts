@@ -307,7 +307,21 @@ export interface PresetSpec {
 export interface PresetSlotSpec {
   slot: SlotRef;
   block_type: string;
-  params?: Readonly<Record<string, Readonly<Record<string, number | string>>>>;  // channel → params
+  /**
+   * Block params. Two shapes accepted, picked by block:
+   *   - Flat: `{ rate: 0.8, depth: 35 }` — for non-channel blocks.
+   *   - Channel-nested: `{ A: { gain: 6 } }` — for channel blocks
+   *     (`describe_device.capabilities.channel_blocks`).
+   *
+   * Dispatchers detect shape per slot (any value is an object → nested)
+   * and route to the device executor's flat or per-channel input. AM4
+   * rejects nested params on non-channel blocks because the executor
+   * has no register to write them to; the flat form is the only valid
+   * shape for filter/chorus/comp/etc.
+   */
+  params?:
+    | Readonly<Record<string, number | string>>
+    | Readonly<Record<string, Readonly<Record<string, number | string>>>>;
   bypassed?: boolean;
   /**
    * v0.4: stable identifier for this block within the preset. Used by

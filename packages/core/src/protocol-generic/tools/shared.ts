@@ -76,11 +76,14 @@ export const presetSlotShape = z.object({
   block_type: z.string().describe(
     'Block to place (e.g. "amp", "drive", "reverb", "none"). See describe_device.block_types.',
   ),
-  params: z.record(
-    z.string(),
+  params: z.union([
     z.record(z.string(), z.union([z.number(), z.string()])),
-  ).optional().describe(
-    'Per-channel params: { "A": { gain: 6, bass: 5 }, "D": { gain: 8 } }. Channel keys match describe_device.capabilities.channel_names.',
+    z.record(z.string(), z.record(z.string(), z.union([z.number(), z.string()]))),
+  ]).optional().describe(
+    'Block params. TWO SHAPES accepted; PICK BY BLOCK: ' +
+    '(1) FLAT — `{ rate: 0.8, depth: 35 }` — for NON-channel blocks (AM4: filter, chorus, flanger, phaser, comp, geq, peq, tremolo, rotary, wah, enhancer, gate, volpan, ingate). Channel blocks on Axe-Fx II/III accept flat too: writes land on the currently-active channel. ' +
+    '(2) CHANNEL-NESTED — `{ A: { gain: 6 }, D: { gain: 8 } }` — for CHANNEL blocks. AM4 channel blocks are amp/drive/reverb/delay (A/B/C/D). Axe-Fx II/III use X/Y. ' +
+    'AM4 rejects channel-nested params on non-channel blocks; use the flat shape there. See describe_device.capabilities.channel_blocks for the per-device list.',
   ),
   bypassed: z.boolean().optional(),
   id: z.string().optional().describe(

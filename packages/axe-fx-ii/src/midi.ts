@@ -143,6 +143,18 @@ export interface AxeFxIIConnection {
   /** True when an input port was successfully opened. */
   hasInput: boolean;
   close: () => void;
+  /**
+   * NOT IMPLEMENTED on Axe-Fx II. The Axe-Fx II connection exposes
+   * `receiveSysExMatching` (predicate-filtered) but not the generic
+   * `receiveSysEx` that accepts any SysEx frame. Calling this throws so
+   * the gap is visible at the call site rather than failing silently.
+   * If a future dispatcher path needs plain `receiveSysEx` on Axe-Fx II,
+   * implement it here using the same `handlers` Set pattern as
+   * `receiveSysExMatching`.
+   */
+  receiveSysEx: (timeoutMs?: number) => Promise<number[]>;
+  /** Not tracked on Axe-Fx II (send errors surface via thrown exceptions). */
+  lastSendError?: Error;
 }
 
 export interface AxeFxIIPortInfo {
@@ -290,16 +302,22 @@ export function connectAxeFxII(): AxeFxIIConnection {
         try { input.closePort(); } catch { /* already closed */ }
       }
     },
+    receiveSysEx: (_timeoutMs?: number) => {
+      return Promise.reject(new Error(
+        'receiveSysEx is not implemented on Axe-Fx II — use receiveSysExMatching ' +
+        'with an explicit predicate. If a dispatcher path calls this, add the ' +
+        'predicate-less handler here using the same handlers Set pattern.',
+      ));
+    },
+    lastSendError: undefined,
   };
 }
 
 // Register the Axe-Fx II connector with the shared connection registry
-// as a side effect of loading this module. `AxeFxIIConnection` is
-// structurally compatible with the generic `MidiConnection` interface
-// for the operations the connection pool performs (send / onMessage /
-// receiveSysExMatching / hasInput / close); the cast acknowledges the
-// missing `receiveSysEx` + `lastSendError` fields that Axe-Fx II tools
-// don't rely on.
+// as a side effect of loading this module. `AxeFxIIConnection` now
+// implements all fields of `MidiConnection` (receiveSysEx throws "not
+// implemented" and lastSendError is always undefined) so the cast is
+// a plain structural assignment rather than an escape hatch.
 import type { MidiConnection } from '@mcp-midi-control/core/midi/transport.js';
 import { registerConnector, AXEFX2_LABEL } from '@mcp-midi-control/core/server-shared/connections.js';
-registerConnector(AXEFX2_LABEL, () => connectAxeFxII() as unknown as MidiConnection);
+registerConnector(AXEFX2_LABEL, () => connectAxeFxII() as MidiConnection);

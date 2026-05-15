@@ -32,8 +32,8 @@ implementation details.
 
 ### Gate 1 — save-authorization
 
-Tools that persist to a slot (e.g. `am4_apply_preset_at`,
-`axefx2_apply_preset_at`, `hydra_apply_patch` with `save: true`) refuse
+Tools that persist to a slot (e.g. `apply_preset` with a target
+location, `save_preset`, `hydra_apply_patch` with `save: true`) refuse
 by default. The AI has to *explicitly* pass `save_authorized: true`,
 which it should only do when you used save-intent language:
 
@@ -157,17 +157,30 @@ chat, and you can correct course before anything persists.
 
 ## How to verify the gates are actually working
 
-If you want to confirm the safety gates work on your installation:
+If you want to confirm the safety gates work on your installation,
+open a new Claude Desktop chat with the `mcp-midi-control` connector
+active and ask:
 
-```bash
-npm run mcp-test-safe-edit
-```
+> Build me a preset at Z04 without saving it. Then immediately
+> try to switch to A01 — I want to see what happens with unsaved edits.
 
-That runs the 7-scenario contract regression suite — same code paths
-the AI hits in chat. It tests the refusal text without writing to your
-hardware. Output should report "2 pass" (the refusal scenarios). Pass
-`--write` to also exercise the live-save scenarios on connected
-hardware; that one writes to scratch slots only.
+Claude will build the tone in the working buffer, then try to navigate
+away. The dirty-buffer gate (Gate 2) should fire and produce a refusal
+message naming the unsaved buffer before Claude switches presets. If the
+gate fires, the safety story is working on your hardware.
+
+For Gate 1 (save-authorization), try:
+
+> Design a Mesa Rectifier preset and put it on M03.
+
+"Put it on" is not save language — Claude should audition at M03 without
+persisting. Compare with:
+
+> Save a Mesa Rectifier preset to M03.
+
+That uses "save" — save-authorization clears, and Claude will write to M03.
+Watch the tool panel: `apply_preset` with `save_authorized: false` is
+an audition; with `save_authorized: true` is a persist.
 
 ## TL;DR for the impatient
 

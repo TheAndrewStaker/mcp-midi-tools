@@ -144,7 +144,7 @@ function specToApplyInput(spec: PresetSpec): ApplyPresetInput {
       `apply_preset on Fractal AM4 does not accept routing edges — AM4 routes implicitly by slot order (slots 1→2→3→4). Drop the routing array, or pick a grid device (Axe-Fx II) for parallel chains / wet-dry splits.`,
     );
   }
-  const slots: ApplyPresetSlotInput[] = spec.slots.map((s) => {
+  const slots: ApplyPresetSlotInput[] = spec.slots.map((s, slotIdx) => {
     if (typeof s.slot !== 'number') {
       throw new DispatchError(
         'capability_not_supported',
@@ -162,16 +162,49 @@ function specToApplyInput(spec: PresetSpec): ApplyPresetInput {
         `apply_preset on Fractal AM4 has one instance per block type (instance=${s.instance} requested for ${s.block_type}). Drop the instance field — AM4 doesn't expose Amp 1 / Amp 2 / etc.`,
       );
     }
-    const channels: Record<string, Record<string, number | string>> = {};
+
+    // The unified schema accepts two `params` shapes: flat
+    // (`{rate: 0.8}`) for non-channel blocks, and channel-nested
+    // (`{A: {gain: 6}}`) for channel blocks. Detect per slot — any
+    // value being a plain object means the agent used the nested shape.
+    // Reject mixed shapes (some primitive, some object) up front so the
+    // caller gets a clear message rather than a confusing executor
+    // error downstream.
+    let flatParams: Record<string, number | string> | undefined;
+    let nestedChannels: Record<string, Record<string, number | string>> | undefined;
     if (s.params) {
-      for (const [ch, paramMap] of Object.entries(s.params)) {
-        channels[ch] = { ...paramMap } as Record<string, number | string>;
+      const entries = Object.entries(s.params as Record<string, unknown>);
+      let nestedCount = 0;
+      let flatCount = 0;
+      for (const [, v] of entries) {
+        if (typeof v === 'object' && v !== null && !Array.isArray(v)) nestedCount++;
+        else flatCount++;
+      }
+      if (nestedCount > 0 && flatCount > 0) {
+        throw new DispatchError(
+          'value_out_of_range',
+          'Fractal AM4',
+          `slots[${slotIdx}] (slot ${s.slot}, ${s.block_type}): params mixes flat values and channel-nested objects. Use one shape per slot: flat \`{rate: 0.8}\` for non-channel blocks, or channel-nested \`{A: {gain: 6}}\` for channel blocks (amp/drive/reverb/delay).`,
+        );
+      }
+      if (nestedCount > 0) {
+        nestedChannels = {};
+        for (const [ch, paramMap] of entries) {
+          nestedChannels[ch] = { ...(paramMap as Record<string, number | string>) };
+        }
+      } else if (flatCount > 0) {
+        flatParams = {};
+        for (const [k, v] of entries) {
+          flatParams[k] = v as number | string;
+        }
       }
     }
+
     return {
       position: s.slot,
       block_type: s.block_type,
-      channels: Object.keys(channels).length > 0 ? channels : undefined,
+      params: flatParams,
+      channels: nestedChannels,
     };
   });
 

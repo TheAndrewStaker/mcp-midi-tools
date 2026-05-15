@@ -32,6 +32,9 @@ audio-confirmed end-to-end on Q8.02 firmware — building "Comp + Amp +
 Cab + Reverb" in chat saves an audible preset on a fresh-empty slot,
 no manual re-routing in AxeEdit required. Multi-scene authoring
 (distinct per-scene bypass + channel state) is hardware-verified too.
+`apply_preset` now configures all block types — including non-channel
+blocks like filter, chorus, and compressor — in a single call, so a
+full song preset builds cleanly in one conversational turn.
 
 > **🟡 Axe-Fx III — community beta.** The Axe-Fx III protocol layer is
 > scaffolded from Fractal's published "Axe-Fx III MIDI for Third-Party
@@ -42,7 +45,7 @@ no manual re-routing in AxeEdit required. Multi-scene authoring
 > errors because Fractal deliberately omits per-block parameter IDs
 > from the public spec. **III owners: we need your help.** Five
 > 30-minute capture sessions per the
-> [community workflow](./docs/_private/HARDWARE-TASKS-AXEFX3.md) take
+> [community workflow](./docs/community/axefx3-captures.md) take
 > the III from "scaffolded" to feature parity with the AM4 + Axe-Fx II
 > support. Plug an Axe-Fx III into the server today and it'll greet you; when
 > you're ready to contribute, the issue tracker is the entry point.
@@ -527,12 +530,13 @@ This project takes opinionated stances about destructive operations
 on your hardware. Across **every** supported device (AM4, Axe-Fx II,
 Hydrasynth, and any device added later), the same rules apply:
 
-**No silent saves.** When you ask Claude to "build a tone at slot 700"
-the tool builds it in the working buffer — you can audition immediately
-— but does **not** save to slot 700 unless you also said "save it" /
-"store it" / "put it on 700" / similar. The only exception is multi-
-preset requests ("build a setlist for 700/701/702"), where save intent
-is implicit because a setlist without persistence isn't a setlist.
+**No silent saves.** When you ask Claude to "build a tone at A03" (AM4)
+or "build a tone at slot 614" (Axe-Fx II) the tool builds it in the
+working buffer — you can audition immediately — but does **not** save
+unless you also said "save it" / "store it" / "put it on A03" / similar.
+The only exception is multi-preset requests ("build a setlist for
+G01–G04"), where save intent is implicit because a setlist without
+persistence isn't a setlist.
 
 **No silent edit loss.** If you've been tweaking a preset and then ask
 Claude to do something that would navigate away from it (load another

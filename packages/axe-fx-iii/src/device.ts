@@ -1,17 +1,14 @@
 /**
- * Axe-Fx III device registry entry point. Importing this file
- * registers the III with the BK-051 unified `DeviceDescriptor`
- * registry — and, as a transitive side effect of importing
- * `./midi.js`, also registers the III's connector factory with
- * `connections.ts` so `ensureConnection('axe-fx-iii')` routes
- * through `connectAxeFxIII()`.
+ * Axe-Fx III descriptor export. Importing this file brings in the
+ * MIDI connector side-effect (via `./midi.js`) so that
+ * `ensureConnection('axe-fx-iii')` routes through `connectAxeFxIII()`.
  *
- * Importing this module (or anything that transitively imports it,
- * e.g. server-all's index.ts) is the sole registration entrypoint.
+ * Device registration (registerDevice) is intentionally NOT done here
+ * as a side effect — the caller (server-all/src/server/index.ts) calls
+ * `registerMcpDevice(AXEFX3_DESCRIPTOR)` explicitly, matching the same
+ * explicit-registration pattern used by AM4, Axe-Fx II, and Hydrasynth.
+ * This keeps test scripts that import the descriptor clean (no global
+ * registry mutations on import).
  */
 import './midi.js';
-import { registerDevice } from '@mcp-midi-control/core/protocol-generic/registry.js';
-import { AXEFX3_DESCRIPTOR } from './descriptor.js';
-
-registerDevice(AXEFX3_DESCRIPTOR);
-export { AXEFX3_DESCRIPTOR };
+export { AXEFX3_DESCRIPTOR } from './descriptor.js';

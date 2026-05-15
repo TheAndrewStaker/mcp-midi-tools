@@ -95,7 +95,14 @@ export const AM4_AGENT_GUIDANCE: Readonly<Record<string, string>> = {
     'A/B/C/D. Without `channel`, the write goes to whatever channel the',
     'block is on now, which may be shared across multiple scenes. Only amp /',
     'drive / reverb / delay have channels; other blocks (chorus, flanger,',
-    'phaser, …) ignore the `channel` argument.',
+    'phaser, filter, comp, geq, peq, tremolo, rotary, wah, enhancer, gate,',
+    'volpan, ingate) ignore the `channel` argument.',
+    'apply_preset SHAPE — channel blocks (amp/drive/reverb/delay) take',
+    'CHANNEL-NESTED params: `{A: {gain: 6}, D: {gain: 8}}`. Non-channel',
+    'blocks take FLAT params: `{rate: 0.8, depth: 35}`. Sending channel-',
+    'nested params on a non-channel block (e.g. `chorus.params = {A: {rate:',
+    '0.8}}`) is rejected — the block has no channel register to write to.',
+    'Pick the shape per slot.',
   ].join(' '),
 
   enum_name_reporting: [

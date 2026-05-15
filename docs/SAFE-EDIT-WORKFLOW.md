@@ -81,14 +81,17 @@ implementation strategy:
 
 | Capability | AM4 | Axe-Fx II | Hydrasynth |
 |---|---|---|---|
-| Device-sourced dirty signal | ⏸ blocked on HW-107 | ✅ via `0x74` state-broadcast | ❌ not exposed in MIDI |
-| `on_active_preset_edited` guard | ⏸ port pending | ✅ Session 68 | n/a (no dirty detection) |
-| `save_authorized` guard on apply-at-slot | ⏸ port pending | ✅ Session 68 | ⏸ port pending |
-| Multi-preset overwrite scan | ✅ `am4_scan_locations` | ✅ `axefx2_scan_preset_range` | n/a (different patch model) |
-| Tool-description guidance for agent | ✅ CLAUDE.md | ✅ in tool descriptions | partial |
+| Device-sourced dirty signal | ❌ not exposed (HW-107 closed Session 74: zero MIDI bytes on front-panel edits; code-side classifier on outbound writes is the only viable signal) | ✅ via `0x74` state-broadcast | ❌ not exposed in MIDI |
+| `on_active_preset_edited` guard | ✅ unified surface (`apply_preset`, `switch_preset`) | ✅ Session 68 | n/a (no dirty detection) |
+| `save_authorized` guard on apply-at-slot | ✅ unified `apply_preset(target_location, save_authorized)` | ✅ Session 68 | ✅ `hydra_apply_patch(save: true)` |
+| Multi-preset overwrite scan | ✅ `scan_locations` | ✅ `scan_locations` | n/a (different patch model) |
+| Tool-description guidance for agent | ✅ `describe_device` agent_guidance | ✅ `describe_device` agent_guidance | ✅ `describe_device` agent_guidance |
 
-Axe-Fx II is the reference implementation (Session 68). AM4 and
-Hydrasynth catch up incrementally.
+All three devices are fully shipped on the unified surface (`apply_preset`,
+`save_preset`, `switch_preset`). The device-namespaced tools
+(`am4_apply_preset_at`, `axefx2_apply_preset_at`) that this table was
+originally tracking were removed in v0.3. The unified surface is the
+live contract.
 
 ## Implementation pattern
 
@@ -184,12 +187,16 @@ These are the user-facing behaviors that prove the contract is
 implemented. Use them as a regression check whenever the safe-edit
 code changes.
 
-**Automated suite:** `npm run mcp-test-safe-edit` (refusal scenarios
-only, hardware-free) and `npm run mcp-test-safe-edit -- --write`
-(full suite, requires connected hardware). Spawns the shipped MCP
-server via `StdioClientTransport` and asserts each scenario against
-the actual tool surface — same code path Claude Desktop hits.
-Source: `scripts/mcp-test-safe-edit-scenarios.ts`.
+**Manual verification:** The scenarios below can be exercised by hand
+in a Claude Desktop chat with `mcp-midi-control` connected. Ask Claude
+to perform the scenario, then observe whether the tool panel shows the
+expected refusal or success. See `docs/SAFETY-FOR-MUSICIANS.md` §"How
+to verify the gates are actually working" for a two-prompt walkthrough.
+
+The automated regression suite (`scripts/mcp-test-safe-edit-scenarios.ts`)
+covers the pre-v0.4 device-namespaced surface and is deprecated. Porting
+to the unified `apply_preset` / `switch_preset` surface is tracked in
+the backlog (BK-TBD).
 
 | Scenario | Expected | Suite assertion |
 |---|---|---|
@@ -236,14 +243,13 @@ Source: `scripts/mcp-test-safe-edit-scenarios.ts`.
 
 ## References
 
-- `src/server/shared/bufferDirty.ts` — shared dirty-flag tracker
-- `src/fractal/axe-fx-ii/tools/shared.ts:guardActiveBufferOrSave`
+- `packages/core/src/server-shared/bufferDirty.ts` — shared dirty-flag tracker
+- `packages/axe-fx-ii/src/tools/shared.ts:guardActiveBufferOrSave`
   — reference implementation of the warn/discard/save-first guard
-- `src/fractal/axe-fx-ii/midi.ts` — device-sourced dirty
+- `packages/axe-fx-ii/src/midi.ts` — device-sourced dirty
   classification (state-broadcast listener)
-- `docs/_private/HARDWARE-TASKS-AM4.md` HW-107 — closed Session 74:
-  AM4 doesn't broadcast on front-panel edits, full stop. The
-  code-side classifier on outbound writes is the only viable signal;
-  front-panel edits are documented as out-of-scope above.
-- `docs/_private/STATE.md` Session 68 — full history of the
-  Axe-Fx II implementation
+- HW-107 — closed Session 74: AM4 doesn't broadcast on front-panel
+  edits, full stop. The code-side classifier on outbound writes is the
+  only viable signal; front-panel edits are documented as out-of-scope
+  above.
+- Session 68 — full history of the Axe-Fx II implementation

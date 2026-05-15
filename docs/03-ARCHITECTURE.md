@@ -39,111 +39,117 @@
 
 ## Layer Responsibilities
 
-### 1. MCP Server (`src/server/`)
-The Claude-facing interface. `src/server/index.ts` is boot +
-register-loop only — one `register*Tools(server)` call per device.
-Pure orchestration plus per-tool agent guidance in the registered
-tool descriptions; no MIDI logic at this layer.
+### 1. MCP Server (`packages/server-all/`)
+
+The Claude-facing interface. `packages/server-all/src/server/index.ts`
+is boot + register-loop only. Pure orchestration plus per-tool agent
+guidance; no MIDI logic at this layer.
 
 ```
-src/server/
-  index.ts                    ← boot + transport + register loop (~120 LOC)
-  shared/                     ← cross-tool helpers (used by every device)
-    connections.ts            ← per-port MIDI registry, ensureConnection,
-                                  recordAckOutcome, stale-handle counter
-    channels.ts               ← lastKnownChannel / lastKnownType caches,
-                                  switchBlockChannel, applicability advisory
-    paramHelpers.ts           ← paramKey resolution, display-value coercion
-    wireOps.ts                ← sendAndAwaitAck + recordInbound/format
-                                  ([+NNNms] LABEL timeline)
-    readOps.ts                ← sendReadAndParse, readPresetName predicate
-  tools/                      ← device-AGNOSTIC tool families
-    midi-primitives.ts        ← send_cc / _note / _program_change /
-                                  _nrpn / _sysex (any MIDI device)
-    midi-control.ts           ← list_midi_ports / reconnect_midi
+packages/server-all/src/
+  server/
+    index.ts                  ← boot + transport + descriptor registration
+    tools/
+      midi-primitives.ts      ← send_cc / _note / _program_change /
+                                   _nrpn / _sysex (any MIDI device)
+      midi-control.ts         ← list_midi_ports / reconnect_midi
 ```
 
-Device-specific tool surfaces live alongside their wire layer under
-`src/<vendor>/<device>/`:
+### 2. Unified tool surface (`packages/core/src/protocol-generic/`)
+
+The 17-tool device-agnostic surface (`apply_preset`, `set_param`,
+`get_param`, `switch_preset`, `save_preset`, `switch_scene`, `set_block`,
+`set_bypass`, `set_params`, `get_params`, `list_params`,
+`describe_device`, `rename`, `scan_locations`, `lookup_lineage`,
+`apply_setlist`, `restore_defaults`). Each tool dispatches through the
+`port` argument to a registered `DeviceDescriptor`.
 
 ```
-src/fractal/am4/tools/        ← AM4 (split by family because apply_preset
-  index.ts                       alone is 1633 LOC)
-  apply.ts                    ← am4_apply_preset / _at / _setlist
-  write.ts                    ← am4_set_param / set_params / set_block_type
-                                  / set_block_bypass
-  read.ts                     ← 8 read tools
-  navigation.ts               ← save / rename / switch / dump (7 tools)
-  factory.ts                  ← restore_factory / _range (with pre/post
-                                  name verification)
-  lookup.ts                   ← list_params / _block_types / _enum_values
-  lookup-lineage.ts           ← lookup_lineage / _lineages (Fractal-
-                                  authored amp/drive/etc. lineage)
-  diagnostics.ts              ← am4_test_navigate (bypass-the-stack probe)
-
-src/fractal/axe-fx-ii/
-  tools.ts                    ← single-file Axe-Fx II tool surface
-
-src/asm/hydrasynth-explorer/
-  server.ts                   ← single-file Hydrasynth tool surface
+packages/core/src/
+  midi/transport.ts           ← MidiConnection interface + AM4 connector
+  protocol-generic/
+    types.ts                  ← DeviceDescriptor, DeviceWriter, DeviceReader,
+                                  PresetSpec, WriteResult, etc.
+    registry.ts               ← registerDevice / requireDevice / resolveDevice
+    dispatcher/               ← per-family dispatch (params, navigation, preset)
+    tools/                    ← MCP tool registrations (param, nav, preset,
+                                  discovery)
+  server-shared/
+    connections.ts            ← per-port MIDI registry, ensureConnection
+    bufferDirty.ts            ← shared dirty-flag tracker (cross-device)
+    safeEdit.ts               ← save_authorized + on_active_preset_edited
+                                  guard helpers
+  fractal-shared/
+    lineage/                  ← Fractal amp/drive/etc. lineage JSON data
+    lineageLookup.ts          ← lookup_lineage engine
 ```
 
-Each tool surface exports a `register<Device>Tools(server)` that
-`src/server/index.ts` calls. Cross-tool state (connection registry,
-channel/type caches) lives once in `src/server/shared/` so multiple
-device surfaces read the same source of truth.
+### 3. Device packages
 
-**Adding a new device.** Single-file pattern (axefx2 / hydra) is the
-default — copy one of those `tools.ts` as a template, change the names,
-and write your wire encoder next door. Multi-file pattern (AM4) is
-only for devices with a tool family big enough that one file becomes
-unwieldy; AM4's `apply.ts` is 1633 LOC by itself, which is why the
-split exists.
+Each device lives in its own workspace package with no cross-device
+dependencies (all depend on `@mcp-midi-control/core` only):
 
-**Safety rules enforced across the AM4 surface:**
-- Save tools (`save_to_location`, `save_preset`, `apply_preset_at`)
-  require an explicit user save phrase; agent guidance is in each
-  tool's description.
-- Pre-overwrite scan: bulk operations call `scan_locations` first to
-  surface what would be clobbered (especially `restore_factory_range`).
-- Working-buffer-only tools (`apply_preset`, `set_param`, etc.) are
-  reversible by switching presets; this is reflected in their
-  REVERSIBILITY / SAVE INTENT clauses.
-- Factory preset verification: pre/post-name comparison
-  (`verifyRestoredSlot` in `src/fractal/am4/tools/factory.ts`) catches
-  no-op restores and silent-fail cases without depending on the BK-036
-  bank-file decode.
+```
+packages/am4/src/
+  descriptor.ts       ← AM4 DeviceDescriptor (reader + writer adapters)
+  descriptor/
+    reader.ts         ← get_param / get_params / scan_locations
+    writer.ts         ← set_param / apply_preset / save_preset / etc.
+    agentGuidance.ts  ← AM4-specific guidance surfaced via describe_device
+  params.ts           ← KNOWN_PARAMS registry (pidLow/pidHigh, range, enums)
+  blockTypes.ts       ← block-name ↔ pidLow lookup
+  locations.ts        ← A01..Z04 ↔ index conversion
+  setParam.ts         ← wire-byte builders (buildSetParam, buildSetBlockType…)
+  applicability.ts    ← type-gated knob applicability
+  factoryBank.ts      ← factory preset restore bytes
+  tools/
+    applyExecutor.ts  ← apply_preset core logic (validation + wire-send)
+    navigation.ts     ← switch_preset / save_preset / scan_locations
+    safeEdit.ts       ← AM4-specific guardActiveBufferOrSave
 
-### 2. AM4 Protocol Layer (`src/fractal/am4/`)
+packages/axe-fx-ii/src/
+  descriptor.ts       ← Axe-Fx II DeviceDescriptor
+  midi.ts             ← bidirectional MIDI handle + dirty-state classifier
+  setParam.ts         ← wire-byte builders (buildSetBlockParameterValue…)
+  params.ts           ← KNOWN_PARAMS registry
+  tools.ts            ← legacy device-namespaced tools (axefx2_*)
+
+packages/axe-fx-iii/src/
+  descriptor.ts       ← Axe-Fx III descriptor (community beta — betaRefusals
+                          on write ops pending capture)
+  device.ts           ← exports AXEFX3_DESCRIPTOR + midi side-effect
+
+packages/hydrasynth-explorer/src/
+  descriptor.ts       ← Hydrasynth DeviceDescriptor
+  server.ts           ← legacy device-namespaced tools (hydra_*)
+```
+
+**Adding a new device.** Write a `DeviceDescriptor` (copy
+`packages/axe-fx-iii/src/descriptor.ts` as a template), register it
+in `packages/server-all/src/server/index.ts` before any descriptor
+whose `port_match` regex it would shadow, and add the package to the
+root `typecheck` + `build` scripts. See `CONTRIBUTING.md` §"Adding a
+new device" for the step-by-step.
+
+**Safety rules enforced uniformly via the unified surface:**
+- `apply_preset(target_location)` defaults to `save_authorized: false`
+  (audition-at-target). Requires explicit `save_authorized: true` plus
+  user save-intent language to persist.
+- `on_active_preset_edited` guard on every navigation tool — refuses
+  before losing unsaved edits, offers save/discard/cancel.
+- Pre-overwrite scan: `apply_setlist` pre-flight-scans the target range
+  before any write.
+- Factory preset verification: pre/post-name comparison in
+  `restore_defaults` catches no-op restores.
+
+### 4. AM4 Protocol Layer (`packages/am4/`)
 Pure TypeScript. No Claude, no MCP. Testable in isolation against
 captured wire bytes via `scripts/verify-msg.ts` and friends.
 
-**Modules:**
-```
-src/fractal/am4/
-  midi.ts             — node-midi connection wrapper, port enumeration,
-                          inbound parser (describeAm4InboundMessage)
-  setParam.ts         — buildSetParam / buildSetBlockType / build*Echo
-                          predicates / parseReadResponse / packed-septet
-                          encoding for the F0 00 01 74 15 ... F7 envelope
-  params.ts           — KNOWN_PARAMS registry (each param's pidLow/pidHigh,
-                          range, scale, enum table, alias list)
-  blockTypes.ts       — block-name ↔ pidLow lookup
-  locations.ts        — A01..Z04 ↔ index conversion
-  applicability.ts    — type-gated knob applicability (XML decode)
-  parameterBridge.ts  — paramNames ↔ AM4-Edit canonical labels
-  factoryBank.ts      — load + replay the factory bank's stored-form
-                          bytes for a given location
-  presetDump.ts       — receive 0x77 / 0x78 / 0x79 dump stream
-  safety/             — factory fingerprints, location classification,
-                          backup helpers (built but post-MVP)
-  ir/                 — preset IR + transpiler (post-MVP)
-```
+Per-vendor packages (`packages/axe-fx-ii/`, `packages/hydrasynth-explorer/`)
+follow the same layout — each device's wire layer is self-contained.
 
-Per-vendor siblings (`src/fractal/axe-fx-ii/`, `src/asm/hydrasynth-explorer/`)
-follow the same layout so each device's wire layer stays self-contained.
-
-### 3. Intermediate Representation (`src/ir/`)
+### 5. Intermediate Representation (post-MVP)
 Device-agnostic preset format. Claude builds this; encoder converts it to SysEx.
 
 ```typescript
@@ -172,7 +178,7 @@ interface Scene {
 }
 ```
 
-### 4. Transport Layer (`src/transport/`)
+### 6. Transport Layer (`packages/core/src/midi/`)
 Thin wrapper around node-midi. Handles port discovery, connection
 lifecycle, and raw SysEx send/receive.
 
@@ -238,32 +244,34 @@ Flat index mapping (for internal use):
 ## Repo Structure
 ```
 mcp-midi-control/
-  src/
-    server/         — MCP server, tool definitions
-    protocol/       — SysEx encoder/decoder, block maps
-    ir/             — Intermediate representation types
-    transport/      — node-midi wrapper
-    safety/         — Slot read, backup, confirmation logic
-    knowledge/      — AM4 block reference data (from manuals)
+  packages/
+    core/           — Cross-device foundation (MidiConnection, unified
+                       dispatcher, DeviceDescriptor types, server-shared
+                       helpers, fractal-shared lineage data)
+    am4/            — Fractal AM4 wire layer + DeviceDescriptor
+    axe-fx-ii/      — Fractal Axe-Fx II XL+ wire layer + DeviceDescriptor
+    axe-fx-iii/     — Fractal Axe-Fx III community-beta descriptor
+    hydrasynth-explorer/ — ASM Hydrasynth Explorer descriptor
+    server-all/     — MCP server entry point (imports all device packages)
   scripts/
-    probe.ts        — Feasibility proof scripts
-    sniff.ts        — MIDI-OX equivalent for logging traffic
-    diff-syx.ts     — Compare two .syx files byte by byte
-    annotate.ts     — Annotate .syx hex dump with known field names
+    verify-*.ts     — Byte-exact golden verifiers (run without hardware)
+    mcp-*.ts        — Hardware integration test harnesses
+    capture-*.ts    — Passive MIDI capture utilities
+    launch-verification.ts — Full end-to-end smoke test (requires hardware)
   samples/          — Local-only debug scratch (entire dir gitignored)
-    factory/        — Factory .syx preset files (downloaded from Fractal; their IP)
+    factory/        — Factory .syx preset files
     captured/       — USB / MIDI-OX captured traffic sessions
-    decoded/        — Human-readable decoded preset JSON + extractor outputs
   docs/
-    SYSEX-MAP.md    — Growing reverse-engineered SysEx reference
-    BLOCK-PARAMS.md — AM4 block parameter tables (from manual)
-    SESSIONS.md     — Sniffing session notes and findings
-  tests/
-    protocol/       — Unit tests for encoder/decoder round-trips
-    integration/    — Tests that require AM4 hardware
-  claude.md         — Context file for Claude Code
-  package.json
-  tsconfig.json
+    SYSEX-MAP.md    — Reverse-engineered SysEx reference (public)
+    BLOCK-PARAMS.md — AM4 block parameter tables
+    SAFE-EDIT-WORKFLOW.md — Cross-device safe-edit contract
+    community/      — Contributor guides (device capture workflows)
+    _private/       — Operational scratch (gitignored): STATE.md,
+                       SESSIONS.md, HARDWARE-TASKS-*.md, BACKLOG.md
+  CLAUDE.md         — Context file for Claude Code
+  CONTRIBUTING.md   — Contributor guide
+  package.json      — npm workspace root
+  tsconfig.json     — Root path mappings for tsx script resolution
 ```
 
 ---
