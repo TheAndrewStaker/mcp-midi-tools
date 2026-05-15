@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "mcp-midi-control": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["packages/server-all/dist/server/index.js"],
+      "env": {}
+    }
+  }
+}

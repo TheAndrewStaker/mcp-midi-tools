@@ -58,6 +58,8 @@
     "build:server-all": "npm run build --workspace=@mcp-midi-control/server-all",
     "build": "npm run build:core && npm run build:am4 && npm run build:axe-fx-ii && npm run build:axe-fx-iii && npm run build:hydrasynth-explorer && npm run build:server-all && tsx scripts/copy-build-assets.ts",
     "inspect": "npx @modelcontextprotocol/inspector node packages/server-all/dist/server/index.js",
+    "agent-sweep": "tsx scripts/agent-regression/index.ts",
+    "agent-sweep:am4": "tsx scripts/agent-regression/index.ts --device=am4",
     "mcp-test-apply": "tsx scripts/mcp-test-apply-preset.ts",
     "mcp-test-suite": "tsx scripts/mcp-test-preset-suite.ts",
     "mcp-test-safe-edit": "tsx scripts/mcp-test-safe-edit-scenarios.ts",
@@ -80,7 +82,8 @@
     "test:jest": "jest --testPathIgnorePatterns=integration",
     "test:jest:all": "jest",
     "typecheck": "tsc --noEmit -p packages/core/tsconfig.json && tsc --noEmit -p packages/am4/tsconfig.json && tsc --noEmit -p packages/axe-fx-ii/tsconfig.json && tsc --noEmit -p packages/axe-fx-iii/tsconfig.json && tsc --noEmit -p packages/hydrasynth-explorer/tsconfig.json && tsc --noEmit -p packages/server-all/tsconfig.json",
-    "preflight": "npm run typecheck && npm test"
+    "preflight": "npm run typecheck && npm test",
+    "release-gate": "npm run preflight && npm run launch-verify && npm run agent-sweep"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",

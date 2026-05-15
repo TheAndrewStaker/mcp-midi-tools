@@ -1,0 +1,386 @@
+/**
+ * Agent-regression harness — runs one case via `claude -p`.
+ *
+ * Spawns Claude Code in non-interactive mode with our MCP server
+ * (`packages/server-all/dist/server/index.js`) as the only available
+ * tool source, streams the JSON event log to stdout, parses each
+ * line into a tool-call / text record, then applies the case's
+ * assertions.
+ *
+ * Bills against the founder's Claude Max subscription (the same
+ * authentication their interactive `claude` session uses). No
+ * ANTHROPIC_API_KEY required.
+ *
+ * Authoring shortcut — drive a single case during development:
+ *   npx tsx scripts/agent-regression/runner.ts <case-id>
+ */
+
+import { spawn } from 'node:child_process';
+import path from 'node:path';
+import type {
+  AgentRegressionCase,
+  CaseResult,
+  ToolCall,
+} from './types.js';
+
+const MCP_CONFIG_PATH = path.resolve('scripts/agent-regression/mcp-config.json');
+const DEFAULT_MODEL = 'claude-sonnet-4-6';
+/**
+ * Claude Code's MCP tool naming convention prefixes every tool with
+ * `mcp__<server_name>__<tool_name>`. Our server is registered in
+ * mcp-config.json as `mcp-midi-control`, so a server-side tool like
+ * `apply_preset` is exposed to the agent as
+ * `mcp__mcp-midi-control__apply_preset`.
+ */
+const MCP_TOOL_PREFIX = 'mcp__mcp-midi-control__';
+
+interface RunOptions {
+  case: AgentRegressionCase;
+  model?: string;
+  /** When true, echo each stream-json event to console as it arrives. */
+  verbose?: boolean;
+  /**
+   * Max retries on failure. Default 1 — Sonnet is non-deterministic
+   * even at temperature 0, so a single spurious fail shouldn't block
+   * release. Pass 0 to disable retry entirely (CI debug mode).
+   */
+  max_retries?: number;
+}
+
+/**
+ * Execute one regression case with retry-on-flake.
+ *
+ * Sonnet's non-determinism produces occasional unrepresentative tool
+ * sequences (e.g. an extra exploratory list_params call) that fail
+ * assertions even when the underlying agent behavior is correct. To
+ * keep release-gate runs from spurious blocks, a failed attempt is
+ * retried once by default. If the retry passes, the case is flagged
+ * `flaked: true` in the report so flakiness is visible — not silently
+ * normalized — but it doesn't block the gate.
+ */
+export async function runCase(opts: RunOptions): Promise<CaseResult> {
+  const maxRetries = opts.max_retries ?? 1;
+  let lastResult: CaseResult | undefined;
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+    const result = await runCaseOnce({ ...opts });
+    if (result.passed) {
+      return { ...result, attempts: attempt, flaked: attempt > 1 };
+    }
+    lastResult = result;
+    if (attempt <= maxRetries && opts.verbose === true) {
+      console.error(`[retry] ${opts.case.id} failed attempt ${attempt}/${maxRetries + 1} — retrying`);
+    }
+  }
+  return { ...lastResult!, attempts: maxRetries + 1, flaked: false };
+}
+
+interface RunOnceOptions {
+  case: AgentRegressionCase;
+  model?: string;
+  verbose?: boolean;
+}
+
+async function runCaseOnce(opts: RunOnceOptions): Promise<CaseResult> {
+  const { case: testCase, model = DEFAULT_MODEL, verbose = false } = opts;
+  const startedAt = Date.now();
+
+  // claude -p flags chosen for full Desktop fidelity + harness control:
+  //   --print / -p              : non-interactive, prompt-and-exit
+  //   --output-format stream-json: NDJSON events on stdout
+  //   --verbose                  : required to enable stream-json on stdout
+  //   --strict-mcp-config        : ignore user/project MCP servers
+  //   --mcp-config <path>        : use ONLY the server in mcp-config.json
+  //   --model <id>               : pin to a specific model (Sonnet 4.6 by default)
+  //   --allowedTools "mcp__*"    : auto-approve MCP tools, deny Bash/Edit/etc.
+  const args = [
+    '-p',
+    '--output-format', 'stream-json',
+    '--verbose',
+    '--no-session-persistence',
+    '--strict-mcp-config',
+    '--mcp-config', MCP_CONFIG_PATH,
+    '--model', model,
+    '--allowedTools', 'mcp__*',
+    testCase.prompt,
+  ];
+
+  // Windows note: `claude` is a cmd shim, so we need shell:true on win32
+  // for the subprocess to resolve it. Direct exec without shell fails with
+  // ENOENT on Windows even when claude is on PATH.
+  const child = spawn('claude', args, {
+    shell: process.platform === 'win32',
+    stdio: ['ignore', 'pipe', 'inherit'],
+  });
+
+  const tool_calls: ToolCall[] = [];
+  const pending_tool_uses = new Map<string, { name: string; arguments: Record<string, unknown> }>();
+  let final_text = '';
+  let raw_event_count = 0;
+  let buffer = '';
+
+  child.stdout.setEncoding('utf8');
+  child.stdout.on('data', (chunk: string) => {
+    buffer += chunk;
+    let nl: number;
+    while ((nl = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, nl).trim();
+      buffer = buffer.slice(nl + 1);
+      if (line.length === 0) continue;
+      raw_event_count++;
+      let event: unknown;
+      try {
+        event = JSON.parse(line);
+      } catch {
+        if (verbose) console.error(`[parse-fail] ${line}`);
+        continue;
+      }
+      if (verbose) console.error(`[event] ${line.slice(0, 240)}`);
+      processEvent(event, tool_calls, pending_tool_uses, (text) => {
+        final_text += text;
+      });
+    }
+  });
+
+  const maxWall = (testCase.expectations.max_wall_seconds ?? 120) * 1000;
+  const timeout = setTimeout(() => {
+    if (!child.killed) child.kill('SIGTERM');
+  }, maxWall);
+
+  const exitCode: number = await new Promise((resolve) => {
+    child.on('exit', (code) => resolve(code ?? -1));
+  });
+  clearTimeout(timeout);
+
+  const wall_seconds = (Date.now() - startedAt) / 1000;
+  const failures = applyAssertions(testCase, tool_calls, final_text, exitCode);
+
+  return {
+    case: testCase,
+    passed: failures.length === 0,
+    failures,
+    tool_calls,
+    final_text,
+    wall_seconds,
+    raw_event_count,
+    attempts: 1,
+    flaked: false,
+  };
+}
+
+/**
+ * Translate one stream-json event into a tool_calls[] entry or a text
+ * accumulation. The Claude Code stream-json schema wraps assistant
+ * turns in `assistant` envelopes with `message.content[]` arrays, and
+ * tool results in `user` envelopes; we destructure both shapes.
+ */
+function processEvent(
+  event: unknown,
+  tool_calls: ToolCall[],
+  pending: Map<string, { name: string; arguments: Record<string, unknown> }>,
+  appendText: (text: string) => void,
+): void {
+  if (event === null || typeof event !== 'object') return;
+  const e = event as { type?: string; message?: unknown };
+
+  // Schema 1: { type: "assistant", message: { content: [{type:"tool_use"|"text",...}] } }
+  if (e.type === 'assistant' && e.message !== null && typeof e.message === 'object') {
+    const msg = e.message as { content?: unknown };
+    if (Array.isArray(msg.content)) {
+      for (const block of msg.content) {
+        if (block === null || typeof block !== 'object') continue;
+        const b = block as { type?: string; id?: string; name?: string; input?: unknown; text?: string };
+        if (b.type === 'tool_use' && typeof b.id === 'string' && typeof b.name === 'string') {
+          pending.set(b.id, {
+            name: b.name,
+            arguments: (b.input as Record<string, unknown> | undefined) ?? {},
+          });
+        } else if (b.type === 'text' && typeof b.text === 'string') {
+          appendText(b.text);
+        }
+      }
+    }
+  }
+
+  // Schema 2: { type: "user", message: { content: [{type:"tool_result", tool_use_id, content, is_error}] } }
+  if (e.type === 'user' && e.message !== null && typeof e.message === 'object') {
+    const msg = e.message as { content?: unknown };
+    if (Array.isArray(msg.content)) {
+      for (const block of msg.content) {
+        if (block === null || typeof block !== 'object') continue;
+        const b = block as { type?: string; tool_use_id?: string; content?: unknown; is_error?: boolean };
+        if (b.type === 'tool_result' && typeof b.tool_use_id === 'string') {
+          const pendingUse = pending.get(b.tool_use_id);
+          if (pendingUse === undefined) continue;
+          pending.delete(b.tool_use_id);
+          tool_calls.push({
+            name: pendingUse.name,
+            short_name: stripPrefix(pendingUse.name),
+            arguments: pendingUse.arguments,
+            result: stringifyToolResult(b.content),
+            is_error: b.is_error === true,
+          });
+        }
+      }
+    }
+  }
+
+  // Schema 3 (older / alternate): top-level tool_use / tool_result events.
+  if (e.type === 'tool_use') {
+    const t = e as { id?: string; name?: string; input?: unknown };
+    if (typeof t.id === 'string' && typeof t.name === 'string') {
+      pending.set(t.id, {
+        name: t.name,
+        arguments: (t.input as Record<string, unknown> | undefined) ?? {},
+      });
+    }
+  }
+  if (e.type === 'tool_result') {
+    const t = e as { tool_use_id?: string; content?: unknown; is_error?: boolean };
+    if (typeof t.tool_use_id === 'string') {
+      const pendingUse = pending.get(t.tool_use_id);
+      if (pendingUse !== undefined) {
+        pending.delete(t.tool_use_id);
+        tool_calls.push({
+          name: pendingUse.name,
+          short_name: stripPrefix(pendingUse.name),
+          arguments: pendingUse.arguments,
+          result: stringifyToolResult(t.content),
+          is_error: t.is_error === true,
+        });
+      }
+    }
+  }
+}
+
+function stripPrefix(name: string): string {
+  return name.startsWith(MCP_TOOL_PREFIX) ? name.slice(MCP_TOOL_PREFIX.length) : name;
+}
+
+function stringifyToolResult(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content.map((c) => {
+      if (c !== null && typeof c === 'object' && 'text' in c) return String((c as { text: unknown }).text);
+      return JSON.stringify(c);
+    }).join('\n');
+  }
+  if (content === null || content === undefined) return '';
+  return JSON.stringify(content);
+}
+
+/**
+ * Apply the case's `expectations` to the captured run. Returns an
+ * array of failure messages — empty array means pass.
+ */
+function applyAssertions(
+  testCase: AgentRegressionCase,
+  tool_calls: readonly ToolCall[],
+  final_text: string,
+  exitCode: number,
+): string[] {
+  const failures: string[] = [];
+  const exp = testCase.expectations;
+
+  if (exitCode !== 0) {
+    failures.push(`claude -p exited with code ${exitCode}`);
+  }
+
+  const callsByName = new Map<string, ToolCall[]>();
+  for (const c of tool_calls) {
+    const list = callsByName.get(c.short_name) ?? [];
+    list.push(c);
+    callsByName.set(c.short_name, list);
+  }
+
+  // must_call
+  for (const tool of exp.must_call) {
+    if (!callsByName.has(tool)) {
+      failures.push(`must_call: agent never called \`${tool}\``);
+    }
+  }
+
+  // must_not_call
+  for (const tool of exp.must_not_call ?? []) {
+    if (callsByName.has(tool)) {
+      failures.push(`must_not_call: agent called \`${tool}\` ${callsByName.get(tool)!.length}×`);
+    }
+  }
+
+  // max_tools / min_tools
+  if (tool_calls.length > exp.max_tools) {
+    failures.push(`max_tools: ${tool_calls.length} > ${exp.max_tools} (sequence: ${tool_calls.map((c) => c.short_name).join(' → ')})`);
+  }
+  const minTools = exp.min_tools ?? 1;
+  if (tool_calls.length < minTools) {
+    failures.push(`min_tools: only ${tool_calls.length} call(s), expected at least ${minTools} (did the agent refuse?)`);
+  }
+
+  // max_repeats
+  for (const [tool, limit] of Object.entries(exp.max_repeats ?? {})) {
+    const count = callsByName.get(tool)?.length ?? 0;
+    if (count > limit) {
+      failures.push(`max_repeats: \`${tool}\` called ${count}× (limit ${limit}) — likely retry loop`);
+    }
+  }
+
+  // text_contains / text_not_contains
+  for (const needle of exp.text_contains ?? []) {
+    if (!final_text.toLowerCase().includes(needle.toLowerCase())) {
+      failures.push(`text_contains: final text missing "${needle}"`);
+    }
+  }
+  for (const needle of exp.text_not_contains ?? []) {
+    if (final_text.toLowerCase().includes(needle.toLowerCase())) {
+      failures.push(`text_not_contains: final text contained "${needle}"`);
+    }
+  }
+
+  // tool_call_validators
+  for (const v of exp.tool_call_validators ?? []) {
+    const matches = callsByName.get(v.tool);
+    if (matches === undefined || matches.length === 0) {
+      failures.push(`tool_call_validators: \`${v.tool}\` was never called`);
+      continue;
+    }
+    const idx = v.call_index ?? 0;
+    if (idx >= matches.length) {
+      failures.push(`tool_call_validators: \`${v.tool}\` was called ${matches.length}× but validator wanted index ${idx}`);
+      continue;
+    }
+    const call = matches[idx];
+    const result = v.check(call.arguments, call.result);
+    if (result !== true) {
+      failures.push(`tool_call_validator(${v.tool}#${idx}): ${result}`);
+    }
+  }
+
+  // should_avoid_dropped_param_warning — scan apply_preset results for the
+  // executor's "dropped X param(s)" warning text.
+  if (exp.should_avoid_dropped_param_warning === true) {
+    for (const c of tool_calls) {
+      if (c.short_name !== 'apply_preset') continue;
+      if (c.result?.includes('Dropped ') === true || c.result?.includes("don't apply on the active block type") === true) {
+        failures.push(`should_avoid_dropped_param_warning: apply_preset response carried a dropped-param warning — agent picked a type that doesn't expose every requested knob`);
+      }
+    }
+  }
+
+  return failures;
+}
+
+// CLI: `tsx runner.ts <case-id>` — useful during case authoring.
+const isMain = import.meta.url === `file://${process.argv[1]?.replace(/\\/g, '/')}`
+  || import.meta.url.endsWith(process.argv[1]?.replace(/\\/g, '/') ?? '');
+if (isMain && process.argv[2] !== undefined) {
+  const caseId = process.argv[2];
+  const { ALL_CASES } = await import('./cases-all.js');
+  const testCase = ALL_CASES.find((c) => c.id === caseId);
+  if (testCase === undefined) {
+    console.error(`No case with id "${caseId}". Known ids: ${ALL_CASES.map((c) => c.id).join(', ')}`);
+    process.exit(1);
+  }
+  const result = await runCase({ case: testCase, verbose: true });
+  console.log(`\n${result.passed ? 'PASS' : 'FAIL'}: ${result.case.id} (${result.wall_seconds.toFixed(1)}s, ${result.tool_calls.length} tool calls)`);
+  for (const f of result.failures) console.log(`  ✗ ${f}`);
+  process.exit(result.passed ? 0 : 1);
+}
