@@ -85,13 +85,23 @@ async function runCaseOnce(opts: RunOnceOptions): Promise<CaseResult> {
   const startedAt = Date.now();
 
   // claude -p flags chosen for full Desktop fidelity + harness control:
-  //   --print / -p              : non-interactive, prompt-and-exit
-  //   --output-format stream-json: NDJSON events on stdout
-  //   --verbose                  : required to enable stream-json on stdout
-  //   --strict-mcp-config        : ignore user/project MCP servers
-  //   --mcp-config <path>        : use ONLY the server in mcp-config.json
-  //   --model <id>               : pin to a specific model (Sonnet 4.6 by default)
-  //   --allowedTools "mcp__*"    : auto-approve MCP tools, deny Bash/Edit/etc.
+  //   --print / -p                       : non-interactive, prompt-and-exit
+  //   --output-format stream-json        : NDJSON events on stdout
+  //   --verbose                          : required to enable stream-json on stdout
+  //   --strict-mcp-config + --mcp-config : use ONLY our MCP server, ignore user/project configs
+  //   --model <id>                       : pin to Sonnet 4.6 by default
+  //   --permission-mode bypassPermissions: auto-approve every tool call. `--allowedTools` does NOT
+  //                                        support glob patterns over MCP tool names — the `*`
+  //                                        syntax is for Bash arg matching only (e.g. `Bash(git *)`).
+  //                                        Bypass is safe here because --strict-mcp-config already
+  //                                        confines MCP to our server, and we explicitly deny the
+  //                                        built-in side-effect tools below.
+  //   --disallowedTools Bash Edit Write... : deny built-ins so the agent can't escape the harness'
+  //                                        scope. If a prompt makes the agent reach for these, it's
+  //                                        a signal the prompt is too generic — fail rather than
+  //                                        silently let it grep our codebase.
+  // The prompt itself is piped to stdin (not argv) so quotes and punctuation
+  // don't need shell-escaping.
   const args = [
     '-p',
     '--output-format', 'stream-json',
@@ -100,17 +110,19 @@ async function runCaseOnce(opts: RunOnceOptions): Promise<CaseResult> {
     '--strict-mcp-config',
     '--mcp-config', MCP_CONFIG_PATH,
     '--model', model,
-    '--allowedTools', 'mcp__*',
-    testCase.prompt,
+    '--permission-mode', 'bypassPermissions',
+    '--disallowedTools', 'Bash', 'Edit', 'Write', 'Read', 'NotebookEdit', 'WebFetch', 'WebSearch', 'Task',
   ];
 
-  // Windows note: `claude` is a cmd shim, so we need shell:true on win32
-  // for the subprocess to resolve it. Direct exec without shell fails with
-  // ENOENT on Windows even when claude is on PATH.
+  // `claude.exe` is a real executable on Windows + a binary on Unix, so
+  // spawn without shell:true. That avoids both the deprecation warning
+  // and the argv-mangling that hits prompts with quotes / punctuation.
   const child = spawn('claude', args, {
-    shell: process.platform === 'win32',
-    stdio: ['ignore', 'pipe', 'inherit'],
+    shell: false,
+    stdio: ['pipe', 'pipe', 'inherit'],
   });
+  child.stdin.write(testCase.prompt);
+  child.stdin.end();
 
   const tool_calls: ToolCall[] = [];
   const pending_tool_uses = new Map<string, { name: string; arguments: Record<string, unknown> }>();
@@ -152,13 +164,20 @@ async function runCaseOnce(opts: RunOnceOptions): Promise<CaseResult> {
   clearTimeout(timeout);
 
   const wall_seconds = (Date.now() - startedAt) / 1000;
-  const failures = applyAssertions(testCase, tool_calls, final_text, exitCode);
+
+  // Filter out Claude Code's invisible runtime tools (ToolSearch, etc.)
+  // before applying assertions — they're schema-loading plumbing, not
+  // agent decisions. We keep them out of `tool_calls` entirely so the
+  // sequence shown in the report reflects what the AGENT did.
+  const agent_tool_calls = tool_calls.filter((c) => !HARNESS_INVISIBLE_TOOLS.has(c.short_name));
+
+  const failures = applyAssertions(testCase, agent_tool_calls, final_text, exitCode);
 
   return {
     case: testCase,
     passed: failures.length === 0,
     failures,
-    tool_calls,
+    tool_calls: agent_tool_calls,
     final_text,
     wall_seconds,
     raw_event_count,
@@ -255,6 +274,23 @@ function processEvent(
 function stripPrefix(name: string): string {
   return name.startsWith(MCP_TOOL_PREFIX) ? name.slice(MCP_TOOL_PREFIX.length) : name;
 }
+
+/**
+ * Claude Code's internal tools that don't represent agent "work" against
+ * the MCP server. Excluded from tool-count tallies so max_tools / sequence
+ * assertions reflect only the agent's actual decision-making, not the
+ * runtime's lazy-schema-loading behavior.
+ *
+ * `ToolSearch` in particular is Claude Code's deferred-tool resolver —
+ * it loads schemas for tools that are surfaced by name in system reminders
+ * but not yet in the agent's context. The agent calls it implicitly to
+ * "discover" our MCP tools; it would run zero times if MCP tools were
+ * pre-loaded but consistently runs 1-3× per session as schemas get pulled
+ * in chunks.
+ */
+const HARNESS_INVISIBLE_TOOLS: ReadonlySet<string> = new Set([
+  'ToolSearch',
+]);
 
 function stringifyToolResult(content: unknown): string {
   if (typeof content === 'string') return content;
