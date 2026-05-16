@@ -287,9 +287,52 @@ When a 0x64 arrives it surfaces as a warning in the tool response
 text — `(echoed_fn, result_code)` plus a human label for known codes.
 Byte-exact predicate + parser goldens (including the community-captured
 `F0 00 01 74 10 64 0E 00 7F F7` frame) live in
-`scripts/verify-axe-fx-iii-encoding.ts`. Known `result_code` labels:
-`0x00` = general / checksum error, `0x05` = NACK; anything else
-surfaces as a raw hex byte.
+`scripts/verify-axe-fx-iii-encoding.ts`.
+
+**Result code table (28 codes, decoded Session 81 from AxeEdit III
+1.14.31 binary).** Index = result_code byte. Source: contiguous
+`MIDI_ERROR_*` string table at .rdata offset 0x597108 in
+`Axe-Edit III.exe`; 0x00 = `MIDI_ERROR_BAD_CHKSUM` matches the
+empirically-verified bad-checksum capture above, so the index → code
+mapping is high-confidence. See `docs/axefx3-fn01-decode.md` for the
+full extraction evidence.
+
+| Code | Label | Meaning |
+|---|---|---|
+| 0x00 | MIDI_ERROR_BAD_CHKSUM | bad checksum |
+| 0x01 | MIDI_ERROR_WRONG_SYSEX_ID | wrong SysEx manufacturer ID |
+| 0x02 | MIDI_ERROR_WRONG_MODEL_NUM | wrong model number |
+| 0x03 | MIDI_ERROR_BAD_ARGUMENT | bad argument |
+| 0x04 | MIDI_ERROR_MSG_NOT_RECOGNIZED | message not recognized |
+| 0x05 | MIDI_ERROR_INVALID_FXID | invalid effect ID |
+| 0x06 | MIDI_ERROR_INVALID_PARAMID | invalid parameter ID |
+| 0x07 | MIDI_ERROR_FX_NOT_IN_USE | effect not in use in this preset |
+| 0x08 | MIDI_ERROR_NO_MODIFIERS_LEFT | no modifier slots left |
+| 0x09 | MIDI_ERROR_WRONG_COUNT | wrong count |
+| 0x0A | MIDI_ERROR_FX_NOT_ROUTABLE | effect not routable here |
+| 0x0B | MIDI_ERROR_BAD_GRID_POS | bad grid position |
+| 0x0C | MIDI_ERROR_DSP_OVERLOAD | DSP overload |
+| 0x0D | MIDI_ERROR_FUNCTION_FAIL | function failed |
+| 0x0E | MIDI_ERROR_INVALID_PATCHNUM | invalid patch number |
+| 0x0F | MIDI_ERROR_ILLEGAL_MSG | illegal message |
+| 0x10 | MIDI_ERROR_BAD_MSG_LENGTH | bad message length |
+| 0x11 | MIDI_ERROR_IMAGE_SIZE_INCORRECT | image size incorrect (firmware) |
+| 0x12 | MIDI_ERROR_BAD_IMAGE_CHKSUM | bad image checksum (firmware) |
+| 0x13 | MIDI_ERROR_NOT_RDY_FOR_FW_UPD | not ready for firmware update |
+| 0x14 | MIDI_ERROR_BUFFER_OVERRUN | buffer overrun |
+| 0x15 | MIDI_ERROR_INVALID_CABNUM | invalid cab number |
+| 0x16 | MIDI_ERROR_INVALID_MODIFIERID | invalid modifier ID |
+| 0x17 | MIDI_ERROR_INVALID_BANKNUM | invalid bank number |
+| 0x18 | MIDI_ERROR_FIRMWARE_ALREADY_CURRENT | firmware already current |
+| 0x19 | MIDI_ERROR_CMD_NOT_SUPPORTED | command not supported |
+| 0x1A | MIDI_ERROR_NULL_DATA | null data |
+| 0x1B | MIDI_ERROR_FLASH_WRITE_FAILED | flash write failed |
+
+Notable for our use: 0x05 INVALID_FXID supersedes a previously
+mis-labeled "NACK" entry. 0x06 INVALID_PARAMID is the code we will
+likely see if `axefx3_set_param` decode is wrong about a parameter
+ID. 0x0C DSP_OVERLOAD is the same code that surfaces in AxeEdit III
+when the user adds a block that exceeds the DSP budget.
 
 ## Effect IDs in v1.4 Appendix 1 that are NOT 3rd-party addressable
 

@@ -210,14 +210,112 @@ F0 00 01 74 10 64 0E 00 7F F7
 ```
 
 - `0E` = the function byte that errored (echo)
-- `00` = result code (likely "general error" / "bad checksum")
+- `00` = result code = `MIDI_ERROR_BAD_CHKSUM`
 - `7F` = checksum (validates: `F0^00^01^74^10^64^0E^00 = 0xFF & 0x7F = 0x7F`)
 
-Useful for our tools — when we send and get a 0x64 back, we can
-parse it as `(echoed_fn, result_code)` and surface a clean error
-to the agent. Today our `axefx3_*` tools fire-and-forget; adding
-a 0x64 listener to the response window would catch malformed-write
-errors.
+**Shipped Session 80:** the III tools wrap each fire-and-forget SET
+with a 250ms 0x64 listener (`sendAndWatchForError` in
+`packages/axe-fx-iii/src/tools/shared.ts`); on reject the tool
+response surfaces `(echoed_fn, result_code)` plus a human label.
+
+### 0x64 result codes (full table, Session 81 decode)
+
+The AxeEdit III 1.14.31 release binary contains a contiguous
+8-byte-aligned `MIDI_ERROR_*` string table at .rdata offset
+0x597108 onward. Each entry's index in offset order = the
+`result_code` byte the III emits. Index 0 = `MIDI_ERROR_BAD_CHKSUM`
+matches the empirically-verified capture above, so the indexing is
+high-confidence.
+
+| Code | Label | Meaning |
+|---|---|---|
+| 0x00 | MIDI_ERROR_BAD_CHKSUM | bad checksum |
+| 0x01 | MIDI_ERROR_WRONG_SYSEX_ID | wrong SysEx manufacturer ID |
+| 0x02 | MIDI_ERROR_WRONG_MODEL_NUM | wrong model number |
+| 0x03 | MIDI_ERROR_BAD_ARGUMENT | bad argument |
+| 0x04 | MIDI_ERROR_MSG_NOT_RECOGNIZED | message not recognized |
+| 0x05 | MIDI_ERROR_INVALID_FXID | invalid effect ID |
+| 0x06 | MIDI_ERROR_INVALID_PARAMID | invalid parameter ID |
+| 0x07 | MIDI_ERROR_FX_NOT_IN_USE | effect not in use in this preset |
+| 0x08 | MIDI_ERROR_NO_MODIFIERS_LEFT | no modifier slots left |
+| 0x09 | MIDI_ERROR_WRONG_COUNT | wrong count |
+| 0x0A | MIDI_ERROR_FX_NOT_ROUTABLE | effect not routable here |
+| 0x0B | MIDI_ERROR_BAD_GRID_POS | bad grid position |
+| 0x0C | MIDI_ERROR_DSP_OVERLOAD | DSP overload |
+| 0x0D | MIDI_ERROR_FUNCTION_FAIL | function failed |
+| 0x0E | MIDI_ERROR_INVALID_PATCHNUM | invalid patch number |
+| 0x0F | MIDI_ERROR_ILLEGAL_MSG | illegal message |
+| 0x10 | MIDI_ERROR_BAD_MSG_LENGTH | bad message length |
+| 0x11 | MIDI_ERROR_IMAGE_SIZE_INCORRECT | image size incorrect (firmware) |
+| 0x12 | MIDI_ERROR_BAD_IMAGE_CHKSUM | bad image checksum (firmware) |
+| 0x13 | MIDI_ERROR_NOT_RDY_FOR_FW_UPD | not ready for firmware update |
+| 0x14 | MIDI_ERROR_BUFFER_OVERRUN | buffer overrun |
+| 0x15 | MIDI_ERROR_INVALID_CABNUM | invalid cab number |
+| 0x16 | MIDI_ERROR_INVALID_MODIFIERID | invalid modifier ID |
+| 0x17 | MIDI_ERROR_INVALID_BANKNUM | invalid bank number |
+| 0x18 | MIDI_ERROR_FIRMWARE_ALREADY_CURRENT | firmware already current |
+| 0x19 | MIDI_ERROR_CMD_NOT_SUPPORTED | command not supported |
+| 0x1A | MIDI_ERROR_NULL_DATA | null data |
+| 0x1B | MIDI_ERROR_FLASH_WRITE_FAILED | flash write failed |
+
+Codes ≥ 0x1C: not enumerated in the AxeEdit III binary. If we
+ever see a 0x64 result_code outside this range it's either firmware
+newer than 1.14.31 added entries, or the device is in an unexpected
+state.
+
+Note: 0x05 = `MIDI_ERROR_INVALID_FXID` supersedes a previously
+mis-labeled "NACK" entry that came from a loose community report.
+The binary-extracted table is authoritative.
+
+### Cross-extract: AxeEdit III binary as a research artifact
+
+The AxeEdit III installer (`Axe-Edit-III-Win-v1p14p31.exe`, installed
+to `C:\Program Files\Fractal Audio\Axe-Edit III\Axe-Edit III.exe`,
+~20 MB) is rich with extractable string symbols. Extraction recipe:
+
+```
+npx tsx scripts/_research/extract-exe-strings.ts \
+  --exe "C:\Program Files\Fractal Audio\Axe-Edit III\Axe-Edit III.exe" \
+  --out samples/captured/decoded/axeedit3-strings.json \
+  --min 4
+```
+
+The output is gitignored (samples/) — re-run per session to refresh.
+
+**Already mined (Session 81):**
+- `MIDI_ERROR_*` table at 0x597108 — 28 codes, full table above.
+
+**Leads not yet mined (each is an independent next pickup):**
+
+- `SYSEX_*` function-byte symbol pool around 0x5aaf80 — includes
+  symbols matching documented functions (`SYSEX_SETGET_BYPASS`,
+  `SYSEX_SETGET_CHANNEL`, `SYSEX_SETGET_TEMPO`, etc.) plus
+  undocumented entries: `SYSEX_DSP_MESSAGE` (Session 78 prioritized
+  this for `get_dsp_usage` decode), `SYSEX_EFFECT_DUMP`,
+  `SYSEX_GUI_CONTROL`, `SYSEX_FS_MESSAGE`, `SYSEX_FS_PASSTHRU_MESSAGE`,
+  `SYSEX_FOOTSWITCH_DUMP`, `SYSEX_SYSTEM_DUMP`. If these are stored
+  as a contiguous string pool indexed by function byte, the index
+  in offset order gives the function-byte assignment for each
+  undocumented function — same technique that decoded the error
+  table.
+- `msg_*` format strings: `msg_getBlockString: effectId: %d, paramId
+  %d / %d, string %d / %d` and `msg_getParamInfo: EffectId: ...`
+  suggest the III has message-builder functions that return
+  per-block param names by index. Useful if we can call them
+  (hardware-dependent), but the format strings alone tell us the
+  shape of the query.
+- CSV export column headers in `.rdata` show AxeEdit III has an
+  export-all-params function (`EffectType, Param Label, ParamId,
+  Type, Units, Precision, Low Limit, High Limit, Multiplier,
+  Resolution, Strings`). If we can locate the data table that feeds
+  this export, we get the complete per-effect-type parameter
+  dictionary without sniffing AxeEdit's MIDI traffic.
+
+The string table at 0x597108 establishes the technique: when
+.rdata contains a contiguous, 8-byte-aligned, NUL-terminated
+string pool that lines up with one enum we've already verified,
+the index → label mapping is reliable. The same technique should
+work on the `SYSEX_*` table next.
 
 ## Some v1.4 effect IDs aren't actually controllable
 

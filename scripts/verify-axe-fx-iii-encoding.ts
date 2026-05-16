@@ -375,9 +375,22 @@ console.log('\nmultipurpose_response (function 0x64):');
     parseMultipurposeResponse(captured),
     { echoedFn: 0x0e, resultCode: 0x00 });
   checkEqual('describeMultipurposeResultCode(0x00)',
-    describeMultipurposeResultCode(0x00), 'general error (often: bad checksum)');
+    describeMultipurposeResultCode(0x00), 'bad checksum (MIDI_ERROR_BAD_CHKSUM)');
+  // 0x05 was previously labeled "NACK" from a loose community report.
+  // The AxeEdit III 1.14.31 binary's MIDI_ERROR_* string table
+  // (indexed by result_code) reveals it as MIDI_ERROR_INVALID_FXID.
   checkEqual('describeMultipurposeResultCode(0x05)',
-    describeMultipurposeResultCode(0x05), 'NACK');
+    describeMultipurposeResultCode(0x05), 'invalid effect ID (MIDI_ERROR_INVALID_FXID)');
+  // Spot-check entries at table boundaries + middle of the table.
+  checkEqual('describeMultipurposeResultCode(0x06)',
+    describeMultipurposeResultCode(0x06), 'invalid parameter ID (MIDI_ERROR_INVALID_PARAMID)');
+  checkEqual('describeMultipurposeResultCode(0x0c)',
+    describeMultipurposeResultCode(0x0c), 'DSP overload (MIDI_ERROR_DSP_OVERLOAD)');
+  checkEqual('describeMultipurposeResultCode(0x1b)',
+    describeMultipurposeResultCode(0x1b), 'flash write failed (MIDI_ERROR_FLASH_WRITE_FAILED)');
+  // 0x1C is the first code past the documented table.
+  checkEqual('describeMultipurposeResultCode(0x1c) — unknown',
+    describeMultipurposeResultCode(0x1c), undefined);
   checkEqual('describeMultipurposeResultCode(0x42) — unknown',
     describeMultipurposeResultCode(0x42), undefined);
 }
@@ -386,7 +399,7 @@ console.log('\nmultipurpose_response (function 0x64):');
 {
   const head = [0xf0, 0x00, 0x01, 0x74, 0x10, 0x64, 0x02, 0x05];
   const synth = [...head, fractalChecksum(head), 0xf7];
-  checkEqual('parseMultipurposeResponse(synth NACK)',
+  checkEqual('parseMultipurposeResponse(synth INVALID_FXID)',
     parseMultipurposeResponse(synth),
     { echoedFn: 0x02, resultCode: 0x05 });
 }

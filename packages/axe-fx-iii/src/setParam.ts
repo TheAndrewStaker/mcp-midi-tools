@@ -544,11 +544,48 @@ export function parseMultipurposeResponse(bytes: readonly number[]): {
  * Human-readable label for a known `result_code` byte. Returns
  * `undefined` for codes not yet documented; callers fall back to the
  * raw hex value.
+ *
+ * Source: AxeEdit III 1.14.31 release binary contains a contiguous
+ * 8-byte-aligned `MIDI_ERROR_*` string table at `.rdata` offset
+ * 0x597108 onward. Entries are accessed by result_code as index.
+ * Index 0 = `MIDI_ERROR_BAD_CHKSUM` matches the empirically-verified
+ * 0x64 frame whose host-side trigger was a malformed checksum, so the
+ * index → result_code mapping is high-confidence. Codes 0x00..0x1B
+ * are populated; anything ≥ 0x1C returns undefined.
+ *
+ * See `docs/axefx3-fn01-decode.md` "0x64 result codes" for the full
+ * decode + index-table evidence.
  */
 export function describeMultipurposeResultCode(code: number): string | undefined {
   switch (code & 0x7f) {
-    case 0x00: return 'general error (often: bad checksum)';
-    case 0x05: return 'NACK';
+    case 0x00: return 'bad checksum (MIDI_ERROR_BAD_CHKSUM)';
+    case 0x01: return 'wrong SysEx manufacturer ID (MIDI_ERROR_WRONG_SYSEX_ID)';
+    case 0x02: return 'wrong model number (MIDI_ERROR_WRONG_MODEL_NUM)';
+    case 0x03: return 'bad argument (MIDI_ERROR_BAD_ARGUMENT)';
+    case 0x04: return 'message not recognized (MIDI_ERROR_MSG_NOT_RECOGNIZED)';
+    case 0x05: return 'invalid effect ID (MIDI_ERROR_INVALID_FXID)';
+    case 0x06: return 'invalid parameter ID (MIDI_ERROR_INVALID_PARAMID)';
+    case 0x07: return 'effect not in use in this preset (MIDI_ERROR_FX_NOT_IN_USE)';
+    case 0x08: return 'no modifier slots left (MIDI_ERROR_NO_MODIFIERS_LEFT)';
+    case 0x09: return 'wrong count (MIDI_ERROR_WRONG_COUNT)';
+    case 0x0a: return 'effect not routable here (MIDI_ERROR_FX_NOT_ROUTABLE)';
+    case 0x0b: return 'bad grid position (MIDI_ERROR_BAD_GRID_POS)';
+    case 0x0c: return 'DSP overload (MIDI_ERROR_DSP_OVERLOAD)';
+    case 0x0d: return 'function failed (MIDI_ERROR_FUNCTION_FAIL)';
+    case 0x0e: return 'invalid patch number (MIDI_ERROR_INVALID_PATCHNUM)';
+    case 0x0f: return 'illegal message (MIDI_ERROR_ILLEGAL_MSG)';
+    case 0x10: return 'bad message length (MIDI_ERROR_BAD_MSG_LENGTH)';
+    case 0x11: return 'image size incorrect (MIDI_ERROR_IMAGE_SIZE_INCORRECT)';
+    case 0x12: return 'bad image checksum (MIDI_ERROR_BAD_IMAGE_CHKSUM)';
+    case 0x13: return 'not ready for firmware update (MIDI_ERROR_NOT_RDY_FOR_FW_UPD)';
+    case 0x14: return 'buffer overrun (MIDI_ERROR_BUFFER_OVERRUN)';
+    case 0x15: return 'invalid cab number (MIDI_ERROR_INVALID_CABNUM)';
+    case 0x16: return 'invalid modifier ID (MIDI_ERROR_INVALID_MODIFIERID)';
+    case 0x17: return 'invalid bank number (MIDI_ERROR_INVALID_BANKNUM)';
+    case 0x18: return 'firmware already current (MIDI_ERROR_FIRMWARE_ALREADY_CURRENT)';
+    case 0x19: return 'command not supported (MIDI_ERROR_CMD_NOT_SUPPORTED)';
+    case 0x1a: return 'null data (MIDI_ERROR_NULL_DATA)';
+    case 0x1b: return 'flash write failed (MIDI_ERROR_FLASH_WRITE_FAILED)';
     default:   return undefined;
   }
 }
