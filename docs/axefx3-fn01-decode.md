@@ -5,17 +5,41 @@ unique 23-byte captures + 2 unique 87-byte captures (2026-05-15
 community scrape). Sub-action codes confirmed; per-block param-ID
 table still TBD.
 
-## Headline: 0x01 is a multi-purpose envelope, NOT a single function
+## Headline: 0x01 is GET_BLOCK_PARAMETERS_LIST — multi-mode envelope
 
-Function 0x01 carries different operations distinguished by a
-2-byte **action code** at offsets 6-7. Three sub-actions identified
-in captures so far:
+Function 0x01 on the Axe-Fx III is the **same** function as on the
+Axe-Fx II: `GET_BLOCK_PARAMETERS_LIST`. This is independently
+confirmed by community posts in two forum threads:
 
-| Action (pos 6-7) | Length | Direction | Likely role |
+- Thread #161230: *"function call 0x01 which is GET_BLOCK_PARAMETERS_LIST"*
+  (with a link to the Axe-Fx II wiki entry).
+- Thread #140602 (Third-Party MIDI Spec): a user describes the
+  workflow as "calling function 0x01 after receive the status dump
+  response (0x13)" — exactly the II-pattern: enumerate blocks via
+  STATUS_DUMP, then query each block's parameter list with 0x01.
+- Thread #192151 (DIY controller share thread): a community member
+  calls 0x01 with `blockid == 106` and receives a stream of
+  `i = N, id = NN` records — the parameter-list response in
+  action.
+
+The function carries different operations distinguished by a 2-byte
+**action / mode code** at offsets 6-7. Three modes observed:
+
+| Action (pos 6-7) | Length | Direction | Role |
 |---|---|---|---|
 | `52 00` | 23 bytes | host → device | **SET_PARAMETER** (set a single block parameter value) |
 | `04 01` | 23 bytes | device → host | **STATE_BROADCAST** (device announces a parameter / modifier state change) |
-| `01 00` | 87 bytes | device → host | **STATE_DUMP** (long block-state snapshot, multi-field) |
+| `01 00` | 87 bytes | device → host | **PARAMETERS_LIST response** (one record from the block's parameter list — multiple records emitted per query) |
+
+The 87-byte `01 00` captures aren't a single state dump as we first
+hypothesized — they're individual records in a multi-message response
+stream. The III emits one 0x01-with-`01 00` for each parameter in
+the queried block, until the list is exhausted.
+
+This means the III's `get_param` / `list_params` operations are
+already in our reach: send `0x01` with the right query-mode action
+code (probably `01 00` with the block ID, no value), parse the
+stream of responses.
 
 **Why this matters:** function 0x01 is the III's parameter-write
 SysEx, **not in the v1.4 third-party MIDI PDF**. Decoding it unlocks
