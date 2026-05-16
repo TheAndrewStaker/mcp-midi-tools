@@ -15,22 +15,37 @@
 
 ---
 
-## Current support matrix
+## Current support matrix (post v1.4 spec alignment — 2026-05-15)
 
-| Tool / operation | Status | Notes |
+| Tool / operation | Status | Wire reference |
 |---|---|---|
-| `list_midi_ports` (detect III) | 🟢 should work | Spec-independent — needs only the port name to contain "axe-fx iii" or "axefx 3" |
-| `describe_device(port: 'axe-fx-iii')` | 🟢 functional | Returns the 47-block roster + capability flags + beta-status agent_guidance |
-| `switch_preset` | 🟡 spec-documented, pending capture | Function 0x0D — same envelope as documented in v1.4 PDF |
-| `switch_scene` | 🟡 spec-documented, pending capture | Function 0x0C |
-| Query preset name (read) | 🟡 spec-documented, pending capture | Function 0x0F |
-| Query scene name (read) | 🟡 spec-documented, pending capture | Function 0x0E |
-| Status dump (read) | 🟡 spec-documented, pending capture | Function 0x13 — returns effect-index space for every block in active preset |
-| `get_param` | 🔴 refused | III deliberately omits per-block param IDs from public spec |
-| `set_param` | 🔴 refused | Param-ID space pending decode |
-| `set_block` / `set_bypass` | 🔴 refused | Effect-index addressing pending decode |
-| `apply_preset` | 🔴 refused | Needs all of above |
-| `save_preset` | 🔴 refused | STORE envelope not in public spec |
+| `list_midi_ports` (detect III) | 🟢 functional | Port-name regex |
+| `describe_device(port: 'axe-fx-iii')` | 🟢 functional | Block roster + capabilities |
+| `axefx3_list_blocks` | 🟢 functional | Pure data |
+| `axefx3_switch_scene` / `get_active_scene` | 🟡 shipped | Function 0x0C |
+| `axefx3_get_preset_name` | 🟡 shipped | Function 0x0D (returns preset # + name) |
+| `axefx3_get_scene_name` | 🟡 shipped | Function 0x0E |
+| `axefx3_set_bypass` / `get_bypass` | 🟡 shipped | Function 0x0A + Appendix 1 effect IDs |
+| `axefx3_set_channel` / `get_channel` | 🟡 shipped | Function 0x0B |
+| `axefx3_tempo_tap` | 🟡 shipped | Function 0x10 |
+| `axefx3_set_tempo` / `get_tempo` | 🟡 shipped | Function 0x14 |
+| `axefx3_set_tuner` | 🟡 shipped | Function 0x11 |
+| `axefx3_set_looper` / `get_looper_state` | 🟡 shipped | Function 0x0F |
+| `axefx3_status_dump` | 🟡 shipped | Function 0x13 |
+| `axefx3_probe_sysex` | 🟢 functional | Raw send + inbound capture |
+| `set_param` | 🔴 refused | Not in v1.4 — needs AxeEdit III sniffing |
+| `save_preset` / `apply_preset` | 🔴 refused | Multi-frame envelope + Huffman-packed body |
+| `switch_preset` (SysEx) | 🔴 refused | Use MIDI Program Change instead |
+| AMP / NAM / Dynamic Distortion bypass | 🔴 effect ID unknown | STATUS_DUMP-against-preset will decode |
+
+**🟡 status legend:** spec-correct per v1.4 PDF, not yet hardware-
+verified. Project maintainer doesn't own an Axe-Fx III. The easiest
+sanity check is `axefx3_get_preset_name` — load any preset on the
+III's front panel, run the tool, and confirm the name + slot it
+reports matches what's on the display. If it disagrees, the wire
+shape we built from the spec differs from real-firmware behavior;
+please open an issue with raw bytes (use `axefx3_probe_sysex` with
+hex `F0 00 01 74 10 0D 7F 7F 18 F7`).
 
 ---
 

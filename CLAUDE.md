@@ -76,7 +76,7 @@ or speculating about wire shapes):
 
 - **AM4** → `docs/SYSEX-MAP.md`
 - **Axe-Fx II** → `docs/SYSEX-MAP-AXE-FX-II.md`
-- **Axe-Fx III** → `docs/SYSEX-MAP-AXE-FX-III.md` (covers Fractal v1.4 PDF; extracted text at `docs/manuals/AxeFx3-MIDI-3rdParty.txt`)
+- **Axe-Fx III** → `docs/SYSEX-MAP-AXE-FX-III.md` (covers Fractal v1.4 PDF; extracted text at `docs/manuals/AxeFx3-MIDI-3rdParty.txt`) + `docs/axefx3-preset-format-research.md` (community RE of preset .syx format; Forum thread #159885 archived at `docs/_private/fractal-forum-text.txt`)
 - **Hydrasynth** → `docs/HYDRASYNTH-SYSEX-MAP.md` (if present)
 
 ## AM4 SysEx Quick Reference

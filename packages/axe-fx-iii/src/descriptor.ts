@@ -1,24 +1,25 @@
 /**
  * Axe-Fx III DeviceDescriptor — community-beta scaffold (BK-015).
  *
- * Wraps the wiki-decoded + Fractal-PDF-sourced Axe-Fx III protocol
- * layer into the BK-051 unified `DeviceDescriptor` contract. The
- * **read surface** (preset/scene number queries, preset/scene name
- * queries, status dump) is functional per Fractal's published spec
- * v1.4 — pending one community capture to confirm byte-for-byte. The
- * **write surface** is gated:
+ * BEFORE EDITING, READ:
+ *   - `docs/SYSEX-MAP-AXE-FX-III.md`
+ *   - `docs/manuals/AxeFx3-MIDI-3rdParty.txt` (Fractal v1.4 PDF extracted)
  *
- *   - `switchPreset` + `switchScene`: functional (spec-documented).
- *   - `setParam`, `setBlock`, `setBypass`, `applyPreset`, `savePreset`,
- *     `restoreDefaults`: throw `DispatchError` with code
- *     `capability_not_supported` + a clear "pending community capture"
- *     pointer to `docs/_private/HARDWARE-TASKS-AXEFX3.md`.
+ * The v1.4 PDF is the authoritative spec source. This descriptor now
+ * exposes all spec-documented operations against the unified surface;
+ * spec-omitted operations (set_param, save_preset, apply_preset)
+ * remain refused with structured "not in v1.4 spec" errors.
  *
- * The block roster (47 blocks) is real — extracted from AxeEdit III
- * editor assets — but per-block parameter dictionaries are EMPTY
- * pending capture-based decoding. `describe_device` surfaces the
- * roster + beta-status warnings; the agent can introspect what's
- * known vs unknown.
+ * What works on the unified surface:
+ *   - get_param: refused (param-ID space not in spec)
+ *   - set_param: refused (param-ID space not in spec)
+ *   - set_block / set_block_type: refused (block-type swap not in spec)
+ *   - set_bypass: 🟡 implemented (function 0x0A + Appendix 1 effect IDs)
+ *   - switch_scene: 🟡 implemented (function 0x0C)
+ *   - apply_preset: refused (depends on set_param + topology writes)
+ *   - save_preset: refused (multi-frame envelope not in v1.4)
+ *   - switch_preset: refused (III has no SysEx preset switch; use MIDI PC)
+ *   - rename: refused (no SET_PRESET_NAME / SET_SCENE_NAME in spec)
  *
  * Registration order in `packages/server-all/src/server/index.ts`
  * MUST put Axe-Fx III BEFORE AM4 — the III's port-name regex
@@ -48,38 +49,37 @@ import { DispatchError } from '@mcp-midi-control/core/protocol-generic/types.js'
 
 import {
   AXE_FX_III_BLOCKS,
+  resolveEffectId,
   type AxeFxIIIBlock,
 } from './blockTypes.js';
 import {
-  buildSwitchPreset,
-  buildSwitchScene,
-  buildQueryPresetName,
-  buildQuerySceneName,
+  buildSetBypass,
+  buildSetChannel,
+  buildSetScene,
 } from './setParam.js';
 
 const DEVICE_LABEL = 'Fractal Axe-Fx III';
 
-function betaRefusal(op: string, gap: string): DispatchError {
+function notInSpec(op: string, gap: string): DispatchError {
   return new DispatchError(
     'capability_not_supported',
     DEVICE_LABEL,
-    `axe-fx-iii ${op}: 🟡 community beta — wire layer pending capture. ${gap}`,
+    `axe-fx-iii ${op}: not in v1.4 third-party MIDI spec. ${gap}`,
     {
       retry_action:
-        'See docs/_private/HARDWARE-TASKS-AXEFX3.md for the capture workflow. ' +
-        'Contributors with Axe-Fx III hardware: please run a USBPcap session of ' +
-        'AxeEdit III firing the operation in question and share the .pcapng so ' +
-        'we can decode the wire format.',
+        'See docs/SYSEX-MAP-AXE-FX-III.md for the spec coverage and ' +
+        'docs/_private/HARDWARE-TASKS-AXEFX3.md for the community ' +
+        'capture workflow that can unlock this operation.',
     },
   );
 }
 
 /**
- * Build the `blocks` map: each AxeEdit-III block becomes a
- * `BlockSchema` with an empty `params` map (pending decode). The
- * agent's `describe_device` reads this to discover what blocks the
- * III ships; `list_params` returns empty for now, with a beta-status
- * note in agent_guidance.
+ * Build the `blocks` map for `describe_device`. Each block carries
+ * its v1.4 effect ID where known. Per-block params are EMPTY — the
+ * v1.4 spec doesn't document parameter writes, so list_params returns
+ * empty for the III; the descriptor surfaces the block roster via
+ * agent_guidance + describe_device.
  */
 function buildBlocks(): Record<string, BlockSchema> {
   const out: Record<string, BlockSchema> = {};
@@ -93,7 +93,6 @@ function buildBlocks(): Record<string, BlockSchema> {
   return out;
 }
 
-/** Lowercase, alphanumeric-and-underscore slug for a block name. */
 function blockSlug(b: AxeFxIIIBlock): string {
   return b.name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 }
@@ -102,16 +101,16 @@ function blockSlug(b: AxeFxIIIBlock): string {
 
 const reader: DeviceReader = {
   async getParam(
-    ctx: DispatchCtx,
+    _ctx: DispatchCtx,
     block: string,
     name: string,
     _channel?: string | number,
   ): Promise<ReadResult> {
-    throw betaRefusal(
+    throw notInSpec(
       `getParam(${block}.${name})`,
-      'III parameter-ID space is not documented in the public Fractal spec ' +
-        '(Gen 3 deliberately omits per-block param IDs). Reads need the same ' +
-        'capture-based decoding as writes.',
+      'III parameter reads need per-block param IDs, which are NOT in v1.4. ' +
+        'Per-block bypass + channel state CAN be read — use the unified ' +
+        '`status_dump` tool or device-namespaced `axefx3_status_dump`.',
     );
   },
   async getParams(
@@ -124,7 +123,8 @@ const reader: DeviceReader = {
     for (let i = 0; i < queries.length; i++) {
       failed.push(i);
       errors[i] =
-        'axe-fx-iii getParams: 🟡 community beta — param-ID space pending capture.';
+        'axe-fx-iii getParams: param-level reads not in v1.4 spec. ' +
+        'Use axefx3_status_dump for per-block bypass/channel state.';
     }
     return { reads, failed_indices: failed, errors };
   },
@@ -134,21 +134,26 @@ const reader: DeviceReader = {
 
 const writer: DeviceWriter = {
   buildSetParam(_block: string, _name: string, _wireValue: number): number[] {
-    throw betaRefusal(
+    throw notInSpec(
       'buildSetParam',
-      'III parameter-ID space pending decode.',
+      'Per-block parameter writes (SET_PARAMETER_VALUE) are NOT in the v1.4 ' +
+        'III spec — Fractal deliberately omitted them. Family-inference ' +
+        'suggests 0x02 with II-style payload, but param-IDs are also ' +
+        'undocumented. Requires capture work.',
     );
   },
 
-  buildSwitchPreset(location: LocationRef): number[] {
-    const idx = coerceLocation(location);
-    return buildSwitchPreset(idx);
+  buildSwitchPreset(_location: LocationRef): number[] {
+    throw notInSpec(
+      'buildSwitchPreset',
+      'III has NO SysEx preset-switch function. Use MIDI Program Change ' +
+        '(with CC 0 + CC 32 Bank Select for slots > 127).',
+    );
   },
 
   buildSwitchScene(scene: number): number[] {
-    // BK-051 unified-surface scene numbers are 1-indexed (display);
-    // the wire is 0-indexed.
-    return buildSwitchScene(scene - 1);
+    // Unified surface scene numbers are 1-indexed (display); wire is 0-indexed.
+    return buildSetScene(scene - 1);
   },
 
   async setParam(
@@ -157,11 +162,9 @@ const writer: DeviceWriter = {
     name: string,
     _wireValue: number,
   ): Promise<WriteResult> {
-    throw betaRefusal(
+    throw notInSpec(
       `setParam(${block}.${name})`,
-      'III parameter writes need the per-block param-ID space, which is not ' +
-        'documented and not in any OSS library. This is the highest-priority ' +
-        'community decode target for III.',
+      'Per-block parameter writes are NOT in the v1.4 III spec.',
     );
   },
 
@@ -170,23 +173,41 @@ const writer: DeviceWriter = {
     _slot: SlotRef,
     change: BlockChange,
   ): Promise<WriteResult> {
-    throw betaRefusal(
+    throw notInSpec(
       `setBlock(${change.block_type ?? 'unknown'})`,
-      'Block-type ID space is not documented; block placement on III needs ' +
-        'the effect-index addressing model decoded from a STATUS_DUMP capture.',
+      'Block-type swap (SET_GRID_CELL) is NOT in the v1.4 III spec. ' +
+        'The III grid layout is fixed by the preset; to change which block ' +
+        'occupies a cell, edit on the device or in AxeEdit III.',
     );
   },
 
   async setBypass(
-    _ctx: DispatchCtx,
+    ctx: DispatchCtx,
     block: string,
-    _bypassed: boolean,
+    bypassed: boolean,
   ): Promise<WriteResult> {
-    throw betaRefusal(
-      `setBypass(${block})`,
-      'III bypass writes use effect-index addressing (function 0x0A id id dd). ' +
-        'Effect-index space pending capture.',
-    );
+    let effectId: number;
+    try {
+      effectId = resolveEffectId(block);
+    } catch (err) {
+      throw new DispatchError(
+        'unknown_block',
+        DEVICE_LABEL,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+    const bytes = buildSetBypass(effectId, bypassed);
+    await ctx.conn.send(bytes);
+    return {
+      op: 'set_bypass',
+      target: block,
+      acked: true,
+      display_value: bypassed ? 'bypassed' : 'engaged',
+      warning:
+        '🟡 axe-fx-iii set_bypass: spec-documented (function 0x0A) but ' +
+        'pending hardware verification. Targets the ACTIVE scene only — ' +
+        'per v1.4 spec, the III has no per-scene bypass write.',
+    };
   },
 
   async applyPreset(
@@ -195,40 +216,34 @@ const writer: DeviceWriter = {
     _target?: LocationRef,
     _options?: ApplyPresetOptions,
   ): Promise<ApplyResult> {
-    throw betaRefusal(
+    throw notInSpec(
       'applyPreset',
-      'III preset authoring needs block-type IDs + effect-index space + per-' +
-        'block param IDs — none of which are publicly documented. The III ' +
-        'protocol layer ships in v0.1 as read + navigation only.',
+      'apply_preset requires set_param + block-type swap + save_preset, ' +
+        'none of which are in the v1.4 spec.',
     );
   },
 
   async switchPreset(
-    ctx: DispatchCtx,
-    location: LocationRef,
+    _ctx: DispatchCtx,
+    _location: LocationRef,
   ): Promise<WriteResult> {
-    const idx = coerceLocation(location);
-    const bytes = buildSwitchPreset(idx);
-    await ctx.conn.send(bytes);
-    return {
-      op: 'switch_preset',
-      target: String(idx),
-      acked: true, // III doesn't ack preset switches via 0x64; assume after send
-      warning:
-        '🟡 axe-fx-iii switch_preset: spec-documented (function 0x0D) but ' +
-        'pending one community capture to verify byte-for-byte against AxeEdit III.',
-    };
+    throw notInSpec(
+      'switchPreset',
+      'III has NO SysEx preset-switch function. Use MIDI Program Change ' +
+        '(2-byte: `Cn pp`, with CC 0 + CC 32 Bank Select for slots > 127).',
+    );
   },
 
   async savePreset(
     _ctx: DispatchCtx,
     _location: LocationRef,
   ): Promise<WriteResult> {
-    throw betaRefusal(
+    throw notInSpec(
       'savePreset',
-      "III STORE_PRESET envelope is not in Fractal's public spec — same gap as " +
-        "Axe-Fx II had pre-Session-71. Decoding requires probe-and-observe " +
-        'against connected hardware.',
+      'STORE_PRESET is NOT in v1.4 spec. Community reverse-engineering ' +
+        'suggests a multi-frame envelope (0x77 header + 16×0x78 body + ' +
+        '0x79 footer per Fractal Forum thread #159885) but this is not ' +
+        'safe to ship without a confirmed capture.',
     );
   },
 
@@ -237,10 +252,11 @@ const writer: DeviceWriter = {
       throw new DispatchError(
         'value_out_of_range',
         DEVICE_LABEL,
-        `axe-fx-iii switchScene: scene ${scene} out of range. The III has 8 scenes per preset (1..8 display, 0..7 wire).`,
+        `axe-fx-iii switchScene: scene ${scene} out of range. ` +
+          'The III has 8 scenes per preset (1..8 display, 0..7 wire).',
       );
     }
-    const bytes = buildSwitchScene(scene - 1);
+    const bytes = buildSetScene(scene - 1);
     await ctx.conn.send(bytes);
     return {
       op: 'switch_scene',
@@ -248,7 +264,7 @@ const writer: DeviceWriter = {
       acked: true,
       warning:
         '🟡 axe-fx-iii switch_scene: spec-documented (function 0x0C) but ' +
-        'pending one community capture to verify.',
+        'pending hardware verification.',
     };
   },
 
@@ -257,75 +273,79 @@ const writer: DeviceWriter = {
     target: RenameTarget,
     _name: string,
   ): Promise<WriteResult> {
-    throw betaRefusal(
+    throw notInSpec(
       `rename(${target})`,
-      'III SET_PRESET_NAME / SET_SCENE_NAME envelopes are not in the public spec.',
+      'SET_PRESET_NAME / SET_SCENE_NAME are NOT in v1.4 spec. III names ' +
+        'are query-only via 0x0D / 0x0E.',
     );
   },
 };
-
-/**
- * Coerce a `LocationRef` (string or number) to the 0-based wire index
- * for the III. III presets are addressed by integer 0..511 (Mark I)
- * or 0..1023 (Mark II); strings are accepted for cross-device API
- * symmetry — anything that parses as an integer is valid.
- */
-function coerceLocation(loc: LocationRef): number {
-  if (typeof loc === 'number') return loc;
-  const parsed = Number.parseInt(loc, 10);
-  if (Number.isFinite(parsed)) return parsed;
-  throw new DispatchError(
-    'bad_location',
-    DEVICE_LABEL,
-    `axe-fx-iii: location "${loc}" is not a valid integer preset number. ` +
-      'The III addresses presets by integer 0..511 (Mark I) or 0..1023 (Mark II).',
-  );
-}
 
 // ── Agent guidance ─────────────────────────────────────────────────
 
 const AXEFX3_AGENT_GUIDANCE: Record<string, string> = {
   beta_status: [
-    '🟡 BETA / COMMUNITY VERIFICATION NEEDED.',
+    '🟡 BETA / HARDWARE VERIFICATION NEEDED.',
     '',
-    "The Axe-Fx III protocol layer is scaffolded from Fractal's published",
-    '"Axe-Fx III MIDI for Third-Party Devices" v1.4 PDF + AxeEdit III editor',
-    'assets (block roster). It has NOT been hardware-verified end-to-end',
-    'because no project maintainer owns an Axe-Fx III.',
+    "The Axe-Fx III protocol layer is implemented from Fractal's published",
+    '"Axe-Fx III MIDI for Third-Party Devices" v1.4 PDF. It has NOT been',
+    'hardware-verified end-to-end because no project maintainer owns an',
+    'Axe-Fx III.',
     '',
-    'What works today:',
-    '  - Device identification (list_midi_ports detects III ports)',
-    '  - describe_device returns capabilities + block roster',
-    '  - switch_preset (function 0x0D) — spec-documented',
-    '  - switch_scene  (function 0x0C) — spec-documented',
-    '  - Read tools: query preset name, query scene name, status dump',
+    'What works today (from v1.4 spec alone, no capture required):',
+    '  - set_bypass / get_bypass on any block with a known effect ID',
+    '  - set_channel / get_channel (channels A/B/C/D)',
+    '  - switch_scene (1..8) / get_active_scene',
+    '  - get_preset_name (returns preset number + 32-char name)',
+    '  - get_scene_name (returns scene name)',
+    '  - status_dump (per-block state snapshot)',
+    '  - tempo: tap, set BPM, get BPM',
+    '  - tuner: on/off',
+    '  - looper: trigger button, get state',
     '',
-    'What does NOT work yet:',
-    '  - apply_preset, set_param, set_block, set_bypass, save_preset',
-    '    — all refused with structured "pending capture" errors.',
-    '  - The III deliberately omits per-block parameter IDs from its',
-    '    public spec, so the param-ID space needs USB-MIDI capture',
-    '    decoding (analogous to how this project decoded Axe-Fx II).',
+    'What does NOT work yet (not in v1.4 spec):',
+    '  - set_param / get_param: per-block parameter writes are NOT in the',
+    '    v1.4 PDF. The III deliberately omits SET_PARAMETER_VALUE from the',
+    '    third-party MIDI surface — and the param-ID space is also not',
+    '    documented anywhere public.',
+    '  - apply_preset / save_preset / set_block / rename — all refused.',
+    '  - switch_preset via SysEx — NOT supported. Use MIDI Program Change',
+    '    (Bank Select CC 0/32 + PC byte) for III preset switching.',
     '',
-    'Help wanted: see docs/_private/HARDWARE-TASKS-AXEFX3.md for the',
-    'community capture workflow. One careful USBPcap session of AxeEdit III',
-    'firing a SET_PARAMETER_VALUE write unlocks the next layer of support.',
+    'AMP block bypass/channel: the v1.4 effect-ID table has no AMP entry.',
+    "AMP IDs may be in the spec's 3..34 reserved range. Until verified",
+    'on hardware via STATUS_DUMP, AMP bypass/channel control may refuse.',
+    '',
+    'Help wanted: see docs/_private/HARDWARE-TASKS-AXEFX3.md.',
   ].join('\n'),
   channels: [
-    'Axe-Fx III channel names: A, B, C, D (4 channels per block — same as AM4,',
-    "different from Axe-Fx II's X/Y). Per-scene channel writes target the",
-    'ACTIVE scene only (III spec function 0x0B id id dd).',
+    'Axe-Fx III channel names: A, B, C, D (4 channels per block — same as',
+    "AM4, different from Axe-Fx II's X/Y). Per-spec function 0x0B `id id dd`",
+    'targets the ACTIVE scene only — the III has no per-scene channel write',
+    'in the v1.4 spec.',
   ].join('\n'),
   scenes: [
-    'Axe-Fx III: 8 scenes per preset (vs AM4 4 / same as Axe-Fx II 8). Scenes',
-    'are 1-indexed in user-facing tools, 0-indexed on the wire (the descriptor',
-    'handles the conversion).',
+    'Axe-Fx III: 8 scenes per preset. Scenes are 1-indexed in user-facing',
+    'tools, 0-indexed on the wire (the descriptor handles conversion).',
   ].join('\n'),
-  grid: [
-    "The III's grid size is ambiguous in published docs: 4x12 (original) vs",
-    "4x14 (Mark II / current firmware). Without hardware confirmation we",
-    'advertise 4x12 in capabilities (conservative). Beta testers: please',
-    'report your firmware version and visible grid columns.',
+  effect_ids: [
+    'Block-level operations (bypass, channel) need an EFFECT ID, which is',
+    "an integer 0..16383 from v1.4 Appendix 1. Examples:",
+    "  - Compressor 1..4    →  46..49",
+    "  - Drive 1..4         →  58..61",
+    "  - Cab 1..4           →  62..65",
+    "  - Reverb 1..4        →  66..69",
+    "  - Delay 1..4         →  70..73",
+    "  - Chorus 1..4        →  78..81",
+    "  - Pitch 1..4         →  110..113",
+    "  - Tone Match 1..4    →  170..173",
+    "  - Plex Delay 1..4    →  178..181",
+    "  - Multiplexer 1..4   →  191..194",
+    "  - IR Player 1..4     →  195..198",
+    'Full table: docs/SYSEX-MAP-AXE-FX-III.md.',
+    '',
+    'AMP, Dynamic Distortion, NAM, Global Block, Shunt — effect IDs NOT',
+    'in v1.4; bypass/channel control for these will refuse until decoded.',
   ].join('\n'),
 };
 
@@ -336,20 +356,23 @@ export const AXEFX3_DESCRIPTOR: DeviceDescriptor = {
   display_name: 'Fractal Axe-Fx III',
   connection_label: 'axe-fx-iii',
   port_match: [
+    // /axe-?fx ?iii/i — matches "Axe-Fx III", "AxeFx III", "axe fx iii", etc.
     { pattern: /axe-?fx ?iii/i },
-    { pattern: /axefx ?3/i },
+    // /axe-?fx ?3/i — covers "Axe-Fx 3" / "AxeFx3" / "axefx 3" / "axe fx 3".
+    { pattern: /axe-?fx ?3/i },
   ],
   capabilities: {
     slot_model: 'grid',
-    grid: { rows: 4, cols: 12 }, // 🟡 wiki contradicts itself between 4×12 and 4×14
+    // 4×14 grid: Mark II (current firmware) ships 14 columns.
+    grid: { rows: 4, cols: 14 },
     has_scenes: true,
     scene_count: 8,
     has_channels: true,
     channel_names: ['A', 'B', 'C', 'D'],
     preset_location_format: /^(?:\d{1,4})$/,
-    supports_save: false, // STORE envelope pending decode
+    supports_save: false,           // STORE envelope not in v1.4 PDF
     supports_factory_restore: false,
-    supports_lineage: false, // shared lineage corpus may extend later
+    supports_lineage: false,
   },
   canonical_terms: {
     block: 'block',
@@ -363,11 +386,4 @@ export const AXEFX3_DESCRIPTOR: DeviceDescriptor = {
   reader,
   writer,
   agent_guidance: AXEFX3_AGENT_GUIDANCE,
-};
-
-// Re-export query builders for any read-tool that wants to wire them
-// directly (e.g. a future axefx3_get_preset_name).
-export {
-  buildQueryPresetName,
-  buildQuerySceneName,
 };

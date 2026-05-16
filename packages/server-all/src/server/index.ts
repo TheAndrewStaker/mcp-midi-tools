@@ -54,7 +54,7 @@ import { registerMidiPrimitiveTools } from './tools/midi-primitives.js';
 
 import { registerAM4Tools } from '@mcp-midi-control/am4/tools/index.js';
 import { registerAxeFxIITools, describeAxeFxIIPortStatus } from '@mcp-midi-control/axe-fx-ii/tools.js';
-import { describeAxeFxIIIPortStatus } from '@mcp-midi-control/axe-fx-iii/midi.js';
+import { registerAxeFxIIITools, describeAxeFxIIIPortStatus } from '@mcp-midi-control/axe-fx-iii/tools.js';
 import { registerHydrasynthTools, describeHydrasynthPortStatus } from '@mcp-midi-control/hydrasynth-explorer/server.js';
 
 // BK-051 unified tool surface — descriptor registration. The dispatcher
@@ -146,6 +146,7 @@ registerMidiPrimitiveTools(server); // send_cc / _note / _program_change / _nrpn
 
 registerAM4Tools(server);           // 30 am4_* tools
 registerAxeFxIITools(server);       // 9 axefx2_* tools
+registerAxeFxIIITools(server);      // 8 axefx3_* tools (🟡 community beta)
 registerHydrasynthTools(server);    // 12 hydra_* tools
 
 // -- Unified-surface descriptor registration (BK-051) -----------------------
