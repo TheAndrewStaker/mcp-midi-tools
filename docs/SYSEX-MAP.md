@@ -1525,6 +1525,93 @@ in v0.1.0 — the tool surfaces the raw bytes for the probe harness.
 
 ---
 
+## 6p. Parameter ID structure — `pidLow` = block, `pidHigh` = paramId (Session 82) 🟢
+
+**Decoded Session 82 (2026-05-16) via Ghidra mining of AM4-Edit.exe.**
+Workflow + tooling: [`docs/ghidra-mining-workflow.md`](ghidra-mining-workflow.md).
+
+The two 14-bit header fields `pidLow` and `pidHigh` in the §6a
+parameter envelope aren't arbitrary handles — they encode a clean
+`(block, param-within-block)` tuple. Confirmed at 99% match rate
+(246 of 249 non-generic non-AMP entries) against our hand-decoded
+`packages/am4/src/params.ts`.
+
+### Mapping
+
+| Field | Semantics |
+|---|---|
+| `pidLow` | Block-type identifier. Matches the `BLOCK_TYPE_VALUES` constants in `packages/am4/src/blockTypes.ts` (e.g. `amp = 0x003a`, `reverb = 0x0042`, `compressor = 0x002e`, `cabinet = 0x003e`, …). |
+| `pidHigh` ∈ [10, 0x3FFF] | Per-block parameter index. **Equals the paramId** of the corresponding entry in AM4-Edit's per-effect param-table dispatcher (`FUN_1402e3da0`). The dispatcher's tables are arrays of `{ int paramId, int padding, const char* nameStr }` 16-byte structs; paramId is the same int that appears in `pidHigh`. |
+| `pidHigh` ∈ [0, 9] | Generic shared params — same meaning across **every** block: |
+| | • `0x0000` → block output level |
+| | • `0x0001` → wet/dry mix |
+| | • `0x0002` → stereo balance |
+| | • `0x0004` → bypass mode (Thru / Mute / Mute FX Out / etc.) |
+| | (`0x0003`, `0x0005`-`0x0009` are reserved; see §9 for channel-state register) |
+| `pidHigh = 0x07D2` (2002) | Per-block channel-select register. Separate from the param dispatcher; used by §9 scene→channel writes. |
+
+### Why this matters
+
+- **Any Ghidra catalog entry directly yields its AM4 wire address.**
+  Given a catalog `(family=REVERB, paramId=15, name=REVERB_SIZE)`,
+  the wire bytes are `pidLow=0x0042, pidHigh=0x000F`. No further
+  binary analysis is needed to derive wire addresses for the rest
+  of the 1,732 catalog entries — and no further USB captures.
+
+- **Existing hand-decoded params are validated.** The 99% match
+  rate proves our capture-driven decode of pidLow/pidHigh values
+  is correct. The 1% that don't match are all `*.channel` entries
+  at `pidHigh=0x07D2` — a separate code path, not a typo.
+
+- **Cross-device generalization.** Axe-Edit III's parallel
+  dispatcher (`FUN_140397a40`) yields the same `(paramId, nameStr)`
+  pairs for shared block families. The III's wire envelope for
+  SET_PARAM uses a different shape (effectId + paramId; see
+  [`docs/SYSEX-MAP-AXE-FX-III.md`](SYSEX-MAP-AXE-FX-III.md)) — but
+  the `paramId` value itself is shared with AM4.
+
+### Ghidra-extracted catalog
+
+| | AM4 | Axe-Fx III |
+|---|---|---|
+| Dispatcher fn | `FUN_1402e3da0` | `FUN_140397a40` |
+| Effect-family cases | 50 (1..0x3c) | 49 (1..0x3b) |
+| Total paramId/name pairs | 1,732 | 2,216 |
+| AM4-only families | PATCH (case 0x3c) | — |
+| III-only families | — | FC, PRESET |
+
+The AMP block is **absent** from both dispatchers (cases 4, 6,
+0x1b return -1). AMP params on AM4 use the pidLow/pidHigh wire
+format like everything else (`pidLow = 0x003a` per
+`BLOCK_TYPE_VALUES`) but the paramId enum and name strings live
+in a separate AM4-Edit code path not yet decoded. Until that
+path is found, AMP params remain capture-decoded only — see
+`packages/am4/src/params.ts` for the hand-curated `amp.*` entries.
+
+### Tooling
+
+Regenerate the AM4 catalog locally (~30 sec):
+
+```bat
+scripts\ghidra\run-am4-paramnames.cmd
+```
+
+Audit `params.ts` against the catalog (~5 sec):
+
+```bash
+npx tsx scripts/_research/compare-am4-params-coverage-v2.ts
+```
+
+Auto-generate proposed `params.ts` entries for catalog params we
+haven't hand-decoded yet:
+
+```bash
+npx tsx scripts/_research/generate-am4-params-from-catalog.ts
+# outputs samples/captured/decoded/am4-params-proposed.ts (gitignored)
+```
+
+---
+
 ## 7. Parameter Value Encoding 🟡
 
 ### 14-bit IDs (block ID, parameter ID)
