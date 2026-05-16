@@ -22,7 +22,40 @@ to forum posts so the chain of evidence is auditable.
    - FM3 / FM9 presets are 10 messages (8× 0x78 body chunks) — same
      header / footer.
    Source: ectoplasm88 post #38 + #39 (May 2025), confirmed across 3
-   FX3 presets from different firmwares.
+   FX3 presets from different firmwares **and our own walk of the
+   v28.06 factory ALL-BANKS file (384 presets, 100% match)**.
+   See `scripts/_research/analyze-factory-bank.ts`.
+
+   **Header (0x77) carries destination location:**
+   - Factory presets: `[0x00, slot_lo, 0x00, 0x00, 0x01]` — byte 1 is
+     the preset slot index (verified across 384 factory presets,
+     monotonically incrementing 0..383).
+   - User-edit-buffer dumps: `[0x7F, 0x00, 0x00, 0x00, 0x01]` — byte 0
+     `0x7F` = edit-buffer / "no fixed destination" marker.
+
+   **Footer (0x79) carries a 3-byte checksum** that's unique per
+   preset (384 distinct values across the factory bank).
+
+   **Body[0] starts with constant magic** `00 08 3F 02 00 55 54 02`
+   (offsets 0-7 of body payload). Then variable bytes including the
+   preset-name region around offsets 14-47 with `0x01` interleavers
+   that look like high-bit overflow markers.
+
+2. **System-bank SysEx uses analogous envelope at 0x51/0x52/0x53.**
+   The "settings backup" produced by Fractal-Bot has the same shape
+   as a preset, but in a different function-byte range:
+   - 1× `0x51` header
+   - 64× `0x52` body chunks
+   - 1× `0x53` footer
+   Source: philflieger post in Fractal Forum thread #201663
+   ("Reverse engineer undocumented sysex?", 2024-02), confirmed by
+   AlGrenadine in same thread by not contradicting.
+
+   Implication: Fractal's wire architecture uses paired
+   header/body/footer function-byte triples in different ranges for
+   different blob types. The pattern is reusable for IR uploads, cab
+   uploads, etc. — function bytes probably 0x4N / 0x5N / 0x6N / 0x7N
+   in a structured way.
 
 2. **Preset content is Huffman-compressed.** The data inside the
    `0x78` frames is NOT a flat parameter table — it's Huffman-packed.
@@ -38,6 +71,17 @@ to forum posts so the chain of evidence is auditable.
    So even a complete decode of the .syx format would NOT give us
    the per-parameter SET_PARAMETER_VALUE sysex needed for tools like
    `set_param`. Those are different problems.
+
+   **Cross-confirmed in thread #201663** (Reverse engineer undocumented
+   sysex?, 2024-02): AlGrenadine to philflieger asking about partial
+   system-bank uploads — *"Yes, you have to sniff what Axe3Edit does
+   when modifying a parameter (a setup parameter in your case)...
+   Sending 'a part of' a bank/preset/ir/anything doesn't exist"*.
+
+   The constraint is absolute: either send the WHOLE blob (preset,
+   system bank, IR), or use the realtime parameter-write SysEx — no
+   middle ground. There is no "send these 3 bytes of preset N's amp
+   gain" operation.
 
 4. **There IS a SysEx for querying block parameter info**, but it's
    not public. AlGrenadine post #57:
