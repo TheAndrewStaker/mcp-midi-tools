@@ -5,16 +5,28 @@ work. If you're a new session (human or agent) trying to figure
 out "what do we know about the Fractal protocol family, and where
 is everything documented?", start here.
 
-Last meaningful update: 2026-05-16 (Sessions 84–86 — closed AM4
-Main Levels page + PATCH routing + scene-MIDI on real hardware;
-ported Axe-Fx II's `0x02 SET_PARAMETER` to the III 🟡 untested).
+Last meaningful update: Session 87 cont (2026-05-16 — cross-ref
+audit infra + `displayLabel` field + scene-MIDI test-send wire
+shape decoded + SysEx assembler fragmentation fix that unbroke the
+AM4 dirty-gate; Sessions 84–86 closed Main Levels + PATCH routing
++ scene-MIDI on real hardware; Axe-Fx II Ghidra recommendation
+flipped to "skip — captures are cheaper"; III `0x02 SET_PARAMETER`
+shipped 🟡 untested).
 
 > **Run `npm run coverage-audit` before trusting any state claim in
 > this doc.** The audit reads `packages/*/src/params.ts` +
 > `scripts/verify-msg.ts` directly and reports current AM4-placeable
-> coverage — most reliable single-command answer to "where are we?"
-> As of Session 86: AM4 placeable coverage is **52%** (459/716
-> paramIds shipped). 196/196 verify-msg goldens green.
+> coverage by-device — most reliable single-command answer to "where
+> are we?" As of Session 87 cont: AM4 placeable coverage is **50%**
+> (`PIDLOW_TO_FAMILY` override in Session 87 cont fixed a CABINET
+> miscount — 16 entries had been attributed to DISTORT, depressing
+> the headline; placeable-only TOTAL is now what's reported, not the
+> misleading 18% that included product-line-only families). 196/196
+> verify-msg goldens green. Cross-ref audit (Session 87 cont):
+> `scripts/_research/coverage-cross-ref-audit.ts` joins Ghidra
+> catalog ↔ AM4-Edit XML ↔ `params.ts` and flags
+> **WIRED-MATCHED / WIRED-MISLABEL=135 / UI-MISSING=298 / GHOST=61**.
+> Wired into preflight as a drift guard at `WIRED_MISLABEL_CEILING=135`.
 
 ---
 
@@ -22,9 +34,9 @@ ported Axe-Fx II's `0x02 SET_PARAMETER` to the III 🟡 untested).
 
 | Device | Model byte | Protocol family | Editor binary | Ghidra project | Decode state |
 |---|---|---|---|---|---|
-| AM4 | `0x15` | Axe-Fx III (subset + extensions) | `AM4-Edit.exe` | `C:\Users\Steph\ghidra-am4-edit.gpr` | **Most complete.** 459 params shipped (52% of AM4-placeable catalog); PATCH family closed Session 84-86 (routing + scene MIDI). |
-| Axe-Fx III | `0x10` | Axe-Fx III (full spec + community RE) | `Axe-Edit III.exe` (v1.14.31) | `C:\Users\Steph\ghidra-axe-edit-3.gpr` | **Partial.** v1.4 PDF opcodes shipping (bypass/channel/scene/tempo/looper/status). `0x02 SET_PARAMETER` ported from II 🟡 untested Session 85 (commit 6b8ab07) — one III contributor unlocks 2216 paramIds. Preset-save 0x77/0x78/0x79 community-known. |
-| Axe-Fx II XL+ | `0x07` | Axe-Fx II (separate family) | `Axe-Edit.exe` | `C:\Users\Steph\ghidra-axe-edit.gpr` | **905 params shipping** via wiki + capture decode. SET_PARAMETER `0x02` hardware-verified (HW-075/077). Ghidra dispatcher mining staged but II's 32-bit binary uses indirect dispatch — paramresolver script returns 9 xrefs / 3 functions, structurally different from AM4/III. Session 86 recommendation: skip Ghidra for II, close remaining gaps via captures. |
+| AM4 | `0x15` | Axe-Fx III (subset + extensions) | `AM4-Edit.exe` | `C:\Users\Steph\ghidra-am4-edit.gpr` | **Most complete.** 463 params shipped covering 50% of AM4-placeable catalog. PATCH family closed Sessions 84–87 (routing — §6n-patch; scene-MIDI 48 params — §6n-scene-midi; scene-MIDI test-send partial — §6n-scene-midi-test, HW-111 open). 1732 paramId/name pairs across 50 families mined Session 82 (catalog). 322/463 params now carry the optional `displayLabel` field (Session 87 cont — generated from AM4-Edit XML; surfaced to LLM as recognition synonym). Cross-ref audit: WIRED-MATCHED + WIRED-MISLABEL=135 + UI-MISSING=298 + GHOST=61. |
+| Axe-Fx III | `0x10` | Axe-Fx III (full spec + community RE) | `Axe-Edit III.exe` (v1.14.31) | `C:\Users\Steph\ghidra-axe-edit-3.gpr` | **Partial.** v1.4 PDF opcodes shipping (bypass/channel/scene/tempo/looper/status). Ghidra Session 82 mined **2216 paramIds across 49 families** + **21 fn bytes confirmed in binary** (vs 10 in v1.4 PDF). `0x02 SET_PARAMETER` ported from II model byte `0x03`→`0x10` and shipped 🟡 untested Sessions 85+86 (commit `6b8ab07`) — see SYSEX-MAP-AXE-FX-III §0x02 SET_PARAMETER. MCP tools `axefx3_set_parameter` / `axefx3_get_parameter` exist with explicit `⚠ UNTESTED` banners; one III contributor running `axefx3_get_parameter(block="Reverb 1", param_id=0)` against a scratch preset unlocks 2216 paramIds. Preset-save 0x77/0x78/0x79 community-known (forum thread #159885 archived). |
+| Axe-Fx II XL+ | `0x07` | Axe-Fx II (separate family) | `Axe-Edit.exe` | `C:\Users\Steph\ghidra-axe-edit.gpr` | **905 params shipping** via wiki + capture decode. `0x02 SET_PARAMETER` hardware-verified (HW-075 / HW-077). Ghidra II mining attempted Sessions 83–84 — **negative finding**: the 32-bit Axe-Edit binary uses indirect dispatch (likely hash-keyed), the byte-pattern + xref technique that worked on AM4/III yields only **9/1125 refs / 3 UI-prompt functions**. Session 87 cont recommendation: **skip Ghidra for II — captures are cheaper than another dispatcher hunt on 32-bit code**. Diagnosis + unblock notes documented in `scripts/ghidra/MineAxeEditIIParamResolver.java` header. |
 | Hydrasynth Explorer | (vendor: ASM, not Fractal) | NRPN-based | n/a | n/a | Separate workstream — not part of this doc. |
 | FM3 / FM9 / VP4 | `0x11` / `0x12` / `0x14` | Axe-Fx III family | (TBD if we add) | (TBD) | Not yet pursued. The Ghidra workflow recipe applies if/when we add them. |
 
@@ -36,9 +48,9 @@ ported Axe-Fx II's `0x02 SET_PARAMETER` to the III 🟡 untested).
 
 | Doc | Covers |
 |---|---|
-| [`docs/SYSEX-MAP.md`](SYSEX-MAP.md) | AM4 wire spec. §6a is the `0x01` SET_PARAM dispatcher; §6p is the canonical Session-82-83 finding: `pidLow=block, pidHigh=catalog paramId`. §6b is value encoding (8-to-7 bit-pack), §6c block placement, §6k cab cross-block, §6m preset name read, etc. |
-| [`docs/SYSEX-MAP-AXE-FX-III.md`](SYSEX-MAP-AXE-FX-III.md) | III wire spec. Covers v1.4 PDF (10 documented functions) + 21 fn bytes confirmed via Ghidra caller trace + the 49-effect dispatcher catalog. Documents what III's SET_PARAM ISN'T (after fn=0x1f hypothesis was ruled out). |
-| [`docs/SYSEX-MAP-AXE-FX-II.md`](SYSEX-MAP-AXE-FX-II.md) | II wire spec — pre-Ghidra-era community RE work. |
+| [`docs/SYSEX-MAP.md`](SYSEX-MAP.md) | AM4 wire spec. §6a is the `0x01` SET_PARAM dispatcher; §6p is the canonical Session-82-83 finding: `pidLow=block, pidHigh=catalog paramId`. §6b value encoding (8-to-7 bit-pack), §6c block placement, §6k cab cross-block, §6l Main Levels (Session 84 — `preset.level / balance / scene_{1..4}_level`), §6m preset-name read, §6n-patch PATCH routing (Session 84), §6n-scene-midi 48 scene-MIDI params (Session 85+86), §6n-scene-midi-test test-send wire frame `action=0x0004 / pidHigh=0x0070` (Session 87 cont 🟡 partial — HW-111). |
+| [`docs/SYSEX-MAP-AXE-FX-III.md`](SYSEX-MAP-AXE-FX-III.md) | III wire spec. Covers v1.4 PDF (10 documented functions) + 21 fn bytes confirmed via Ghidra caller trace + the 49-effect dispatcher catalog. **§0x02 SET_PARAMETER** documents the II→III port (model byte `0x03`→`0x10`, Sessions 85+86) with community-evidence chain and the one-call test that converts 🟡→🟢. Documents what III's SET_PARAM ISN'T (fn=0x1f ruled out Session 83). |
+| [`docs/SYSEX-MAP-AXE-FX-II.md`](SYSEX-MAP-AXE-FX-II.md) | II wire spec — pre-Ghidra-era community RE work. Still the canonical doc; Session 87 cont confirmed Ghidra is not a cheaper alternative on the II 32-bit binary. |
 | [`docs/BLOCK-PARAMS.md`](BLOCK-PARAMS.md) | AM4 block reference. Header table maps each AM4 block to its pidLow, catalog family, dispatcher case, and catalog param count. Points at the Ghidra catalog as the primary source. |
 | [`docs/ghidra-mining-workflow.md`](ghidra-mining-workflow.md) | **Workflow recipe**: how to mine a new Fractal editor binary. Captures the 3-tier proven technique, v1 failure modes to avoid, dispatcher discovery, ParamDescriptor struct layout, headless runner pattern, cross-block addressing pattern. Read this first before opening a new Ghidra project. |
 
@@ -100,6 +112,11 @@ Under `scripts/_research/`:
 | `generate-am4-params-from-catalog.ts` | Emit proposed `params.ts` entries from catalog (verified wire mapping) |
 | `validate-params-against-catalog.ts` | Validate `params.ts` correctness against catalog + blockTypes.ts |
 | `am4-catalog-coverage-report.ts` | Emit per-block markdown coverage report |
+| `coverage-cross-ref-audit.ts` | **Three-way join (catalog ↔ XML ↔ params.ts)** — Session 87 cont. Classifies every catalog entry as WIRED-MATCHED / WIRED-MISLABEL / UI-MISSING / GHOST / PIDLOW-UNKNOWN. Wired into preflight as a drift guard at `WIRED_MISLABEL_CEILING=135`. Output: `samples/captured/decoded/coverage-cross-ref-audit.md` |
+| `add-display-labels.ts` | Idempotent generator that populates the optional `displayLabel` field on `params.ts` entries from AM4-Edit XML (322/463 entries populated as of Session 87 cont) |
+| `decode-session-85-scene-midi.ts` | Decode scene-MIDI captures into 16-msg Type/Channel/Value rows (Session 85+86) |
+| `decode-hw110.ts` | Decode HW-110 scene-MIDI test-send capture (Session 87 cont) |
+| `probe-dirty-gate.ts` | Regression probe that hashes the AM4 working buffer twice + asserts dirty-after-set_param differs + asserts switch_preset refuses with structured warning. Locks in the Session 87 SysEx assembler fix. |
 
 ---
 
@@ -125,8 +142,25 @@ These pidLows are addressable but not in `BLOCK_TYPE_VALUES`:
 
 - `0x0025` Input Noise Gate (`ingate.*`, INPUT family)
 - `0x003e` Cabinet (CABINET family, §6k)
-- PATCH family pidLow TBD (case 0x3c, 85 params — scene/routing/4CM)
+- `0x00CE` PATCH family (case 0x3c, 85 params — preset.level/balance, scene_{1..4}_level, routing_slot_{2,3,4}, scene_{1..4}_midi_{1..4}_{type,channel,value}). Decoded Sessions 84–86 — §6n-patch + §6n-scene-midi. The PATCH `PATCH_SCENE_OUTPUT1..4` entries are NOT a phantom per-scene output mode — they're the Scene N Level knobs already shipping at `preset.scene_{1..4}_level` (Session 87 cont closure). `PATCH_4CM` is a firmware ghost with no AM4-Edit UI (4CM on AM4 is a wiring pattern, not a software toggle).
 - GLOBAL family pidLow TBD (case 0x1, 99 params — system settings)
+
+### Transport-layer fix (Session 87)
+
+`packages/core/src/midi/transport.ts:createSysExAssembler` (pure
+exported function, ~50 LOC) buffers bytes between F0…F7 across
+multiple WinMM callbacks before invoking downstream handlers.
+RtMidi's WinMM input callback delivers SysEx in 1024-byte chunks
+without waiting for `F7`, so a 3082-byte AM4 preset dump arrived
+as 3–4 separate `message` events and the dirty-gate's preset-dump
+receiver rejected every chunk as malformed → fingerprint cache
+never populated → every navigation silently discarded dirty edits.
+The fix is wired into `connect()` and covered by 7 byte-exact
+goldens in `scripts/verify-sysex-assembler.ts` (3082-byte AM4
+4-fragment case, 2KB 2-fragment case, single-fragment, back-to-
+back SysEx, interleave, empty fragments). Affects every device
+that reads messages >1024 bytes (AM4 preset dumps + factory
+restore; II preset dumps are larger).
 
 ### III function-byte inventory (Session 82-83)
 
@@ -142,25 +176,35 @@ The III's SET_PARAM wire envelope is **still undecoded** as of Session 83. fn=0x
 
 In rough order of impact:
 
-1. **Apply ~268 UI-referenced proposed AM4 params to `packages/am4/src/params.ts`** — wire bytes are correct; needs unit/scale/range/enum metadata per entry. Start with reverb (43), delay (42), drive (90).
+1. **Verify `axefx3_set_parameter` on real III hardware** (commit `6b8ab07`, Sessions 85+86) — wire shape ported from II by swapping model byte `0x03`→`0x10` and shipped 🟡 untested. Founder doesn't own a III. First III contributor running `axefx3_get_parameter(block="Reverb 1", param_id=0)` against a scratch preset confirms or refutes. Three outcomes documented in `docs/SYSEX-MAP-AXE-FX-III.md §0x02 SET_PARAMETER`. If accepted, 2216 III paramIds become writable from the MCP surface.
 
-2. **Capture AM4 PATCH block pidLow** — toggle a routing/4CM option in AM4-Edit while capturing USB. Unlocks scene-MIDI / routing / 4CM MCP tools.
+2. **Close the 298 UI-MISSING AM4 params** — wired gaps where the catalog has the symbol AND XML exposes the control AND `params.ts` has no entry. Top families: CABINET (54), REVERB (42), DELAY (40), DISTORT (35). Each needs a capture or AM4-Edit screenshot for range/unit (the catalog doesn't carry those). Roadmap item, not a single session task. Route through `paramNames.ts` overrides not direct `params.ts` edits — blunt blind-merge corrupts unit metadata (Session 84 bug pattern).
 
-3. **Capture AM4 GLOBAL block pidLow** — same pattern. Unlocks system-wide MCP tools.
+3. **HW-111 — decode the scene-MIDI test-send per-row payload byte packing** (Session 87 cont). Per-scene "Send All" payload fully decoded: `byte[2] = (scene_idx<<5) | 0x0F`. Per-row payload partial. Closes SYSEX-MAP §6n-scene-midi-test from 🟡 → 🟢. P3, non-blocking.
 
-4. **Decode III SET_PARAM wire envelope** — USBPcap capture of AxeEdit III firing a single-knob change. Once decoded, the 2216-param III catalog becomes writable from the MCP surface.
+4. **WIRED-MISLABEL review pass** (135 entries, Session 87 cont). Most are intentional disambiguation (e.g. `cab_mic_preamp_drive` is more specific than "Drive"); some are real (e.g. `align_distance_1` should arguably be `mic_distance_1` to match the UI). One review pass through `samples/captured/decoded/coverage-cross-ref-audit.md` "WIRED-MISLABEL findings" section could lower the ceiling and improve LLM prompt matching.
 
-5. **Re-run II-generation Ghidra mining** after Ghidra Auto Analyze with all data-ref analyzers enabled on the II project.
+5. **action=0x0017 anomaly trigger still unknown.** Session 87 cont ruled out test-send buttons via HW-110 (16 per-row + 4 per-scene clicks → zero `action=0x0017` frames; test-send fires `action=0x0004 / pidHigh=0x0070` instead). Next candidate hypotheses: "Quick Build" button or another page-level AM4-Edit action. NOT blocking any user-facing feature.
 
-6. **Investigate generic `pidHigh` 7 and 8** — currently seen on `delay.kill_dry` and `amp.out_boost_level` respectively. Are they cross-block (a fifth and sixth generic slot) or block-specific overflows?
+6. **Capture AM4 GLOBAL block pidLow** — toggle a system setting in AM4-Edit while capturing USB. Unlocks system-wide MCP tools (USB levels, tap-tempo mode, etc.). Case 0x1, 99 params.
 
-7. **Verify `amp.cab1_distance` `pidHigh`** — flagged by validator as using the generic balance slot. Either capture was right (cab semantics differ) or there's a typo.
+7. **Investigate generic `pidHigh` 7 and 8** — currently seen on `delay.kill_dry` and `amp.out_boost_level` respectively. Are they cross-block (a fifth and sixth generic slot) or block-specific overflows?
 
-8. **`SYSEX_DSP_MESSAGE` decode** — confirmed string in III binary, fn byte unknown. Would unlock `get_dsp_usage` per Session 78 forum-wishlist Item 3.
+8. **Verify `amp.cab1_distance` `pidHigh`** — ~~validator-flagged~~ **resolved Session 83**: hardware-verified at pidHigh=0x02 under cab pidLow=0x3e (cross-block addressing per §6k). Ghidra catalog's `CABINET_PROXIMITY1` (paramId 20) is a separate unbound cab param. Kept here as a pointer; not a real open question.
 
-9. **AM4-Edit alternate dispatcher hunt** — case 0x3a in `FUN_1402e3da0` returns an empty table. What's its purpose? (Same on III's `FUN_140397a40`.) Are there OTHER dispatchers we haven't found?
+9. **`SYSEX_DSP_MESSAGE` decode** — confirmed string in III binary, fn byte unknown. Would unlock `get_dsp_usage` per Session 78 forum-wishlist Item 3.
 
-10. **Cross-publish AM4 / III catalogs** — both binaries use the same Fractal symbolic names. A shared `fractal-shared/catalog/` package could centralize the per-family paramId enums (so amp.gain on AM4 and reverb.time on III both pull canonical names from one source). Architectural — would prep BK-051 unified surface.
+10. **AM4-Edit alternate dispatcher hunt** — case 0x3a in `FUN_1402e3da0` returns an empty table. What's its purpose? (Same on III's `FUN_140397a40`.) Are there OTHER dispatchers we haven't found?
+
+11. **Cross-publish AM4 / III catalogs** — both binaries use the same Fractal symbolic names. A shared `fractal-shared/catalog/` package could centralize the per-family paramId enums (so amp.gain on AM4 and reverb.time on III both pull canonical names from one source). Architectural — would prep BK-051 unified surface.
+
+**Closed since last update:**
+
+- ~~Capture AM4 PATCH block pidLow~~ — closed Session 84 (`pidLow=0x00CE`, §6n-patch).
+- ~~Decode the 0x3e81 action=0x0017 scene-MIDI anomaly~~ — decoupled Session 85+86: scene-MIDI uses standard `action=0x0001 SET_PARAM`; the 0x0017 anomaly is a different (unknown-trigger) operation.
+- ~~Re-run II-generation Ghidra mining after data-ref analyzer fix~~ — closed Session 87 cont as **negative finding**: 32-bit Axe-Edit uses indirect dispatch; xref technique yields 9/1125 refs. **Skip Ghidra for II.**
+- ~~PATCH_SCENE_OUTPUT1..4 + PATCH_4CM coverage gaps~~ — closed Session 87 cont: the SCENE_OUTPUT entries ARE the Scene N Level knobs (already shipping); `PATCH_4CM` is a firmware ghost with no UI.
+- ~~SysEx fragmentation breaking AM4 dirty-gate~~ — closed Session 87 (`createSysExAssembler` in `transport.ts` + 7 goldens).
 
 ---
 
@@ -190,10 +234,38 @@ In rough order of impact:
   III binary (28 codes); III v1.4 non-addressable IDs marked
   (ID_CONTROL, ID_MIDIBLOCK, ID_FOOTCONTROLLER, ID_PRESET_FC).
 - **Session 82** (2026-05-16): **Ghidra mining sweep**. Extracted
-  full per-effect param dictionaries for AM4 (1732 pairs) and III
-  (2216 pairs). 21 III fn bytes confirmed via caller trace.
+  full per-effect param dictionaries for AM4 (1732 pairs / 50
+  families) and III (2216 pairs / 49 families). 21 III fn bytes
+  confirmed via caller trace.
 - **Session 83** (2026-05-16 overnight): **AMP=DISTORT closure +
   documentation hardening**. Validator, coverage report, full
-  workflow recipe, II mining script staged. fn=0x1f walk-back. All
-  Session 82-83 findings consolidated into committed docs (this
-  file is the index).
+  workflow recipe, II mining script staged. fn=0x1f walk-back.
+- **Session 84** (2026-05-16): **Two AM4 hardware decodes closed in
+  one session.** HW-067a Main Levels (`preset.level / balance /
+  scene_{1..4}_level`, §6l). PATCH family (`pidLow=0x00CE`,
+  §6n-patch) — routing toggles, 10 new MCP params, 185/185
+  verify-msg goldens green.
+- **Sessions 85+86** (2026-05-16): **Scene-MIDI bank decoded
+  end-to-end.** 48 new MCP-addressable params
+  (`preset.scene_{1..4}_midi_{1..4}_{type,channel,value}`),
+  Type-enum-folds-CC# encoding screenshot-confirmed (§6n-scene-midi).
+  Axe-Fx III `0x02 SET_PARAMETER` ported from II 🟡 untested.
+- **Session 87** (2026-05-16): **AM4 dirty-gate fixed at the
+  transport root.** `createSysExAssembler` in
+  `packages/core/src/midi/transport.ts` (~50 LOC pure function)
+  buffers F0…F7 across WinMM's 1024-byte SysEx chunks; closes a
+  bug where 3082-byte AM4 preset dumps arrived as 3–4 separate
+  events and the dirty-gate silently fell through to proceed.
+  Verified live against AM4 via `probe-dirty-gate.ts`.
+- **Session 87 cont** (2026-05-16): **Cross-ref audit infra +
+  displayLabel field + scene-MIDI test-send wire shape.**
+  `coverage-cross-ref-audit.ts` joins catalog ↔ XML ↔ params.ts
+  (WIRED-MISLABEL=135 / UI-MISSING=298 / GHOST=61, wired into
+  preflight). `Param.displayLabel` optional field added, 322/463
+  AM4 entries populated. HW-110 closed (test-send fires
+  `action=0x0004 / pidHigh=0x0070`, NOT the 0x0017 anomaly);
+  per-scene "Send All" payload decoded; per-row payload partial
+  (HW-111 open). Ghidra II mining: **negative finding** — skip
+  Ghidra for II; 32-bit indirect dispatch defeats the technique.
+  Coverage-audit now reports by-device with placeable-only TOTAL
+  (50%, not the misleading 18% that included product-line families).
