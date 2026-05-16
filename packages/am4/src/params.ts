@@ -3040,6 +3040,74 @@ export const KNOWN_PARAMS = {
     unit: 'enum', displayMin: 0, displayMax: 2,
     enumValues: { 0: 'L+R', 1: 'LEFT', 2: 'RIGHT' },
   },
+
+  // ── Main Levels page — pidLow=0x002A — HW-067a closed Session 84 (2026-05-16) ──
+  // Capture: samples/captured/session-84-levels.pcapng. AM4-Edit 2.00 +
+  // AM4 firmware 2.00 use action=0x0001 (the standard write action) on
+  // this register family — supersedes Session 50's tentative 0x0002.
+  // Anchors from screenshot match wire 1:1: preset.level wire 1.1100 →
+  // display 1.1 dB; preset.balance wire 0.0222 → display 2.2 (× 100);
+  // scene levels wire 3.33/4.44/5.55/6.66 → display 3.3/4.4/5.5/6.7 dB.
+  'preset.level': {
+    block: 'preset', name: 'level',
+    pidLow: 0x002a, pidHigh: 0x0000,
+    unit: 'db', displayMin: -80, displayMax: 20,
+  },
+  'preset.balance': {
+    block: 'preset', name: 'balance',
+    pidLow: 0x002a, pidHigh: 0x0002,
+    unit: 'bipolar_percent', displayMin: -100, displayMax: 100,
+  },
+  'preset.scene_1_level': {
+    block: 'preset', name: 'scene_1_level',
+    pidLow: 0x002a, pidHigh: 0x0018,
+    unit: 'db', displayMin: -80, displayMax: 20,
+  },
+  'preset.scene_2_level': {
+    block: 'preset', name: 'scene_2_level',
+    pidLow: 0x002a, pidHigh: 0x0019,
+    unit: 'db', displayMin: -80, displayMax: 20,
+  },
+  'preset.scene_3_level': {
+    block: 'preset', name: 'scene_3_level',
+    pidLow: 0x002a, pidHigh: 0x001a,
+    unit: 'db', displayMin: -80, displayMax: 20,
+  },
+  'preset.scene_4_level': {
+    block: 'preset', name: 'scene_4_level',
+    pidLow: 0x002a, pidHigh: 0x001b,
+    unit: 'db', displayMin: -80, displayMax: 20,
+  },
+
+  // ── PATCH family — pidLow=0x00CE (cross-references catalog case 0x3c) ──
+  // Closed Session 84 (2026-05-16) via samples/captured/session-84-routing-
+  // mix-midi.pcapng. Wire shape decoded directly against Ghidra's PATCH
+  // catalog: paramId N → pidHigh = N (matching §6p rule for every other
+  // AM4 block). Same pidLow already hosts block-placement (pidHigh=
+  // 0x0010+slot-1) and preset rename — PATCH is the umbrella family that
+  // covers "everything preset-scoped that isn't a block parameter."
+  //
+  // Confirmed wire values for routing: Series=0.0, Parallel=1.0.
+  // Founder toggled FX2/3/4 routing dropdowns in AM4-Edit; each click
+  // produced a clean float write whose value matches the on-screen state.
+  'preset.routing_slot_2': {
+    block: 'preset', name: 'routing_slot_2',
+    pidLow: 0x00ce, pidHigh: 0x0014,
+    unit: 'enum', displayMin: 0, displayMax: 1,
+    enumValues: { 0: 'Series', 1: 'Parallel' },
+  },
+  'preset.routing_slot_3': {
+    block: 'preset', name: 'routing_slot_3',
+    pidLow: 0x00ce, pidHigh: 0x0015,
+    unit: 'enum', displayMin: 0, displayMax: 1,
+    enumValues: { 0: 'Series', 1: 'Parallel' },
+  },
+  'preset.routing_slot_4': {
+    block: 'preset', name: 'routing_slot_4',
+    pidLow: 0x00ce, pidHigh: 0x0016,
+    unit: 'enum', displayMin: 0, displayMax: 1,
+    enumValues: { 0: 'Series', 1: 'Parallel' },
+  },
 } as const satisfies Record<string, Param>;
 
 export type ParamKey = keyof typeof KNOWN_PARAMS;

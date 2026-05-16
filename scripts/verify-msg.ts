@@ -1036,6 +1036,66 @@ const cases: { label: string; built: number[]; expected: string }[] = [
     built: buildSetParam('tremolo.ducking', 10),
     expected: 'f000017415016a00180001000000040000001003780df7',
   },
+  // HW-067a / Session 84 (2026-05-16): Main Levels page decode. Captured
+  // AM4-Edit 2.00 + firmware 2.00 against samples/captured/session-84-
+  // levels.pcapng. Uses standard action=0x0001 (supersedes Session 50's
+  // tentative 0x0002 from the older AM4-Edit version). preset.level wire
+  // matches display 1:1 (raw dB); preset.balance is bipolar_percent (×100
+  // scale). Per-scene levels follow the same raw-dB convention as
+  // preset.level.
+  {
+    label: 'buildSetParam("preset.level", 1.11) — session-84-levels (1.1 dB display)',
+    built: buildSetParam('preset.level', 1.11),
+    expected: 'f000017415012a0000000100000004003d451163784cf7',
+  },
+  {
+    label: 'buildSetParam("preset.balance", 2.22) — session-84-levels (2.2 display, ×100)',
+    built: buildSetParam('preset.balance', 2.22),
+    expected: 'f000017415012a00020001000000040063371653604df7',
+  },
+  {
+    label: 'buildSetParam("preset.scene_1_level", 3.33) — session-84-levels',
+    built: buildSetParam('preset.scene_1_level', 3.33),
+    expected: 'f000017415012a0018000100000004005c074a540063f7',
+  },
+  {
+    label: 'buildSetParam("preset.scene_2_level", 4.44) — session-84-levels',
+    built: buildSetParam('preset.scene_2_level', 4.44),
+    expected: 'f000017415012a0019000100000004003d451164002af7',
+  },
+  {
+    label: 'buildSetParam("preset.scene_3_level", 5.55) — session-84-levels',
+    built: buildSetParam('preset.scene_3_level', 5.55),
+    expected: 'f000017415012a001a000100000004004d263614006df7',
+  },
+  {
+    label: 'buildSetParam("preset.scene_4_level", 6.66) — session-84-levels',
+    built: buildSetParam('preset.scene_4_level', 6.66),
+    expected: 'f000017415012a001b000100000004005c075a540070f7',
+  },
+  // Session 84 (2026-05-16): PATCH family closed via samples/captured/
+  // session-84-routing-mix-midi.pcapng. pidLow=0x00CE; paramId → pidHigh
+  // 1:1 against Ghidra catalog case 0x3c. Series=0.0, Parallel=1.0.
+  {
+    label: 'buildSetParam("preset.routing_slot_2", "Parallel") — session-84-routing-mix-midi',
+    built: buildSetParam('preset.routing_slot_2', 1),
+    expected: 'f000017415014e011400010000000400000010037824f7',
+  },
+  {
+    label: 'buildSetParam("preset.routing_slot_2", "Series") — session-84-routing-mix-midi',
+    built: buildSetParam('preset.routing_slot_2', 0),
+    expected: 'f000017415014e01140001000000040000000000004ff7',
+  },
+  {
+    label: 'buildSetParam("preset.routing_slot_3", "Parallel") — session-84-routing-mix-midi',
+    built: buildSetParam('preset.routing_slot_3', 1),
+    expected: 'f000017415014e011500010000000400000010037825f7',
+  },
+  {
+    label: 'buildSetParam("preset.routing_slot_4", "Parallel") — session-84-routing-mix-midi',
+    built: buildSetParam('preset.routing_slot_4', 1),
+    expected: 'f000017415014e011600010000000400000010037826f7',
+  },
 ];
 
 let pass = 0;

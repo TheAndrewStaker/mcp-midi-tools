@@ -14,6 +14,15 @@ single next action, and recent findings — start every session there.
 `STATE.md` is kept current; the numbered plan docs (`01-PROJECT-VISION.md`,
 `03-ARCHITECTURE.md`) are longer-lived reference.
 
+**Then run `npm run coverage-audit`.** It auto-snapshots Ghidra-catalog
+coverage vs `params.ts` vs `verify-msg.ts` goldens, plus per-device
+param counts. This is the antidote to handoff-list drift — STATE.md
+"open follow-ups" go stale silently when later sessions close them
+without ticking off the prior handoff; the audit reads current code
+state directly, so it can't lie about what's done. Trust the audit
+over any text claim that something is "open." Wired into preflight,
+so it also runs at session-end.
+
 Hardware tasks the founder owes (USB captures, round-trip tests on
 the device, reference dumps) are queued per-device under
 `docs/_private/`:
@@ -78,6 +87,108 @@ or speculating about wire shapes):
 - **Axe-Fx II** → `docs/SYSEX-MAP-AXE-FX-II.md`
 - **Axe-Fx III** → `docs/SYSEX-MAP-AXE-FX-III.md` (covers Fractal v1.4 PDF; extracted text at `docs/manuals/AxeFx3-MIDI-3rdParty.txt`) + `docs/axefx3-preset-format-research.md` (community RE of preset .syx format; Forum thread #159885 archived at `docs/_private/fractal-forum-text.txt`)
 - **Hydrasynth** → `docs/HYDRASYNTH-SYSEX-MAP.md` (if present)
+
+## Reverse-engineering workflow
+
+Protocol RE is the bulk of this project's work. Following the workflow
+below keeps sessions from re-treading dead ends and from publishing
+claims that aren't byte-verified.
+
+### Session start (read in this order)
+1. **`docs/_private/STATE.md`** — current phase, single next action,
+   recent breakthroughs. Always first.
+2. **`npm run coverage-audit`** — code-state ground truth, not stale
+   text (handled by the section above; restated here because RE
+   sessions especially drift on this).
+3. **`docs/fractal-protocol-decode-status.md`** — per-device decode
+   status table. Last full sweep Session 82–83. Read before opening
+   any new investigation so you know what's already named vs. open.
+4. **`docs/_private/HARDWARE-TASKS-<DEVICE>.md`** — open captures the
+   founder owes. If a 🔜 Pending task gates the work you're about to
+   do, surface it instead of speculating around the missing data.
+5. **Per-device wire map** — `SYSEX-MAP.md`, `SYSEX-MAP-AXE-FX-II.md`,
+   or `SYSEX-MAP-AXE-FX-III.md`. The authoritative byte-shape doc.
+6. **`docs/REFERENCES.md`** — only the section for your device. Don't
+   WebFetch for a manual we already have extracted to `.txt`.
+
+### Capture methods (in order of preference)
+- **Ghidra dispatcher mining** — canonical for paramId ↔ name catalog
+  discovery (99% wire-accuracy verified Session 82–83). Three-tier
+  technique with symbol-table walk, byte-pattern + xref, and
+  instruction-walk fallback. See `docs/ghidra-mining-workflow.md`.
+- **JUCE BinaryData extraction** — 5-minute label discovery from
+  editor binaries via the embedded ZIP. 1,299 AM4-Edit labels and
+  10,250 AxeEdit III labels recovered this way. See
+  `docs/capture-guides/juce-binarydata-extraction.md`.
+- **Directed probe scripts** (`scripts/probe*.ts`) — cheap, scriptable,
+  default for unknown wire envelopes. One hypothesis per probe; keep
+  the probe read-only unless explicitly designed to write.
+- **Passive capture** — open the device MIDI input with no editor.
+  Axe-Fx II broadcasts state continuously; AM4 is silent and needs an
+  active query loop. See `docs/fractal-broadcast-vs-poll-research.md`.
+- **loopMIDI + MIDI-OX bridge** — fallback for capturing the
+  editor-write direction. **Use as a last resort.** Fractal gates
+  loopMIDI by driver class explicitly in AxeEdit (Session 85) — this
+  is intentional, not a bug. See
+  `docs/axe-fx-ii-community-re-methodology.md`.
+
+### Methods that have failed — don't re-attempt
+- **WinDbg trap-after-launch** — stack-frame too shallow, label written
+  before trap arms. Session 46. Use JUCE BinaryData instead.
+- **Positional XML → cache-record binding** — XML `parameterName` is a
+  per-variant UI symbol, not a unique wire key. 20–40% inversions
+  across variants. Session 46 cont 2.
+- **AxeEdit + loopMIDI virtual driver** — Fractal gates loopMIDI by
+  class via `midiInGetDevCaps` / `midiOutGetDevCaps`. Intentional
+  filtering. Session 85.
+- **USBPcap on Axe-Fx II XL+ (Quantum 8.02)** — driver routes above
+  the USB-class layer, misses device traffic. Session 53 era.
+- **Byte-literal full SysEx envelope (`F0 00 01 74 10`) search in
+  Ghidra** — model byte loaded at runtime from a device-handle struct.
+  Search the 4-byte `F0 00 01 74` instead and inspect the next
+  instruction for the model load. Session 82.
+- **Param table as flat `-1`-terminated `int` array** — actually a
+  16-byte `ParamDescriptor` (paramId at +0, name pointer at +8).
+  Stride-by-4 produces garbage. Session 82.
+- **AM4 `0x77` preset-save envelope assumed portable to Axe-Fx II** —
+  inert on II XL+ (Session 94). Each device family gets its own
+  envelope decode; do not extrapolate across model bytes.
+
+### Scientific discipline (rules forged by real bugs)
+- **Every new `pidHigh` in `params.ts` requires a `verify-msg.ts`
+  golden built from captured bytes.** Septet-encoded 14-bit fields are
+  easy to misread as little-endian (Session 08). The golden is the
+  only mechanical guard against the class.
+- **Front panel + `get_param` echo are ground truth.** AxeEdit and
+  AM4-Edit cache stale UI state (HW-086, freshly-placed Volume block
+  showed 10.00 while device held 0.00). On disagreement, the editor
+  is wrong.
+- **Read before write.** Every device tool gates writes behind a
+  fingerprint read. Don't bypass this in new probe scripts unless
+  they're explicitly read-only (`scripts/probe.ts` is read-only
+  forever, by policy).
+- **One capture per hypothesis.** When isolating an unknown field,
+  change exactly one input on the editor or device. Two simultaneous
+  edits produce ambiguous diff bytes and cost days.
+- **Variant-dependent binding.** The same `parameterName` maps to
+  different wire IDs across effect variants (e.g. `DISTORT_TONE` is
+  `drive.id=12` in some variants, `drive.id=23` in others). XML alone
+  is never sufficient — combine with a capture or the Ghidra paramId
+  table.
+- **Septet-encode every 14-bit field, not just `pidLow`.** `action`,
+  effect IDs, preset numbers, tempo BPM, location bytes — all 7-bit-
+  pair encoded. Forgetting once = wire mismatch and a confused
+  device.
+- **Cite captures with file path + byte offset** in `SYSEX-MAP*.md`
+  so future agents can re-verify. "Confirmed via capture" without a
+  reference is hearsay.
+
+### Negative findings are valuable
+When a probe rules a hypothesis OUT (e.g. Session 94 ruling that AM4's
+`0x77` envelope doesn't work on Axe-Fx II), commit the result to
+`docs/SYSEX-MAP-*.md` or `docs/_private/SESSIONS.md` with the search
+terms a future agent would use ("AM4 0x77 portable to II — no"). This
+saves a session every time someone re-asks the same question.
 
 ## AM4 SysEx Quick Reference
 

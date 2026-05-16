@@ -1167,7 +1167,69 @@ split is internal. Each `cab*` entry's `pidLow` field is set to
 
 ---
 
-## 6l. Main Levels page — `pidLow=0x002A` (HW-067 / Session 50, partial) 🟡
+## 6l. Main Levels page — `pidLow=0x002A` (HW-067a closed Session 84, 2026-05-16) 🟢
+
+**Decoded end-to-end** from `samples/captured/session-84-levels.pcapng`
+against the founder's on-screen anchor values (preset.level=1.1 dB,
+preset.balance=2.2, scene 1-4 levels 3.33/4.44/5.55/6.66 dB).
+Decoded params now live in `packages/am4/src/params.ts` under the
+`preset.*` block.
+
+### Confirmed mapping (anchors match wire 1:1)
+
+| Param | pidLow | pidHigh | Action | Wire float | Display | Unit / scale |
+|---|---|---|---|---|---|---|
+| `preset.level` | `0x002A` | `0x0000` | `0x0001` | 1.1100 | 1.1 dB | `db` (raw passthrough) |
+| `preset.balance` | `0x002A` | `0x0002` | `0x0001` | 0.0222 | 2.2 | `bipolar_percent` (×100) |
+| `preset.scene_1_level` | `0x002A` | `0x0018` | `0x0001` | 3.3300 | 3.3 dB | `db` |
+| `preset.scene_2_level` | `0x002A` | `0x0019` | `0x0001` | 4.4400 | 4.4 dB | `db` |
+| `preset.scene_3_level` | `0x002A` | `0x001A` | `0x0001` | 5.5500 | 5.5 dB | `db` |
+| `preset.scene_4_level` | `0x002A` | `0x001B` | `0x0001` | 6.6600 | 6.7 dB | `db` |
+
+### Resolutions of Session 50's open questions
+
+1. **Value encoding scale (Q1, closed):** display = wire 1:1 for dB
+   params, ×100 for `bipolar_percent` balance. The Session 46 capture
+   showed 0..1-range floats because that was a *normalized-drag*
+   action — see Q2.
+2. **Action `0x0002` vs `0x0001` (Q2, closed):** AM4-Edit 2.00 +
+   firmware 2.00 use the **standard `action=0x0001`** for this
+   register family — same action our existing `buildSetParam` already
+   sends. No `buildSetParam` extension needed. The Session 46
+   `action=0x0002` writes were from an older AM4-Edit version
+   doing live-drag continuous writes; the new version sends a single
+   discrete commit on knob release.
+3. **Scene 3 / 4 confirmation (Q3, closed):** wire-verified —
+   pidHighs `0x001A` and `0x001B` accept writes and the values land
+   1:1 with the displayed dB readout.
+4. **Adjacent registers `0x001C..0x0025` (Q4, partial):** the
+   Session 84 capture also wrote to `0x001C`/`0x001D`/`0x001E` with
+   values 7.77/8.88/9.99 (likely Output / Master Level knobs) and
+   to `0x001F..0x0025` with descending dB values -9 .. -3 (these
+   are 7 of the 10 Preset EQ bands). Final naming pending a directed
+   capture that pins each pidHigh → frequency-band correspondence.
+
+### Code status
+
+**Wired into `params.ts`:** `preset.level` / `preset.balance` /
+`preset.scene_1_level..preset.scene_4_level`. Standard `buildSetParam`
+(action=0x0001) works. `set_param(block='preset', name='level',
+value=1.1)` writes 1.1 dB; `set_param(block='preset',
+name='scene_2_level', value=-4.0)` writes -4 dB to scene 2's level.
+
+**Goldens:** verify-msg covers `preset.level` / `preset.balance` /
+`preset.scene_1_level` against captured wire bytes from
+`session-84-levels.pcapng`. Pack/unpack roundtrip exercised via
+the existing 10-sample verify-pack.
+
+### Legacy decode (Session 50, superseded)
+
+The text below documents what was known after the Session 46
+capture, before the Session 84 follow-up. Kept for traceability.
+
+---
+
+## 6l-old. Main Levels page — Session 46 / Session 50 partial decode 🟡 (superseded)
 
 **Captured Session 46 by founder (delivered Session 50, 2026-05-07):**
 `samples/captured/session-46-main-levels.pcapn.pcapng` (filename note
@@ -1374,6 +1436,70 @@ under 5 ms in practice.
   "Refresh Preset Names" UI button) emit identical wire patterns,
   confirming this is the canonical command for non-destructive name
   reads.
+
+---
+
+## 6n-patch. PATCH family — preset-scoped routing + scene-MIDI + 4CM (Session 84, 2026-05-16) 🟢
+
+**pidLow = 0x00CE** — same register family that hosts block-placement
+(pidHigh=0x0010+slot-1) and preset rename (pidHigh=0x000B). PATCH is
+the umbrella for every preset-scoped param that isn't a block
+parameter: routing toggles, scene-output config, 4CM mode, and the
+4-message-per-scene MIDI sequencer.
+
+**Decoded against Ghidra catalog case_0x3c** — the 85 `PATCH_*`
+paramIds map directly to pidHighs via the §6p rule (`pidHigh = paramId`).
+Capture: `samples/captured/session-84-routing-mix-midi.pcapng`.
+
+### Confirmed wire writes from Session 84
+
+| Time | pidLow | pidHigh | paramId | Catalog name | Wire value | Meaning |
+|---|---|---|---|---|---|---|
+| 11.29s | 0x00CE | 0x0014 | 20 | `PATCH_ROUTING_SLOT2` | 1.0 | FX2 → Parallel |
+| 14.80s | 0x00CE | 0x0014 | 20 | `PATCH_ROUTING_SLOT2` | 0.0 | FX2 → Series |
+| 17.99s | 0x00CE | 0x0015 | 21 | `PATCH_ROUTING_SLOT3` | 1.0 / 0.0 | FX3 routing |
+| 24.22s | 0x00CE | 0x0016 | 22 | `PATCH_ROUTING_SLOT4` | 1.0 / 0.0 | FX4 routing |
+| 56.83s | 0x00CE | 0x0040 | 64 | `PATCH_SCENE_1_MIDI_MSG_1` | 1.0 | Scene 1 MIDI msg type → PC |
+| 1.00s | 0x00CE | 0x0050 | 80 | `PATCH_SCENE_1_MIDI_CH_1` | 2.0 / 3.0 | Scene 1 MIDI channel |
+| 1.00s | 0x00CE | 0x0060 | 96 | `PATCH_SCENE_2_MIDI_CH_1` | 4.0 | Scene 2 MIDI channel |
+
+### Routing encoding
+
+Series/Parallel is a binary float: **Series = 0.0, Parallel = 1.0**.
+Wire bytes match the standard 5-byte packed float envelope —
+`buildSetParam('preset.routing_slot_2', 1)` produces the exact bytes
+AM4-Edit sends for "Parallel."
+
+### Anomaly: action=0x0017 at pidHigh=0x3E81
+
+One write at t=30.41s addresses `pidHigh = 0x3e81` (16,001 decimal —
+well past any 85-entry catalog) with `action = 0x0017`. Likely an
+encoded multi-byte MIDI-message write that packs `(scene, message_idx,
+field)` into the pidHigh and uses a different action than the standard
+0x0001. Out of scope for first-pass PATCH support; needs a dedicated
+capture sweeping scene N's MIDI message M field to decode the packing.
+
+### Shipped MCP-addressable params
+
+`packages/am4/src/params.ts` now exposes:
+- `preset.routing_slot_2` (enum: Series / Parallel)
+- `preset.routing_slot_3` (enum: Series / Parallel)
+- `preset.routing_slot_4` (enum: Series / Parallel)
+
+Standard `buildSetParam` (action=0x0001) handles the write. Verified
+byte-exact against the capture via `verify-msg.ts` goldens.
+
+### Pending (catalog known, wire-untested)
+
+The remaining 82 PATCH catalog params are wire-addressable in
+principle (same pidLow + §6p rule) but each needs a directed capture
+to confirm the value encoding for enum-typed dropdowns:
+- 4× `PATCH_SCENE_N_OUTPUT` (scene output mode)
+- 1× `PATCH_4CM` (4-cable method toggle)
+- 16× `PATCH_SCENE_N_MIDI_MSG_M` (scene MIDI message type, 4 scenes × 4 slots)
+- 16× `PATCH_SCENE_N_MIDI_CH_M` (scene MIDI channel, 4 scenes × 4 slots)
+- 16× `PATCH_SCENE_N_MIDI_VALUE_M` (scene MIDI value byte, 4 scenes × 4 slots)
+- Plus 29 remaining items — see Ghidra catalog `case_0x3c` (85 total).
 
 ---
 

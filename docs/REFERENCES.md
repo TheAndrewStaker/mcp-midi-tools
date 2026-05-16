@@ -5,6 +5,28 @@ Update this file whenever a new reference is added to the project.
 
 ---
 
+## Per-device authoritative decode status (read first)
+
+Before opening a new reverse-engineering investigation or proposing a
+protocol change, consult these — they reflect what is currently
+byte-verified vs. what is still open. Always more current than the
+manuals.
+
+- **`docs/fractal-protocol-decode-status.md`** — cross-device status
+  index (AM4 / Axe-Fx II / Axe-Fx III). Last full sweep Session 82–83
+  (Ghidra mining). Tells you which paramId families are named and
+  which are still open per device.
+- **`docs/SYSEX-MAP.md`** — AM4 wire map, byte-exact, with capture
+  references for every confirmed claim.
+- **`docs/SYSEX-MAP-AXE-FX-II.md`** — Axe-Fx II wire map.
+- **`docs/SYSEX-MAP-AXE-FX-III.md`** — Axe-Fx III wire map (covers
+  Fractal's v1.4 PDF + community RE).
+- **`docs/ghidra-mining-workflow.md`** — proven canonical RE method
+  for paramId catalog extraction (99% wire-accuracy verified). Read
+  before opening a new Ghidra project on any Fractal editor binary.
+
+---
+
 ## Official Fractal Audio documents (local)
 
 All files below live in `docs/manuals/` unless noted. Plain-text `.txt` extractions

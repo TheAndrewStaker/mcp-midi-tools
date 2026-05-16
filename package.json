@@ -49,6 +49,7 @@
     "gen-params": "tsx scripts/gen-params-from-cache.ts",
     "smoke-server": "tsx scripts/smoke-server.ts",
     "verify-lineage-resources": "tsx scripts/verify-lineage-resources.ts",
+    "coverage-audit": "tsx scripts/coverage-audit.ts",
     "write-test": "tsx scripts/_research/write-test.ts",
     "server": "tsx packages/server-all/src/server/index.ts",
     "build:core": "npm run build --workspace=@mcp-midi-control/core",
@@ -85,7 +86,7 @@
     "test:jest": "jest --testPathIgnorePatterns=integration",
     "test:jest:all": "jest",
     "typecheck": "tsc --noEmit -p packages/core/tsconfig.json && tsc --noEmit -p packages/am4/tsconfig.json && tsc --noEmit -p packages/axe-fx-ii/tsconfig.json && tsc --noEmit -p packages/axe-fx-iii/tsconfig.json && tsc --noEmit -p packages/hydrasynth-explorer/tsconfig.json && tsc --noEmit -p packages/server-all/tsconfig.json",
-    "preflight": "npm run typecheck && npm test",
+    "preflight": "npm run typecheck && npm test && npm run coverage-audit",
     "release-gate": "npm run preflight && npm run launch-verify && npm run agent-sweep"
   },
   "devDependencies": {
