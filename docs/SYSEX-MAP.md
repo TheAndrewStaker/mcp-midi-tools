@@ -1602,15 +1602,148 @@ after switching scenes, or you'll only ever exercise col 0/4/8/12.
 
 ### Out of scope (still pending in PATCH family)
 
-- 4× `PATCH_SCENE_N_OUTPUT` (per-scene output mode — listed in §6n-patch).
-- 1× `PATCH_4CM` (4-cable-method toggle).
-- 29 remaining Ghidra `case_0x3c` items.
+Session 87 (2026-05-16) cross-reference audit corrected two phantom
+items from this list:
+
+- ~~4× `PATCH_SCENE_N_OUTPUT`~~ — these are the **Scene N Level**
+  knobs, already shipping as `preset.scene_{1..4}_level`. The catalog
+  symbol is Fractal's internal name; AM4-Edit labels them "Scene N
+  Level." Caught by `scripts/_research/coverage-cross-ref-audit.ts`
+  joining XML display names to catalog symbols.
+- ~~1× `PATCH_4CM`~~ — confirmed **firmware ghost**. No AM4-Edit UI
+  control. The 4CM concept exists only as a wiring pattern in the
+  AM4 owner's manual (rear-panel Send/Return + VP4); there is no
+  software toggle on AM4. Flagged GHOST in the cross-ref audit.
+
+Still pending: ~29 Ghidra `case_0x3c` items in the catalog with no
+XML control (likely firmware-internal calc state, not user-facing
+knobs).
 
 The Session 84 `pidHigh=0x3E81 action=0x0017` anomaly is **NOT** on
-the scene-MIDI critical path — Session 85's directed scene-MIDI
-authoring did not trigger it. That anomaly was a different AM4-Edit
-operation (likely the "test message" buttons next to each scene
-header in the Scene MIDI page); decoding is a separate research item.
+the scene-MIDI critical path. Session 87 capture
+`session-87-scene-midi-test-buttons.pcapng` clicked all 16 per-row
+test-send "▶" buttons and produced **zero** `action=0x0017` frames —
+ruling out test-message buttons as the trigger. Anomaly trigger
+remains unknown. What WAS discovered: per-row and per-scene "Send
+All" buttons fire `action=0x0004 / pidHigh=0x0070` — see §6n-scene-
+midi-test below.
+
+---
+
+## 6n-scene-midi-test. Scene MIDI test-send command (`action=0x0004`, `pidHigh=0x0070`) 🟡 partial
+
+Discovered Session 87 (2026-05-16) via two captures of AM4-Edit's
+Scene MIDI page test-send buttons:
+- `samples/captured/session-87-scene-midi-test-buttons.pcapng` —
+  16 clicks of per-row "▶" test-send buttons (one per scene-msg cell).
+- `samples/captured/session-87-scene-top-midi-test-buttons.pcapng` —
+  4 clicks of per-scene "Send All" top buttons (one per scene column).
+
+**This is NOT a working-buffer write.** It's a transient command
+telling the AM4 to emit a MIDI message out its MIDI OUT port right
+now — for monitoring rigs that respond to scene-change PCs/CCs. The
+configured (type, channel, value) for the targeted scene-msg row is
+sent. No persistent state changes; nothing to save, nothing to read
+back.
+
+### Wire shape
+
+```
+F0 00 01 74 15 01 [4E 01] [70 00] [01 00] [00 00] [04 00]
+                          ^^^^^^^                  ^^^^^^^
+                          pidHigh=0x0070            action=0x0004
+[5 payload bytes] [cs] F7
+```
+
+- `pidLow = 0x00CE` — PATCH family, same as §6n-scene-midi.
+- `pidHigh = 0x0070` — fixed; distinct from the scene-MIDI auth rows
+  at 0x40/0x50/0x60.
+- `action = 0x0004` — distinct from `0x0001` (SET_PARAM write) and
+  `0x0000` (read). This action seems to mean **"execute this as a
+  transient device-side command,"** not "store the payload as state."
+- Payload is 5 bytes, encoding varies by which button fired the
+  command (per-row vs per-scene).
+
+### Per-scene "Send All" button payload — DECODED 🟢
+
+The 4 top buttons each fire once with payload:
+```
+00 00 [scene_byte] 74 38
+```
+where `scene_byte = (scene_index << 5) | 0x0F`:
+
+| Scene | Wire payload byte[2] | Bits |
+|---|---|---|
+| 1 | `0x0F` | `00.0_1111` |
+| 2 | `0x2F` | `00.1_1111` ← bit 5 |
+| 3 | `0x4F` | `10.0_1111` ← bit 6 (after septet) |
+| 4 | `0x6F` | `10.1_1111` ← bits 5+6 |
+
+Bits 5–6 of byte[2] encode `(scene_index & 3)`. Bits 0–3 are constant
+`0xF` — interpretable as a 4-bit msg-mask `1111` meaning "send all
+4 msgs." Bytes 3–4 are constant `0x74 0x38` (semantics TBD — possibly
+default channel/value for the "Send All" entry point).
+
+Captured in `session-87-scene-top-midi-test-buttons.pcapng`, 4 frames
+at `t=8.81 / 11.90 / 14.11 / 16.73 s`.
+
+### Per-row "Send this msg" button payload — partially decoded 🟡
+
+The 16 per-row buttons each fire once with payload:
+```
+00 [b1] [b2] [b3] [b4]
+```
+where the 5 bytes encode `(scene, msg, type, channel, value)` somehow
+— consistent with how a single MIDI command is fully specified — but
+the exact field layout is not yet reverse-engineered. Captured payload
+samples (one per click, in time order) from
+`session-87-scene-midi-test-buttons.pcapng`:
+
+```
+00 00 00 00 00     ←  scene 1, msg 1, all defaults
+00 00 10 04 18
+00 00 00 04 20
+00 00 08 04 20
+00 00 10 03 78
+00 20 10 04 18
+00 10 00 04 20
+00 10 08 04 20
+00 00 00 04 00
+00 00 10 14 18
+00 20 00 04 20
+00 20 08 04 20
+00 00 08 04 00
+00 20 10 14 18
+00 30 00 04 20
+00 30 08 04 20
+```
+
+Byte[1] cycles through `0x00 / 0x10 / 0x20 / 0x30` — a 2-bit field in
+bits 4–5, likely scene index. Bytes[2..4] then carry msg/type/channel/
+value but the exact packing isn't pinned. **To fully decode: a
+controlled probe where the founder sets a known (msg, type, channel,
+value) per click and reports them — then we reverse the bytes from
+known inputs.** Tracked as HW-110-cont.
+
+### What's still open
+
+- **action=0x0017 anomaly** at `pidHigh=0x3E81` remains undecoded.
+  Session 87 ruled out test-send buttons as the trigger. The
+  remaining hypothesis is "Quick Build" or some other AM4-Edit
+  page-level action; needs a fresh directed capture.
+- **Per-row payload byte packing** for the test-send command (above).
+- **hdr2=0x08 zero-payload frames** observed at scene-msg-field pidHighs
+  in the top-buttons capture — possibly a "clear test state" sub-
+  command that fires alongside the per-scene Send All. Decode TBD.
+
+### Potential MCP tool
+
+Once the per-row payload is decoded, a `am4_send_scene_midi_test_now`
+tool becomes possible: takes `(scene, msg_index | 'all')` and fires
+the corresponding `action=0x0004 / pidHigh=0x0070` frame. Useful for
+agent-driven "preview how scene 2 will affect my monitor amp"
+workflows. Not in scope for v0.1; capture the requirement here so
+it's available when the protocol lands fully.
 
 ---
 
