@@ -57,6 +57,79 @@ export interface MidiConnection {
   close: () => void;
 }
 
+/**
+ * Build a stateful SysEx reassembler. node-midi's WinMM backend hands
+ * each MIM_LONGDATA buffer up as its own `message` event, so any SysEx
+ * longer than RT_SYSEX_BUFFER_SIZE (1024 bytes — RtMidi.cpp:2467)
+ * arrives split across multiple callbacks. AM4 preset-dump chunks
+ * (3082 bytes) and Axe-Fx II preset bodies are both bigger than that.
+ * Downstream parsers (presetDump.ts assertDumpMessageShape,
+ * receiveSysExMatching, every device's response parser) assume one
+ * F0…F7 message per emit — this glues fragments back together so the
+ * assumption holds.
+ *
+ * Returned function is the inbound seam: feed every raw `message`
+ * callback through it; it emits to `dispatch` once a fragment ends
+ * in F7 (or immediately for any non-SysEx fragment, which short MIDI
+ * messages always are).
+ *
+ * Edge cases:
+ *   - Short MIDI (3-byte note/CC/PC) bypasses the accumulator —
+ *     the first byte is a non-F0 status, so it ships straight through.
+ *   - Complete SysEx in a single fragment (F0…F7, length ≤ 1024)
+ *     also bypasses the accumulator. Fast path.
+ *   - A fragment with F7 mid-buffer (rare on WinMM but legal MIDI)
+ *     is split at the F7: prefix is emitted as the completed message,
+ *     trailing bytes open a new accumulation if they start with F0.
+ *
+ * Exported for unit testing so we don't need a live MIDI port to
+ * prove the reassembly is correct.
+ */
+export function createSysExAssembler(
+  dispatch: (bytes: number[]) => void,
+): (fragment: number[]) => void {
+  let accumulator: number[] | undefined;
+  return (bytes: number[]): void => {
+    if (bytes.length === 0) return;
+    const startsWithF0 = bytes[0] === 0xf0;
+    const endsWithF7 = bytes[bytes.length - 1] === 0xf7;
+
+    // Fast path: complete SysEx in one fragment, or a non-SysEx
+    // short message. Nothing to assemble.
+    if (accumulator === undefined && startsWithF0 && endsWithF7) {
+      dispatch(bytes);
+      return;
+    }
+    if (accumulator === undefined && !startsWithF0) {
+      dispatch(bytes);
+      return;
+    }
+
+    // Open or continuing SysEx fragment.
+    if (accumulator === undefined && startsWithF0) {
+      accumulator = bytes.slice();
+    } else if (accumulator !== undefined) {
+      for (const b of bytes) accumulator.push(b);
+    }
+
+    // Drain on any F7. Handle F7-in-middle by splitting (defensive).
+    if (accumulator !== undefined && endsWithF7) {
+      const f7Index = accumulator.lastIndexOf(0xf7);
+      const complete = accumulator.slice(0, f7Index + 1);
+      const trailing = accumulator.slice(f7Index + 1);
+      accumulator = undefined;
+      dispatch(complete);
+      if (trailing.length > 0 && trailing[0] === 0xf0) {
+        if (trailing[trailing.length - 1] === 0xf7) {
+          dispatch(trailing);
+        } else {
+          accumulator = trailing;
+        }
+      }
+    }
+  };
+}
+
 function findPortByName(
   port: Input | Output,
   needles: readonly string[],
@@ -335,8 +408,12 @@ export function connect(opts: ConnectOptions): MidiConnection {
   input.ignoreTypes(false, true, true);
 
   const handlers = new Set<(bytes: number[]) => void>();
-  input.on('message', (_dt: number, bytes: number[]) => {
+  const dispatch = (bytes: number[]): void => {
     for (const h of handlers) h(bytes);
+  };
+  const assemble = createSysExAssembler(dispatch);
+  input.on('message', (_dt: number, bytes: number[]) => {
+    assemble(bytes);
   });
 
   input.openPort(inputPort);

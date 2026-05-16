@@ -198,7 +198,11 @@ async function verifyAm4(client: Client): Promise<void> {
     );
   }
 
-  // AM4 audition-at-target (target_location, no save_authorized) — v0.4 mode 2
+  // AM4 audition-at-target (target_location, no save_authorized) — v0.4 mode 2.
+  // Type-applicability precheck (commit 179c974, 2026-05-15): the executor
+  // rejects type+knob combinations the amp model doesn't expose. Use
+  // "1959SLP Normal" — confirmed to expose `gain` per the precheck's
+  // valid_options list and a canonical drive-amp pick.
   {
     const r = await client.callTool({
       name: 'apply_preset',
@@ -208,7 +212,7 @@ async function verifyAm4(client: Client): Promise<void> {
         spec: {
           name: 'AUD-AT-Z4',
           slots: [
-            { slot: 1, block_type: 'amp', params: { A: { type: 'Class A 30W', gain: 5 } } },
+            { slot: 1, block_type: 'amp', params: { A: { type: '1959SLP Normal', gain: 5 } } },
           ],
         },
         on_active_preset_edited: 'discard',
@@ -303,16 +307,21 @@ async function verifyAm4(client: Client): Promise<void> {
     });
   }
 
-  // AM4 apply_preset skip+warn: 5F8 Tweed Normal has no master knob.
-  // The spec asks for amp.master; the executor should skip+warn, not
-  // refuse the whole call.
+  // AM4 type-applicability precheck (commit 179c974, 2026-05-15): when a
+  // slot specifies a `type` enum AND knobs that type doesn't expose, the
+  // dispatcher REJECTS upfront with a structured error containing
+  // valid_options. The previous skip-with-warning semantic was replaced
+  // structurally because agents kept silently no-op'ing on incompatible
+  // combinations (H1 trap). Verify the rejection wording and that the
+  // named offending knob appears in the message so agents know what to
+  // pick from.
   {
     const r = await client.callTool({
       name: 'apply_preset',
       arguments: {
         port: 'am4',
         spec: {
-          name: 'SKIPTEST',
+          name: 'PRECHECK',
           slots: [
             {
               slot: 1,
@@ -325,10 +334,14 @@ async function verifyAm4(client: Client): Promise<void> {
       },
     });
     const t = extractText(r);
-    record('apply_preset with type-gated param still succeeds (audition)', !isError(r), t.slice(0, 300));
     record(
-      'apply_preset surfaces skip warning for amp.master on 5F8 Tweed Normal',
-      !isError(r) && /skipped|drop|not apply|no-?op/i.test(t) && /master/i.test(t),
+      'apply_preset precheck rejects type-gated incompatibility',
+      isError(r) && /doesn't expose all of|silently no-op/i.test(t),
+      t.slice(0, 400),
+    );
+    record(
+      'apply_preset precheck surfaces offending knob + valid_options pointer',
+      isError(r) && /master/i.test(t) && /find_compatible_types|valid_options|Pick a type/i.test(t),
       t.slice(0, 500),
     );
   }
