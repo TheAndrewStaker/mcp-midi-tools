@@ -17,6 +17,7 @@ import {
   type MockResponder,
 } from '@mcp-midi-control/core/midi/transport.js';
 import { fractalChecksum } from '@mcp-midi-control/core/fractal-shared/checksum.js';
+import { packValue, packValueChunked } from '@mcp-midi-control/core/fractal-shared/packValue.js';
 
 export {
   connect,
@@ -98,72 +99,206 @@ export function connectAM4(): MidiConnection {
  * frame, returns the inbound responses the AM4 would emit.
  *
  * Recognized shapes (see `setParam.ts` for outgoing layouts, this file's
- * `describeAm4InboundMessage` for inbound ack envelopes):
+ * `describeAm4InboundMessage` for inbound ack envelopes, `readOps.ts`
+ * for the read predicates):
  *
- *   - 0x01 PARAM_RW + action=0x0001 (WRITE) → 64-byte write-echo
- *     (hdr4=0x0028). Satisfies `isWriteEcho` predicate.
- *   - 0x01 PARAM_RW + action≠WRITE (save/rename/preset-switch) →
+ *   - 0x01 PARAM_RW + action=0x0001 WRITE → 64-byte write-echo
+ *     (hdr4=0x0028). Satisfies `isWriteEcho`.
+ *   - 0x01 PARAM_RW + action=0x000E short READ → 23-byte read response
+ *     (hdr4=0x0004, 5 packed bytes). Satisfies `isReadResponse`. Value
+ *     comes from `mockReadValueFor(pidLow, pidHigh)`.
+ *   - 0x01 PARAM_RW + action=0x000D long READ (bypass) → 64-byte
+ *     response (hdr4=0x0028) with bypass flag at byte 22.
+ *   - 0x01 PARAM_RW + action=0x0012 READ_PRESET_NAME → 55-byte response
+ *     (hdr4=0x0020, 37 packed bytes for 32-char preset name).
+ *   - 0x01 PARAM_RW + other action (save/rename/preset-switch) →
  *     18-byte command-ack (hdr4=0x0000). Satisfies `isCommandAck`.
  *   - 0x12 mode switch → no response (write-only, no ack expected).
- *   - 0x01 PARAM_RW + action=0x0026 (READ) → 64-byte READ response,
- *     same shape as the write-echo (hdr4=0x0028, dummy 40-byte
- *     value descriptor). Sufficient for `get_param` to resolve;
- *     the value won't reflect real state (no in-memory state model
- *     yet — added if/when read-back tests need it).
  *
- * Predicate-only correctness: the AM4 ack predicates check structural
- * fields (envelope + function + addressing + hdr4) but ignore the
- * payload bytes. The mock fills the payload with zeros. If a future
- * test needs a specific value read-back, extend this with an
- * in-memory device-state map.
+ * Predicate-only correctness: AM4 predicates check structural fields
+ * (envelope + function + addressing + hdr4 + length) plus a small
+ * payload region (long read uses byte 22 for bypass). Filling the
+ * rest of the payload with zeros is fine — the parsers tolerate
+ * empty / zero-value content.
+ *
+ * The mock is stateless beyond `mockReadValueFor`'s hardcoded "current
+ * location = Z04" hint. Writes succeed but their values aren't read
+ * back; sufficient for agent-regression cases that test agent BEHAVIOR
+ * (tool sequencing, arg correctness) rather than wire-roundtrip state.
  */
 const SYSEX_START = 0xf0;
 const SYSEX_END = 0xf7;
-const ACTION_WRITE_LO = 0x01; // 14-bit septet encoding of action 0x0001
-const HDR4_WRITE_ECHO_LO = 0x28; // hdr4 = 0x0028 (40-byte descriptor)
+const ACTION_WRITE_LO = 0x01;
+const ACTION_LONG_READ_LO = 0x0d;
+const ACTION_SHORT_READ_LO = 0x0e;
+const ACTION_READ_PRESET_NAME_LO = 0x12;
+const HDR4_WRITE_ECHO_LO = 0x28;
+const HDR4_SHORT_READ_LO = 0x04;
+const HDR4_LONG_READ_LO = 0x28;
+const HDR4_READ_PRESET_NAME_LO = 0x20;
+
+// Common AM4 state registers (see packages/am4/src/tools/read.ts and
+// packages/am4/src/setParam.ts). Mock hardcodes plausible defaults so
+// agents that poll state during hero-case prompts see something
+// representative of a populated Z04 working buffer.
+const LOCATION_STATE_PID_LOW = 0x00ce;
+const LOCATION_STATE_PID_HIGH = 0x000a;
+const MOCK_ACTIVE_LOCATION_INDEX = 103; // Z04
+
+// Block-placement registers — slots 1..4 live at
+// (pidLow=0x00CE, pidHigh=0x000F+i). The u32 value is the placed
+// block's pidLow (e.g. amp=0x003A). See `BLOCK_SLOT_PID_LOW` /
+// `BLOCK_SLOT_PID_HIGH_BASE` in setParam.ts.
+const BLOCK_SLOT_PID_LOW = 0x00ce;
+const BLOCK_SLOT_PID_HIGH_SLOT_1 = 0x000f;
+const BLOCK_SLOT_PID_HIGH_SLOT_2 = 0x0010;
+const BLOCK_SLOT_PID_HIGH_SLOT_3 = 0x0011;
+const BLOCK_SLOT_PID_HIGH_SLOT_4 = 0x0012;
+
+// Block-type pidLow values (mirror packages/am4/src/blockTypes.ts).
+const BLOCK_PID_LOW_AMP = 0x003a;
+const BLOCK_PID_LOW_REVERB = 0x0042;
+const BLOCK_PID_LOW_DELAY = 0x0046;
+const BLOCK_PID_LOW_CHORUS = 0x004e;
+
+// Default mock preset placement: amp / chorus / reverb / delay on
+// slots 1..4. Gives agents that read Z04 something realistic to
+// tweak (without it, every slot reads as "none" and read-then-tweak
+// prompts fail because there's no amp to bump gain on).
+const MOCK_SLOT_BLOCK_TYPES: ReadonlyMap<number, number> = new Map([
+  [BLOCK_SLOT_PID_HIGH_SLOT_1, BLOCK_PID_LOW_AMP],
+  [BLOCK_SLOT_PID_HIGH_SLOT_2, BLOCK_PID_LOW_CHORUS],
+  [BLOCK_SLOT_PID_HIGH_SLOT_3, BLOCK_PID_LOW_REVERB],
+  [BLOCK_SLOT_PID_HIGH_SLOT_4, BLOCK_PID_LOW_DELAY],
+]);
+
+// Default mock param value: u32 32767 ÷ 65534 ≈ 0.5 → display ~5.0 on
+// the 0..10 knob convention (`READ_VALUE_DENOMINATOR` = 65534, see
+// `setParam.ts`). Sensible mid-scale for amp.gain, reverb.mix, etc.
+const MOCK_DEFAULT_PARAM_VALUE = 32767;
+
+/**
+ * Compute the u32 value the mock should return for a short-read of a
+ * given (pidLow, pidHigh) pair. Specialized for state registers the
+ * hero cases poll; defaults to a mid-scale display value for any
+ * param-read the mock doesn't have a specific answer for.
+ */
+function mockReadValueFor(pidLow: number, pidHigh: number): number {
+  if (pidLow === LOCATION_STATE_PID_LOW && pidHigh === LOCATION_STATE_PID_HIGH) {
+    return MOCK_ACTIVE_LOCATION_INDEX;
+  }
+  if (pidLow === BLOCK_SLOT_PID_LOW) {
+    const placed = MOCK_SLOT_BLOCK_TYPES.get(pidHigh);
+    if (placed !== undefined) return placed;
+  }
+  return MOCK_DEFAULT_PARAM_VALUE;
+}
+
+/**
+ * Build the AM4 short-read response (23 bytes) for an outgoing short
+ * read. Payload encodes a u32 little-endian value via the same
+ * packValue scheme writes use.
+ */
+function buildShortReadResponse(outgoing: number[], pidLow: number, pidHigh: number): number[] {
+  const value = mockReadValueFor(pidLow, pidHigh);
+  const raw = new Uint8Array(4);
+  new DataView(raw.buffer).setUint32(0, value, true);
+  const packed = Array.from(packValue(raw));
+  const body: number[] = new Array<number>(16).fill(0);
+  body[0] = SYSEX_START;
+  for (let i = 1; i <= 11; i++) body[i] = outgoing[i] ?? 0;
+  body[12] = 0x00; body[13] = 0x00;
+  body[14] = HDR4_SHORT_READ_LO; body[15] = 0x00;
+  const head = [...body, ...packed];
+  const cs = fractalChecksum(head);
+  return [...head, cs, SYSEX_END];
+}
+
+/**
+ * Build the AM4 long-read response (64 bytes) for an outgoing long
+ * read. Payload is 40 zero bytes — agent reads bypass=0 at byte 22.
+ */
+function buildLongReadResponse(outgoing: number[]): number[] {
+  const body: number[] = new Array<number>(62).fill(0);
+  body[0] = SYSEX_START;
+  for (let i = 1; i <= 11; i++) body[i] = outgoing[i] ?? 0;
+  body[14] = HDR4_LONG_READ_LO; body[15] = 0x00;
+  // bytes 16..61 zero — bypass flag at byte 22 stays 0 (active).
+  const cs = fractalChecksum(body);
+  return [...body, cs, SYSEX_END];
+}
+
+/**
+ * Build the READ_PRESET_NAME response (55 bytes) for an outgoing
+ * preset-name read. 32-char name is "(mock preset)" + spaces, packed
+ * via packValueChunked into 37 wire bytes.
+ */
+function buildPresetNameResponse(outgoing: number[]): number[] {
+  const name = '(mock preset)';
+  const raw = new Uint8Array(32);
+  for (let i = 0; i < name.length && i < 32; i++) raw[i] = name.charCodeAt(i);
+  for (let i = name.length; i < 32; i++) raw[i] = 0x20; // pad with spaces
+  const packed = Array.from(packValueChunked(raw));
+  const body: number[] = new Array<number>(16).fill(0);
+  body[0] = SYSEX_START;
+  for (let i = 1; i <= 11; i++) body[i] = outgoing[i] ?? 0;
+  body[14] = HDR4_READ_PRESET_NAME_LO; body[15] = 0x00;
+  const head = [...body, ...packed];
+  const cs = fractalChecksum(head);
+  return [...head, cs, SYSEX_END];
+}
 
 export const am4MockResponder: MockResponder = (outgoing) => {
   if (outgoing.length < 8) return [];
   if (outgoing[0] !== SYSEX_START) return [];
-  // Envelope: F0 00 01 74 15 [fn] ...
   if (outgoing[1] !== 0x00 || outgoing[2] !== 0x01 || outgoing[3] !== 0x74 || outgoing[4] !== 0x15) {
     return [];
   }
   const fn = outgoing[5];
-  if (fn !== 0x01) return []; // mode switches (0x12) etc. are write-only — no ack
+  if (fn !== 0x01) return []; // mode switches (0x12) etc. — write-only, no ack
   if (outgoing.length < 12) return [];
+  const pidLow = (outgoing[6] ?? 0) | ((outgoing[7] ?? 0) << 7);
+  const pidHigh = (outgoing[8] ?? 0) | ((outgoing[9] ?? 0) << 7);
   const actionLo = outgoing[10];
   const actionHi = outgoing[11];
-  const isWriteAction = actionLo === ACTION_WRITE_LO && actionHi === 0x00;
 
-  if (isWriteAction) {
-    // 64-byte write-echo. Predicate isWriteEcho only checks bytes 0..15
-    // for structural fields — the 40-byte payload (bytes 16..55) is
-    // ignored. Zero-filled payload + correct header is sufficient.
-    const body: number[] = new Array<number>(62).fill(0);
-    body[0] = SYSEX_START;
-    // bytes 1..9: copy envelope + fn + pidLow + pidHigh from outgoing.
-    for (let i = 1; i <= 9; i++) body[i] = outgoing[i] ?? 0;
-    body[10] = ACTION_WRITE_LO;
-    body[11] = 0x00;
-    body[12] = 0x00;
-    body[13] = 0x00;
-    body[14] = HDR4_WRITE_ECHO_LO;
-    body[15] = 0x00;
-    // bytes 16..61: zero-filled payload — already initialized.
-    const cs = fractalChecksum(body);
-    return [[...body, cs, SYSEX_END]];
+  if (actionHi !== 0x00) {
+    // High-byte non-zero actions aren't part of our envelope set —
+    // return command-ack to keep the writer from timing out.
+    return [buildCommandAck(outgoing)];
   }
 
-  // 18-byte command-ack. Predicate isCommandAck requires exact length 18,
-  // bytes 0..11 copied from outgoing, bytes 12..15 all zero.
+  switch (actionLo) {
+    case ACTION_WRITE_LO:
+      return [buildWriteEcho(outgoing)];
+    case ACTION_SHORT_READ_LO:
+      return [buildShortReadResponse(outgoing, pidLow, pidHigh)];
+    case ACTION_LONG_READ_LO:
+      return [buildLongReadResponse(outgoing)];
+    case ACTION_READ_PRESET_NAME_LO:
+      return [buildPresetNameResponse(outgoing)];
+    default:
+      return [buildCommandAck(outgoing)];
+  }
+};
+
+function buildWriteEcho(outgoing: number[]): number[] {
+  const body: number[] = new Array<number>(62).fill(0);
+  body[0] = SYSEX_START;
+  for (let i = 1; i <= 9; i++) body[i] = outgoing[i] ?? 0;
+  body[10] = ACTION_WRITE_LO; body[11] = 0x00;
+  body[14] = HDR4_WRITE_ECHO_LO; body[15] = 0x00;
+  const cs = fractalChecksum(body);
+  return [...body, cs, SYSEX_END];
+}
+
+function buildCommandAck(outgoing: number[]): number[] {
   const ack: number[] = new Array<number>(16).fill(0);
   ack[0] = SYSEX_START;
   for (let i = 1; i <= 11; i++) ack[i] = outgoing[i] ?? 0;
-  // bytes 12..15 stay zero.
   const cs = fractalChecksum(ack);
-  return [[...ack, cs, SYSEX_END]];
-};
+  return [...ack, cs, SYSEX_END];
+}
 
 // Register the AM4 connector with the shared connection registry as a
 // side effect of loading this module. Importing anything from `am4/midi.ts`
