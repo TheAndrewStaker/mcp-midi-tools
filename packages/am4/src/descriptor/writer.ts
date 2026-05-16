@@ -75,6 +75,7 @@ import { loadFactoryBank, sendFactoryRestore } from '../factoryBank.js';
 import {
   guardActiveAM4BufferOrSave,
   refreshAM4Fingerprint,
+  warmupAM4BaselineIfNeeded,
 } from '../tools/safeEdit.js';
 import { readPresetName } from '../shared/readOps.js';
 import { recordInbound, sendAndAwaitAck } from '../shared/wireOps.js';
@@ -312,6 +313,7 @@ export const writer: DeviceWriter = {
     value: number,
     channel?: string | number,
   ): Promise<WriteResult> {
+    await warmupAM4BaselineIfNeeded(ctx.conn);
     const key = `${block}.${name}` as ParamKey;
     const param: Param = KNOWN_PARAMS[key];
     const bytes = buildSetParam(key, value);
@@ -355,6 +357,7 @@ export const writer: DeviceWriter = {
   },
 
   async setParams(ctx, ops): Promise<BatchWriteResult> {
+    await warmupAM4BaselineIfNeeded(ctx.conn);
     const writes: WriteResult[] = [];
     let acked_count = 0;
     let unacked_count = 0;
@@ -439,6 +442,7 @@ export const writer: DeviceWriter = {
   },
 
   async switchPreset(ctx, location): Promise<WriteResult> {
+    await warmupAM4BaselineIfNeeded(ctx.conn);
     const locationIndex = parseAm4Location(location);
     const bytes = buildSwitchPreset(locationIndex);
     const result = await sendAndAwaitAck(ctx.conn, bytes, isWriteEcho);
@@ -465,6 +469,7 @@ export const writer: DeviceWriter = {
   },
 
   async savePreset(ctx, location, name): Promise<WriteResult> {
+    await warmupAM4BaselineIfNeeded(ctx.conn);
     const locationIndex = parseAm4Location(location);
     if (name !== undefined && name.length > 0) {
       // Composite rename + save (mirrors am4_save_preset).
@@ -518,6 +523,7 @@ export const writer: DeviceWriter = {
         `Scene index ${scene} out of range on Fractal AM4 (valid: 1..4).`,
       );
     }
+    await warmupAM4BaselineIfNeeded(ctx.conn);
     const bytes = buildSwitchScene(scene - 1);
     const result = await sendAndAwaitAck(ctx.conn, bytes, isWriteEcho);
     invalidateChannelCache();
@@ -532,6 +538,7 @@ export const writer: DeviceWriter = {
   },
 
   async setBlock(ctx, slot, change): Promise<WriteResult> {
+    await warmupAM4BaselineIfNeeded(ctx.conn);
     if (typeof slot !== 'number' || !Number.isInteger(slot) || slot < 1 || slot > 4) {
       throw new DispatchError(
         'bad_location',
@@ -570,6 +577,7 @@ export const writer: DeviceWriter = {
   },
 
   async setBypass(ctx, block, bypassed): Promise<WriteResult> {
+    await warmupAM4BaselineIfNeeded(ctx.conn);
     const wire = resolveBlockType(block);
     if (wire === undefined || wire === BLOCK_TYPE_VALUES.none) {
       const known = Object.keys(BLOCK_TYPE_VALUES).filter((n) => n !== 'none').join(', ');
@@ -605,6 +613,7 @@ export const writer: DeviceWriter = {
   async applyPreset(ctx, spec: PresetSpec, target, options): Promise<ApplyResult> {
     const input = specToApplyInput(spec);
     const shouldSave = options?.save ?? false;
+    await warmupAM4BaselineIfNeeded(ctx.conn);
 
     const startMs = Date.now();
     if (target !== undefined) {
