@@ -61,6 +61,8 @@
     "inspect": "npx @modelcontextprotocol/inspector node packages/server-all/dist/server/index.js",
     "agent-sweep": "tsx scripts/agent-regression/index.ts",
     "agent-sweep:am4": "tsx scripts/agent-regression/index.ts --device=am4",
+    "agent-sweep:real": "tsx scripts/agent-regression/index.ts --real-hardware",
+    "agent-sweep:am4:real": "tsx scripts/agent-regression/index.ts --device=am4 --real-hardware",
     "mcp-test-apply": "tsx scripts/mcp-test-apply-preset.ts",
     "mcp-test-suite": "tsx scripts/mcp-test-preset-suite.ts",
     "mcp-test-safe-edit": "tsx scripts/mcp-test-safe-edit-scenarios.ts",

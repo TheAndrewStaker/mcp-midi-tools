@@ -46,14 +46,35 @@ have missed it. This harness's `should_avoid_dropped_param_warning`
 
 ## Running
 
+**Default = mock transport (no USB hardware needed).** Every spawned
+`claude -p` child gets `MCP_MOCK_TRANSPORT=1` in its env, and each
+device's `connectXXX()` short-circuits to an in-memory mock. The
+agent exercises the full dispatcher pipeline (display→wire encoding,
+channel switching, applyExecutor) against synthesized ack envelopes.
+
 ```bash
-npm run agent-sweep                                 # all cases (auto-skips HW cases when device not connected)
-npm run agent-sweep:am4                             # AM4 only
+npm run agent-sweep                                 # all cases under mock
+npm run agent-sweep:am4                             # AM4 only, mock
 npx tsx scripts/agent-regression/index.ts --tier=no-hardware
 npx tsx scripts/agent-regression/index.ts --case=am4-h1-sunday-morning --verbose
 ```
 
-Drive one case during development:
+**Real-hardware mode (USB plugged in).** Opt out of the mock via the
+`--real-hardware` flag (or set `AGENT_REGRESSION_REAL_HARDWARE=1` in
+the env). Verifies wire-level correctness alongside agent behavior.
+
+```bash
+npm run agent-sweep:real                            # all cases against real hardware
+npm run agent-sweep:am4:real                        # AM4 only, real hardware
+npx tsx scripts/agent-regression/index.ts --real-hardware
+```
+
+The startup banner reports which transport is active —
+`Transport: mock transport (no USB).` vs `Transport: real hardware
+(USB MIDI).` — so it's obvious which mode you're in.
+
+Drive one case during development (uses mock by default — set the env
+var for real hardware):
 
 ```bash
 npx tsx scripts/agent-regression/runner.ts am4-h1-sunday-morning

@@ -62,12 +62,14 @@ interface CliArgs {
   caseId?: string;
   model?: string;
   verbose: boolean;
+  realHardware: boolean;
 }
 
 function parseArgs(argv: readonly string[]): CliArgs {
-  const out: CliArgs = { verbose: false };
+  const out: CliArgs = { verbose: false, realHardware: false };
   for (const raw of argv) {
     if (raw === '--verbose') out.verbose = true;
+    else if (raw === '--real-hardware') out.realHardware = true;
     else if (raw.startsWith('--device=')) out.device = raw.slice('--device='.length) as Device;
     else if (raw.startsWith('--tier=')) out.tier = raw.slice('--tier='.length) as Tier;
     else if (raw.startsWith('--case=')) out.caseId = raw.slice('--case='.length);
@@ -83,6 +85,15 @@ function formatToolSequence(result: CaseResult): string {
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
+
+  // `--real-hardware` flips runner.ts off the default mock-transport
+  // path. The runner reads `AGENT_REGRESSION_REAL_HARDWARE` from the
+  // env (cross-platform); we set it here so the npm script wrappers
+  // can stay shell-agnostic (Git Bash / PowerShell / cmd all run the
+  // same `tsx ... --real-hardware` line).
+  if (args.realHardware) {
+    process.env.AGENT_REGRESSION_REAL_HARDWARE = '1';
+  }
 
   let cases: readonly AgentRegressionCase[] = ALL_CASES.filter((c) => {
     if (args.device !== undefined && c.device !== args.device) return false;
@@ -112,8 +123,10 @@ async function main(): Promise<void> {
   }
   cases = runnable;
 
+  const transportMode = args.realHardware ? 'real hardware (USB MIDI)' : 'mock transport (no USB)';
   console.log(`Running ${cases.length} case(s)${args.model !== undefined ? ` with model ${args.model}` : ''}${skipped.length > 0 ? `; skipping ${skipped.length} hardware case(s)` : ''}.`);
-  console.log(`Surface: MCP-only via \`--tools ""\` (Desktop-fidelity — no Bash/Grep/Skill/Task).\n`);
+  console.log(`Surface: MCP-only via \`--tools ""\` (Desktop-fidelity — no Bash/Grep/Skill/Task).`);
+  console.log(`Transport: ${transportMode}.\n`);
 
   const results: CaseResult[] = [];
   for (const testCase of cases) {
