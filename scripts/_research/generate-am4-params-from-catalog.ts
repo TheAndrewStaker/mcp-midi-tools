@@ -38,25 +38,37 @@ for (const m of blockTypesSrc.matchAll(/^\s+([a-z]+):\s+(0x[0-9a-fA-F]+),/gm)) {
 }
 console.log(`Block-type pidLows: ${Object.keys(blockPidLow).length}`);
 
-// --- Step 2: map Ghidra family → our block name ---
+// --- Step 2: map Ghidra family → our block name(s) ---
+//
+// IMPORTANT: A single Ghidra family can map to MULTIPLE AM4 blocks
+// when they share a param dictionary. Confirmed via AM4-Edit's
+// __block_layout.xml EditorControls entries:
+//   <EditorControls name="Amp"   parameters="DISTORT_*">  → amp block
+//   <EditorControls name="Drive" ...>                       → drive block
+//
+// AMP and DRIVE both pull from DISTORT (case 0xa, 143 catalog params),
+// addressed via different pidLow values (amp=0x003a, drive=0x0076).
+// Verified Session 82 at 93/93 match rate against our hand-decoded
+// amp params (the remaining 6 are 5 generic + 1 channel-special at
+// pidHigh=2002).
 
-const FAMILY_TO_BLOCK: Record<string, string> = {
-  REVERB: 'reverb',
-  DELAY: 'delay',
-  CHORUS: 'chorus',
-  FLANGER: 'flanger',
-  PHASER: 'phaser',
-  ROTARY: 'rotary',
-  TREMOLO: 'tremolo',
-  WAH: 'wah',
-  FILTER: 'filter',
-  DISTORT: 'drive',
-  COMP: 'compressor',
-  GEQ: 'geq',
-  PEQ: 'peq',
-  GATE: 'gate',
-  ENHANCER: 'enhancer',
-  VOLUME: 'volpan',
+const FAMILY_TO_BLOCKS: Record<string, string[]> = {
+  REVERB: ['reverb'],
+  DELAY: ['delay'],
+  CHORUS: ['chorus'],
+  FLANGER: ['flanger'],
+  PHASER: ['phaser'],
+  ROTARY: ['rotary'],
+  TREMOLO: ['tremolo'],
+  WAH: ['wah'],
+  FILTER: ['filter'],
+  DISTORT: ['amp', 'drive'],   // ← key finding: both blocks share this catalog
+  COMP: ['compressor'],
+  GEQ: ['geq'],
+  PEQ: ['peq'],
+  GATE: ['gate'],
+  ENHANCER: ['enhancer'],
+  VOLUME: ['volpan'],
 };
 
 // --- Step 3: load existing params.ts entries (set of (block, pidHigh)) ---
@@ -152,24 +164,27 @@ const proposals: { block: string; name: string; pidLow: number; pidHigh: number;
 
 for (const eff of Object.values(catalog.effect_types) as any[]) {
   if (!eff.effectFamily) continue;
-  const ourBlock = FAMILY_TO_BLOCK[eff.effectFamily];
-  if (!ourBlock) continue;
-  const pidLow = blockPidLow[ourBlock];
-  if (pidLow === undefined) continue;
+  const ourBlocks = FAMILY_TO_BLOCKS[eff.effectFamily];
+  if (!ourBlocks) continue;
 
-  for (const p of eff.params as { paramId: number; name: string }[]) {
-    if (!p.name || p.name === '?') continue;
-    if (p.paramId < 10) continue; // skip generic
-    if (existing.has(`${ourBlock}:${p.paramId}`)) continue;
-    const ourName = nameToOurs(p.name);
-    proposals.push({
-      block: ourBlock,
-      name: ourName,
-      pidLow,
-      pidHigh: p.paramId,
-      symbol: p.name,
-      uiReferenced: uiAll.has(p.name),
-    });
+  for (const ourBlock of ourBlocks) {
+    const pidLow = blockPidLow[ourBlock];
+    if (pidLow === undefined) continue;
+
+    for (const p of eff.params as { paramId: number; name: string }[]) {
+      if (!p.name || p.name === '?') continue;
+      if (p.paramId < 10) continue; // skip generic
+      if (existing.has(`${ourBlock}:${p.paramId}`)) continue;
+      const ourName = nameToOurs(p.name);
+      proposals.push({
+        block: ourBlock,
+        name: ourName,
+        pidLow,
+        pidHigh: p.paramId,
+        symbol: p.name,
+        uiReferenced: uiAll.has(p.name),
+      });
+    }
   }
 }
 

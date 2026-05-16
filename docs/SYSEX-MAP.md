@@ -1580,13 +1580,67 @@ parameter envelope aren't arbitrary handles — they encode a clean
 | AM4-only families | PATCH (case 0x3c) | — |
 | III-only families | — | FC, PRESET |
 
-The AMP block is **absent** from both dispatchers (cases 4, 6,
-0x1b return -1). AMP params on AM4 use the pidLow/pidHigh wire
-format like everything else (`pidLow = 0x003a` per
-`BLOCK_TYPE_VALUES`) but the paramId enum and name strings live
-in a separate AM4-Edit code path not yet decoded. Until that
-path is found, AMP params remain capture-decoded only — see
-`packages/am4/src/params.ts` for the hand-curated `amp.*` entries.
+The AMP block has **no separate dispatcher case** — it shares the
+DISTORT family (case 0xa, 143 catalog params) with the DRIVE block,
+addressed via different pidLow values:
+
+| Block | pidLow | Shared param family |
+|---|---|---|
+| amp | `0x003a` | DISTORT (case 0xa) |
+| drive | `0x0076` | DISTORT (case 0xa) |
+
+Confirmed via AM4-Edit's `__block_layout.xml`:
+
+```xml
+<EditorControls name="Amp"
+  parameters="DISTORT_DRIVETYPE,DISTORT_EQTYPE,DISTORT_FBTYPE,
+              DISTORT_BETA,DISTORT_BIASTYPE,
+              DISTORT_MODE_1,DISTORT_MODE_2">
+```
+
+Cross-validated against our hand-decoded `amp.*` params: 93 of 93
+non-generic, non-channel-register entries match the DISTORT catalog
+by `pidHigh = paramId`. The remaining 6 are 5 generic params
+(pidHigh 0-9) + 1 channel-select register (pidHigh 0x07D2).
+
+This means every UI-referenced DISTORT_* paramId is addressable on
+AM4 at BOTH `pidLow=0x003a` (amp) AND `pidLow=0x0076` (drive). The
+generator (`scripts/_research/generate-am4-params-from-catalog.ts`)
+emits proposed entries for both blocks.
+
+### AM4 UI block name → Ghidra family
+
+Full mapping from `__block_layout.xml` `<EditorControls name="X">`
+to the dispatcher's effect-family:
+
+| UI name | Family | Case | AM4 pidLow | Notes |
+|---|---|---|---|---|
+| Amp | DISTORT | 0xa | 0x003a | ← shared with Drive |
+| Drive | DISTORT | 0xa | 0x0076 | ← shared with Amp |
+| Cab | CABINET | 0xb | 0x003e | |
+| Compressor | COMP | 0x7 | 0x002e | |
+| GraphicEQ | GEQ | 0x8 | 0x0032 | |
+| ParametricEQ | PEQ | 0x9 | 0x0036 | |
+| Reverb | REVERB | 0xc | 0x0042 | |
+| Delay | DELAY | 0xd | 0x0046 | |
+| Chorus | CHORUS | 0x10 | 0x004e | |
+| Flanger | FLANGER | 0x11 | 0x0052 | |
+| Rotary | ROTARY | 0x12 | 0x0056 | |
+| Phaser | PHASER | 0x13 | 0x005a | |
+| Wah | WAH | 0x14 | 0x005e | |
+| Tremolo | TREMOLO | 0x16 | 0x006a | |
+| Filter | FILTER | 0x18 | 0x0072 | |
+| Enhancer | ENHANCER | 0x1a | 0x007a | |
+| GateExpander | GATE | 0x23 | 0x0092 | |
+| VolPan | VOLUME | 0x28 | 0x0066 | |
+| DynamicDistortion | DYNDIST | 0x3b | — | not in current `blockTypes.ts` |
+
+The XML EditorControls list also contains entries for blocks AM4 the
+device may not support as placeable effects (Pitch, MultiDelay,
+PlexDelay, MegaTap, Vocoder, Synth, etc.). These are likely
+AxeEdit-family blocks the AM4-Edit codebase carries from the shared
+Fractal source — verify hardware support before exposing as MCP
+tools.
 
 ### Tooling
 
