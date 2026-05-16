@@ -1,0 +1,15 @@
+# Files gitignored but needed inside every Agent-View worktree.
+# Syntax is .gitignore-style. Only files that match a pattern AND are
+# gitignored are copied; tracked files are never duplicated.
+#
+# See docs/PARALLEL-WORK.md for the rationale per entry.
+
+# Session orientation: STATE.md, HARDWARE-TASKS-*.md, SESSIONS.md, BACKLOG.
+# CLAUDE.md tells every session to read docs/_private/STATE.md first, so a
+# worktree without this directory starts blind.
+docs/_private/
+
+# Future-proofing — no .env is checked in today, but if one ever lands here
+# (locally), background sessions should inherit it.
+.env
+.env.local

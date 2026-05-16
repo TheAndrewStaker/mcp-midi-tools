@@ -9,6 +9,12 @@ build/
 .idea/
 .claude/settings.local.json
 
+# Per-session worktrees created automatically by `claude agents` (Agent View)
+# when a background session needs to edit files. See docs/PARALLEL-WORK.md.
+# Each worktree is its own git checkout; we don't want it to show as
+# untracked in the main checkout.
+.claude/worktrees/
+
 # Stale path — wiki cache lives at `docs/_private/wiki/` now (covered by
 # the `docs/_private/` rule below). Kept here as a guard against a
 # regression that puts it back at the old location.

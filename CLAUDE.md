@@ -395,6 +395,55 @@ When writing a HW-NNN task that involves verifying behavior, name which
 source the founder should read. Don't accept a "checked the editor, looks
 right" report when the question is "did the write actually land."
 
+## Parallel sessions (Agent View)
+
+Up to ~3 Claude Code sessions can run on this repo concurrently via
+`claude agents` (Agent View, v2.1.139+). Each background session is
+auto-isolated into its own `.claude/worktrees/<name>/` on first file
+write, so parallel sessions never share a working tree.
+
+Full workflow + safe parallelization seams + single-writer files +
+merge-back checklist live in **`docs/PARALLEL-WORK.md`**. Read that
+before dispatching more than one session against this repo. Key
+takeaways for an agent that lands here mid-task:
+
+- `docs/_private/STATE.md`, `docs/_private/SESSIONS.md`,
+  `docs/DECISIONS.md`, `MEMORY.md`, `CLAUDE.md`, and `package.json` are
+  single-writer per turn — don't edit them concurrently with another
+  session.
+- The safest seams to split work along are **per-device** (AM4 / II /
+  III / Hydrasynth) and **per-package** (`packages/core/` vs the
+  device packages).
+- Before deleting a session row in Agent View, the worktree's work
+  must already be committed and pushed — `Ctrl+X Ctrl+X` removes the
+  worktree directory.
+
+### Background-session role (cwd is under `.claude/worktrees/`)
+
+When a session detects its working directory is under
+`.claude/worktrees/`, it's NOT the interactive orchestrator. The
+orchestrator's "don't commit unless told" rule does NOT apply.
+The session is closer to a named sub-agent on a worktree and MUST,
+before declaring its task done in the peek panel:
+
+1. **Run `npm run preflight`** in the worktree. Fix anything it
+   reports. Don't declare done while preflight is red.
+2. **Commit unstaged work** to the worktree's auto-created branch
+   (`worktree-<name>`). Use a descriptive message. No `Co-Authored-By`
+   trailer. No `--no-verify`. No `--no-gpg-sign`.
+3. **Push the feature branch** to `origin` so the founder can review
+   from GitHub and merge it later. Never push to `origin/main`.
+4. **Then** post the completion summary in the session output.
+
+If preflight fails or you can't push (auth, network, conflict), DO
+NOT declare done — surface the blocker in the session output and
+leave the work in the worktree. The founder will attach and decide.
+
+Rationale: `Ctrl+X Ctrl+X` in Agent View deletes the worktree along
+with the session. Committed-and-pushed work survives; uncommitted
+work in the worktree is lost on delete. Treat commit + push as part
+of "finishing the task," not a separate step.
+
 ## Rebuilding for Claude Desktop testing
 
 Claude Desktop launches this MCP server from the **compiled
