@@ -16,6 +16,39 @@
 // IDs (separate enum). But the per-effect param dictionary
 // structure should be identical.
 //
+// ⚠️  CURRENT STATUS (2026-05-16) — script ran but produced near-zero
+//     yield on the 32-bit II binary. The full-analyze pass ran cleanly
+//     (189 sec, all 32 analyzers including Data Reference completed).
+//     Phase 1 found 1125 param-symbol strings (good, same order as
+//     AM4). Phase 2 collapsed: only 9 xrefs / 3 functions, all UI-
+//     prompt code (PROMPT_PRESET_BUNDLE_IMPORT, EXPORT_STRIP_GLOBALS)
+//     — not the param dispatcher.
+//
+//     Root cause is structural, not analyzer-config: the 32-bit
+//     Axe-Edit binary's dispatcher doesn't reference param symbols
+//     via direct data pointers the way the 64-bit AM4-Edit and
+//     AxeEdit-III binaries do (likely an indirect lookup table or
+//     hash-keyed dispatch). The xref path used here (Phase 2's
+//     refMgr.getReferencesTo) finds almost nothing as a result.
+//
+//     Unblock paths (none are 5-minute work):
+//       1. Add an instruction-walk fallback — scan code for
+//          `lea`/`mov` immediates pointing into the string region,
+//          even where the data-ref analyzer didn't pick them up.
+//       2. Reverse from the SET_PARAMETER_VALUE (fn=0x02) handler.
+//          Find the dispatch table on the wire-handler side, follow
+//          it down to the param resolver, then read the param-table
+//          walk directly.
+//       3. Skip Ghidra for II entirely. II already has 905 params
+//          shipping via captures + manual work. Residual gaps may be
+//          cheaper to close with targeted captures than with another
+//          dispatcher hunt on a 32-bit binary.
+//
+//     Output file from the failed run lives at:
+//     samples/captured/decoded/ghidra-axeedit2-paramresolver.txt
+//     (1125 strings + 3 UI-prompt functions; useful as a string
+//     inventory but not as a param dictionary).
+//
 // Output:
 //   C:\dev\mcp-midi-tools\samples\captured\decoded\ghidra-axeedit2-paramresolver.txt
 //
