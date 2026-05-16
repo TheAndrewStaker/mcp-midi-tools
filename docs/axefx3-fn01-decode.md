@@ -1,7 +1,21 @@
 # Axe-Fx III function 0x01 — partial decode
 
-**Status:** field skeleton inferred from 4 community-captured 0x01
-frames; full layout pending more captures.
+**Status:** field skeletons for three sub-actions inferred from 11
+unique 23-byte captures + 2 unique 87-byte captures (2026-05-15
+community scrape). Sub-action codes confirmed; per-block param-ID
+table still TBD.
+
+## Headline: 0x01 is a multi-purpose envelope, NOT a single function
+
+Function 0x01 carries different operations distinguished by a
+2-byte **action code** at offsets 6-7. Three sub-actions identified
+in captures so far:
+
+| Action (pos 6-7) | Length | Direction | Likely role |
+|---|---|---|---|
+| `52 00` | 23 bytes | host → device | **SET_PARAMETER** (set a single block parameter value) |
+| `04 01` | 23 bytes | device → host | **STATE_BROADCAST** (device announces a parameter / modifier state change) |
+| `01 00` | 87 bytes | device → host | **STATE_DUMP** (long block-state snapshot, multi-field) |
 
 **Why this matters:** function 0x01 is the III's parameter-write
 SysEx, **not in the v1.4 third-party MIDI PDF**. Decoding it unlocks
@@ -9,106 +23,160 @@ SysEx, **not in the v1.4 third-party MIDI PDF**. Decoding it unlocks
 omits parameter writes — this is exactly the gap the community has
 been trying to close.
 
-## What we have
+## Sub-action `52 00` — SET_PARAMETER (host→device)
 
-Four byte-exact captures, all 23 bytes total (function 0x01 has a
-**fixed-length 23-byte envelope** with a 15-byte payload):
+Four labeled captures (FC-12 footswitch sending boost on/off):
 
 ```
-pos: 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22
+pos:  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22
 
-A1:  F0 00 01 74 10 01 52 00 3A 00 28 00 00 00 00 7C 03 00 00 00 00 2B F7   "Amp 1 Boost ON"
-A1f: F0 00 01 74 10 01 52 00 3A 00 28 00 00 00 00 00 00 00 00 00 00 54 F7   "Amp 1 Boost OFF"
-A2:  F0 00 01 74 10 01 52 00 3B 00 28 00 00 00 00 7C 03 00 00 00 00 2A F7   "Amp 2 Boost ON"
-X:   F0 00 01 74 10 01 04 01 3A 00 00 00 46 01 00 00 00 00 00 00 00 6C F7   (unrelated MIDI flood)
+A1on: F0 00 01 74 10 01 52 00 3A 00 28 00 00 00 00 7C 03 00 00 00 00 2B F7   "Amp 1 Boost ON"
+A1of: F0 00 01 74 10 01 52 00 3A 00 28 00 00 00 00 00 00 00 00 00 00 54 F7   "Amp 1 Boost OFF"
+A2on: F0 00 01 74 10 01 52 00 3B 00 28 00 00 00 00 7C 03 00 00 00 00 2A F7   "Amp 2 Boost ON"
+A2of: F0 00 01 74 10 01 52 00 3B 00 28 00 00 00 00 00 00 00 00 00 00 55 F7   "Amp 2 Boost OFF"
 ```
 
-Bytes that vary across the three "Boost" captures isolate fields by
-elimination.
+Differences ON vs OFF (same block): only **value bytes at 15-16**
+change. Differences A1 vs A2 (same value): only **effect ID lo
+at offset 8** changes (`3A` ↔ `3B`).
 
-## Decoded field skeleton
+### SET_PARAMETER field layout (verified)
 
 | Offset | Bytes | Field | Evidence |
 |---|---|---|---|
-| 0-5 | `F0 00 01 74 10 01` | SysEx envelope + function byte | Fixed |
-| 6-7 | `52 00` (boost), `04 01` (other) | **Action / mode code** (2 bytes) | Varies between capture types |
-| 8-9 | `3A 00` (Drive 1), `3B 00` (Drive 2) | **Effect ID** (LS-first septet pair) | Differs only between Drive 1 vs Drive 2 captures |
-| 10-11 | `28 00` (boost), `00 00` (other) | **Parameter ID** (LS-first septet pair) | Constant across Boost captures, different for the other type |
-| 12-13 | `00 00` (boost), `46 01` (other) | Unknown — possibly sub-param or controller index | Varies |
-| 14 | `00` | Padding / reserved | Constant `00` across all 4 |
-| 15-16 | `7C 03` (ON), `00 00` (OFF) | **Value** (LS-first septet pair) | The ONLY field that differs between A1-ON and A1-OFF |
-| 17-20 | `00 00 00 00` | Reserved / unused | Constant `00` |
-| 21 | `2B` / `54` / `2A` / `6C` | **XOR checksum** (Fractal family standard) | Re-derivable |
+| 0-5 | `F0 00 01 74 10 01` | SysEx envelope + function 0x01 | Fixed |
+| 6-7 | `52 00` | **Sub-action: SET_PARAMETER** | Constant across all SET captures |
+| 8-9 | `3A 00`, `3B 00` | **Effect ID** (LS-first septet pair) | `3A 00` = 58 = `ID_DISTORT1` (Drive 1) per v1.4 Appendix; `3B 00` = Drive 2 |
+| 10-11 | `28 00` | **Parameter ID** (LS-first septet pair) | Constant `40` across all 4 Drive captures — same param being set |
+| 12-14 | `00 00 00` | Reserved (always zero in SET captures) | Constant |
+| 15-16 | `7C 03` ↔ `00 00` | **Value** (LS-first septet pair) | The ONLY field that differs between same-block ON and OFF — confirms it's the value |
+| 17-20 | `00 00 00 00` | Reserved | Constant zero |
+| 21 | `2B` / `54` / `2A` / `55` | XOR checksum (Fractal family standard) | Re-derivable |
 | 22 | `F7` | SysEx end | Fixed |
 
-## Key decoded facts
+`0x1FC` (= 508 decimal) is the value Drive 1 / Drive 2 take when
+"Boost ON". The forum thread doesn't label which Drive parameter
+this is — could be Drive Mix, Output Level, or a boost-specific
+flag. One more capture pairing this param with a known knob name
+would close it.
 
-**Effect ID confirms v1.4 PDF Appendix 1.** `3A 00` decodes via the
-14-bit LS-first septet pair as `0x3A | (0x00 << 7) = 58`, which is
-`ID_DISTORT1` in the v1.4 Appendix. Our Drive 1 (legacy name
-"DISTORT" in Fractal's older code) is wired at effect ID 58.
+## Sub-action `04 01` — STATE_BROADCAST (device→host)
 
-The forum-thread title called it "Amp 1 Boost," but the wire bytes
-show it's actually setting a parameter on the **Drive 1 block**, not
-the Amp block. User colloquially called their drive-block-as-boost
-the "Amp 1 Boost" — a naming mismatch worth noting.
+Five captures from a passive sniff of AxeEdit III ↔ III traffic.
+These are inbound (device emitting), not outbound (host setting):
 
-**0x28 (decimal 40) is some Drive parameter.** Boost-on raises the
-value to `0x7C 03` = `0x1FC` = 508 decimal. Boost-off zeroes it.
-Without the parameter-id table for the Drive block, we can't yet
-name which Drive knob this is (Drive Mix? Output Level? Bypass-
-override?). It's NOT the bypass — bypass uses function 0x0A per
-the v1.4 PDF, not 0x01.
+```
+pos:  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22
 
-**0x01 is fixed-length 23 bytes.** Unlike the variable-length 0x77
-preset frames, function 0x01 looks like a fixed envelope. This
-simplifies the encoder/decoder substantially.
+      F0 00 01 74 10 01 04 01 3A 00 00 00 46 01 00 00 00 00 00 00 00 6C F7
+      F0 00 01 74 10 01 04 01 3B 00 00 00 13 00 00 00 00 00 00 00 00 39 F7
+      F0 00 01 74 10 01 04 01 02 00 00 00 25 1A 00 00 00 00 00 00 00 2C F7
+      F0 00 01 74 10 01 04 01 01 00 00 00 7F 1B 02 00 00 00 00 00 00 76 F7
+      F0 00 01 74 10 01 04 01 3E 01 00 00 4F 27 02 00 00 00 00 00 00 44 F7
+```
+
+### STATE_BROADCAST field layout
+
+| Offset | Bytes | Field | Evidence |
+|---|---|---|---|
+| 6-7 | `04 01` | **Sub-action: STATE_BROADCAST** | Constant across all 5 device-emitted captures |
+| 8-9 | varies | **Effect ID** (LS-first septet pair) | Decoded values: 58/59 (Drive 1/2), 2 (`ID_CONTROL`), 1 (gen-1 holdover?), 190 (`ID_MIDIBLOCK`) — all match v1.4 Appendix 1 |
+| 10-11 | `00 00` | Reserved (no separate param-id field?) | Constant zero |
+| 12-13 | varies | **Value** (LS-first septet pair) | Different values per broadcast |
+| 14 | `00` / `02` | Unknown flag — appears with some broadcasts | Sometimes `02`, hypothesis: "value pending / latched" |
+| 15-20 | `00 00 00 00 00 00` | Reserved | Constant zero |
+| 21 | varies | XOR checksum | Re-derivable |
+
+The broadcast covers effect IDs across the full v1.4 Appendix
+range (1, 2, 58, 59, 190) — consistent with a stream the device
+emits when AxeEdit polls or auto-syncs state.
+
+## Sub-action `01 00` — STATE_DUMP (device→host, 87 bytes)
+
+Two captures, much longer (87 bytes total → 79-byte payload):
+
+```
+pos: 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 …
+
+#1:  F0 00 01 74 10 01 01 00 25 00 00 00 3F 01 00 00 00 00 00 38 …
+#2:  F0 00 01 74 10 01 01 00 28 00 00 00 3F 01 00 00 00 00 00 38 …
+```
+
+- Pos 6-7: `01 00` (action code)
+- Pos 8-9: effect ID (`25 00` = 37 = `ID_INPUT1`; `28 00` = 40 = `ID_COMP1`)
+- Pos 12-13: `3F 01` constant across both (191 = unknown — possibly "all parameters" flag)
+- Pos 19: `38` constant — probably another marker
+- Pos 21-37: per-block parameter values, packed as septet pairs
+
+These look like **multi-parameter state dumps** for a single block.
+Effectively the III's analog of Axe-Fx II's `GET_BLOCK_PARAMETERS_LIST`
+response — the device transmitting all the block's parameters when
+AxeEdit III opens its block editor for that block.
+
+If this hypothesis is correct, sending `01 00` with a given effect
+ID is the way to QUERY all parameters of a block. That would be
+the III's `get_params(block)` function — a major decode unlock.
+
+## Cross-decode facts
+
+**Effect ID across all sub-actions decodes via the v1.4 Appendix 1
+table.** Examples observed in 0x01 captures:
+
+| Effect ID bytes | Decoded ID | v1.4 Appendix label |
+|---|---|---|
+| `01 00` | 1 | (reserved range — gen 1 holdover?) |
+| `02 00` | 2 | `ID_CONTROL` |
+| `25 00` | 37 | `ID_INPUT1` |
+| `28 00` | 40 | `ID_COMP1` (Compressor 1) |
+| `3A 00` | 58 | `ID_DISTORT1` (Drive 1) |
+| `3B 00` | 59 | `ID_DISTORT2` (Drive 2) |
+| `3E 01` | 190 | `ID_MIDIBLOCK` (Scene MIDI) |
+
+This is independent verification that the v1.4 Appendix's effect-
+ID space applies to the III's real-time parameter SysEx, not just
+the documented `0x0A` / `0x0B` / `0x13` functions.
+
+**"Amp 1 Boost" was actually a Drive block.** The forum-thread
+title said "Amp 1 Boost," but `3A 00` = 58 = `ID_DISTORT1`. The
+user labeled their footswitch action by intent, not by wire
+representation. Wire bytes win.
+
+**SET_PARAMETER (`52 00`) is fixed 23 bytes.** Single-parameter
+operation. Simple encoder.
+
+**STATE_BROADCAST (`04 01`) is also 23 bytes.** Same envelope
+shape but device-emitted, different field layout.
+
+**STATE_DUMP (`01 00`) is 87 bytes** with much richer payload.
+Likely the "all parameters of this block" envelope.
 
 ## What we still need
 
-**Per-block, per-parameter ID dictionary.** The biggest gap. We
-have one example pair (Drive 1's param 40 set to 508). To populate
-the full table for `set_param` we'd need:
+**Per-block, per-parameter ID dictionary.** Biggest gap. We've
+confirmed param ID `28 00` (= 40) for the Drive block boost
+operation, but don't know what "param 40" is in human terms (Drive
+Mix? Output Level? Boost flag?). To populate `set_param`:
 
-- **One capture per (block_type, parameter) pair**, with a known
-  value. AxeEdit III firing a single-knob change is the canonical
-  source. Pairing this with the parameter's display name in
-  AxeEdit closes the loop.
+- **One capture per (block_type, parameter) pair** with a known
+  human-readable value. AxeEdit III firing a single-knob change
+  paired with a screenshot of the affected knob is the canonical
+  data point.
 
-- **Same param at multiple values** to decode the value encoding.
-  Most Fractal parameters are 16-bit unsigned packed into the
-  septet pair; we'd want to verify by capturing e.g. Drive Drive
-  knob at 0%, 50%, and 100% and checking the value bytes scale
-  linearly.
+- **Same param at multiple values** to verify linearity. Most
+  Fractal parameters are 16-bit unsigned packed into the septet
+  pair. Worth confirming by capturing e.g. Drive's Drive knob at
+  0%, 50%, 100% and checking the value bytes scale linearly.
 
-- **The "Action / mode" field at offset 6-7.** Captures of the
-  same parameter being SET vs. QUERIED (or different modifier
-  types) would clarify what this field encodes.
+**Verify the `01 00` STATE_DUMP query direction.** If sending
+`F0 00 01 74 10 01 01 00 [effect_id] [cs] F7` (host→device, short
+form, hypothetical) triggers the device to dump the long 87-byte
+state for that block, that's a `get_params(block)` decode for
+free — no per-param-ID table needed for reads.
 
-## Targeted scraping plan
-
-Two forum threads — both visible in the search snippets but NOT
-fully scraped — contain rich 0x01 capture content:
-
-1. **"Assigning a Footswitch on FC-12 to Control Amp Boost"**
-   (forum thread, multiple 0x01 captures per post). The user paired
-   their captured bytes with the human-readable "what the FC-12
-   button does" labels.
-
-2. **"AxeFXIII MIDI Input receives TONS of messages"** (forum
-   thread). Shows a stream of 0x01 frames captured by a third-
-   party MIDI tool as AxeEdit ran. Likely high-density 0x01
-   variety.
-
-Drop both into the next batch-scrape (the existing
-`docs/_private/forum-scrape-threads-batch.js` handles them).
-
-**Also useful — a targeted search:** the literal hex string
-`"F0 00 01 74 10 01"` (note: must include the leading `"` and
-inner spaces so XenForo treats it as a phrase). Run it via the
-search UI to get a fresh `/search/<sid>/` URL, then run
-`forum-scrape-search.js`. Will surface every post in which
-someone pasted a 0x01 capture.
+**Decode the 87-byte STATE_DUMP payload.** 79 bytes of data after
+the effect ID. Almost certainly a packed parameter list — but the
+ordering and which-param-is-where requires pairing with AxeEdit's
+display for that block.
 
 ## Cross-references
 
