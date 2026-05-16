@@ -5,8 +5,16 @@ work. If you're a new session (human or agent) trying to figure
 out "what do we know about the Fractal protocol family, and where
 is everything documented?", start here.
 
-Last meaningful update: 2026-05-16 (Sessions 82-83 — Ghidra mining
-sweep across AM4-Edit and Axe-Edit III).
+Last meaningful update: 2026-05-16 (Sessions 84–86 — closed AM4
+Main Levels page + PATCH routing + scene-MIDI on real hardware;
+ported Axe-Fx II's `0x02 SET_PARAMETER` to the III 🟡 untested).
+
+> **Run `npm run coverage-audit` before trusting any state claim in
+> this doc.** The audit reads `packages/*/src/params.ts` +
+> `scripts/verify-msg.ts` directly and reports current AM4-placeable
+> coverage — most reliable single-command answer to "where are we?"
+> As of Session 86: AM4 placeable coverage is **52%** (459/716
+> paramIds shipped). 196/196 verify-msg goldens green.
 
 ---
 
@@ -14,9 +22,9 @@ sweep across AM4-Edit and Axe-Edit III).
 
 | Device | Model byte | Protocol family | Editor binary | Ghidra project | Decode state |
 |---|---|---|---|---|---|
-| AM4 | `0x15` | Axe-Fx III (subset + extensions) | `AM4-Edit.exe` | `C:\Users\Steph\ghidra-am4-edit.gpr` | **Most complete.** 50 effect families decoded; 332 of ~700 UI-relevant params named in `params.ts`. |
-| Axe-Fx III | `0x10` | Axe-Fx III (full spec + community RE) | `Axe-Edit III.exe` (v1.14.31) | `C:\Users\Steph\ghidra-axe-edit-3.gpr` | **Partial.** 49 effect families decoded; SET_PARAM wire envelope undecoded (Session 83 ruled out fn=0x1f); preset-save 0x77/0x78/0x79 community-known. |
-| Axe-Fx II XL+ | `0x07` | Axe-Fx II (separate family) | `Axe-Edit.exe` | `C:\Users\Steph\ghidra-axe-edit.gpr` | **Minimal.** SET_PARAMETER `0x02` shipping. Ghidra dispatcher mining staged but data-ref analyzer needs to re-run on the 32-bit project. |
+| AM4 | `0x15` | Axe-Fx III (subset + extensions) | `AM4-Edit.exe` | `C:\Users\Steph\ghidra-am4-edit.gpr` | **Most complete.** 459 params shipped (52% of AM4-placeable catalog); PATCH family closed Session 84-86 (routing + scene MIDI). |
+| Axe-Fx III | `0x10` | Axe-Fx III (full spec + community RE) | `Axe-Edit III.exe` (v1.14.31) | `C:\Users\Steph\ghidra-axe-edit-3.gpr` | **Partial.** v1.4 PDF opcodes shipping (bypass/channel/scene/tempo/looper/status). `0x02 SET_PARAMETER` ported from II 🟡 untested Session 85 (commit 6b8ab07) — one III contributor unlocks 2216 paramIds. Preset-save 0x77/0x78/0x79 community-known. |
+| Axe-Fx II XL+ | `0x07` | Axe-Fx II (separate family) | `Axe-Edit.exe` | `C:\Users\Steph\ghidra-axe-edit.gpr` | **905 params shipping** via wiki + capture decode. SET_PARAMETER `0x02` hardware-verified (HW-075/077). Ghidra dispatcher mining staged but II's 32-bit binary uses indirect dispatch — paramresolver script returns 9 xrefs / 3 functions, structurally different from AM4/III. Session 86 recommendation: skip Ghidra for II, close remaining gaps via captures. |
 | Hydrasynth Explorer | (vendor: ASM, not Fractal) | NRPN-based | n/a | n/a | Separate workstream — not part of this doc. |
 | FM3 / FM9 / VP4 | `0x11` / `0x12` / `0x14` | Axe-Fx III family | (TBD if we add) | (TBD) | Not yet pursued. The Ghidra workflow recipe applies if/when we add them. |
 
