@@ -1542,12 +1542,14 @@ parameter envelope aren't arbitrary handles — they encode a clean
 |---|---|
 | `pidLow` | Block-type identifier. Matches the `BLOCK_TYPE_VALUES` constants in `packages/am4/src/blockTypes.ts` (e.g. `amp = 0x003a`, `reverb = 0x0042`, `compressor = 0x002e`, `cabinet = 0x003e`, …). |
 | `pidHigh` ∈ [10, 0x3FFF] | Per-block parameter index. **Equals the paramId** of the corresponding entry in AM4-Edit's per-effect param-table dispatcher (`FUN_1402e3da0`). The dispatcher's tables are arrays of `{ int paramId, int padding, const char* nameStr }` 16-byte structs; paramId is the same int that appears in `pidHigh`. |
-| `pidHigh` ∈ [0, 9] | Generic shared params — same meaning across **every** block: |
-| | • `0x0000` → block output level |
-| | • `0x0001` → wet/dry mix |
-| | • `0x0002` → stereo balance |
-| | • `0x0004` → bypass mode (Thru / Mute / Mute FX Out / etc.) |
-| | (`0x0003`, `0x0005`-`0x0009` are reserved; see §9 for channel-state register) |
+| `pidHigh` ∈ [0, 9] | Generic shared params — paramId values < 10 are NOT in the per-effect dispatcher catalog (which starts at paramId 10), so these are cross-block conventions. Documented to date: |
+| | • `0x0000` → block output level (14 blocks confirmed via captures) |
+| | • `0x0001` → wet/dry mix (15 blocks confirmed) |
+| | • `0x0002` → stereo balance (16 blocks confirmed; **but `amp.cab1_distance` uses this slot under the cab block — verify whether cab's slot 2 truly is balance or has a per-cab meaning**) |
+| | • `0x0004` → bypass mode / Thru / Mute / Mute FX Out / Mute FX In / Mute Out (11 blocks confirmed) |
+| | • `0x0007` → seen on `delay.kill_dry` only — verify whether other blocks have a kill-dry generic at slot 7 |
+| | • `0x0008` → seen on `amp.out_boost_level` only — possibly generic, possibly amp-only |
+| | (`0x0003`, `0x0005`, `0x0006`, `0x0009` undocumented; see §9 for channel-state register at `pidHigh=0x07D2`) |
 | `pidHigh = 0x07D2` (2002) | Per-block channel-select register. Separate from the param dispatcher; used by §9 scene→channel writes. |
 
 ### Why this matters

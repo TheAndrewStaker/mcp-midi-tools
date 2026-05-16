@@ -308,6 +308,50 @@ Axe-Edit III parameter dictionaries").
 
 ---
 
+## Cross-block addressing — when one family covers multiple blocks
+
+Some Fractal devices route a single param family's catalog through
+multiple wire-level block IDs. Verified Session 83 on AM4:
+
+- **AMP + DRIVE both use the DISTORT family** (catalog case 0xa, 143
+  params). Addressed via different pidLow values:
+  - `amp` block: `pidLow = 0x003a`
+  - `drive` block: `pidLow = 0x0076`
+
+The anchor for finding these patterns is AM4-Edit's
+`__block_layout.xml` `<EditorControls name="X" parameters="FAMILY_*">`
+attribute. The "Amp" EditorControls entry explicitly references
+`DISTORT_*` symbols, confirming the cross-pidLow mapping.
+
+When validating against the catalog (see
+`scripts/_research/validate-params-against-catalog.ts`), use the
+reverse `pidLow → block` map to look up the actual family the wire
+bytes target, rather than just the user-facing block tag in
+`params.ts`.
+
+## Non-placeable but wire-addressable blocks
+
+`packages/am4/src/blockTypes.ts` lists only the slot-placeable
+blocks (17 on AM4). The wire format addresses additional system
+"blocks" via dedicated pidLows that aren't in that map. Confirmed
+to date:
+
+- `pidLow = 0x0025` — Input Noise Gate (params.ts `ingate.*`).
+  Catalog family = INPUT (case 0x29). Validated: `ingate.threshold`
+  pidHigh=10 matches `INPUT_THRESH` paramId 10.
+- `pidLow = 0x003e` — Cabinet block (§6k). Catalog family = CABINET
+  (case 0xb). 16 `amp.cab_*` entries in params.ts use this pidLow
+  (the AM4 amp's integrated cab Expert page).
+- PATCH family (case 0x3c, 85 params) — pidLow TBD. AM4-specific
+  scene/routing/4CM/scene-MIDI params not in any current device file.
+- GLOBAL family (case 0x1, 99 params) — pidLow TBD. System-wide
+  settings (tuner mode, USB level, output config, etc.).
+
+Future devices likely have analogous "system" pidLows. When mining
+a new editor binary, look for catalog families that have no
+corresponding entry in the device's blockTypes — those are
+candidates for non-placeable system-block discovery via capture.
+
 ## Tips for the next session
 
 - **Always close Ghidra GUI fully (File → Exit) before any headless
