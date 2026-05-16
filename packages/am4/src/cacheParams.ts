@@ -499,7 +499,7 @@ export const CACHE_PARAMS = {
   'reverb.high_decay': {
     block: 'reverb', name: 'high_decay',
     pidLow: 0x0042, pidHigh: 0x000d,
-    unit: 'db', displayMin: 0.009999999776482582, displayMax: 1,
+    unit: 'count', displayMin: 0.01, displayMax: 1,
     scaling: 'log10',
   },
   'reverb.scattering': {
@@ -535,7 +535,7 @@ export const CACHE_PARAMS = {
   'reverb.rate': {
     block: 'reverb', name: 'rate',
     pidLow: 0x0042, pidHigh: 0x0016,
-    unit: 'db', displayMin: 0.009999999776482582, displayMax: 1,
+    unit: 'hz', displayMin: 0.01, displayMax: 1,
   },
   'reverb.diffusion': {
     block: 'reverb', name: 'diffusion',
@@ -565,23 +565,23 @@ export const CACHE_PARAMS = {
   'reverb.frequency_1': {
     block: 'reverb', name: 'frequency_1',
     pidLow: 0x0042, pidHigh: 0x001e,
-    unit: 'db', displayMin: 20, displayMax: 2000,
+    unit: 'hz', displayMin: 20, displayMax: 2000,
   },
   'reverb.frequency_2': {
     block: 'reverb', name: 'frequency_2',
     pidLow: 0x0042, pidHigh: 0x001f,
-    unit: 'db', displayMin: 100, displayMax: 10000,
+    unit: 'hz', displayMin: 100, displayMax: 10000,
   },
   'reverb.q_1': {
     block: 'reverb', name: 'q_1',
     pidLow: 0x0042, pidHigh: 0x0020,
-    unit: 'db', displayMin: 0.10000000149011612, displayMax: 10,
+    unit: 'count', displayMin: 0.1, displayMax: 10,
     scaling: 'log10',
   },
   'reverb.q_2': {
     block: 'reverb', name: 'q_2',
     pidLow: 0x0042, pidHigh: 0x0021,
-    unit: 'db', displayMin: 0.10000000149011612, displayMax: 10,
+    unit: 'count', displayMin: 0.1, displayMax: 10,
     scaling: 'log10',
   },
   'reverb.gain_1': {
@@ -597,13 +597,13 @@ export const CACHE_PARAMS = {
   'reverb.low_decay': {
     block: 'reverb', name: 'low_decay',
     pidLow: 0x0042, pidHigh: 0x0025,
-    unit: 'db', displayMin: 0.019999999552965164, displayMax: 2,
+    unit: 'seconds', displayMin: 0.02, displayMax: 2,
     scaling: 'log10',
   },
   'reverb.xover_frequency': {
     block: 'reverb', name: 'xover_frequency',
     pidLow: 0x0042, pidHigh: 0x0026,
-    unit: 'db', displayMin: 100, displayMax: 10000,
+    unit: 'hz', displayMin: 100, displayMax: 10000,
   },
   'reverb.threshold': {
     block: 'reverb', name: 'threshold',
@@ -626,6 +626,11 @@ export const CACHE_PARAMS = {
     pidLow: 0x0042, pidHigh: 0x002c,
     unit: 'percent', displayMin: 0, displayMax: 100,
   },
+  'reverb.early_decay': {
+    block: 'reverb', name: 'early_decay',
+    pidLow: 0x0042, pidHigh: 0x002d,
+    unit: 'percent', displayMin: 0, displayMax: 100,
+  },
   'reverb.late_input_mix': {
     block: 'reverb', name: 'late_input_mix',
     pidLow: 0x0042, pidHigh: 0x002e,
@@ -634,7 +639,12 @@ export const CACHE_PARAMS = {
   'reverb.basetype': {
     block: 'reverb', name: 'basetype',
     pidLow: 0x0042, pidHigh: 0x0031,
-    unit: 'db', displayMin: 0, displayMax: 8,
+    unit: 'count', displayMin: 0, displayMax: 8,
+  },
+  'reverb.lfo_phase': {
+    block: 'reverb', name: 'lfo_phase',
+    pidLow: 0x0042, pidHigh: 0x0032,
+    unit: 'degrees', displayMin: 0, displayMax: 180,
   },
   'reverb.pitch_mix': {
     block: 'reverb', name: 'pitch_mix',
@@ -659,7 +669,7 @@ export const CACHE_PARAMS = {
   'reverb.splice_time': {
     block: 'reverb', name: 'splice_time',
     pidLow: 0x0042, pidHigh: 0x003c,
-    unit: 'ms', displayMin: 0, displayMax: 2000,
+    unit: 'ms', displayMin: 10, displayMax: 2000,
   },
   'reverb.pitch_modulation': {
     block: 'reverb', name: 'pitch_modulation',
@@ -669,7 +679,7 @@ export const CACHE_PARAMS = {
   'reverb.voice_balance': {
     block: 'reverb', name: 'voice_balance',
     pidLow: 0x0042, pidHigh: 0x003f,
-    unit: 'percent', displayMin: 0, displayMax: 100,
+    unit: 'bipolar_percent', displayMin: -100, displayMax: 100,
   },
   'reverb.feedback': {
     block: 'reverb', name: 'feedback',
@@ -684,7 +694,7 @@ export const CACHE_PARAMS = {
   'reverb.pitch_high_cut': {
     block: 'reverb', name: 'pitch_high_cut',
     pidLow: 0x0042, pidHigh: 0x0043,
-    unit: 'db', displayMin: 200, displayMax: 20000,
+    unit: 'hz', displayMin: 200, displayMax: 20000,
   },
   'reverb.tonetype': {
     block: 'reverb', name: 'tonetype',
@@ -694,13 +704,13 @@ export const CACHE_PARAMS = {
   'reverb.low_cut_q': {
     block: 'reverb', name: 'low_cut_q',
     pidLow: 0x0042, pidHigh: 0x0047,
-    unit: 'db', displayMin: 0.10000000149011612, displayMax: 10,
+    unit: 'count', displayMin: 0.1, displayMax: 10,
     scaling: 'log10',
   },
   'reverb.high_cut_q': {
     block: 'reverb', name: 'high_cut_q',
     pidLow: 0x0042, pidHigh: 0x0048,
-    unit: 'db', displayMin: 0.10000000149011612, displayMax: 10,
+    unit: 'count', displayMin: 0.1, displayMax: 10,
     scaling: 'log10',
   },
   'delay.mix': {
@@ -747,7 +757,7 @@ export const CACHE_PARAMS = {
   'delay.echo_pan': {
     block: 'delay', name: 'echo_pan',
     pidLow: 0x0046, pidHigh: 0x0011,
-    unit: 'percent', displayMin: 0, displayMax: 100,
+    unit: 'bipolar_percent', displayMin: -100, displayMax: 100,
   },
   'delay.stereo_spread': {
     block: 'delay', name: 'stereo_spread',
@@ -767,12 +777,12 @@ export const CACHE_PARAMS = {
   'delay.mod_rate': {
     block: 'delay', name: 'mod_rate',
     pidLow: 0x0046, pidHigh: 0x0016,
-    unit: 'db', displayMin: 0.10000000149011612, displayMax: 10,
+    unit: 'hz', displayMin: 0.1, displayMax: 10,
   },
   'delay.rate': {
     block: 'delay', name: 'rate',
     pidLow: 0x0046, pidHigh: 0x0017,
-    unit: 'db', displayMin: 0.20000000298023224, displayMax: 20,
+    unit: 'hz', displayMin: 0.2, displayMax: 20,
   },
   'delay.mod_depth': {
     block: 'delay', name: 'mod_depth',
@@ -802,12 +812,12 @@ export const CACHE_PARAMS = {
   'delay.rotation': {
     block: 'delay', name: 'rotation',
     pidLow: 0x0046, pidHigh: 0x0022,
-    unit: 'percent', displayMin: 0, displayMax: 100,
+    unit: 'bipolar_percent', displayMin: -100, displayMax: 100,
   },
-  'delay.lfo_1_type': {
-    block: 'delay', name: 'lfo_1_type',
+  'delay.lfo_phase': {
+    block: 'delay', name: 'lfo_phase',
     pidLow: 0x0046, pidHigh: 0x0023,
-    unit: 'percent', displayMin: 0, displayMax: 100,
+    unit: 'bipolar_percent', displayMin: -100, displayMax: 100,
   },
   'delay.level_l': {
     block: 'delay', name: 'level_l',
@@ -822,17 +832,27 @@ export const CACHE_PARAMS = {
   'delay.pan_l': {
     block: 'delay', name: 'pan_l',
     pidLow: 0x0046, pidHigh: 0x0026,
-    unit: 'percent', displayMin: 0, displayMax: 100,
+    unit: 'bipolar_percent', displayMin: -100, displayMax: 100,
   },
   'delay.pan_r': {
     block: 'delay', name: 'pan_r',
     pidLow: 0x0046, pidHigh: 0x0027,
-    unit: 'percent', displayMin: 0, displayMax: 100,
+    unit: 'bipolar_percent', displayMin: -100, displayMax: 100,
+  },
+  'delay.modulation_phase': {
+    block: 'delay', name: 'modulation_phase',
+    pidLow: 0x0046, pidHigh: 0x0028,
+    unit: 'degrees', displayMin: 0, displayMax: 180,
+  },
+  'delay.lfo_phase_2': {
+    block: 'delay', name: 'lfo_phase_2',
+    pidLow: 0x0046, pidHigh: 0x0029,
+    unit: 'degrees', displayMin: 0, displayMax: 180,
   },
   'delay.crossfade_time': {
     block: 'delay', name: 'crossfade_time',
     pidLow: 0x0046, pidHigh: 0x002a,
-    unit: 'ms', displayMin: 0, displayMax: 255,
+    unit: 'ms', displayMin: 1, displayMax: 255,
   },
   'delay.ducking': {
     block: 'delay', name: 'ducking',
@@ -863,22 +883,27 @@ export const CACHE_PARAMS = {
   'delay.sweep_rate': {
     block: 'delay', name: 'sweep_rate',
     pidLow: 0x0046, pidHigh: 0x0038,
-    unit: 'db', displayMin: 0.10000000149011612, displayMax: 10,
+    unit: 'hz', displayMin: 0.1, displayMax: 10,
+  },
+  'delay.sweep_phase': {
+    block: 'delay', name: 'sweep_phase',
+    pidLow: 0x0046, pidHigh: 0x003a,
+    unit: 'degrees', displayMin: 0, displayMax: 180,
   },
   'delay.sweep_start_freq': {
     block: 'delay', name: 'sweep_start_freq',
     pidLow: 0x0046, pidHigh: 0x003c,
-    unit: 'db', displayMin: 100, displayMax: 1000,
+    unit: 'hz', displayMin: 100, displayMax: 1000,
   },
   'delay.sweep_stop_freq': {
     block: 'delay', name: 'sweep_stop_freq',
     pidLow: 0x0046, pidHigh: 0x003d,
-    unit: 'db', displayMin: 500, displayMax: 5000,
+    unit: 'hz', displayMin: 500, displayMax: 5000,
   },
   'delay.sweep_resonance': {
     block: 'delay', name: 'sweep_resonance',
     pidLow: 0x0046, pidHigh: 0x003e,
-    unit: 'knob_0_10', displayMin: 0, displayMax: 10,
+    unit: 'count', displayMin: 0.2, displayMax: 20,
     scaling: 'log10',
   },
   'delay.eq_q_high_low': {
@@ -964,12 +989,17 @@ export const CACHE_PARAMS = {
   'delay.pan_rate': {
     block: 'delay', name: 'pan_rate',
     pidLow: 0x0046, pidHigh: 0x0052,
-    unit: 'db', displayMin: 0.10000000149011612, displayMax: 10,
+    unit: 'hz', displayMin: 0.1, displayMax: 10,
   },
   'delay.pan_depth': {
     block: 'delay', name: 'pan_depth',
     pidLow: 0x0046, pidHigh: 0x0054,
     unit: 'percent', displayMin: 0, displayMax: 100,
+  },
+  'delay.lfo_phase_4': {
+    block: 'delay', name: 'lfo_phase_4',
+    pidLow: 0x0046, pidHigh: 0x0055,
+    unit: 'degrees', displayMin: 0, displayMax: 180,
   },
   'delay.stack_feedback': {
     block: 'delay', name: 'stack_feedback',

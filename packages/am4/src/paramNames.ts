@@ -218,6 +218,80 @@ export const PARAM_NAMES: Readonly<Record<string, Readonly<Record<number, ParamN
     // spot-check still required.
     56: { name: 'shift_1', unit: 'semitones', displayMin: -24, displayMax: 24 },
     57: { name: 'shift_2', unit: 'semitones', displayMin: -24, displayMax: 24 },
+    // Session 88 (2026-05-16): REVERB params from
+    // samples/captured/decoded/am4-params-proposed.ts (Ghidra-mined
+    // catalog, Session 82–83). Routed through paramNames.ts overrides
+    // (not direct cacheParams hand-edit) per the Session 84 unit-fallback
+    // trap — the cache pipeline's c=1 default emits `unit: 'db'`, wrong
+    // for Hz / Q / count / semitones / seconds. Names defer to the
+    // resolver-derived GENERATED_PARAM_NAMES entries (firmware-truth from
+    // AM4-Edit.exe's variant resolver) where they exist; only unit /
+    // displayMin / displayMax overrides are emitted to correct the
+    // cache pipeline defaults. Eight ids (51, 53, 54, 59, 61, 64, 68,
+    // 70) have no GENERATED entry — those that are enums need a custom
+    // value list and stay hand-authored in params.ts (see TODOs below).
+    //
+    // id=13 REVERB_HFRATIO ("High Decay") — cache type=64 log10
+    // a=0.01 b=1 → decay-ratio knob, NOT dB. Display 0.01..1 as a
+    // count (effectively a percent ×100, but cache emits as raw float).
+    13: { name: 'high_decay', unit: 'count', displayMin: 0.01, displayMax: 1 },
+    // id=22 REVERB_RATE — cache type=66 log10 a=0.01 b=1 → modulation
+    // rate. Range 0..1 is a normalized rate knob (UI shows 0.0..1.00 Hz
+    // approximately). Use 'hz' with the raw range.
+    22: { name: 'rate', unit: 'hz', displayMin: 0.01, displayMax: 1 },
+    // ids 30/31 REVERB_FREQ1/FREQ2 — cache type=66 log10 c=1, a/b are
+    // the actual Hz range. Default 'db' is wrong.
+    30: { name: 'frequency_1', unit: 'hz', displayMin: 20, displayMax: 2000 },
+    31: { name: 'frequency_2', unit: 'hz', displayMin: 100, displayMax: 10000 },
+    // ids 32/33 REVERB_Q1/Q2 — cache type=64 log10 a=0.1 b=10 → Q
+    // factor 0.1..10. Default 'db' is wrong; use 'count'.
+    32: { name: 'q_1', unit: 'count', displayMin: 0.1, displayMax: 10 },
+    33: { name: 'q_2', unit: 'count', displayMin: 0.1, displayMax: 10 },
+    // id=37 REVERB_LFTIME ("Low Decay") — cache type=64 log10 a=0.02
+    // b=2 sec → seconds, not dB.
+    37: { name: 'low_decay', unit: 'seconds', displayMin: 0.02, displayMax: 2 },
+    // id=38 REVERB_LFXOVER ("Xover Frequency") — cache type=66 a=100
+    // b=10000 → Hz.
+    38: { name: 'xover_frequency', unit: 'hz', displayMin: 100, displayMax: 10000 },
+    // id=45 REVERB_EARLYDECAY ("Early Decay") — cache c=50 a=0 b=2 →
+    // display 0..100% (a*c..b*c). Generator can't infer c=50; full
+    // override required.
+    45: { name: 'early_decay', unit: 'percent', displayMin: 0, displayMax: 100 },
+    // id=49 REVERB_BASETYPE — cache kind=float type=16 range 0..8 →
+    // integer count selector (which base reverb algorithm). Should
+    // ideally be an enum with named base types, but cache lacks the
+    // value table — registered as count for now.
+    49: { name: 'basetype', unit: 'count', displayMin: 0, displayMax: 8 },
+    // id=50 REVERB_LFOPHASE — cache type=54 c=57.29578 (rad→deg) →
+    // 0..180 degrees per radians-encoded LFO phase convention.
+    50: { name: 'lfo_phase', unit: 'degrees', displayMin: 0, displayMax: 180 },
+    // id=55 REVERB_PITCHMIX — c=100 already correct percent; no
+    // override needed. Skipping.
+    // id=60 REVERB_PITCHTIME ("Splice Time") — cache type=52 c=1000
+    // a=0.01 b=2 sec → 10..2000 ms. Generator emits 'ms' but
+    // displayMin defaults to 0; override the lower bound.
+    60: { name: 'splice_time', unit: 'ms', displayMin: 10, displayMax: 2000 },
+    // id=63 REVERB_PITCHBAL ("Voice Balance") — c=100 a=-1 b=1 →
+    // bipolar_percent; generator default for c=100 is plain percent.
+    63: { name: 'voice_balance', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+    // id=67 REVERB_PITCHLPF ("Pitch High Cut") — cache type=66 a=200
+    // b=20000 → Hz; default 'db' wrong.
+    67: { name: 'pitch_high_cut', unit: 'hz', displayMin: 200, displayMax: 20000 },
+    // ids 71/72 REVERB_LOWQ/HIGHQ ("Low Cut Q" / "High Cut Q") —
+    // cache type=64 log10 a=0.1 b=10 → Q factor count; default 'db'
+    // wrong.
+    71: { name: 'low_cut_q', unit: 'count', displayMin: 0.1, displayMax: 10 },
+    72: { name: 'high_cut_q', unit: 'count', displayMin: 0.1, displayMax: 10 },
+    // TODO (no GENERATED entry, enum without value table — hand-author
+    // in params.ts with proper enum map):
+    //   id=51 REVERB_INPUTSELECT  enum 0..2  (likely L+R / L / R)
+    //   id=53 REVERB_LOWSLOPE     enum 0..1  (slope toggle)
+    //   id=54 REVERB_HIGHSLOPE    enum 0..1  (slope toggle)
+    //   id=59 REVERB_PITCHDIR     enum 0..3  (pitch shift direction)
+    //   id=61 REVERB_PITCHPOS     enum 0..2  (pitch position)
+    //   id=64 REVERB_PREDLYTEMPO  enum 0..78 (TEMPO_DIVISIONS_VALUES)
+    //   id=68 REVERB_SPRINGTYPE   enum 0..1  (spring type toggle)
+    //   id=70 REVERB_PREDLYTAP    enum 0..1  (predelay tap mode)
   },
   delay: {
     // Mix follows the universal percent-at-0x01 pattern (Blocks Guide
@@ -277,6 +351,81 @@ export const PARAM_NAMES: Readonly<Record<string, Readonly<Record<number, ParamN
     80: { name: 'lfo_depth', unit: 'percent', displayMin: 0, displayMax: 100 },
     87: { name: 'stack_feedback', unit: 'percent', displayMin: 0, displayMax: 100 },
     88: { name: 'hold_feedback', unit: 'percent', displayMin: 0, displayMax: 100 },
+    // Session 88 (2026-05-16): DELAY params from
+    // samples/captured/decoded/am4-params-proposed.ts (Ghidra-mined
+    // catalog, Session 82–83). Same workflow as the REVERB block above:
+    // route through paramNames.ts overrides to correct the cache
+    // pipeline's c=1 → 'db' fallback for Hz / Q / count / degrees
+    // entries. Names use the resolver-derived GENERATED_PARAM_NAMES
+    // entries (firmware-truth) where they exist; ids with no GENERATED
+    // entry are enums that need custom value tables and stay
+    // hand-authored in params.ts (see TODOs below).
+    //
+    // id=17 DELAY_DELAYPAN ("Echo Pan") — c=100 a=-1 b=1 → bipolar
+    // pan, not a 0..100 percent. Generator default for c=100 is plain
+    // 'percent'; override to bipolar_percent.
+    17: { name: 'echo_pan', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+    // ids 22/23 DELAY_RATE1/RATE2 ("Mod Rate" / "Rate") — cache type=66
+    // log10 a=0.1..10 / 0.2..20 → Hz. Default 'db' wrong.
+    22: { name: 'mod_rate', unit: 'hz', displayMin: 0.1, displayMax: 10 },
+    23: { name: 'rate', unit: 'hz', displayMin: 0.2, displayMax: 20 },
+    // ids 34/35 DELAY_FEEDLR/FEEDRL ("Rotation" / second routing) —
+    // c=100 a=-1 b=1 → bipolar_percent. Generator default is plain
+    // 'percent' which loses the sign.
+    34: { name: 'rotation', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+    35: { name: 'lfo_phase', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+    // ids 38/39 DELAY_PANL/PANR ("Pan L" / "Pan R") — type=48 c=100
+    // a=-1 b=1 → bipolar pan.
+    38: { name: 'pan_l', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+    39: { name: 'pan_r', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+    // ids 40/41 DELAY_LFO1PHASE/LFO2PHASE — type=54 c=57.29578 (rad→
+    // deg) → 0..180 degrees per radians-encoded LFO phase convention.
+    // Generator's c=57.29... is unrecognized; falls through to skip.
+    // Full override required.
+    40: { name: 'modulation_phase', unit: 'degrees', displayMin: 0, displayMax: 180 },
+    41: { name: 'lfo_phase_2', unit: 'degrees', displayMin: 0, displayMax: 180 },
+    // id=42 DELAY_SPLICETIME ("Crossfade Time") — type=52 c=1000
+    // a=0.001 b=0.255 → ms 1..255. Generator emits ms but displayMin
+    // floors to 0; override the lower bound to match cache.
+    42: { name: 'crossfade_time', unit: 'ms', displayMin: 1, displayMax: 255 },
+    // id=56 DELAY_RATE3 ("Sweep Rate") — type=66 → Hz; default 'db' wrong.
+    56: { name: 'sweep_rate', unit: 'hz', displayMin: 0.1, displayMax: 10 },
+    // id=58 DELAY_LFO3PHASE ("Sweep Phase") — type=54 → degrees.
+    58: { name: 'sweep_phase', unit: 'degrees', displayMin: 0, displayMax: 180 },
+    // ids 60/61 DELAY_FSTART/FSTOP ("Sweep Start/Stop Freq") — type=66
+    // → Hz; default 'db' wrong.
+    60: { name: 'sweep_start_freq', unit: 'hz', displayMin: 100, displayMax: 1000 },
+    61: { name: 'sweep_stop_freq', unit: 'hz', displayMin: 500, displayMax: 5000 },
+    // id=62 DELAY_Q ("Sweep Resonance") — type=80 log10 c=10 a=0.2
+    // b=20 → Q-factor 0.2..20. Cache c=10 makes generator emit
+    // 'knob_0_10' with bounds 0..10 — wrong upper bound and misleading
+    // unit name. Use 'count' with the real range.
+    62: { name: 'sweep_resonance', unit: 'count', displayMin: 0.2, displayMax: 20 },
+    // id=82 DELAY_RATE4 ("Pan Rate") — type=66 → Hz.
+    82: { name: 'pan_rate', unit: 'hz', displayMin: 0.1, displayMax: 10 },
+    // id=85 DELAY_LFO4PHASE — type=54 → degrees. GENERATED named it
+    // `lfo_phase_lfo4phase` (deduplication artifact); use the cleaner
+    // `lfo_phase_4` since LFO1 phase already owns plain `lfo_phase`.
+    85: { name: 'lfo_phase_4', unit: 'degrees', displayMin: 0, displayMax: 180 },
+    // TODO (no GENERATED entry, enum without value table — hand-author
+    // in params.ts with proper enum map):
+    //   id=11 DELAY_TYPE         enum 0..7  (delay mode variant)
+    //   id=28 DELAY_LFO1TYPE     enum 0..9  (LFO waveform: sine/tri/...)
+    //   id=29 DELAY_LFO2TYPE     enum 0..9  (LFO waveform)
+    //   id=33 DELAY_TEMPOR       enum 0..78 (TEMPO_DIVISIONS_VALUES)
+    //   id=43 DELAY_RUN          enum 0..1  (run/stop toggle)
+    //   id=44 DELAY_MODE         enum 0..1  (mode toggle)
+    //   id=52 DELAY_LFO1TARGET   enum 0..2  (LFO 1 target)
+    //   id=53 DELAY_LFO2TARGET   enum 0..2  (LFO 2 target)
+    //   id=54 DELAY_LFO1TEMPO    enum 0..78 (TEMPO_DIVISIONS_VALUES)
+    //   id=55 DELAY_LFO2TEMPO    enum 0..78 (TEMPO_DIVISIONS_VALUES)
+    //   id=57 DELAY_LFO3TYPE     enum 0..9  (LFO waveform)
+    //   id=59 DELAY_LFO3TEMPO    enum 0..78 (TEMPO_DIVISIONS_VALUES)
+    //   id=71 DELAY_MAXDEPTH     enum 0..1  (max depth toggle)
+    //   id=81 DELAY_LFO4TYPE     enum 0..9  (LFO waveform)
+    //   id=83 DELAY_LFO4TEMPO    enum 0..78 (TEMPO_DIVISIONS_VALUES)
+    //   id=86 DELAY_LFO4TARGET   enum 0..3  (LFO 4 target)
+    //   id=89 DELAY_SVFTYPE      enum 1..3  (SVF filter type)
   },
   // Universal `mix` at pidHigh 0x01 across every effect block that
   // exposes a Mix Page per the Blocks Guide (p. 7). Skipped for
