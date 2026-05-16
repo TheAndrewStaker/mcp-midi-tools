@@ -10,15 +10,15 @@
  *
  * What this script answers:
  *   1. Does every preset in the bank match the 18-frame envelope?
- *   2. What does the 0x77 "preset revision number" header look like
- *      across presets — uniform, or varying? (vangrieg's claim: it
- *      evolves "only when needed.")
+ *   2. What does the 0x77 "preset header" payload look like across
+ *      presets — uniform, or varying? (Community RE characterized it
+ *      as a "preset revision number" that evolves only when needed.)
  *   3. What's in the 0x79 footer (11 bytes)? Constant or per-preset?
  *   4. How "full" is each preset (non-zero-byte count in body) — a
  *      proxy for preset complexity vs. empty/initial-state factory
  *      slots.
  *   5. What's in the first 64 bytes of each preset's body frame 0
- *      (where ectoplasm88 says the preset name lives)?
+ *      (where community RE pegged the preset name region)?
  *
  * Run:
  *   # Default: the v28.06 ALL-BANKS file
@@ -363,9 +363,10 @@ for (const p of presets.slice(0, 8)) {
 
 console.log('\nDone.');
 console.log('\nNext-phase questions to chase:');
-console.log('  - body[0] head includes the preset name per ectoplasm88 #14. Names');
-console.log('    for factory presets are listed in the v28.06 release notes — we');
-console.log('    can pair-match raw bytes ↔ known names to decode the encoding.');
+console.log('  - body[0] head includes the preset name (community RE places it');
+console.log('    in the first 128 bytes of the body payload). Names for factory');
+console.log('    presets are listed in the v28.06 release notes — we can pair-');
+console.log('    match raw bytes ↔ known names to decode the encoding.');
 console.log('  - Compare body fill (non-zero %) against AxeEdit\'s "amount of stuff');
 console.log('    in this preset" — bands of presets with similar complexity should');
 console.log('    cluster together.');

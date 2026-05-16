@@ -312,7 +312,7 @@ encoding) but not for the labelling layer.
 | Boss RC-505 MKII / VE-500 | Boss Tone Studio | Unknown | Probe |
 | Line 6 Helix / HX Stomp | Helix Native, HX Edit | Unknown | Probe |
 | Quad Cortex | NDSP Cortex Cloud | Unknown — desktop editor exists | Probe |
-| AlGrenadine FractalBot / Fracpad | (closed) | Worth probing | Probe |
+| Third-party Fractal editor (closed-source community tool) | (closed) | Worth probing | Probe |
 
 For each: run `scripts/probe-juce-binarydata.ts <exe>` first to
 detect the ZIP. If found, run `scripts/extract-all-zips.ts <exe>`

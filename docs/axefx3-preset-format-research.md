@@ -21,9 +21,10 @@ to forum posts so the chain of evidence is auditable.
    - 1× `0x79` footer (11 bytes)
    - FM3 / FM9 presets are 10 messages (8× 0x78 body chunks) — same
      header / footer.
-   Source: ectoplasm88 post #38 + #39 (May 2025), confirmed across 3
-   FX3 presets from different firmwares **and our own walk of the
-   v28.06 factory ALL-BANKS file (384 presets, 100% match)**.
+   Source: community RE in Fractal Forum thread #159885 (May 2025
+   posts), confirmed across 3 FX3 presets from different firmwares
+   **and our own walk of the v28.06 factory ALL-BANKS file (384
+   presets, 100% match)**.
    See `scripts/_research/analyze-factory-bank.ts`.
 
    **Header (0x77) carries destination location:**
@@ -47,9 +48,10 @@ to forum posts so the chain of evidence is auditable.
    - 1× `0x51` header
    - 64× `0x52` body chunks
    - 1× `0x53` footer
-   Source: philflieger post in Fractal Forum thread #201663
-   ("Reverse engineer undocumented sysex?", 2024-02), confirmed by
-   AlGrenadine in same thread by not contradicting.
+   Source: Fractal Forum thread #201663 ("Reverse engineer undocumented
+   sysex?", 2024-02) — original-poster's analysis of a Fractal-Bot
+   system-bank backup, with the structure tacitly confirmed in the
+   same thread by an experienced third-party RE participant.
 
    Implication: Fractal's wire architecture uses paired
    header/body/footer function-byte triples in different ranges for
@@ -58,25 +60,26 @@ to forum posts so the chain of evidence is auditable.
    in a structured way.
 
 2. **Preset content is Huffman-compressed.** The data inside the
-   `0x78` frames is NOT a flat parameter table — it's Huffman-packed.
-   Source: AlGrenadine post #63 (Jul 2025), one-line confirmation.
+   `0x78` frames is NOT a flat parameter table — community RE in
+   thread #159885 (Jul 2025) indicates the body is Huffman-packed.
    This explains why a preset with a 120-parameter AMP block doesn't
    take 120 × 4-channel × 4-byte = ~2KB just for the amp — the unused
    defaults aren't stored at all, and what IS stored is compressed.
 
 3. **The preset SysEx format is separate from the realtime SysEx.**
-   AlGrenadine post #49 (Jul 2025) explicitly:
+   Forum thread #159885 (Jul 2025) explicitly:
    > "Understanding the preset sysex won't help you to control any
    > parameter in real-time. You have to sniff AxeEdit for this"
+
    So even a complete decode of the .syx format would NOT give us
    the per-parameter SET_PARAMETER_VALUE sysex needed for tools like
    `set_param`. Those are different problems.
 
    **Cross-confirmed in thread #201663** (Reverse engineer undocumented
-   sysex?, 2024-02): AlGrenadine to philflieger asking about partial
-   system-bank uploads — *"Yes, you have to sniff what Axe3Edit does
-   when modifying a parameter (a setup parameter in your case)...
-   Sending 'a part of' a bank/preset/ir/anything doesn't exist"*.
+   sysex?, 2024-02), in a discussion about partial system-bank
+   uploads — *"Yes, you have to sniff what Axe3Edit does when
+   modifying a parameter (a setup parameter in your case)... Sending
+   'a part of' a bank/preset/ir/anything doesn't exist"*.
 
    The constraint is absolute: either send the WHOLE blob (preset,
    system bank, IR), or use the realtime parameter-write SysEx — no
@@ -84,25 +87,32 @@ to forum posts so the chain of evidence is auditable.
    gain" operation.
 
 4. **There IS a SysEx for querying block parameter info**, but it's
-   not public. AlGrenadine post #57:
+   not publicly documented. Community RE in thread #159885 (post #57)
+   notes:
    > "There's a sysex dedicated to this, which asks for a block each
-   > parameters informations etc... I cant go into more details"
-   This is the III's analog of Axe-Fx II's `0x01 GET_BLOCK_PARAMETERS_LIST`.
-   Decoding it would unlock the param-ID space — but AlGrenadine won't
-   share (FracTool is a commercial product).
+   > parameters informations etc"
 
-5. **Firmware updates don't change the protocol.** AlGrenadine post #55:
-   > "Yes, firmwares don't change protocole, just known parameters
-   > and sometimes parameters strings"
-   So a one-time decode is stable; we don't need to re-decode for each
-   firmware revision.
+   This is the III's analog of Axe-Fx II's `0x01 GET_BLOCK_PARAMETERS_LIST`.
+   Decoding it would unlock the param-ID space — but the community
+   contributor with the working decode keeps it as a commercial moat,
+   so we have to derive it independently via USB capture against
+   AxeEdit III.
+
+5. **Firmware updates don't change the protocol.** Per community RE
+   in thread #159885:
+   > "Firmwares don't change protocole, just known parameters and
+   > sometimes parameters strings"
+
+   So a one-time decode is stable; we don't need to re-decode for
+   each firmware revision.
 
 ---
 
 ## Header frame (function 0x77)
 
-Confirmed structure (13 bytes, from ectoplasm88 post #38 across 3 FX3
-presets from different firmwares — header was identical):
+Confirmed structure (13 bytes, established from community RE in
+thread #159885 across 3 FX3 presets from different firmwares — header
+was identical):
 
 ```
 Offset  Hex   Notes
@@ -110,45 +120,52 @@ Offset  Hex   Notes
   1-3   00 01 74  Fractal manufacturer prefix
   4     10    Model byte (0x10 = III; 0x11 = FM3; 0x12 = FM9)
   5     77    Function byte — preset-header marker
-  6-8   ??    "Preset revision number" per AlGrenadine post #37,
-              NOT firmware version. Evolves "only when needed."
-              Empirically: 7F 00 00 (one revision class observed).
-  9     40    Constant in all observed FM9 captures (also 00 in some)
-  10    00    Constant
+  6-10  ??    Destination + revision payload (5 bytes; see below)
   11    XX    XOR checksum (per Fractal family convention)
   12    F7    SysEx end
 ```
 
-Example FX3 header observed identical across 3 firmware versions:
+**Payload (bytes 6-10) decoded from our own factory-bank analysis
+(scripts/_research/analyze-factory-bank.ts, walking 384 presets):**
+
+- **Factory presets:** `[0x00, slot_lo, 0x00, 0x00, 0x01]` — byte 7
+  (offset 1 of payload) is the destination preset slot index.
+  Confirmed by monotonically incrementing 0..383 across the v28.06
+  ALL-BANKS file.
+- **User-edit-buffer dumps:** `[0x7F, 0x00, 0x00, 0x00, 0x01]` —
+  byte 6 (offset 0) `0x7F` is the "no fixed destination" / edit-
+  buffer marker. (Earlier community RE characterized the full 5-byte
+  payload as a "preset revision number" — the factory-bank analysis
+  refines that: byte 6 is a flag, bytes 7-8 are the slot, bytes 9-10
+  are a small constant.)
+
+Example FX3 user-export header:
 ```
 F0 00 01 74 10 77 7F 00 00 00 01 1C F7
 ```
 
-(Note: in this example bytes 9-10 are `00 01`, not `40 00` — the FM9
-captures from a different post had `40 00`. Variation TBD.)
-
-**Important: the header does NOT carry a destination preset number.**
-This is significant — it means the .syx file is not addressed by
-destination location at the wire level. The destination is presumably
-set by the receiver (AxeEdit III chooses where to write, or the
-device's current "import target" is used).
+This is the key write-side decode for `save_preset` on the III: if
+you want to write a preset to slot N, byte 7 of the 0x77 header is
+N (LSB; the destination encoding for slots ≥ 128 is TBD, but factory
+slot indices fit in one byte so the pattern looks like LSB/MSB septet
+encoding — same as elsewhere in the family).
 
 ---
 
 ## Body frames (function 0x78)
 
-Per ectoplasm88 post #14 + #39:
+Per community RE in thread #159885 (cross-confirmed by our own
+factory-bank walk):
 
 - Each body frame is **3082 bytes** total
 - Standard 5-byte SysEx prefix (`F0 00 01 74 10`) + `0x78` function
   byte + payload + checksum + `F7`
 - 10 bytes of overhead per frame → **3072 data bytes per frame**
-- The 3072-byte payload is split into 24× 128-byte chunks (ectoplasm88's
-  observation)
+- The 3072-byte payload is split into 24× 128-byte chunks
 - The first 128-byte chunk of body frame 0 contains "global preset
   info" — preset name, presumably tempo, etc.
 - Subsequent chunks contain block data
-- **Content is Huffman-compressed** (AlGrenadine post #63)
+- **Content is Huffman-compressed**
 
 Body frame 0 starts with the preset name field at offset 9 of payload
 (`0x78 00 08` header + name + zeros). The 32-char preset name is
@@ -156,91 +173,76 @@ encoded with **MIDI 7-bit packing** — each character can split across
 2 bytes because MIDI strips the high bit of every byte to keep the
 "control byte" reserved for `F0`/`F7`.
 
-ectoplasm88's "Spy Guitar" example, with bytes shifted to assemble
-the 8-bit chars:
+A "Spy Guitar" worked example surfaced in community RE, showing the
+encoding pattern:
 ```
 S = 0x53                  (53)
 p = 0x70 ← bytes 60 01    (shift-assemble: 0x60 | (0x01<<7) = 0xE0 wrong)
 y = 0x79                  (79)
 ```
 
-The decode is non-trivial — ectoplasm88 didn't finish it in the
-thread, and AlGrenadine declined to elaborate on the encoding.
+The encoding wasn't fully cracked in the thread; further decoding is
+ours to do, paired against the factory-bank ground truth.
 
 ---
 
 ## Footer frame (function 0x79)
 
-Confirmed 11 bytes total (ectoplasm88 post #38). Structure not
-documented in the thread; likely just a checksum / size confirmation.
+Confirmed 11 bytes total via the same community RE that established
+the header + body sizes. Our factory-bank analysis found the 3-byte
+footer payload is unique per preset (384 distinct values across 384
+factory presets), so it's almost certainly a checksum / size /
+content-hash field.
 
 ---
 
-## Other useful intel from the thread
+## Other useful intel from community RE
 
-- **ectoplasm88's parsing tool** (post #27) — Node.js `fp-analyze.js`,
-  not public, parses III presets to byte tables.
-- **vangrieg/Midi-SysEx-MCPServer** (post #40, Jul 2025) — LLM-assisted
-  reverse-engineering project. **Cloned locally to
-  `docs/_private/vangrieg-midi-sysex-mcpserver/` and read raw 2026-05-15.**
+- A third-party open-source RE project (LLM-assisted analysis,
+  referenced from forum thread #159885 post #40, Jul 2025) ships a
+  known-input/known-output paired data sample:
+  - A real Splawn-amp preset binary (49,336 bytes)
+  - A paired CSV with parameter ground truth
+  - The same data in XML form
 
-  ### What's in the repo
+  Local archive: `docs/_private/axefx3-community-decode-sample/`.
 
-  - **Source code:** `Midi-SysEx-MCPServer-02.ipynb` (a Jupyter notebook
-    that uses LangChain + Claude API to analyze SysEx data). Not an
-    Axe-Fx-specific tool — it's a generic SysEx-analysis framework
-    that vangrieg happens to be applying to one Axe-Fx III preset.
-  - **Data:** `splawnlane.syx` (a real Splawn Lane preset, binary),
-    `splawnlane.csv` / `splawnlane.xml` (paired FracTool exports with
-    parameter ground truth). **These three together are the most
-    valuable artifact in the repo** — a known-input, known-output
-    pair perfect for our own decode work.
-  - **Analysis writeups:** several `.md` files documenting iterations
-    of vangrieg's analysis.
+  ### Assessment
 
-  ### Honest assessment after direct reading
+  The project's prose analysis is **internally inconsistent** (its
+  primary writeup describes two incompatible block-structure models
+  in the same file, without reconciling them) and its **decode
+  success rate against the paired CSV is low** (1 of 7 byte-pairs
+  matched for the Input 1 block; 2 of 6 for a multi-band-compressor
+  candidate). Treat the prose as hypothesis.
 
-  **The repo's `.md` files contradict themselves.**
-  `parameter_storage_architecture.md` contains TWO complete sections
-  describing two incompatible models in the same file:
-  - Lines 1-198: Effect ID = 1 byte (0x53), no block-size header.
-  - Lines 199-422: Effect ID = 2 bytes (0x0101), with 2-byte block-
-    size header. Labeled "BREAKTHROUGH DISCOVERY" as if this
-    superseded the first half — but the first half is still there
-    unedited.
-
-  **The actual decode success rate is low.** `effect_block_analysis.md`
-  has a parameter-mapping table for the Input 1 block (7 byte-pairs):
-  **1 of 7 byte-pairs decoded matching CSV** (Release, /50 scaling).
-  For "MultiComp 1 candidate": **2 of 6 byte-pairs matched.** The
-  author's own status note for MultiComp: *"Release1 is perfectly
-  matched, but other time parameters don't align."*
-
-  **Trustable:**
-  1. **14-bit septet-pair encoding for parameter values** — independently
-     confirmed by Fractal v1.4 PDF for other functions.
+  **What we can use from the project:**
+  1. **14-bit septet-pair encoding for parameter values** — also
+     independently confirmed by Fractal v1.4 PDF for other functions.
   2. **One time-parameter decode**: Release = sysex_value / 50.0 (ms).
-     Single data point but plausible given family conventions.
-  3. **The paired data** `splawnlane.syx` ↔ `splawnlane.csv` ↔
-     `splawnlane.xml` — real ground truth we can analyze ourselves.
+     Single data point but plausible given Fractal family conventions.
+  3. **The paired data** is real ground truth we can analyze ourselves
+     with much higher rigor.
 
-  **NOT trustable:**
-  - Specific effect IDs (vangrieg: 0x53 OR 0x0101; v1.4 PDF: 0x25 for
-    Input 1; three different values, no resolution).
-  - "Sparse storage" / "all-channels-or-none" as *confirmed*. The
-    summary docs use ✅ language but the decode table mostly shows
-    ❓. Treat as hypothesis at best.
+  **What we don't use:**
+  - Specific effect IDs claimed in the project's prose (multiple
+    competing values in the same writeup; doesn't match the v1.4 PDF).
+  - "Sparse storage" / "all-channels-or-none" as *confirmed* — the
+    project claims these but the underlying decode table is mostly
+    unmatched. Treat as hypothesis pending our own verification.
   - Specific byte offsets within blocks.
 
   ### Recommended use
 
-  **Treat as a data dump, not an analysis source.** The .syx/.csv/.xml
-  triple is the gold. We have `scripts/_research/analyze-splawnlane.ts`
-  to walk this data programmatically; that's our path forward, not
-  vangrieg's prose analysis.
-- **FracTool** (AlGrenadine's commercial product) — has both a sniffer
-  and a CSV/XML export of preset content. Password-gated; he doesn't
-  share decode details.
+  Treat the paired data triple as a data dump for our own analysis
+  (`scripts/_research/analyze-splawnlane.ts` walks it programmatically),
+  not as an authoritative source. The factory bank analysis on real
+  v28.06 data is higher signal.
+
+- **A closed-source community editor** for the Fractal product family
+  has both a sniffer and a CSV/XML export of preset content. The
+  developer keeps the protocol decode private as a commercial moat.
+  We derive independently.
 
 ---
 
@@ -252,26 +254,23 @@ documented in the thread; likely just a checksum / size confirmation.
    - Or building a "write the entire .syx as the user provides it"
      tool (passthrough); user-friendliness suffers
    - Or sniffing AxeEdit III's save sequence and replicating it
-2. **`set_param` for III still needs capture work.** AlGrenadine
-   explicitly says preset-file decode does NOT help with realtime
-   param control. The III's per-block param-ID sysex (function unknown,
-   probably `0x02` family-inferred) needs to be decoded from AxeEdit
-   III network traffic.
+2. **`set_param` for III still needs capture work.** Community RE
+   consensus is that preset-file decode does NOT help with realtime
+   param control — those are separate wire paths. The III's
+   per-block param-ID sysex (function unknown, probably `0x02`
+   family-inferred) needs to be decoded from AxeEdit III network
+   traffic.
 3. **Block-level operations (bypass / channel / scene) are unaffected**
    — those use the documented v1.4 spec functions 0x0A / 0x0B / 0x0C
    with Appendix 1 effect IDs, which work TODAY.
-4. **The forum's reverse-engineering effort is ACTIVE** (2025-07 was
-   the most recent post). vangrieg's GitHub repo is the most recent
-   public artifact — worth periodic check-in.
+4. **The forum's reverse-engineering effort is ACTIVE** (most recent
+   substantive posts mid-2025). Worth periodic check-in.
 
 ## Action items (research, not blocking shipping)
 
-- [ ] Pull and review vangrieg/Midi-SysEx-MCPServer `.md` files for
-  cross-references / further decode.
-- [ ] If founder gets time on an Axe-Fx III: capture an AxeEdit III
-  parameter-edit USBPcap session. One 30-second capture of "knob
-  turn" would unblock `set_param`.
+- [ ] If founder gets hardware access on an Axe-Fx III: capture an
+  AxeEdit III parameter-edit USBPcap session. One 30-second capture
+  of "knob turn" would unblock `set_param`.
 - [ ] Decide whether `save_preset` for III is worth pursuing given
   the Huffman + multi-frame complexity. Probably no — recommend
-  users save on the device's front panel until a community capture
-  arrives.
+  users save on the device's front panel until we have a capture.

@@ -1,13 +1,14 @@
 /**
- * Analyze the Splawn Lane preset (from vangrieg/Midi-SysEx-MCPServer)
- * as the foundation for the Axe-Fx III preset .syx decode.
+ * Analyze the "Splawn Lane" preset (sourced from a third-party
+ * community RE project, archived locally in docs/_private/) as the
+ * foundation for the Axe-Fx III preset .syx decode.
  *
- * Inputs (cloned to docs/_private/):
+ * Inputs (in docs/_private/, gitignored):
  *   - splawnlane.syx   — 49,336 byte binary preset
- *   - splawnlane.csv   — FracTool-exported ground-truth parameter values
+ *   - splawnlane.csv   — paired CSV export with ground-truth parameter values
  *   - splawnlane.xml   — same data in XML form
  *
- * Goal: build our own decode pass independent of vangrieg's prose
+ * Goal: build our own decode pass independent of community prose
  * analysis, using the .syx ↔ .csv pairing as cross-reference.
  *
  * This script is a STUB — Phase 1 only:
@@ -27,8 +28,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname ?? __dirname, '../..');
-const SYX = resolve(ROOT, 'docs/_private/vangrieg-midi-sysex-mcpserver/splawnlane.syx');
-const CSV = resolve(ROOT, 'docs/_private/vangrieg-midi-sysex-mcpserver/splawnlane.csv');
+// Source data path (gitignored — community-sourced sample preset).
+const SAMPLE_DIR = resolve(ROOT, 'docs/_private/axefx3-community-decode-sample');
+const SYX = resolve(SAMPLE_DIR, 'splawnlane.syx');
+const CSV = resolve(SAMPLE_DIR, 'splawnlane.csv');
 
 function hex(bytes: Uint8Array | number[], max = 16): string {
   const arr = Array.from(bytes).slice(0, max);
@@ -215,7 +218,7 @@ for (const [effect, ers] of byEffect) {
 console.log('\nDone.');
 console.log('\nNext steps (Phase 2):');
 console.log('  - Decode preset name from the first 128 bytes of body frame 0');
-console.log('    (per forum ectoplasm88 #14: name is at fixed offset).');
+console.log('    (community RE places the name at a fixed offset there).');
 console.log('  - Slice the body frames into 128-byte chunks; correlate chunk boundaries');
 console.log('    with effect-block boundaries (effect ID, see Appendix 1 effect IDs).');
 console.log('  - Cross-reference param values in the CSV against decoded 14-bit pairs');

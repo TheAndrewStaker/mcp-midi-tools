@@ -11,40 +11,26 @@ ends and where original RE begins on this project.
 
 ---
 
-## The two projects most often referenced
+## The non-open landscape (for context)
 
-### Fractool — by AlGrenadine
+A closed-source third-party power-user utility exists for the
+Fractal product family — manages presets and cabs, converts between
+device variants (FM3 / Axe-Fx II / XL / XL+ / AX8 / Axe-Fx III /
+FM9), exports CSV / XML, and ships a built-in SysEx sniffer.
+Distribution is donationware; the protocol decoding is kept private
+as a commercial moat. We can compare against its UI behavior and
+exported CSVs but cannot inspect its protocol RE directly.
 
-Fractool is a power-user utility for Fractal devices written by the
-Fractal forum contributor **AlGrenadine**, distributed as **closed-
-source donationware**. It manages presets, cabs, and converts presets
-between FM3 / Axe-Fx II / XL / XL+ / AX8 / Axe-Fx III / FM9 formats,
-exports to CSV / XML, and notably includes a **built-in SysEx
-sniffer** that forum users have leveraged to capture Axe-Edit III
-traffic for their own RE work.
+Forum thread (development context): [#112538 — for power users
+only](https://forum.fractalaudio.com/threads/fractool-for-power-users-only.112538/).
 
-- Long-running forum thread: ["FracTool — for power users only"
-  (112538)](https://forum.fractalaudio.com/threads/fractool-for-power-users-only.112538/)
-- Acknowledgement thread: ["Shout-out to AlGrenadine for FracTool"
-  (157506)](https://forum.fractalaudio.com/threads/shout-out-to-algrenadine-for-fractool.157506/)
+Separately, **[Fractal-Bot](https://www.fractalaudio.com/fractal-bot/)**
+is Fractal Audio's *official* Mac/Win utility for firmware updates
+and preset/bank transfers. Closed-source first-party software, not a
+reverse-engineering project. Any time community guides reference
+"Fracbot," that's the tool they mean.
 
-Because Fractool is closed-source, its decodes are visible only in
-its UI behaviour and CSV exports. We can compare results, but we
-cannot inspect its protocol RE notes directly. A GitHub repo
-`andydevs/fractool` exists but is **unrelated** (a fractal-image
-generator, no connection to Fractal Audio).
-
-### "Fracbot" — actually Fractal-Bot, an official Fractal Audio tool
-
-There is no notable community RE project named Fracbot. The name
-that sounds like it almost always refers to **[Fractal-Bot](https://www.fractalaudio.com/fractal-bot/)** — Fractal Audio's
-official Mac/Win utility for firmware updates and preset/bank
-transfers. Fractal-Bot is closed-source first-party software; it is
-not a reverse-engineering project. Any time community guides
-reference "Fracbot," that's the tool they mean.
-
-So the relevant comparison set for *this* project is Fractool plus
-the open-source libraries below — not Fracbot.
+The relevant *open-source* comparison set for this project is below.
 
 ---
 
@@ -233,30 +219,30 @@ surface isn't just undocumented — it's actively gated.** Fractal
 has deliberately engineered both editors to make third-party
 traffic-sniffing harder. The wiki MIDI_SysEx spec stopping at the
 controller-class surface is the same posture documented at the
-protocol-disclosure level: Cliff Chase has declined on-forum
-(thread 219120) to commit to publishing an editor SDK; FracPad III's
-author has publicly cited legal risk as the reason for keeping
-their decoded protocol private; the wiki documents READ functions
-generously and SET / STORE functions minimally.
+protocol-disclosure level: Fractal's founder has declined on-forum
+(thread 219120) to commit to publishing an editor SDK; the
+closed-source third-party editor's author has publicly cited legal
+risk as the reason for keeping their decoded protocol private; the
+wiki documents READ functions generously and SET / STORE functions
+minimally.
 
-That posture also explains why hobby projects like bspaulding /
-laxu / tysonlt stopped where they did. Pushing past the gate to the
-editor-write surface is expensive enough — both technically (needs
-driver-level workarounds like Fractool's bridged sniffer) and
-politically (FracPad's legal-risk note) — that single-developer
-unpaid work doesn't follow through. **A project with a coordinated
-hardware-validation contributor workflow** (this project's BK-048)
-**can amortize that cost across many contributors and accumulate
-decodes the hobby corpus couldn't justify.** That's the structural
-edge.
+That posture also explains why open-source hobby projects stop
+where they do. Pushing past the gate to the editor-write surface
+is expensive enough — both technically (needs driver-level
+workarounds for the sniffer side) and politically (the legal-risk
+posture) — that unpaid single-developer work doesn't follow through.
+**A project with a coordinated hardware-validation contributor
+workflow** (this project's BK-048) **can amortize that cost across
+many contributors and accumulate decodes the hobby corpus couldn't
+justify.** That's the structural edge.
 
 Practical implication for our own RE work: capture-driven decoding
-needs a driver-level workaround (Fractool, or modifying our
-`scripts/sniff.ts` to register a Fractal-imitating MIDI driver,
-which is significantly more work). The fallback path is
-capture-free protocol RE — probe candidate function IDs via our
-own `send_sysex` tool and observe the device's response — which is
-slower but doesn't depend on intercepting AxeEdit at all.
+needs a driver-level workaround, or modifying our `scripts/sniff.ts`
+to register a Fractal-imitating MIDI driver (significantly more
+work). The fallback path is capture-free protocol RE — probe
+candidate function IDs via our own `send_sysex` tool and observe
+the device's response — which is slower but doesn't depend on
+intercepting AxeEdit at all.
 
 ### The simpler-than-expected workaround we found (2026-05-11)
 
@@ -558,10 +544,9 @@ BK-048 workflow.
 3. [Forum: Using MidiOX to capture sysex sent from Axefx 2 (130725)](https://forum.fractalaudio.com/threads/using-midiox-to-capture-sysex-sent-from-axefx-2.130725/) — canonical loopMIDI + MIDI-OX recipe.
 4. [Forum: Reverse engineer undocumented sysex? (201663)](https://forum.fractalaudio.com/threads/reverse-engineer-undocumented-sysex.201663/) — community discussion of what's still undecoded + firmware-drift expectations.
 5. [Forum: Axe-Fx III and deconstructing/parsing a .syx (159885)](https://forum.fractalaudio.com/threads/axe-fx-iii-and-deconstructing-parsing-a-syx-sysex-preset-file.159885/) — direct binary-format RE on saved files.
-6. [Forum: FracTool — for power users only (112538)](https://forum.fractalaudio.com/threads/fractool-for-power-users-only.112538/) — Fractool development thread (AlGrenadine).
-7. [Forum: Shout-out to AlGrenadine for FracTool (157506)](https://forum.fractalaudio.com/threads/shout-out-to-algrenadine-for-fractool.157506/) — Fractool acknowledgement.
-8. [Fractal-Bot (official tool)](https://www.fractalaudio.com/fractal-bot/) — Fractal's first-party firmware/preset utility, NOT a community RE project.
-9. [GitHub: bspaulding/axe-fx-midi](https://github.com/bspaulding/axe-fx-midi) — Rust crate, Fractal-wiki-sourced.
-10. [GitHub: tysonlt/AxeFxControl](https://github.com/tysonlt/AxeFxControl) — Axe-Fx III spec implementation.
-11. [GitHub: laxu/AxeFx2VirtualPedalboard](https://github.com/laxu/AxeFx2VirtualPedalboard) — Axe-Fx II CC → SysEx translator.
-12. [Snoize MIDI Monitor](https://www.snoize.com/MIDIMonitor/) — macOS equivalent of MIDI-OX.
+6. [Forum thread #112538](https://forum.fractalaudio.com/threads/fractool-for-power-users-only.112538/) — closed-source third-party Fractal editor's long-running development thread (commercial alternative, decode kept private).
+7. [Fractal-Bot (official tool)](https://www.fractalaudio.com/fractal-bot/) — Fractal's first-party firmware/preset utility, NOT a community RE project.
+8. [GitHub: bspaulding/axe-fx-midi](https://github.com/bspaulding/axe-fx-midi) — Rust crate, Fractal-wiki-sourced.
+9. [GitHub: tysonlt/AxeFxControl](https://github.com/tysonlt/AxeFxControl) — Axe-Fx III spec implementation.
+10. [GitHub: laxu/AxeFx2VirtualPedalboard](https://github.com/laxu/AxeFx2VirtualPedalboard) — Axe-Fx II CC → SysEx translator.
+11. [Snoize MIDI Monitor](https://www.snoize.com/MIDIMonitor/) — macOS equivalent of MIDI-OX.

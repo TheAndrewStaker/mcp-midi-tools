@@ -1,18 +1,18 @@
 /**
- * Triage AlGrenadine's forum post dump for SysEx / preset-decode
- * relevance.
+ * Triage a forum-post dump for SysEx / preset-decode relevance.
  *
- * Reads the JSON output from forum-scrape-search.js and ranks each
- * result by keyword matches in title + snippet. Groups by thread so
- * we know which threads have multiple AlGrenadine posts (the ones
- * worth fully scraping with forum-scrape-thread.js).
+ * Reads the JSON output from forum-scrape-search.js (or the batch
+ * variants) and ranks each result by keyword matches in title +
+ * snippet. Groups by thread so we know which threads carry the most
+ * decode-relevant signal — those are the ones worth fully scraping
+ * with forum-scrape-thread.js (or the batch thread scraper).
  *
  * Run:
- *   npx tsx scripts/_research/triage-algrenadine-posts.ts
+ *   npx tsx scripts/_research/triage-forum-posts.ts
  *
  *   # or point at a specific dump:
- *   npx tsx scripts/_research/triage-algrenadine-posts.ts \
- *     docs/_private/forum-search-algrenadine-2026-05-16T00-05-49-953Z.json
+ *   npx tsx scripts/_research/triage-forum-posts.ts \
+ *     docs/_private/forum-search-<timestamp>.json
  */
 
 import { readFileSync, readdirSync } from 'node:fs';
@@ -22,7 +22,7 @@ import { argv } from 'node:process';
 const ROOT = resolve(import.meta.dirname ?? __dirname, '../..');
 const PRIVATE_DIR = resolve(ROOT, 'docs/_private');
 
-// Pick the requested file or the most-recent algrenadine search dump.
+// Pick the requested file or the most-recent forum-search dump.
 function findDumpFile(): string {
   if (argv[2]) return resolve(argv[2]);
   const candidates = readdirSync(PRIVATE_DIR)
@@ -76,7 +76,7 @@ const KEYWORD_WEIGHTS: Array<{ pattern: RegExp; title: number; snippet: number; 
                                             title: 8,  snippet: 4, label: 'reverse-engineer' },
   { pattern: /\b0x[0-9a-f]{2,}\b/i,         title: 4,  snippet: 3, label: 'hex-byte' },
   { pattern: /\b(F0|f0)\s*00\s*01\s*74\b/i, title: 12, snippet: 8, label: 'fractal-prefix' },
-  { pattern: /\bfractool|fracpad\b/i,       title: 5,  snippet: 2, label: 'fractool' },
+  { pattern: /\bfractool|fracpad\b/i,       title: 5,  snippet: 2, label: 'closed-editor' },
   { pattern: /\b(checksum|crc|xor)\b/i,     title: 4,  snippet: 2, label: 'checksum' },
   { pattern: /\b(huffman|compress)\b/i,     title: 6,  snippet: 3, label: 'compression' },
   { pattern: /\b(third[- ]?party|3rd[- ]?party)\b/i,

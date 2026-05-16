@@ -28,10 +28,11 @@ specific tools that wrap them. Users install one framework + one or
 more device packs, get a Claude Desktop integration that knows their
 gear by name.
 
-Inverse of the closed model (AlGrenadine's FractalBot / Fracpad — one
-proprietary editor per device family, no shared substrate). This
-project is the **open** counterpart: shared substrate, vendor-specific
-packs, OSS from day one (Apache-2.0).
+Inverse of the closed model the community currently lives with (one
+proprietary editor per device family, no shared substrate, no
+extensibility for AI tooling). This project is the **open**
+counterpart: shared substrate, vendor-specific packs, OSS from day
+one (Apache-2.0) so the community can build better tools together.
 
 ## Two-tier architecture
 
@@ -403,5 +404,6 @@ the broader MIDI / tools community who don't care about MCP specifically.
   safe-edit contract that every device package implements
 - [`CONTRIBUTING.md`](../CONTRIBUTING.md) — "Adding a new device"
   step-by-step
-- AlGrenadine's FractalBot / Fracpad — closed-source per-device
-  editors that this project deliberately inverts
+- The existing closed-source per-device editors that this project
+  deliberately inverts (commercial third-party tools each gated to
+  one vendor family, no extensibility for AI / scripting)
