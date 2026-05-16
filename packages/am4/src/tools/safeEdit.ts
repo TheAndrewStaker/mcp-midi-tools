@@ -78,6 +78,60 @@ export async function refreshAM4Fingerprint(
 }
 
 /**
+ * Connections we have already attempted to baseline-warm at least once.
+ * Tracked via WeakSet so reconnects (forceReconnect) get a fresh warm-up
+ * automatically — the old connection's reference dies, the new
+ * connection isn't in the set yet.
+ */
+const warmedConnections = new WeakSet<MidiConnection>();
+
+/**
+ * One-shot baseline warm-up. Reads the active location, dumps the
+ * working buffer, and caches its hash as the dirty-gate baseline for
+ * that location.
+ *
+ * Closes the "first navigation after server restart silently proceeds"
+ * gap. Without warm-up, the cache is empty until the first
+ * post-switch refresh runs — so a `set_param` followed by an
+ * unflagged `switch_preset` as the first two AM4 calls of a session
+ * would lose the edit silently. With warm-up, the baseline is in
+ * place before any edit can happen, so the gate refuses correctly.
+ *
+ * Idempotent on the hot path: a `WeakSet<MidiConnection>` records the
+ * first attempt per connection lifetime; subsequent calls return
+ * immediately. Cost is one wire read + one buffer dump (~150–200 ms)
+ * on the first AM4 tool call per server lifetime, then ~0 ms.
+ *
+ * Best-effort: failures are swallowed (the gate's existing
+ * graceful-degrade path still fires).
+ */
+export async function warmupAM4BaselineIfNeeded(
+  conn: MidiConnection,
+): Promise<void> {
+  if (warmedConnections.has(conn)) return;
+  // Mark attempted up front so a failed warm-up doesn't get retried on
+  // every subsequent tool call — the gate's no-baseline branch will
+  // still degrade gracefully if this read failed.
+  warmedConnections.add(conn);
+  try {
+    const parsed = await sendReadAndParse(conn, LOCATION_STATE_PID_LOW, LOCATION_STATE_PID_HIGH);
+    const idx = parsed.asUInt32LE();
+    if (!Number.isInteger(idx) || idx < 0 || idx > 103) return;
+    // If a baseline was already cached for this location (e.g. test
+    // setup seeded one), respect it — don't overwrite with a fresh
+    // read that might capture a different state.
+    if (getCachedFingerprint(idx)) return;
+    const streamPromise = receivePresetDumpStream(conn, { timeoutMs: BUFFER_DUMP_TIMEOUT_MS });
+    conn.send(buildRequestActiveBufferDump());
+    const stream = await streamPromise;
+    const hash = fingerprintDump(stream.chunkBytes);
+    cacheFingerprint(idx, hash);
+  } catch {
+    // Best-effort — see jsdoc.
+  }
+}
+
+/**
  * Dump the working buffer and hash it. Used by the dirty gate to
  * compare the current state against the cached clean baseline.
  * Returns undefined on failure so the caller can degrade gracefully.
