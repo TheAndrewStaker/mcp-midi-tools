@@ -1630,111 +1630,103 @@ midi-test below.
 
 ---
 
-## 6n-scene-midi-test. Scene MIDI test-send command (`action=0x0004`, `pidHigh=0x0070`) 🟡 partial
+## 6n-scene-midi-test. Scene MIDI test-send command (`pidLow=0x00CE`, `pidHigh=0x0070`) 🟢
 
-Discovered Session 87 (2026-05-16) via two captures of AM4-Edit's
+Decoded Session 87 (2026-05-16) via two captures of AM4-Edit's
 Scene MIDI page test-send buttons:
 - `samples/captured/session-87-scene-midi-test-buttons.pcapng` —
   16 clicks of per-row "▶" test-send buttons (one per scene-msg cell).
 - `samples/captured/session-87-scene-top-midi-test-buttons.pcapng` —
   4 clicks of per-scene "Send All" top buttons (one per scene column).
 
-**This is NOT a working-buffer write.** It's a transient command
-telling the AM4 to emit a MIDI message out its MIDI OUT port right
-now — for monitoring rigs that respond to scene-change PCs/CCs. The
-configured (type, channel, value) for the targeted scene-msg row is
-sent. No persistent state changes; nothing to save, nothing to read
-back.
+**This is NOT a working-buffer write.** It's a transient trigger
+register telling the AM4 to emit the MIDI message that's already
+authored at the targeted scene-msg row (via §6n-scene-midi). The
+configured (type, channel, value) for that row is sent out the
+AM4's MIDI OUT. No persistent state change.
 
-### Wire shape
+### Wire shape (standard SET_PARAM envelope)
 
 ```
-F0 00 01 74 15 01 [4E 01] [70 00] [01 00] [00 00] [04 00]
-                          ^^^^^^^                  ^^^^^^^
-                          pidHigh=0x0070            action=0x0004
-[5 payload bytes] [cs] F7
+F0 00 01 74 15 01 [pidLow=0x00CE] [pidHigh=0x0070] [action=0x0001] [hdr3=0x0000] [hdr4=0x0004] [5 packed bytes] [cs] F7
 ```
 
 - `pidLow = 0x00CE` — PATCH family, same as §6n-scene-midi.
 - `pidHigh = 0x0070` — fixed; distinct from the scene-MIDI auth rows
   at 0x40/0x50/0x60.
-- `action = 0x0004` — distinct from `0x0001` (SET_PARAM write) and
-  `0x0000` (read). This action seems to mean **"execute this as a
-  transient device-side command,"** not "store the payload as state."
-- Payload is 5 bytes, encoding varies by which button fired the
-  command (per-row vs per-scene).
+- `action = 0x0001` — standard SET_PARAM write.
+- `hdr4 = 0x0004` — 4-byte raw payload (float32), septet-packed to
+  5 wire bytes (same convention as every other dB/float register in
+  the AM4 protocol).
+- Payload (after septet unpacking) is a single **float32 trigger value**
+  encoding which row to fire.
 
-### Per-scene "Send All" button payload — DECODED 🟢
-
-The 4 top buttons each fire once with payload:
-```
-00 00 [scene_byte] 74 38
-```
-where `scene_byte = (scene_index << 5) | 0x0F`:
-
-| Scene | Wire payload byte[2] | Bits |
-|---|---|---|
-| 1 | `0x0F` | `00.0_1111` |
-| 2 | `0x2F` | `00.1_1111` ← bit 5 |
-| 3 | `0x4F` | `10.0_1111` ← bit 6 (after septet) |
-| 4 | `0x6F` | `10.1_1111` ← bits 5+6 |
-
-Bits 5–6 of byte[2] encode `(scene_index & 3)`. Bits 0–3 are constant
-`0xF` — interpretable as a 4-bit msg-mask `1111` meaning "send all
-4 msgs." Bytes 3–4 are constant `0x74 0x38` (semantics TBD — possibly
-default channel/value for the "Send All" entry point).
-
-Captured in `session-87-scene-top-midi-test-buttons.pcapng`, 4 frames
-at `t=8.81 / 11.90 / 14.11 / 16.73 s`.
-
-### Per-row "Send this msg" button payload — partially decoded 🟡
-
-The 16 per-row buttons each fire once with payload:
-```
-00 [b1] [b2] [b3] [b4]
-```
-where the 5 bytes encode `(scene, msg, type, channel, value)` somehow
-— consistent with how a single MIDI command is fully specified — but
-the exact field layout is not yet reverse-engineered. Captured payload
-samples (one per click, in time order) from
-`session-87-scene-midi-test-buttons.pcapng`:
+### Trigger value encoding (unified for per-row and Send All)
 
 ```
-00 00 00 00 00     ←  scene 1, msg 1, all defaults
-00 00 10 04 18
-00 00 00 04 20
-00 00 08 04 20
-00 00 10 03 78
-00 20 10 04 18
-00 10 00 04 20
-00 10 08 04 20
-00 00 00 04 00
-00 00 10 14 18
-00 20 00 04 20
-00 20 08 04 20
-00 00 08 04 00
-00 20 10 14 18
-00 30 00 04 20
-00 30 08 04 20
+trigger_float32_value = scene_index + (high_byte << 8)
+  scene_index = 0..3  (scene 1..4)
+  high_byte   = 0..3  (per-row: msg_index 0..3)
+              = 0xFF (per-scene Send All sentinel — "fire all 4 msgs")
 ```
 
-Byte[1] cycles through `0x00 / 0x10 / 0x20 / 0x30` — a 2-bit field in
-bits 4–5, likely scene index. Bytes[2..4] then carry msg/type/channel/
-value but the exact packing isn't pinned. **To fully decode: a
-controlled probe where the founder sets a known (msg, type, channel,
-value) per click and reports them — then we reverse the bytes from
-known inputs.** Tracked as HW-110-cont.
+The "scene index in low byte, mode-selector in high byte" pattern
+matches the AM4's other one-shot trigger registers in §6a.
+
+**Per-row clicks** (16 frames from session-87-scene-midi-test-buttons):
+
+| Click # | (scene, msg) 0-idx | trigger float32 | unpacked raw bytes |
+|---|---|---|---|
+| 1 | (0, 0) | `0.0` | `00 00 00 00` |
+| 2 | (1, 0) | `256.0` | `00 00 80 43` |
+| 3 | (2, 0) | `512.0` | `00 00 00 44` |
+| 4 | (3, 0) | `768.0` | `00 00 40 44` |
+| 5 | (0, 1) | `1.0` | `00 00 80 3F` |
+| 6 | (1, 1) | `257.0` | `00 80 80 43` |
+| 7 | (2, 1) | `513.0` | `00 40 00 44` |
+| 8 | (3, 1) | `769.0` | `00 40 40 44` |
+| 9 | (0, 2) | `2.0` | `00 00 00 40` |
+| 10 | (1, 2) | `258.0` | `00 00 81 43` |
+| 11 | (2, 2) | `514.0` | `00 80 00 44` |
+| 12 | (3, 2) | `770.0` | `00 80 40 44` |
+| 13 | (0, 3) | `3.0` | `00 00 40 40` |
+| 14 | (1, 3) | `259.0` | `00 80 81 43` |
+| 15 | (2, 3) | `515.0` | `00 C0 00 44` |
+| 16 | (3, 3) | `771.0` | `00 C0 40 44` |
+
+**Per-scene Send All clicks** (4 frames from
+session-87-scene-top-midi-test-buttons):
+
+| Click # | scene_index 0-idx | trigger float32 | interpretation |
+|---|---|---|---|
+| 1 | 0 | `65280.0` (=`0xFF00`) | scene 1, all msgs |
+| 2 | 1 | `65281.0` (=`0xFF01`) | scene 2, all msgs |
+| 3 | 2 | `65282.0` (=`0xFF02`) | scene 3, all msgs |
+| 4 | 3 | `65283.0` (=`0xFF03`) | scene 4, all msgs |
+
+Decoder reference: `scripts/_research/decode-hw110.ts` (chronological
+per-write detail; pairs with `decode-main-levels.ts` shape).
+
+### Companion `action=0x0008` zero-payload frames
+
+The Send All capture also contained 12 follow-up frames at
+`t=32.32..32.35 s` with `action=0x0008` and empty payload at the
+scene-MIDI authoring pidHighs (`0x48-0x4B / 0x58-0x5B / 0x68-0x6B`,
+i.e. scene 3's Type/Channel/Value cells). Hypothesis: a "refresh
+display" or "post-test state restore" pulse AM4-Edit emits to flush
+its UI back to the authored values. Not part of the trigger
+protocol — surfaces only when AM4-Edit is in the loop.
 
 ### What's still open
 
 - **action=0x0017 anomaly** at `pidHigh=0x3E81` remains undecoded.
-  Session 87 ruled out test-send buttons as the trigger. The
-  remaining hypothesis is "Quick Build" or some other AM4-Edit
-  page-level action; needs a fresh directed capture.
-- **Per-row payload byte packing** for the test-send command (above).
-- **hdr2=0x08 zero-payload frames** observed at scene-msg-field pidHighs
-  in the top-buttons capture — possibly a "clear test state" sub-
-  command that fires alongside the per-scene Send All. Decode TBD.
+  Session 87 ruled out per-row test-send buttons as the trigger
+  (HW-110 ✅). Send All buttons also ruled out (use action=0x0001).
+  Remaining hypotheses: "Quick Build" page action, AM4-Edit File →
+  Send / Refresh, or a notification-side frame the device emits for
+  some other UI affordance. Needs a fresh directed capture.
+- **action=0x0008 semantics** — see "Companion frames" above. Low
+  priority; AM4-Edit-internal pulse, not on the agent-write path.
 
 ### Potential MCP tool
 
