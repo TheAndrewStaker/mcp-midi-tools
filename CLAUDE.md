@@ -190,34 +190,15 @@ When a probe rules a hypothesis OUT (e.g. Session 94 ruling that AM4's
 terms a future agent would use ("AM4 0x77 portable to II — no"). This
 saves a session every time someone re-asks the same question.
 
-## AM4 SysEx Quick Reference
+## AM4 SysEx — quick facts
 
-### Device ID
-AM4 model byte: `0x15`
+Full envelope, checksum, function-byte table, and capture-cited
+decodes live in **`docs/SYSEX-MAP.md`**. The basics, here:
 
-### Message Envelope
-```
-F0 00 01 74 15 [function] [payload...] [checksum] F7
-```
-
-### Checksum
-```typescript
-const checksum = bytes.reduce((a, b) => a ^ b, 0) & 0x7F;
-// where bytes = everything from F0 through last payload byte
-```
-
-### Known Working Commands
-```
-Mode: Presets  — F0 00 01 74 15 12 48 4A F7
-Mode: Scenes   — F0 00 01 74 15 12 49 4B F7
-Mode: Effects  — F0 00 01 74 15 12 4A 48 F7
-Mode: Amp      — F0 00 01 74 15 12 58 5A F7
-Mode: Tuner    — F0 00 01 74 15 12 18 1A F7
-```
-
-### Preset-location Naming
-A01–Z04 (104 preset locations total, 4 per bank, 26 banks A–Z). Use
-`parseLocationCode` / `formatLocationCode` from `src/protocol/locations.ts`.
+- **Model byte:** `0x15`. Envelope: `F0 00 01 74 15 [fn] [...] [cksum] F7`.
+- **Checksum:** `bytes.reduce((a,b)=>a^b,0) & 0x7F` over `F0`..last payload byte.
+- **Preset locations:** A01–Z04 (104 total). Use `parseLocationCode` /
+  `formatLocationCode` from `src/protocol/locations.ts` — never hardcode.
 
 ## Fractal terminology (use these exact words)
 
@@ -319,54 +300,22 @@ v0.3+ ships exclusively. If a new capability doesn't fit the unified
 contract, design the contract change first (extend `DeviceWriter` /
 `DeviceReader` / capabilities), then register the unified tool.
 
-## Tool API conventions (project-wide)
+## Tool API conventions
 
-**Display-first.** MCP tool inputs and outputs use **display units** —
-the values a musician reads on the AM4 front panel or in the manual.
-Enum-typed params accept the **display name** as a string. Wire and
-protocol numbers (14-bit septet-encoded ints, packed-float bytes,
-internal `value × scale` fixed-point) are an internal detail that
-**never appears in tool surfaces**.
+**Display-first.** Every MCP tool surface — for every device, present
+and future — accepts and returns **display units** (what a musician
+reads on the front panel: `0..10` knob, dB, ms, ratio `4:1`, enum
+string `'Plexi 100W High'`). Wire-format details (septet-encoded
+14-bit ints, packed-float bytes, `value × scale` fixed-point) are
+internal and never leak through tool I/O. Error messages use display
+shape too: `"amp.gain out of range [0..10]: 12.5"`, never `"wire value
+0x4800 invalid"`.
 
-This contract is enforced by the unified surface's TypeScript types
-(`ParamSchema.encode: (display: number | string) => number`) — every
-descriptor's encoder must accept display input by signature. Errors
-emit display-shaped messages (`"amp.gain out of range [0..10]: 12.5"`,
-not `"wire value 0x4800 invalid"`). `WriteResult.display_value` is
-what the LLM reads back. The unit label on each param passes through
-verbatim from the descriptor (AM4's `knob_0_10`, `pf`,
-`rotary_mic_spacing` etc. — open item #4 fix in Session B chunk 1) so
-the LLM sees the words the device's manual uses.
-
-This rule applies to **AM4 today and every future instrument** (a
-parked Hydrasynth-explorer branch already follows it):
-
-- `set_param({ block: 'amp', name: 'gain', value: 4.5 })` — display dB / 0-10 knob
-- `set_param({ block: 'compressor', name: 'ratio', value: 4 })` — 4:1, not "wire 4"
-- `set_param({ block: 'amp', name: 'type', value: 'Plexi 100W High' })` — enum string
-- `apply_preset({ slots: [{ position: 1, block_type: 'amp', params: { gain: 6, bass: 5 } }] })` — display values throughout
-- `set_block_type({ position: 1, block_type: 'reverb' })` — block name, not the wire enum index
-
-The encoder/protocol layer translates display → wire and hides device-
-specific scaling: Fractal's `value × scale` packed-float wire format,
-14-bit septet encoding, bipolar centering, the per-block channel
-register, etc. When adding a new tool or new device support:
-
-1. **Surface accepts display values and enum strings.** Use the
-   `resolveValue(param, value)` / `resolveEnumValue` helpers at the
-   tool boundary so all tools share the same coercion.
-2. **Encoders take wire values internally.** The tool layer does the
-   display → wire conversion once at the entry point; everything below
-   the tool function takes wire and stays type-checked against it.
-3. **Tool descriptions list iconic examples in display units**, not
-   wire numbers. e.g. "amp.gain accepts 0..10 (knob)" not "amp.gain
-   accepts 0.0..1.0 (internal float)".
-
-Rationale and rejected alternatives are in `docs/DECISIONS.md`
-(2026-04-28 entry). Reference implementations on AM4:
-`src/fractal/am4/params.ts:resolveEnumValue` (display name → enum int)
-and `src/server/shared/paramHelpers.ts:resolveValue` (display value →
-numeric, with range check + enum auto-resolve).
+Display ↔ wire coercion happens once at the tool boundary via
+`resolveValue` / `resolveEnumValue` (`src/server/shared/paramHelpers.ts`,
+`src/fractal/am4/params.ts`). Everything below the tool layer takes
+wire and is type-checked against it. Rationale + rejected
+alternatives: `docs/DECISIONS.md` (2026-04-28 entry).
 
 ## Performance budget
 
@@ -436,14 +385,11 @@ right now," trust these in order:
    its own display label in the response payload, so this is the wire-
    level truth as the device understands it.
 3. **AxeEdit / AM4-Edit panel display.** Useful but **not authoritative**
-   — editor apps cache UI state and can show stale or placeholder values,
-   especially right after a block is placed (AxeEdit shows "Volume: 10.00"
-   for a freshly-placed Volume/Pan block while the device's actual state
-   is wire 0 = display 0.00; HW-086, 2026-05-11). If front panel or
-   `get_param` disagrees with the editor, the editor is the one that's
-   wrong. **Workaround** if the founder needs the editor in sync: close
-   and reopen AxeEdit (or reload the preset in the editor) — that forces
-   a fresh read from the device.
+   — editor apps cache UI state (HW-086 example: freshly-placed
+   Volume/Pan block reads `10.00` in AxeEdit while device holds wire
+   `0`). If front panel or `get_param` disagrees with the editor, the
+   editor is wrong. Reload-the-preset in the editor forces a fresh
+   read.
 
 When writing a HW-NNN task that involves verifying behavior, name which
 source the founder should read. Don't accept a "checked the editor, looks
@@ -471,14 +417,12 @@ do all three of these or the test will run against stale code:**
    has to be a full quit. The relaunch respawns the child from the new
    dist.
 
-If you only changed test/verify scripts under `scripts/` (they run via
-`tsx` directly, never via dist), `docs/`, or `samples/` — no rebuild
-needed; preflight is enough.
+If you only changed `scripts/` (run via `tsx`, never dist), `docs/`,
+or `samples/` — preflight is enough; no rebuild needed.
 
-**Default behavior at session end**: if you've edited any TypeScript
-under `src/` and the next likely user action is "test it in Claude
-Desktop", run `npm run build` automatically and surface the restart
-reminder in your wrap-up text. Don't make the founder ask twice.
+**Default at session end:** if you've edited any TypeScript under
+`src/` and the next user step is testing in Claude Desktop, run
+`npm run build` and surface the relaunch reminder in your wrap-up.
 
 ## Living documentation — update before declaring a session complete
 
@@ -521,147 +465,3 @@ verify nothing was missed.
   real workflow (founder builds multiple presets per session by
   saving to different locations from the same working buffer).
 
----
-
-# Claude Project Setup Instructions
-
-These instructions are for setting up the **Claude.ai Project** that will
-serve as the knowledge base and planning environment for this app.
-(Different from Claude Code — this is the conversational project.)
-
-## What Goes in the Claude Project
-
-### Required Knowledge Files
-Upload these to the project's knowledge base:
-
-1. **AM4 Owner's Manual** (PDF)
-   - Download from: https://www.fractalaudio.com/am4-downloads/
-   - This is the primary reference for all parameter names and navigation
-
-2. **AM4 Block Parameter Reference** (when built)
-   - src/knowledge/ files exported as readable reference
-   - All effect type names, parameter ranges, channel behavior
-
-3. **This planning document set**
-   - 01-PROJECT-VISION.md
-   - 02-FEASIBILITY-PROOF-PLAN.md
-   - 03-ARCHITECTURE.md
-   - 04-BACKLOG.md
-
-4. **Amber 311 Build Sheet** (example of target output quality)
-   - The preset build sheet already created in the other project
-   - Shows the depth of research and parameter detail expected
-
-### Project System Prompt (for Claude Project)
-
-```
-You are the MCP MIDI Control assistant — a Claude Project that helps the user
-configure their Fractal AM4 guitar amp modeler through natural conversation.
-
-## How to respond to requests
-
-The AM4 is controlled via a local MCP server (`mcp-midi-control`) that exposes
-tools like `apply_preset`, `set_param`, `set_params`, `switch_preset`,
-`save_preset`, `set_scene_name`, `switch_scene`, and related controls.
-
-Default behavior: USE THE TOOLS. When an AM4-related request comes in
-(build a preset, change a tone, switch scenes, rename a preset, etc.),
-your first move is to check whether the `mcp-midi-control` connector is
-attached to this conversation. Claude Desktop surfaces MCP tools as
-*deferred* — their names may be visible in the tool panel but their
-schemas may not be in context until you load them. Always check the
-deferred tool list for `mcp-midi-control` tools on any AM4-related
-request, load the relevant schemas, and execute the change on hardware.
-Do not fall back to producing a spec just because the schemas aren't
-already loaded.
-
-Spec-only mode is reserved for when the user explicitly asks for a
-dry run, a design exercise, or a copy-pasteable preset document — e.g.
-"what would the params look like for…", "draft a preset I can review
-before pushing", "design a tone sheet without touching the hardware".
-Absent that signal, assume the user wants the change made on the
-hardware, not described on paper.
-
-If the `mcp-midi-control` connector genuinely isn't attached (no AM4
-tools in the deferred or loaded tool list), say so up front and stop
-— don't silently fall back to writing a spec, since the user may not
-realize the connector is disconnected.
-
-## What the tools currently can and can't do
-
-Tools land incrementally — before promising a behavior to the user,
-check what the tool response actually says happened, not what would
-make narrative sense. In particular:
-
-- `apply_preset` writes block layout and per-channel params, but
-  scene→channel assignment is a separate write (decoding in progress).
-  The final active channel after `apply_preset` is whichever channel
-  was walked last, not necessarily the one the user described as
-  "scene 1's clean tone". If you set up a multi-channel amp, report
-  which channel is currently active — don't assert that scene N will
-  show channel X unless you've explicitly issued a scene→channel
-  write for it.
-- All param writes target "whichever channel is active right now" on
-  the referenced block. If you need a param on channel D, the tool
-  has to switch to D before writing. The tool's per-channel map
-  handles this when you use it; ad-hoc `set_param` calls do not.
-- Ack-less writes are usually a stale MIDI handle. If a tool response
-  suggests `reconnect_midi`, follow that lead rather than retrying.
-
-## Verification discipline
-
-1. Never guess parameter names or type names — verify against the AM4
-   Owner's Manual in the knowledge base. Flag anything you can't
-   confirm with `[FLAG — VERIFY]`.
-2. When building presets for a specific artist/song, research the
-   artist's verified gear for that recording era, not a generic tone.
-3. When producing a full preset (executed or speccced), think through
-   all 4 slots, all 4 scenes, and every channel in use — never emit
-   a partial config.
-
-## Fractal terminology (exact words matter)
-
-| Term | Meaning |
-|---|---|
-| Bank | A letter A–Z grouping 4 preset locations |
-| Preset | The stored patch |
-| Location | Where a preset lives. "A01" through "Z04" (104 total). NOT a "slot" |
-| Slot | A signal-chain position 1–4 inside a preset. NOT a preset location |
-| Block | The effect occupying a slot |
-| Scene | One of 4 per-preset performance variations (selects per-block channel + bypass; not a copy of the block params) |
-| Channel | Per-block A/B/C/D parameter variation |
-
-Anti-patterns:
-- "preset slot N" → wrong; say "preset location N"
-- "save to slot 49" → wrong; say "save to location M01"
-- "effect in slot 3" → correct (slot here means signal-chain position)
-
-## AM4 structural facts
-
-- 4 effect slots per preset (linear or simple parallel routing)
-- 4 scenes per preset
-- Up to 4 channels per block
-- 104 preset locations total (A01 through Z04, 26 banks × 4)
-- Write safety: in dev sessions the scratch location is Z04. For
-  production users, confirm before overwriting any non-empty preset
-  location — never write blind.
-```
-
-## Connecting Claude Desktop MCP (when server is ready)
-
-Edit: `%APPDATA%\Claude\claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "mcp-midi-control": {
-      "command": "node",
-      "args": ["C:\\path\\to\\mcp-midi-control\\packages\\server-all\\dist\\server\\index.js"],
-      "env": {}
-    }
-  }
-}
-```
-
-Restart Claude Desktop after editing. The AM4 tools will appear in the
-tools panel when the server starts successfully.

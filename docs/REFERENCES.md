@@ -183,10 +183,17 @@ Active community. Useful search terms:
 - "preset format" — reverse-engineering discussions (mostly Axe-Fx III, some apply).
 - "3rd party MIDI" — expected usage and gotchas.
 
+### Axe-Fx II community libraries
+A detailed scan of the open-source community RE projects (bspaulding,
+tysonlt, laxu) with license / staleness / coverage notes lives in
+**`docs/axe-fx-ii-community-re-methodology.md`**. That doc is the
+canonical inventory — don't duplicate the per-library breakdown here.
+
 ### Axe-Fx III preset-format reverse-engineering
 Community projects that have partially reverse-engineered the Axe-Fx III preset
 binary are potential cross-references for AM4 (same family, similar format):
 - Not formally indexed here; search `github.com` for `axefx3` / `fractal preset parser`.
+- Fractal Forum thread #159885 archived at `docs/_private/fractal-forum-text.txt`.
 
 ---
 

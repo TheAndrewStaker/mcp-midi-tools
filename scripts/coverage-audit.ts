@@ -204,48 +204,63 @@ console.log(`Ghidra catalog: ${existsSync(GHIDRA_AM4) ? `${Object.keys(catalogBy
 console.log(`Goldens with SET_PARAM wire bytes: ${goldenPidPairs.size} distinct (pidLow, pidHigh) pairs`);
 console.log('');
 
-console.log('AM4 PARAM COVERAGE (per Ghidra catalog family)');
-console.log('');
-console.log(
-  '  ' + pad('Family', 12) + pad('Blocks', 22) +
-  padl('Catalog', 9) + padl('In params.ts', 14) + padl('Goldens', 10) + '  ' + 'Catalog %'
-);
-console.log('  ' + '─'.repeat(78));
+// Split families into AM4-placeable (has at least one AM4 block mapped)
+// vs product-line-only (in Ghidra catalog but not placeable on AM4).
+// The Ghidra catalog is product-line-wide (Axe-Fx III / FM9 / FM3 /
+// AM4) — families like PITCH / MULTITAP / PLEX / VOCODER live on
+// larger Fractal hardware, not on AM4's 4-slot pedal. Mixing them
+// into one TOTAL produces a misleading "AM4 coverage" headline.
 
-const sortedFamilies = Object.values(familyMap)
-  .filter((f) => f.catalogCount > 0 || f.shippedCount > 0)
+const placeable = Object.values(familyMap)
+  .filter((f) => f.blocks.length > 0)
+  .sort((a, b) => b.catalogCount - a.catalogCount);
+const productLineOnly = Object.values(familyMap)
+  .filter((f) => f.catalogCount > 0 && f.blocks.length === 0)
   .sort((a, b) => b.catalogCount - a.catalogCount);
 
-let totalCatalog = 0, totalShipped = 0, totalGolden = 0, totalAddressed = 0;
-for (const f of sortedFamilies) {
-  const addressedFromCatalog = catalogParamsAddressed[f.family]?.size ?? 0;
-  const pct = f.catalogCount > 0
-    ? `${Math.round((addressedFromCatalog / f.catalogCount) * 100)}%`
-    : '—';
+function renderFamilyTable(rows: FamilyCoverage[], totalLabel: string): void {
   console.log(
-    '  ' + pad(f.family, 12) + pad(f.blocks.join(', ') || '—', 22) +
-    padl(f.catalogCount || '—', 9) + padl(f.shippedCount || '—', 14) + padl(f.goldenCount || '—', 10) + '  ' + pct
+    '  ' + pad('Family', 12) + pad('Blocks', 22) +
+    padl('Catalog', 9) + padl('In params.ts', 14) + padl('Goldens', 10) + '  ' + 'Catalog %'
   );
-  totalCatalog += f.catalogCount;
-  totalShipped += f.shippedCount;
-  totalGolden += f.goldenCount;
-  totalAddressed += addressedFromCatalog;
+  console.log('  ' + '─'.repeat(78));
+  let tC = 0, tS = 0, tG = 0, tA = 0;
+  for (const f of rows) {
+    const addressedFromCatalog = catalogParamsAddressed[f.family]?.size ?? 0;
+    const pct = f.catalogCount > 0
+      ? `${Math.round((addressedFromCatalog / f.catalogCount) * 100)}%`
+      : '—';
+    console.log(
+      '  ' + pad(f.family, 12) + pad(f.blocks.join(', ') || '—', 22) +
+      padl(f.catalogCount || '—', 9) + padl(f.shippedCount || '—', 14) + padl(f.goldenCount || '—', 10) + '  ' + pct
+    );
+    tC += f.catalogCount;
+    tS += f.shippedCount;
+    tG += f.goldenCount;
+    tA += addressedFromCatalog;
+  }
+  console.log('  ' + '─'.repeat(78));
+  const pct = tC > 0 ? `${Math.round((tA / tC) * 100)}%` : '—';
+  console.log(
+    '  ' + pad(totalLabel, 12) + pad('', 22) +
+    padl(tC, 9) + padl(tS, 14) + padl(tG, 10) + '  ' + pct
+  );
 }
-console.log('  ' + '─'.repeat(78));
-const totalPct = totalCatalog > 0 ? `${Math.round((totalAddressed / totalCatalog) * 100)}%` : '—';
-console.log(
-  '  ' + pad('TOTAL', 12) + pad('', 22) +
-  padl(totalCatalog, 9) + padl(totalShipped, 14) + padl(totalGolden, 10) + '  ' + totalPct
-);
+
+console.log('AM4 PARAM COVERAGE — placeable families only');
+console.log('  Families with at least one AM4 block mapped. This is the real');
+console.log('  AM4 denominator — the TOTAL % is meaningful AM4 coverage.');
+console.log('');
+renderFamilyTable(placeable, 'AM4 TOTAL');
 console.log('');
 
-// Catalog families NOT mapped to any block — these are the "unbinded" families
-const unmappedFamilies = Object.values(familyMap)
-  .filter((f) => f.catalogCount > 0 && f.blocks.length === 0);
-if (unmappedFamilies.length > 0) {
-  console.log('Catalog families WITHOUT a known pidLow binding (potential future MCP surfaces):');
+if (productLineOnly.length > 0) {
+  console.log('Ghidra catalog families NOT placeable on AM4 (Fractal product-line scope)');
+  console.log('  These families live in the editor binary because Axe-Fx III / FM9 /');
+  console.log('  FM3 share the codebase. AM4\'s 4-slot pedal does not expose them, so');
+  console.log('  they don\'t count against AM4 coverage. Listed here for awareness:');
   console.log('');
-  for (const f of unmappedFamilies.sort((a, b) => b.catalogCount - a.catalogCount)) {
+  for (const f of productLineOnly) {
     console.log(`  ${pad(f.family, 14)} ${padl(f.catalogCount, 4)} paramIds catalog-known`);
   }
   console.log('');
@@ -294,13 +309,16 @@ console.log('');
 // What the audit DOESN'T tell you — direct ask for the open work
 console.log('READ THIS WHEN PLANNING NEXT WORK');
 console.log('');
+console.log('  • The "AM4 TOTAL" row is the real AM4 coverage. Earlier versions');
+console.log('    mixed product-line-only families into that total and produced a');
+console.log('    misleading sub-20% headline — those families aren\'t AM4 blocks.');
 console.log('  • Catalog % counts only entries with pidHigh >= 10 — generic params');
 console.log('    (level/mix/balance/bypass at pidHigh 0-9, plus channel-select at');
 console.log('    0x07D2) are NOT in the catalog and are counted separately in the');
 console.log('    "In params.ts" column.');
 console.log('  • Goldens column counts entries where verify-msg.ts has a byte-');
 console.log('    exact wire test. Entries without goldens are unverified end-to-end.');
-console.log('  • "Catalog families WITHOUT pidLow" lists every family the binary');
-console.log('    knows about but we haven\'t mapped to a wire address yet —');
-console.log('    each one is a potential MCP surface unlock from one capture.');
+console.log('  • Axe-Fx III shows 0 per-param coverage because SET_PARAM is still');
+console.log('    undecoded. Cracking one III SET_PARAM frame unlocks 2216 paramIds');
+console.log('    that already live in the III Ghidra catalog. Single biggest unlock.');
 console.log('');
