@@ -44,6 +44,13 @@ interface RawResult {
   context: string;
   snippet: string;
   page: number;
+  /**
+   * Optional — present only when the dump came from
+   * docs/_private/forum-scrape-searches-batch.js. Lists which forum
+   * search queries surfaced this result. Multi-query hits = high
+   * signal.
+   */
+  matched_queries?: string[];
 }
 
 interface Dump {
@@ -105,6 +112,13 @@ function scoreResult(r: RawResult): { score: number; matched: string[] } {
       score += snippet;
       matched.push(`${label}:snippet`);
     }
+  }
+  // Bonus: results that hit multiple forum search queries in a
+  // batch search are inherently higher-signal. +3 per extra query.
+  if (r.matched_queries && r.matched_queries.length > 1) {
+    const bonus = (r.matched_queries.length - 1) * 3;
+    score += bonus;
+    matched.push(`multi-query+${bonus}`);
   }
   return { score, matched };
 }
@@ -174,6 +188,9 @@ for (const t of threads.slice(0, 10)) {
     console.log(`     • [${p.score}]  ${p.url}`);
     if (p.matchedLabels.length > 0) {
       console.log(`         matched: ${p.matchedLabels.join(', ')}`);
+    }
+    if (p.matched_queries && p.matched_queries.length > 0) {
+      console.log(`         search queries: ${p.matched_queries.join('  |  ')}`);
     }
     if (p.snippet) {
       const snip = p.snippet.replace(/\s+/g, ' ').slice(0, 200);
