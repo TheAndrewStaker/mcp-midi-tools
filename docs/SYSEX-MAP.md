@@ -1642,6 +1642,39 @@ AxeEdit-family blocks the AM4-Edit codebase carries from the shared
 Fractal source — verify hardware support before exposing as MCP
 tools.
 
+### Non-placeable addressable blocks
+
+`packages/am4/src/blockTypes.ts` only lists the 17 blocks placeable
+in AM4's 4 slots. But the wire format addresses additional system-
+wide "blocks" via dedicated pidLow values. Documented so far:
+
+| pidLow | Block | Catalog family | UI page | Notes |
+|---|---|---|---|---|
+| `0x0025` | Input Noise Gate (`ingate.*`) | INPUT (case 0x29) | "Input" | Not in `BLOCK_TYPE_VALUES` (not slot-placeable). Verified: our `ingate.threshold` pidHigh=10 matches `INPUT_THRESH` paramId 10. |
+| `0x003e` | Cabinet | CABINET (case 0xb) | "Cab" or part of "Amp Expert" | §6k. AM4's amp Expert page Cabinet tab writes here. |
+
+The PATCH family (case 0x3c, 85 params — AM4-specific) covers
+scene-level config that isn't tied to a single block:
+
+- `PATCH_SCENE_OUTPUT1..4` — per-scene output 1-4 enable/mute
+- `PATCH_ROUTING_SLOT2..4` — inter-slot routing (parallel/serial)
+- `PATCH_4CM` — Four Cable Method mode
+- `PATCH_SCENE_N_MIDI_MSG_M / _CH_M / _VAL_M / _EXEC_M` — per-scene
+  MIDI sends (4 messages × 4 scenes — sends external MIDI when a
+  scene activates)
+- `PATCH_AMP_CHA_COLOR..CHD_COLOR` — per-amp-channel color tags (UI)
+- `PATCH_SCENE_N_MIDI_MENU`, `PATCH_SCENE_MIDI_CLEAR` — MIDI menu / clear
+
+PATCH's pidLow has not yet been captured on hardware (no USB capture
+of AM4-Edit firing routing/4CM/scene-MIDI changes). Likely
+candidates: pidLow=0 (system-wide) or a dedicated patch-config
+pidLow. **Future capture (HW-NNN) needed to confirm.**
+
+Similarly, the GLOBAL family (case 0x1, 99 params in AM4 catalog)
+covers system-wide settings (tuner mode, USB levels, output config,
+tap-tempo mode, etc.). Its pidLow address path is also TBD — likely
+similar to PATCH (pidLow=0 or a dedicated GLOBAL pidLow).
+
 ### Tooling
 
 Regenerate the AM4 catalog locally (~30 sec):
