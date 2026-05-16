@@ -422,7 +422,20 @@ console.log(`Inferred pidLow for ${pidlowMap.size} families.`);
 // To lower: confirm the new count is intentional (renamed param matches
 // XML display), then update this constant.
 
-const WIRED_MISLABEL_CEILING = 135;
+// Session 89 (2026-05-16): bumped 135 → 143 for the DISTORT UI-MISSING
+// closeout (16 new amp params under pidLow=0x003a). 8 of the 16 have
+// `name` divergent from the AM4-Edit XML display label by design:
+//   - amp.spkr_drive ≠ "Drive"            — disambiguates vs drive.drive
+//   - amp.input_eq_frequency ≠ "Frequency"  — mirrors input_eq_q / _gain family
+//   - amp.overdrive ≠ "Normal Gain"       — resolver name (variant-stable);
+//                                            "Normal Gain" is variant-specific
+//   - amp.b_plus_monitor ≠ "B+"           — _monitor suffix marks read-only
+//   - amp.gain_monitor ≠ "Gain"           — disambiguates vs amp.gain (id=11)
+//   - amp.headroom_monitor ≠ "HEADROOM"   — _monitor suffix marks read-only
+//   - amp.presence_prepresence ≠ "Treble" — XML label misleading; resolver
+//                                            keeps the dedupe suffix
+//   - amp.pa_high_cut ≠ "Tone"            — pa_ prefix mirrors power-amp family
+const WIRED_MISLABEL_CEILING = 143;
 if (totals['WIRED-MISLABEL'] > WIRED_MISLABEL_CEILING) {
   console.error('');
   console.error(`FAIL: WIRED-MISLABEL count is ${totals['WIRED-MISLABEL']}, ceiling is ${WIRED_MISLABEL_CEILING}.`);

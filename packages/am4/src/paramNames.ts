@@ -115,6 +115,144 @@ export const PARAM_NAMES: Readonly<Record<string, Readonly<Record<number, ParamN
     83: { name: 'compressor_threshold', unit: 'db', displayMin: -60, displayMax: 0 },
     84: { name: 'master_vol_trim', unit: 'count', displayMin: 0.1, displayMax: 10 },
     104: { name: 'high_treble', unit: 'db', displayMin: -12, displayMax: 12 },
+    // Session 89 (2026-05-16): DISTORT UI-MISSING closeout from
+    // samples/captured/decoded/am4-params-proposed.ts (Ghidra-mined
+    // catalog, Sessions 82–83) + cross-ref audit (35 UI-MISSING amp
+    // params at pidLow=0x003a). Same workflow as REVERB + DELAY
+    // commit 5de0870: route through paramNames.ts overrides to
+    // correct the cache pipeline's c=1 → 'db' fallback for Hz / count
+    // entries, plus full overrides where c is non-default (c=0.4166
+    // for spkr-reso knobs, c=2 for spkrdrive, c=31.62 for definition).
+    // Names re-state the GENERATED_PARAM_NAMES entry verbatim where
+    // present (firmware-truth from AM4-Edit.exe's variant resolver);
+    // only unit / displayMin / displayMax overrides are emitted to
+    // correct the cache pipeline defaults. Enum-typed ids (typecode
+    // 16) need custom value tables and stay hand-authored in
+    // params.ts later — see TODOs at the end of the amp: block.
+    //
+    // id=34 DISTORT_SPKRLFGAIN ("Low Reso") — cache type=48 a=0
+    // b=24 c=0.4166666… → display ×c → 0..10 knob. Generator can't
+    // infer c=0.4166; full override required. No GENERATED entry
+    // (resolver doesn't reach this id), so emit the name here too.
+    34: { name: 'low_reso', unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+    // id=38 DISTORT_MVCAP ("Master Vol Cap") — cache type=72 (log10)
+    // a=1e-6 b=1e-3 c=1e6 → 1..1000 pF (Master-Volume bypass
+    // capacitor in pF; sibling to amp.bright_cap at id=20 which uses
+    // the same pf unit). GENERATED has `master_vol_cap`.
+    38: { name: 'master_vol_cap', unit: 'pf', displayMin: 1, displayMax: 1000 },
+    // id=51 DISTORT_SPKRHFGAIN ("Hi Reso") — same shape as id=34
+    // (cache type=48, c=0.4166666…). GENERATED has `hi_reso`.
+    51: { name: 'hi_reso', unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+    // id=57 DISTORT_SPKRDRIVE ("Drive") — speaker-stage drive knob.
+    // Cache type=48 a=0 b=5 c=2 → display 0..10 knob. Generator can't
+    // infer c=2; full override required. GENERATED has `drive`, which
+    // collides with the existing drive block's `drive` (different
+    // block — no collision at lookup). Renamed to `spkr_drive` to
+    // avoid amp.drive vs drive.drive ambiguity in tool descriptions.
+    57: { name: 'spkr_drive', unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+    // id=79 DISTORT_INEQFREQ ("Frequency") — input-EQ peaking
+    // frequency. Cache type=66 a=100 b=10000 c=1 → Hz; default 'db'
+    // wrong. GENERATED has `frequency`. The label "Frequency" alone
+    // is ambiguous across amp's two EQ stages — renamed to
+    // `input_eq_frequency` to mirror the existing `input_eq_low_cut`
+    // / `input_eq_q` / `input_eq_gain` naming at adjacent paramIds.
+    79: { name: 'input_eq_frequency', unit: 'hz', displayMin: 100, displayMax: 10000 },
+    // id=81 DISTORT_DRIVE2 ("Normal Gain") — second drive register
+    // for amps with a Normal channel (Marshall JTM/JCM-style).
+    // Cache type=48 c=10 → knob_0_10 inference works; unit not
+    // overridden. GENERATED has `overdrive` from the variant
+    // resolver — keep the resolver name. (Cache pipeline will
+    // auto-emit this entry on next gen-params since GENERATED
+    // supplies the name.) Registered here for documentation and
+    // to give the entry an explicit displayMin/Max audit trail.
+    81: { name: 'overdrive', unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+    // id=86 DISTORT_DEFINITION ("Definition") — Power-amp definition
+    // knob. Cache type=48 a=-0.31623 b=0.31623 c=31.62299 → bipolar
+    // ×c → -10..+10. The 31.62 scale is ≈ 10/√10 — power-amp
+    // definition appears stored on a log-axis but displayed as a
+    // bipolar knob. Generator can't infer c=31.62; full override.
+    // Use `count` (not bipolar_percent) since the front-panel reads
+    // -10.0..+10.0, not ±100%.
+    86: { name: 'definition', unit: 'count', displayMin: -10, displayMax: 10 },
+    // id=87 DISTORT_CFTHRESH ("Compression") — Cathode-Follower
+    // compression amount. Cache type=53 c=100 → percent inference
+    // works; unit not overridden. GENERATED has `compression`.
+    87: { name: 'compression', unit: 'percent', displayMin: 0, displayMax: 100 },
+    // id=90 DISTORT_HICUT ("High Cut") — Preamp high-cut Hz.
+    // Cache type=66 a=200 b=20000 c=1 → Hz; default 'db' wrong.
+    // GENERATED has `high_cut`.
+    90: { name: 'high_cut', unit: 'hz', displayMin: 200, displayMax: 20000 },
+    // id=100 DISTORT_CBRATIO ("Cathode Resistance") — Cathode-bias
+    // resistance amount. Cache type=53 c=100 → percent inference
+    // works; unit not overridden. GENERATED has `cathode_resistance`.
+    100: { name: 'cathode_resistance', unit: 'percent', displayMin: 0, displayMax: 100 },
+    // id=125 DISTORT_VCCMON ("B+") — Power-supply B+ voltage MONITOR
+    // (read-only meter, not a knob). Cache type=0 a=0 b=1 c=1 → raw
+    // 0..1 float. Display as `count` (0..1) instead of the dB default.
+    // GENERATED has `vccmon` (resolver had no XML label). Renamed
+    // to `b_plus_monitor` to surface the function (it's the B+
+    // headroom indicator behind the "B+" front-panel display).
+    125: { name: 'b_plus_monitor', unit: 'count', displayMin: 0, displayMax: 1 },
+    // id=126 DISTORT_GAINMON ("Gain") — Drive-stage gain MONITOR
+    // (read-only meter). Cache type=0 c=1 → count. GENERATED has
+    // `gain_gainmon` (dedupe artifact since `gain` is owned by id=11).
+    // Renamed to `gain_monitor` for clarity.
+    126: { name: 'gain_monitor', unit: 'count', displayMin: 0, displayMax: 1 },
+    // id=137 DISTORT_VPLATEMON ("HEADROOM") — Power-amp plate-
+    // voltage headroom monitor. Cache type=0 c=1 → count.
+    // GENERATED has `headroom`.
+    137: { name: 'headroom_monitor', unit: 'count', displayMin: 0, displayMax: 1 },
+    // id=138 DISTORT_PREPRESENCE ("Treble") — Preamp-stage presence
+    // shaper (the label is "Treble" on some amps, but the wire/
+    // catalog calls it PREPRESENCE — pre-power-amp presence).
+    // Cache type=48 c=10 → knob_0_10 inference works. GENERATED has
+    // `presence_prepresence` (dedupe vs amp.presence at id=30).
+    138: { name: 'presence_prepresence', unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+    // id=140 DISTORT_PAHICUT ("Tone") — Power-amp high-cut shaper
+    // (label is "Tone" on AM4-Edit, catalog calls it PAHICUT).
+    // Cache type=48 c=10 → knob_0_10 inference works. GENERATED has
+    // `high_cut_pahicut`. Renamed to `pa_high_cut` for the same
+    // reason `high_cut` (id=90) is preamp-side: clearer family
+    // separation in describe_device output.
+    140: { name: 'pa_high_cut', unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+    // id=145 DISTORT_GLOBALMASTER ("Overdrive Volume") — Global
+    // post-amp master that scales after the cab sim. Cache type=48
+    // c=10 → knob_0_10 inference works. GENERATED has
+    // `overdrive_volume`.
+    145: { name: 'overdrive_volume', unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+    // TODOs — enum-typed ids (cache typecode=16). Each needs a custom
+    // enum value table hand-authored in params.ts; auto-emission via
+    // paramNames.ts would force the wrong enumImport (AMP_TYPES_VALUES
+    // is the Type enum at id=10, not these per-feature enums). The
+    // GENERATED_PARAM_NAMES table also skips these because the
+    // resolver only emits to non-enum cache slots. Symbol + range +
+    // value labels listed below for the future capture-driven pass:
+    //   id=47  DISTORT_BOOST       enum 0..1   "In Boost Sw" [OFF, ON]
+    //   id=61  DISTORT_SATSWITCH   enum 0..2   "Saturation Sw" [OFF, ON, ON (IDEAL)]
+    //   id=76  DISTORT_PRETUBETYPE enum 0..8   "Preamp Tube Type" [12AX7A SYL, ECC83, 7025, 12AX7A JJ, ECC803S, EF86, 12AX7A RCA, 12AX7A, 12AX7B]
+    //   id=93  DISTORT_SUPPLYTYPE  enum 0..1   "Power Type" [AC, DC]
+    //   id=103 DISTORT_PRESAG      enum 0..1   "Preamp Sag" [OFF, ON]
+    //   id=109 DISTORT_INEQTYPE    enum 0..3   "Type" [LOWSHELF, PEAKING, HIGHSHELF, TILT EQ]
+    //   id=111 DISTORT_PRESSHIFT   enum 0..1   "Pres. Shift" [OFF, ON]
+    //   id=117 DISTORT_EQPOSITION  enum 0..2   "Location" [OUTPUT, PRE P.A., INPUT]
+    //   id=130 DISTORT_BOOSTTYPE   enum 0..14  "In Boost Type" [NEUTRAL, T808, T808 MOD, SUPER OD, FULL OD, AC BOOST, SHIMMER, FAS BOOST, GRINDER, TREBLE BOOST, MID BOOST, CC BOOST, SHRED BOOST, RCB BOOST, JP IIC+ SHRED]
+    //   id=133 DISTORT_EQONOFF     enum 0..1   "Off / On" [OFF, ON]
+    //   id=135 DISTORT_SPKRMODEL   enum 0..92  "Spkr Imp. Curve" — 93-cab impedance-curve table (factory speaker IRs). Big table; consider a dedicated SPKR_IMP_CURVE_VALUES export in cacheEnums.ts.
+    //   id=141 DISTORT_PAONOFF     enum 0..1   "Power Amp Modeling" [OFF, ON]
+    //   id=142 DISTORT_SPKRBREAKUP enum 0..2   "Breakup" [SOFT, MEDIUM, HARD]
+    //   id=144 DISTORT_PLATEDIODE  enum 0..1   "Plate Suppr. Diodes" [OFF, ON]
+    //   id=146 DISTORT_AUTO_SPKR_Z enum 0..1   "DynaMatch" [OFF, ON]
+    //   id=147 DISTORT_NFBCOMP     enum 0..1   "NFB Compensation" [OFF, ON]
+    //   id=148 DISTORT_MODE_1      enum 0..3   "Mid/Gain Boost" [mode 1, mode 2, mode 3, mode 4]
+    //   id=149 DISTORT_MODE_2      enum 0..3   "Tubes" — cache lists kind=float typecode=16 a=0 b=3; treat as 4-state enum (values pending capture).
+    //
+    // TODO — action / button-class (no cache record):
+    //   id=65520 DISTORT_ZEROEQ    button       "Zero All" — XML exposes
+    //     this as a UI control but cache has no record (button class,
+    //     not a stored param). Wire-write should send the action to the
+    //     GEQ block to reset all bands to 0 dB. Likely needs a synthetic
+    //     entry in params.ts with a fixed action payload rather than a
+    //     value range. Defer pending capture-confirmed wire shape.
   },
   drive: {
     2: BALANCE,

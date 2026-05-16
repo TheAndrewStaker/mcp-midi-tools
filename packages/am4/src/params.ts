@@ -1283,6 +1283,137 @@ export const KNOWN_PARAMS = {
     unit: 'ms', displayMin: 0, displayMax: 100,
   },
 
+  // Session 89 (2026-05-16) — DISTORT UI-MISSING closeout. 16 new amp
+  // params mirrored from CACHE_PARAMS so the coverage-audit (which
+  // text-greps params.ts) sees them. Wire bytes + units come from
+  // paramNames.ts overrides; cacheParams.ts emits the canonical entries
+  // and verify-cache-params guards byte-for-byte agreement. displayLabel
+  // = AM4-Edit XML "name=" attribute for the same EditorControl. See
+  // samples/captured/decoded/am4-params-proposed.ts for the Ghidra
+  // catalog source (Sessions 82–83) and cache-section2.json for the
+  // signature data that pinned each unit + range.
+  'amp.low_reso': {
+    block: 'amp', name: 'low_reso',
+    displayLabel: 'Low Reso',
+    pidLow: 0x003a, pidHigh: 0x0022,
+    unit: 'knob_0_10', displayMin: 0, displayMax: 10,
+  },
+  'amp.master_vol_cap': {
+    block: 'amp', name: 'master_vol_cap',
+    displayLabel: 'Master Vol Cap',
+    pidLow: 0x003a, pidHigh: 0x0026,
+    // Cache typecode=72 → log10 storage (sibling to amp.bright_cap at
+    // id=20). Capacitance scaling in pF.
+    unit: 'pf', displayMin: 1, displayMax: 1000,
+    scaling: 'log10',
+  },
+  'amp.hi_reso': {
+    block: 'amp', name: 'hi_reso',
+    displayLabel: 'Hi Reso',
+    pidLow: 0x003a, pidHigh: 0x0033,
+    unit: 'knob_0_10', displayMin: 0, displayMax: 10,
+  },
+  'amp.spkr_drive': {
+    block: 'amp', name: 'spkr_drive',
+    displayLabel: 'Drive',
+    pidLow: 0x003a, pidHigh: 0x0039,
+    // Speaker-stage drive knob (catalog: DISTORT_SPKRDRIVE). Renamed
+    // from the resolver's bare 'drive' to disambiguate against
+    // drive.drive in the separate Drive block.
+    unit: 'knob_0_10', displayMin: 0, displayMax: 10,
+  },
+  'amp.input_eq_frequency': {
+    block: 'amp', name: 'input_eq_frequency',
+    displayLabel: 'Frequency',
+    pidLow: 0x003a, pidHigh: 0x004f,
+    // Input-EQ peaking frequency. Renamed from the resolver's bare
+    // 'frequency' to mirror the existing input_eq_q / input_eq_gain /
+    // input_eq_low_cut family on the same UI page.
+    unit: 'hz', displayMin: 100, displayMax: 10000,
+  },
+  'amp.overdrive': {
+    block: 'amp', name: 'overdrive',
+    displayLabel: 'Normal Gain',
+    pidLow: 0x003a, pidHigh: 0x0051,
+    unit: 'knob_0_10', displayMin: 0, displayMax: 10,
+  },
+  'amp.definition': {
+    block: 'amp', name: 'definition',
+    displayLabel: 'Definition',
+    pidLow: 0x003a, pidHigh: 0x0056,
+    // Cache c=31.62299 (≈10/√10) → bipolar power-amp definition knob
+    // displayed -10..+10 on the front panel. Uses 'count' rather than
+    // bipolar_percent because front panel reads -10.0..+10.0, not ±100%.
+    unit: 'count', displayMin: -10, displayMax: 10,
+  },
+  'amp.compression': {
+    block: 'amp', name: 'compression',
+    displayLabel: 'Compression',
+    pidLow: 0x003a, pidHigh: 0x0057,
+    unit: 'percent', displayMin: 0, displayMax: 100,
+  },
+  'amp.high_cut': {
+    block: 'amp', name: 'high_cut',
+    displayLabel: 'High Cut',
+    pidLow: 0x003a, pidHigh: 0x005a,
+    unit: 'hz', displayMin: 200, displayMax: 20000,
+  },
+  'amp.cathode_resistance': {
+    block: 'amp', name: 'cathode_resistance',
+    displayLabel: 'Cathode Resistance',
+    pidLow: 0x003a, pidHigh: 0x0064,
+    unit: 'percent', displayMin: 0, displayMax: 100,
+  },
+  'amp.b_plus_monitor': {
+    block: 'amp', name: 'b_plus_monitor',
+    displayLabel: 'B+',
+    pidLow: 0x003a, pidHigh: 0x007d,
+    // Read-only B+ voltage monitor (front-panel meter, not a knob).
+    // Cache type=0 a=0 b=1 c=1 → raw 0..1 float; display as count.
+    unit: 'count', displayMin: 0, displayMax: 1,
+  },
+  'amp.gain_monitor': {
+    block: 'amp', name: 'gain_monitor',
+    displayLabel: 'Gain',
+    pidLow: 0x003a, pidHigh: 0x007e,
+    // Read-only gain monitor. Sibling to b_plus_monitor / headroom_monitor.
+    unit: 'count', displayMin: 0, displayMax: 1,
+  },
+  'amp.headroom_monitor': {
+    block: 'amp', name: 'headroom_monitor',
+    displayLabel: 'HEADROOM',
+    pidLow: 0x003a, pidHigh: 0x0089,
+    // Read-only plate-voltage headroom monitor.
+    unit: 'count', displayMin: 0, displayMax: 1,
+  },
+  'amp.presence_prepresence': {
+    block: 'amp', name: 'presence_prepresence',
+    displayLabel: 'Treble',
+    pidLow: 0x003a, pidHigh: 0x008a,
+    // Preamp-stage presence shaper. AM4-Edit XML labels this "Treble"
+    // on some amps; catalog name is DISTORT_PREPRESENCE. Name keeps
+    // the resolver's dedupe suffix since amp.presence (id=30) is the
+    // post-amp presence knob.
+    unit: 'knob_0_10', displayMin: 0, displayMax: 10,
+  },
+  'amp.pa_high_cut': {
+    block: 'amp', name: 'pa_high_cut',
+    displayLabel: 'Tone',
+    pidLow: 0x003a, pidHigh: 0x008c,
+    // Power-amp high-cut shaper. AM4-Edit labels "Tone" but catalog
+    // is DISTORT_PAHICUT; renamed from resolver's 'high_cut_pahicut'
+    // to surface the family (pa_ prefix mirrors the rest of the
+    // power-amp stage knobs).
+    unit: 'knob_0_10', displayMin: 0, displayMax: 10,
+  },
+  'amp.overdrive_volume': {
+    block: 'amp', name: 'overdrive_volume',
+    displayLabel: 'Overdrive Volume',
+    pidLow: 0x003a, pidHigh: 0x0091,
+    // Global post-amp master that scales after the cab sim.
+    unit: 'knob_0_10', displayMin: 0, displayMax: 10,
+  },
+
   'drive.drive': {
     block: 'drive', name: 'drive',
     displayLabel: 'Gain',
