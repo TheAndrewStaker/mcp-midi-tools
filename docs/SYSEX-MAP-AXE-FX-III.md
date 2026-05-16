@@ -382,9 +382,9 @@ scans returned 0 hits.
 | 0x19 | ❌ | Undocumented (3-byte payload, FOOTSWITCH_*?) |
 | 0x1a | ❌ | Undocumented (3-byte payload, FOOTSWITCH_*?) |
 | 0x1b | ❌ | Undocumented (3-byte payload, FOOTSWITCH_*?) |
-| 0x1f | ❌ | **High suspicion: SET_PARAM equivalent** (variable payload + model byte) |
-| 0x3f | ❌ | Undocumented |
-| 0x40 | ❌ | Undocumented |
+| 0x1f | ❌ | Caller `FUN_140339ed0(longlong*, ushort*)` packs a 16-bit value into 7-bit septets before calling. **Smaller payload than full SET_PARAM would need** (SET_PARAM needs effectId+paramId+value ~60 bits / 9 septets). Likely a 14-bit-payload-only SysEx — candidates: per-effect bypass, channel set, or status query. Re-classified from "high suspicion SET_PARAM" after Session 83 caller-decompile inspection. |
+| 0x3f | ❌ | Caller `FUN_140336dd0(longlong, ushort*)` — same shape as 0x1f (16-bit input + septet pack). Likely paired with 0x40 as a 14-bit-value SysEx pair. |
+| 0x40 | ❌ | Caller `FUN_140337060` — similar shape to 0x3f. |
 | 0x46 | ❌ | Undocumented (paired with 0x47) |
 | 0x47 | ❌ | Undocumented (paramless — like TEMPO TAP shape) |
 | 0x5a | ❌ | Undocumented (scene-related? `+ 0x20 + 'Z'` arithmetic in caller) |
@@ -404,6 +404,39 @@ That's **21 undocumented function bytes** confirmed in AxeEdit III's
 code (v1.14.31), against 10 documented in v1.4. Each one is a real
 SysEx opcode AxeEdit III sends to the device — payload structure
 still needs USBPcap or further decompile analysis per caller.
+
+### What the III's SET_PARAM (still) isn't
+
+Session 83 inspected the callers of the candidate fn bytes (0x1f,
+0x3f, 0x40) and found **none of them carry a SET_PARAM-shaped
+payload**. Each caller packs a single 16-bit value (a `ushort`)
+into septets before invoking the generic builder; SET_PARAM would
+need at minimum a `(effectId, paramId, value)` triple (~60 bits =
+9 septets after 14-bit splits + 32-bit float). The 16-bit-only
+payload suggests these are configuration / bypass / channel-set
+messages rather than per-knob parameter writes.
+
+Three hypotheses for where III SET_PARAM actually lives:
+
+1. **A fn byte we haven't seen invoked by AxeEdit III at runtime.**
+   The Trace dump captures call SITES; if SET_PARAM is on a code
+   path the editor doesn't hit during normal startup-and-poll, we
+   wouldn't see it. (AxeEdit III may primarily use the existing
+   STATUS DUMP `0x13` for read-back and emit fewer per-knob writes
+   than AM4-Edit does.)
+2. **A different protocol layer.** AxeEdit III communicates with
+   the device over both SysEx AND a separate proprietary USB-bulk
+   channel; per-knob writes might use the bulk channel, not SysEx.
+3. **A different message-builder function.** `FUN_1403437d0` is
+   one of two generic builders we identified; the other is
+   `FUN_1403434b0` (only 4 callers). And there are hardcoded
+   builders for specific fn bytes (`FUN_14014d2a0` for 0x77).
+   SET_PARAM might be wrapped by a dedicated builder we haven't
+   found yet.
+
+The cleanest path to actual III SET_PARAM decode remains a USBPcap
+capture of AxeEdit III firing a single-knob change — that surfaces
+the actual wire bytes, regardless of which builder produced them.
 
 ## Effect-type parameter dictionary (Session 82)
 
