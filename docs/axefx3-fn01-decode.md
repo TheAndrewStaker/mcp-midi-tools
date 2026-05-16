@@ -285,19 +285,62 @@ The output is gitignored (samples/) — re-run per session to refresh.
 **Already mined (Session 81):**
 - `MIDI_ERROR_*` table at 0x597108 — 28 codes, full table above.
 
-**Leads not yet mined (each is an independent next pickup):**
+**Mined Session 82 (negative result on the offset-as-index hypothesis):**
 
-- `SYSEX_*` function-byte symbol pool around 0x5aaf80 — includes
-  symbols matching documented functions (`SYSEX_SETGET_BYPASS`,
-  `SYSEX_SETGET_CHANNEL`, `SYSEX_SETGET_TEMPO`, etc.) plus
-  undocumented entries: `SYSEX_DSP_MESSAGE` (Session 78 prioritized
-  this for `get_dsp_usage` decode), `SYSEX_EFFECT_DUMP`,
-  `SYSEX_GUI_CONTROL`, `SYSEX_FS_MESSAGE`, `SYSEX_FS_PASSTHRU_MESSAGE`,
-  `SYSEX_FOOTSWITCH_DUMP`, `SYSEX_SYSTEM_DUMP`. If these are stored
-  as a contiguous string pool indexed by function byte, the index
-  in offset order gives the function-byte assignment for each
-  undocumented function — same technique that decoded the error
-  table.
+The `SYSEX_*` symbol pool exists where Session 81's leads suggested
+— 23 contiguous-ish ASCII strings starting at 0x5aaf80 and running
+to 0x5ab2b0. Filter recipe: `mine-axeedit3-sysex-table.ts`. Full
+list in `SYSEX-MAP-AXE-FX-III.md` "Function names confirmed in
+AxeEdit III binary."
+
+But the `MIDI_ERROR_*` trick — string-pool index = enum value —
+**does NOT hold here.** Of the 8 documented v1.4 names that appear
+in the pool, no single `delta = (fn_byte - string_pool_index)`
+constant fits all anchors:
+
+| String                  | Index | Documented fn | delta |
+|---|---|---|---|
+| SYSEX_SETGET_LOOPER     | 2     | 0x0F          | 13    |
+| SYSEX_GET_SCENENAME     | 3     | 0x0E          | 11    |
+| SYSEX_SETGET_TEMPO      | 5     | 0x14          | 15    |
+| SYSEX_PATCH_STATUS      | 6     | 0x13          | 13    |
+| SYSEX_GET_PATCHNAME     | 10    | 0x0D          | 3     |
+| SYSEX_SETGET_SCENE      | 11    | 0x0C          | 1     |
+| SYSEX_SETGET_CHANNEL    | 12    | 0x0B          | -1    |
+| SYSEX_SETGET_BYPASS     | 13    | 0x0A          | -3    |
+
+There's a sub-run pattern (within each contiguous run of known
+anchors, fn_byte descends by 1 as offset ascends) consistent with
+a `switch (fn) { case 0x14: ...; case 0x13: ...; }` written in
+descending source order — but the runs are non-contiguous and the
+unknown entries between them break any global index → fn formula.
+
+A parallel function-byte array hypothesis was also tested:
+`find-axeedit3-sysex-fnbyte-array.ts` scans the entire 20 MB binary
+for a u8/u16/u32 array of length 23 (and 32 / 48 / 64 / 96 / 128)
+satisfying all 8 anchor constraints. **Zero hits on every stride
+and every guess.** No const u8 lookup table from enum-index to
+function byte exists.
+
+**Conclusion: the binary-string scrape cannot resolve undocumented
+SYSEX_* function bytes.** What it CAN do: confirm the *existence*
+of the 14 undocumented names. Function-byte assignment for those
+names needs one of:
+
+1. **Ghidra / decompiler against `Axe-Edit III.exe`.** No
+   Ghidra-against-III work exists yet (the 14 `ghidra-*.txt`
+   artifacts under `samples/captured/decoded/` are all AM4-Edit
+   and Axe-Edit II generation, model byte 0x07). Decompiling the
+   function that references this string pool would expose the
+   `switch (fn)` cases directly. **This is the cleanest path.**
+2. **USBPcap of AxeEdit III firing each undocumented function.**
+   Direct wire-level evidence; expensive per-function.
+3. **Forum / community scrape for any of these symbol names.**
+   Most of these symbol names are unique enough to be googleable
+   if any community RE has touched them.
+
+**Other leads not yet mined (each is an independent next pickup):**
+
 - `msg_*` format strings: `msg_getBlockString: effectId: %d, paramId
   %d / %d, string %d / %d` and `msg_getParamInfo: EffectId: ...`
   suggest the III has message-builder functions that return
@@ -314,8 +357,12 @@ The output is gitignored (samples/) — re-run per session to refresh.
 The string table at 0x597108 establishes the technique: when
 .rdata contains a contiguous, 8-byte-aligned, NUL-terminated
 string pool that lines up with one enum we've already verified,
-the index → label mapping is reliable. The same technique should
-work on the `SYSEX_*` table next.
+the index → label mapping is reliable. **The SYSEX_* pool does
+NOT satisfy that condition** — same shape, but the strings are
+ordered by something other than function byte (likely source-
+declaration order in a `getSysexFunctionName()` switch). The
+MIDI_ERROR_* table was a lucky alignment, not a generalizable
+trick.
 
 ## Some v1.4 effect IDs aren't actually controllable
 

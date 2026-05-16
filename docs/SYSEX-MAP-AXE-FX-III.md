@@ -354,6 +354,184 @@ column so the agent can see the FC-only blocks before attempting a
 write. Goldens in `scripts/verify-axe-fx-iii-encoding.ts` cover all
 four refusal cases.
 
+## Function bytes confirmed in the AxeEdit III binary (Session 82)
+
+Ghidra mining (`MineAxeEditIIIv2.java` + `TraceAxeEditIIIMessageBuilders.java`,
+both runnable via `scripts/ghidra/run-axeedit3-*.cmd`) identified
+AxeEdit III's generic SysEx message-builder function (`FUN_1403437d0`
+at v1.14.31) which takes the function byte as a runtime parameter.
+Walking its 41 callers reveals **every fn byte AxeEdit III emits**.
+The Fractal model byte is loaded from a device-handle struct field
+at runtime (`param_1 + 0x30`), so `F0 00 01 74 10` doesn't appear as
+a literal byte sequence in `.text` — explaining why v1 byte-pattern
+scans returned 0 hits.
+
+| fn byte | v1.4 documented? | Likely role |
+|---|---|---|
+| 0x0A | ✅ | SET/GET BYPASS |
+| 0x0B | ✅ | SET/GET CHANNEL |
+| 0x0C | ✅ | SET/GET SCENE |
+| 0x0D | ✅ | QUERY PATCH NAME |
+| 0x0E | ✅ | QUERY SCENE NAME |
+| 0x0F | ✅ | SET/GET LOOPER STATE |
+| 0x10 | ✅ | TEMPO TAP |
+| 0x11 | ✅ | TUNER ON/OFF |
+| 0x12 | ❌ | Undocumented (seen 2× in caller scan; payload `local_res10, 1, model-from-struct`) |
+| 0x13 | ✅ | STATUS DUMP |
+| 0x14 | ✅ | SET/GET TEMPO |
+| 0x19 | ❌ | Undocumented (3-byte payload, FOOTSWITCH_*?) |
+| 0x1a | ❌ | Undocumented (3-byte payload, FOOTSWITCH_*?) |
+| 0x1b | ❌ | Undocumented (3-byte payload, FOOTSWITCH_*?) |
+| 0x1f | ❌ | **High suspicion: SET_PARAM equivalent** (variable payload + model byte) |
+| 0x3f | ❌ | Undocumented |
+| 0x40 | ❌ | Undocumented |
+| 0x46 | ❌ | Undocumented (paired with 0x47) |
+| 0x47 | ❌ | Undocumented (paramless — like TEMPO TAP shape) |
+| 0x5a | ❌ | Undocumented (scene-related? `+ 0x20 + 'Z'` arithmetic in caller) |
+| 0x5b | ❌ | Undocumented |
+| 0x5c | ❌ | Undocumented |
+| 0x74 | ❌ | Preset-adjacent (caller chain near 0x77/0x78/0x79) |
+| 0x75 | ❌ | Preset-adjacent |
+| 0x76 | ❌ | Preset-adjacent |
+| 0x77 | ❌ | PRESET-SAVE HEADER (community-RE; hardcoded in `FUN_14014d2a0`) |
+| 0x78 | ❌ | PRESET-SAVE BODY (community-RE) |
+| 0x79 | ❌ | PRESET-SAVE FOOTER (community-RE) |
+| 0x7a | ❌ | Undocumented (preset-LOAD request?) |
+| 0x7b | ❌ | Undocumented |
+| 0x7c | ❌ | Undocumented |
+
+That's **21 undocumented function bytes** confirmed in AxeEdit III's
+code (v1.14.31), against 10 documented in v1.4. Each one is a real
+SysEx opcode AxeEdit III sends to the device — payload structure
+still needs USBPcap or further decompile analysis per caller.
+
+## Effect-type parameter dictionary (Session 82)
+
+Ghidra mining (`DumpAxeEditIIIParamNames.java`, runnable via
+`scripts/ghidra/run-axeedit3-paramnames.cmd`) decoded
+`FUN_140397a40`'s effect-type dispatcher in AxeEdit III. The
+dispatcher is a switch statement with 49 cases (effect-type internal
+enum 1..0x3b minus 4/6/0x1b which return -1). Each case returns a
+pointer to a per-effect param table: an array of 16-byte structs
+`{ int paramId, int padding, const char* nameStr }` terminated by
+paramId == -1. The name strings are exactly the same `EFFECT_*` /
+`REVERB_*` / `GLOBAL_*` etc. symbols the `__block_layout.xml` UI
+config references.
+
+**2216 paramId → paramName pairs extracted across 49 effect types.**
+Full JSON: `samples/captured/decoded/ghidra-axeedit3-paramnames.json`
+(gitignored; re-generate with the Ghidra script).
+
+| case | family | params | v1.4 ID? |
+|---|---|---|---|
+| 0x01 | GLOBAL | 248 | — (system-wide) |
+| 0x02 | CONTROLLERS | 189 | ID_CONTROL=2 (non-addressable) |
+| 0x03 | MOD | 25 | — |
+| 0x05 | IRCAPTURE | 4 | ID_IRCAPTURE=36 |
+| 0x07 | COMP | 37 | ID_COMP1=46 |
+| 0x08 | GEQ | 21 | ID_GRAPHEQ1=50 |
+| 0x09 | PEQ | 33 | ID_PARAEQ1=54 |
+| 0x0a | DISTORT (Drive) | 143 | ID_DISTORT1=58 |
+| 0x0b | CABINET | 126 | ID_CAB1=62 |
+| 0x0c | REVERB | 71 | ID_REVERB1=66 |
+| 0x0d | DELAY | 89 | ID_DELAY1=70 |
+| 0x0e | MULTITAP | 121 | ID_MULTITAP=74 |
+| 0x0f | PLEX | 96 | ID_PLEXDELAY=178 |
+| 0x10 | CHORUS | 32 | ID_CHORUS1=78 |
+| 0x11 | FLANGER | 63 | ID_FLANGER1=82 |
+| 0x12 | ROTARY | 21 | ID_ROTARY=86 |
+| 0x13 | PHASER | 35 | ID_PHASER1=90 |
+| 0x14 | WAH | 25 | ID_WAH=94 |
+| 0x15 | FORMANT | 12 | ID_FORMANT=98 |
+| 0x16 | TREMOLO | 22 | ID_PAN_TREMOLO=106 |
+| 0x17 | PITCH | 114 | ID_PITCH=110 |
+| 0x18 | FILTER | 37 | ID_FILTER=114 |
+| 0x19 | FUZZ | 44 | ID_FUZZ=118 |
+| 0x1a | ENHANCER | 12 | ID_ENHANCER=122 |
+| 0x1c | MIXER | 23 | ID_MIXER=126 |
+| 0x1d | FDBKSEND | 2 | ID_SEND=182 |
+| 0x1e | FDBKRET | 6 | ID_RETURN=186 |
+| 0x1f | SYNTH | 42 | ID_SYNTH=130 |
+| 0x20 | VOCODER | 67 | ID_VOCODER=134 |
+| 0x21 | MEGATAP | 35 | ID_MEGATAPDELAY=138 |
+| 0x22 | CROSSOVER | 15 | ID_XOVER=142 |
+| 0x23 | GATE | 19 | ID_GATE=146 |
+| 0x24 | RINGMOD | 13 | ID_RINGMOD=150 |
+| 0x25 | MULTICOMP | 37 | ID_MULTIBANDCOMP=154 |
+| 0x26 | TENTAP | 49 | ID_TENTAPDELAY=158 |
+| 0x27 | RESONATOR | 40 | ID_RESONATOR=162 |
+| 0x28 | VOLUME | 15 | ID_VOLUME=102 |
+| 0x29 | INPUT | 10 | ID_INPUT1=37 (case 0x29-0x2d share table) |
+| 0x2e | OUTPUT | 26 | ID_OUTPUT1=42 (case 0x2e-0x31 share table) |
+| 0x32 | LOOPER | 24 | ID_LOOPER=166 |
+| 0x33 | TONEMATCH | 27 | ID_TONEMATCH=170 |
+| 0x34 | RTA | 6 | ID_RTA=174 |
+| 0x35 | MIDIBLOCK | 13 | ID_MIDIBLOCK=190 (non-addressable) |
+| 0x36 | MULTIPLEXER | 7 | ID_MULTIPLEXER=191 |
+| 0x37 | IRPLAYER | 26 | ID_IRPLAYER=195 |
+| 0x38 | FC | 29 | ID_FOOTCONTROLLER=199 (non-addressable) |
+| 0x39 | PRESET | 51 | ID_PRESET_FC=200 (non-addressable) |
+| 0x3a | (empty) | 0 | — likely placeholder |
+| 0x3b | DYNDIST | 14 | post-v1.4 (Dynamic Distortion) |
+
+**Notably absent: the AMP block.** Cases 0x04, 0x06, 0x1b in the
+dispatcher return -1 (no param table). AMP almost certainly uses a
+separate parameter-resolver path; finding it is a Session 83+ task.
+
+Family → first paramId for each effect is the canonical paramId for
+that block's "type" knob (REVERB → paramId 0 = REVERB_TYPE; DELAY →
+paramId 0 = DELAY_TYPE; ...). This is enough to start drafting
+`packages/axe-fx-iii/src/params.ts` per-effect descriptors — the
+remaining gap is the III's SET_PARAM wire envelope (which fn byte
+sends a `{effectId, paramId, value}` triple).
+
+## Function names confirmed in AxeEdit III binary
+
+`Axe-Edit III.exe` v1.14.31 contains 23 ASCII strings starting with
+`SYSEX_` in a contiguous-ish .rdata block at offset 0x5aaf80–0x5ab2b0.
+Mining recipe in `scripts/_research/mine-axeedit3-sysex-table.ts`.
+This pool confirms which SysEx-function symbols exist in AxeEdit
+III's source code, but the offset-ordering does NOT encode the
+function byte (verified Session 82 — see
+[`axefx3-fn01-decode.md`](axefx3-fn01-decode.md) "Mined Session 82"
+section for the negative result + scan that ruled out a parallel
+u8/u16/u32 function-byte array).
+
+**Documented in v1.4 PDF (function bytes known):**
+
+- `SYSEX_SETGET_BYPASS` (0x0A), `SYSEX_SETGET_CHANNEL` (0x0B),
+  `SYSEX_SETGET_SCENE` (0x0C), `SYSEX_GET_PATCHNAME` (0x0D),
+  `SYSEX_GET_SCENENAME` (0x0E), `SYSEX_SETGET_LOOPER` (0x0F),
+  `SYSEX_PATCH_STATUS` (0x13), `SYSEX_SETGET_TEMPO` (0x14)
+
+**Confirmed to exist in AxeEdit III source — function bytes
+unknown.** None of these are in the v1.4 PDF. Function-byte
+assignment for these requires Ghidra against `Axe-Edit III.exe`
+(none done yet), USBPcap of AxeEdit firing each, or community
+sources that name the function byte:
+
+| Symbol | Likely purpose |
+|---|---|
+| `SYSEX_DSP_MESSAGE` | DSP-usage / CPU-load query (Session 78 wanted this for `get_dsp_usage` MCP tool) |
+| `SYSEX_EFFECT_DUMP` | Full-effect-state dump for one block |
+| `SYSEX_GUI_CONTROL` | AxeEdit↔device UI-state coordination |
+| `SYSEX_FS_MESSAGE` | Footswitch event message |
+| `SYSEX_FS_PASSTHRU_MESSAGE` | Footswitch passthrough (FC↔III) |
+| `SYSEX_FOOTSWITCH_START` | Footswitch-config session start |
+| `SYSEX_FOOTSWITCH_DATA` | Footswitch-config payload chunk |
+| `SYSEX_FOOTSWITCH_END` | Footswitch-config session end |
+| `SYSEX_FOOTSWITCH_DUMP` | Read all footswitch config |
+| `SYSEX_SYSTEM_DUMP` | Read global/system settings |
+| `SYSEX_A3_TUNER` | Tuner data push (different from documented 0x11 SET-tuner) |
+| `SYSEX_A3_TEMPO` | Tempo down-beat push (different from documented 0x14 SET-tempo) |
+| `SYSEX_A3_SYSTEM_DATA_START` | System-data multi-frame envelope start |
+| `SYSEX_A3_SYSTEM_DATA` | System-data payload |
+| `SYSEX_A3_SYSTEM_DATA_END` | System-data envelope end |
+
+The `A3_*` prefix is plausibly "Axe-Fx III gen-3" naming for push-
+direction or A3-spec-revision messages — distinct from the
+SET/GET request-direction functions.
+
 ## BPM table reference
 
 Forum thread "All Axe Fx III BPM Tempo SysEx 1-200bpm" published
