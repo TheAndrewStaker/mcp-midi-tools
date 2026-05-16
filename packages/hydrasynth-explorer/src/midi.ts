@@ -109,6 +109,9 @@ export function listHydrasynthOutputs(): HydrasynthPortInfo[] {
  * Caller surfaces the throw to the user as an MCP error response.
  */
 export function connectHydrasynth(): HydrasynthConnection {
+  if (process.env.MCP_MOCK_TRANSPORT === '1') {
+    return mockHydrasynthConnection();
+  }
   const out = new midi.Output();
   const outIdx = findHydrasynthOutputIndex(out);
   if (outIdx < 0) {
@@ -172,5 +175,31 @@ export function connectHydrasynth(): HydrasynthConnection {
         try { input.closePort(); } catch { /* already closed */ }
       }
     },
+  };
+}
+
+/**
+ * Hydrasynth mock connection. Returned by `connectHydrasynth()` when
+ * `MCP_MOCK_TRANSPORT=1` is set — lets agent-regression cases run
+ * without an Explorer plugged in.
+ *
+ * Hydrasynth's CC / NRPN writes are fire-and-forget by design (the
+ * device doesn't ack — see `docs/devices/hydrasynth-explorer/
+ * FIRST-SMOKE.md` §3). SysEx patch dumps DO emit acks (`19 00`, `17 00
+ * NN 16`, `1B 00`, `07 00 BANK PATCH` per SysexEncoding.txt) but the
+ * Hydra tools observe these via the `onMessage` listener for
+ * diagnostics, not via blocking awaits — so this no-input mock is
+ * sufficient for both NRPN-driven and SysEx-driven write paths. If a
+ * future agent-regression case needs ack visibility, extend
+ * `mockHydrasynthConnection()` with a responder that synthesizes the
+ * documented Hydrasynth ack bytes.
+ */
+function mockHydrasynthConnection(): HydrasynthConnection {
+  return {
+    send: (_bytes) => { /* no-op — writes accepted, no wire traffic */ },
+    lastSendError: undefined,
+    onMessage: (_handler) => () => { /* no-op unsubscribe */ },
+    hasInput: false,
+    close: () => { /* no-op */ },
   };
 }

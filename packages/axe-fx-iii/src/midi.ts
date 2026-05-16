@@ -14,7 +14,9 @@
 
 import {
   connect,
+  mockConnect,
   type MidiConnection,
+  type MockResponder,
 } from '@mcp-midi-control/core/midi/transport.js';
 
 export {
@@ -53,6 +55,9 @@ export const AXE_FX_III_PORT_NEEDLES = ['axe-fx iii', 'axefx3', 'axe-fx 3'] as c
  * names appear as soon as the unit is plugged in and powered on.
  */
 export function connectAxeFxIII(): MidiConnection {
+  if (process.env.MCP_MOCK_TRANSPORT === '1') {
+    return mockConnect({ responder: axeFx3MockResponder });
+  }
   return connect({
     needles: AXE_FX_III_PORT_NEEDLES,
     notFoundLeadIn: 'Axe-Fx III not found in the MIDI device list. Common causes:',
@@ -65,6 +70,23 @@ export function connectAxeFxIII(): MidiConnection {
     ],
   });
 }
+
+/**
+ * Axe-Fx III mock response synthesizer. Minimal scaffolding — all
+ * Axe-Fx III write tools refuse with `capability_not_supported` at the
+ * dispatcher layer (community-beta status — see BK-015), so the mock
+ * is only ever invoked by the read tools (preset/scene queries) that
+ * the v1.4 spec describes. For agent-regression refusal-coverage cases
+ * the dispatcher rejects BEFORE the mock is called, so this responder
+ * doesn't need to know the III's read envelopes yet.
+ *
+ * Returns [] (no inbound) for every outgoing message. Read predicates
+ * will time out — which is the correct behavior under the current
+ * community-beta scope. Extend with III-specific response shapes when
+ * read tools graduate from 🟡 to 🟢 (once captures land via HW-AXE-FX-3
+ * tasks).
+ */
+const axeFx3MockResponder: MockResponder = (_outgoing) => [];
 
 // Register the Axe-Fx III connector with the shared connection registry
 // as a module-load side effect. Importing anything from this module

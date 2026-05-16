@@ -211,6 +211,9 @@ export function listAxeFxIIOutputs(): AxeFxIIPortInfo[] {
  * Caller surfaces the throw to the user as an MCP error response.
  */
 export function connectAxeFxII(): AxeFxIIConnection {
+  if (process.env.MCP_MOCK_TRANSPORT === '1') {
+    return mockAxeFxIIConnection();
+  }
   const out = new midi.Output();
   const outIdx = findAxeFxIIOutputIndex(out);
   if (outIdx < 0) {
@@ -309,6 +312,45 @@ export function connectAxeFxII(): AxeFxIIConnection {
         'predicate-less handler here using the same handlers Set pattern.',
       ));
     },
+    lastSendError: undefined,
+  };
+}
+
+/**
+ * Axe-Fx II mock connection. Returned by `connectAxeFxII()` when
+ * `MCP_MOCK_TRANSPORT=1` is set — lets agent-regression cases run
+ * without the XL+ plugged in.
+ *
+ * Writes are accepted (no-op send). Reads via `receiveSysExMatching`
+ * time out — the Axe-Fx II GET response shapes (state-broadcast
+ * triples 0x74/0x75/0x76 etc.) aren't synthesized yet. Cases that
+ * exercise WRITE-only paths (apply_preset, set_param, switch_preset,
+ * v0.4 routing) will pass; read-driven cases will need a responder
+ * extension following the AM4 pattern in am4/midi.ts:am4MockResponder.
+ *
+ * The `hasInput:true` flag is set so the writers' "no input port" guard
+ * doesn't trip — the mock pretends a bidirectional connection exists
+ * even though reads will time out at the predicate level.
+ */
+function mockAxeFxIIConnection(): AxeFxIIConnection {
+  const handlers = new Set<(bytes: number[]) => void>();
+  return {
+    send: (_bytes) => { /* no-op — writes accepted, no wire traffic */ },
+    onMessage: (handler) => {
+      handlers.add(handler);
+      return () => { handlers.delete(handler); };
+    },
+    receiveSysExMatching: (_predicate, _timeoutMs = 1000) => Promise.reject(new Error(
+      'mock Axe-Fx II transport: read-side response synthesis not implemented. ' +
+      'Cases needing reads should either extend mockAxeFxIIConnection with the ' +
+      'documented response envelopes or run against real hardware.',
+    )),
+    hasInput: true,
+    close: () => { handlers.clear(); },
+    receiveSysEx: (_timeoutMs?: number) => Promise.reject(new Error(
+      'receiveSysEx is not implemented on Axe-Fx II — use receiveSysExMatching ' +
+      'with an explicit predicate.',
+    )),
     lastSendError: undefined,
   };
 }
