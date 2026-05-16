@@ -42,6 +42,15 @@ const cases: Case[] = [
   { key: 'amp.type', input: '', expected: undefined, desc: 'empty string' },
   { key: 'amp.type', input: '   ', expected: undefined, desc: 'whitespace only' },
   { key: 'amp.type', input: 'this is not a real amp', expected: undefined, desc: 'no match' },
+
+  // Scene-MIDI Type enum (PC + 128 CC entries — wire 1..129).
+  // Cross-confirmed against session-85-scene-midi.png ("CC #016" displayed
+  // when the wire carried Type=18) — locks the PC=1 / CC_N=N+2 encoding.
+  { key: 'preset.scene_1_midi_1_type', input: 'None', expected: 0, desc: 'scene-MIDI None' },
+  { key: 'preset.scene_1_midi_1_type', input: 'PC', expected: 1, desc: 'scene-MIDI PC' },
+  { key: 'preset.scene_4_midi_1_type', input: 'CC #016', expected: 18, desc: 'scene-MIDI CC#016 (session-85 anchor)' },
+  { key: 'preset.scene_1_midi_1_type', input: 'CC #000', expected: 2, desc: 'scene-MIDI CC#000 (range low)' },
+  { key: 'preset.scene_1_midi_1_type', input: 'CC #127', expected: 129, desc: 'scene-MIDI CC#127 (range high)' },
 ];
 
 let passed = 0;

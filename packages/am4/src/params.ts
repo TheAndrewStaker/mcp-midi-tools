@@ -366,6 +366,35 @@ export const PARAM_ALIASES: Record<string, string> = {
 };
 
 /**
+ * Scene-MIDI Type enum (PATCH family, pidHigh row 0x40..0x4F).
+ *
+ * AM4-Edit's UI exposes only Program Change and Control Change as
+ * available message types ("The available message types are Program
+ * Change (PC) and Control Change (CC)" — AM4-Edit Scene MIDI page
+ * help text). The wire encoding folds the CC number into the Type
+ * enum itself:
+ *
+ *   wire 0   → 'None'        (no message — Channel/Value greyed out)
+ *   wire 1   → 'PC'          (Program Change — uses Channel + Value)
+ *   wire N≥2 → 'CC #(N-2)'   (Control Change with CC# = N-2)
+ *
+ * Wire-confirmed against samples/captured/session-85-scene-midi.pcapng
+ * (Type=1.0 for PC) and the founder's AM4-Edit screenshot showing
+ * "CC #016" displayed when wire Type=18.0 (16 + 2 = 18).
+ *
+ * Display names use AM4-Edit's exact format: `CC #016` (zero-padded to
+ * 3 digits, with a space and hash). Keep parity with what the user
+ * reads on screen — `resolveEnumValue` matches by display string.
+ */
+export const SCENE_MIDI_TYPE_ENUM: Record<number, string> = (() => {
+  const out: Record<number, string> = { 0: 'None', 1: 'PC' };
+  for (let cc = 0; cc <= 127; cc++) {
+    out[cc + 2] = `CC #${cc.toString().padStart(3, '0')}`;
+  }
+  return out;
+})();
+
+/**
  * Runtime parameter registry. Hand-authored entries (manual unit/range
  * overrides, out-of-band registers like `*.channel` / `*.level`,
  * hand-authored enum mappings, etc.) are listed explicitly below.
@@ -3108,6 +3137,129 @@ export const KNOWN_PARAMS = {
     unit: 'enum', displayMin: 0, displayMax: 1,
     enumValues: { 0: 'Series', 1: 'Parallel' },
   },
+
+  // ── PATCH scene-MIDI — pidLow=0x00CE, base rows 0x40/0x50/0x60 ──
+  // Closed Session 85 + 86 (2026-05-16) via:
+  //   samples/captured/session-85-scene-midi.pcapng
+  //   samples/captured/session-86-scene-midi-disambiguate.pcapng
+  //
+  // Each scene has 4 MIDI message slots; each slot has 3 fields
+  // (Type / Channel / Value). 4×4×3 = 48 wire-addressable params,
+  // all on standard SET_PARAM action=0x0001 with hdr4=0x0004 and
+  // a packed-float value. NO custom action needed.
+  //
+  // Wire layout:
+  //   pidHigh = base_row + (scene-1)*4 + (msg-1)
+  //     base_row 0x40 → Type    (enum; PC=1.0 confirmed)
+  //     base_row 0x50 → Channel (1..16, raw int as float)
+  //     base_row 0x60 → Value   (0..127, raw int as float)
+  //
+  // Type enum: only PC=1 is wire-confirmed. The (s=4,m=4) bonus in
+  // session-85 showed Type=18.0 for what the founder believed was CC,
+  // so CC=18 is hypothesized but not yet locked. A dedicated type-
+  // sweep capture (cycle the Type dropdown through all entries on one
+  // slot) would harvest the full enum. Treat unknown Type values as
+  // raw int passthrough — the encoder will accept any int 0..127.
+  //
+  // The Session 84 §6n-patch anomaly (pidHigh=0x3e81 action=0x0017)
+  // is unrelated to scene-MIDI authoring — it was triggered by a
+  // different AM4-Edit operation. Not on this critical path.
+  'preset.scene_1_midi_1_type': { block: 'preset', name: 'scene_1_midi_1_type',
+    pidLow: 0x00ce, pidHigh: 0x0040, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_1_midi_1_channel': { block: 'preset', name: 'scene_1_midi_1_channel',
+    pidLow: 0x00ce, pidHigh: 0x0050, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_1_midi_1_value': { block: 'preset', name: 'scene_1_midi_1_value',
+    pidLow: 0x00ce, pidHigh: 0x0060, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_1_midi_2_type': { block: 'preset', name: 'scene_1_midi_2_type',
+    pidLow: 0x00ce, pidHigh: 0x0041, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_1_midi_2_channel': { block: 'preset', name: 'scene_1_midi_2_channel',
+    pidLow: 0x00ce, pidHigh: 0x0051, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_1_midi_2_value': { block: 'preset', name: 'scene_1_midi_2_value',
+    pidLow: 0x00ce, pidHigh: 0x0061, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_1_midi_3_type': { block: 'preset', name: 'scene_1_midi_3_type',
+    pidLow: 0x00ce, pidHigh: 0x0042, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_1_midi_3_channel': { block: 'preset', name: 'scene_1_midi_3_channel',
+    pidLow: 0x00ce, pidHigh: 0x0052, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_1_midi_3_value': { block: 'preset', name: 'scene_1_midi_3_value',
+    pidLow: 0x00ce, pidHigh: 0x0062, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_1_midi_4_type': { block: 'preset', name: 'scene_1_midi_4_type',
+    pidLow: 0x00ce, pidHigh: 0x0043, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_1_midi_4_channel': { block: 'preset', name: 'scene_1_midi_4_channel',
+    pidLow: 0x00ce, pidHigh: 0x0053, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_1_midi_4_value': { block: 'preset', name: 'scene_1_midi_4_value',
+    pidLow: 0x00ce, pidHigh: 0x0063, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_2_midi_1_type': { block: 'preset', name: 'scene_2_midi_1_type',
+    pidLow: 0x00ce, pidHigh: 0x0044, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_2_midi_1_channel': { block: 'preset', name: 'scene_2_midi_1_channel',
+    pidLow: 0x00ce, pidHigh: 0x0054, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_2_midi_1_value': { block: 'preset', name: 'scene_2_midi_1_value',
+    pidLow: 0x00ce, pidHigh: 0x0064, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_2_midi_2_type': { block: 'preset', name: 'scene_2_midi_2_type',
+    pidLow: 0x00ce, pidHigh: 0x0045, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_2_midi_2_channel': { block: 'preset', name: 'scene_2_midi_2_channel',
+    pidLow: 0x00ce, pidHigh: 0x0055, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_2_midi_2_value': { block: 'preset', name: 'scene_2_midi_2_value',
+    pidLow: 0x00ce, pidHigh: 0x0065, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_2_midi_3_type': { block: 'preset', name: 'scene_2_midi_3_type',
+    pidLow: 0x00ce, pidHigh: 0x0046, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_2_midi_3_channel': { block: 'preset', name: 'scene_2_midi_3_channel',
+    pidLow: 0x00ce, pidHigh: 0x0056, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_2_midi_3_value': { block: 'preset', name: 'scene_2_midi_3_value',
+    pidLow: 0x00ce, pidHigh: 0x0066, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_2_midi_4_type': { block: 'preset', name: 'scene_2_midi_4_type',
+    pidLow: 0x00ce, pidHigh: 0x0047, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_2_midi_4_channel': { block: 'preset', name: 'scene_2_midi_4_channel',
+    pidLow: 0x00ce, pidHigh: 0x0057, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_2_midi_4_value': { block: 'preset', name: 'scene_2_midi_4_value',
+    pidLow: 0x00ce, pidHigh: 0x0067, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_3_midi_1_type': { block: 'preset', name: 'scene_3_midi_1_type',
+    pidLow: 0x00ce, pidHigh: 0x0048, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_3_midi_1_channel': { block: 'preset', name: 'scene_3_midi_1_channel',
+    pidLow: 0x00ce, pidHigh: 0x0058, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_3_midi_1_value': { block: 'preset', name: 'scene_3_midi_1_value',
+    pidLow: 0x00ce, pidHigh: 0x0068, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_3_midi_2_type': { block: 'preset', name: 'scene_3_midi_2_type',
+    pidLow: 0x00ce, pidHigh: 0x0049, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_3_midi_2_channel': { block: 'preset', name: 'scene_3_midi_2_channel',
+    pidLow: 0x00ce, pidHigh: 0x0059, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_3_midi_2_value': { block: 'preset', name: 'scene_3_midi_2_value',
+    pidLow: 0x00ce, pidHigh: 0x0069, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_3_midi_3_type': { block: 'preset', name: 'scene_3_midi_3_type',
+    pidLow: 0x00ce, pidHigh: 0x004a, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_3_midi_3_channel': { block: 'preset', name: 'scene_3_midi_3_channel',
+    pidLow: 0x00ce, pidHigh: 0x005a, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_3_midi_3_value': { block: 'preset', name: 'scene_3_midi_3_value',
+    pidLow: 0x00ce, pidHigh: 0x006a, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_3_midi_4_type': { block: 'preset', name: 'scene_3_midi_4_type',
+    pidLow: 0x00ce, pidHigh: 0x004b, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_3_midi_4_channel': { block: 'preset', name: 'scene_3_midi_4_channel',
+    pidLow: 0x00ce, pidHigh: 0x005b, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_3_midi_4_value': { block: 'preset', name: 'scene_3_midi_4_value',
+    pidLow: 0x00ce, pidHigh: 0x006b, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_4_midi_1_type': { block: 'preset', name: 'scene_4_midi_1_type',
+    pidLow: 0x00ce, pidHigh: 0x004c, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_4_midi_1_channel': { block: 'preset', name: 'scene_4_midi_1_channel',
+    pidLow: 0x00ce, pidHigh: 0x005c, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_4_midi_1_value': { block: 'preset', name: 'scene_4_midi_1_value',
+    pidLow: 0x00ce, pidHigh: 0x006c, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_4_midi_2_type': { block: 'preset', name: 'scene_4_midi_2_type',
+    pidLow: 0x00ce, pidHigh: 0x004d, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_4_midi_2_channel': { block: 'preset', name: 'scene_4_midi_2_channel',
+    pidLow: 0x00ce, pidHigh: 0x005d, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_4_midi_2_value': { block: 'preset', name: 'scene_4_midi_2_value',
+    pidLow: 0x00ce, pidHigh: 0x006d, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_4_midi_3_type': { block: 'preset', name: 'scene_4_midi_3_type',
+    pidLow: 0x00ce, pidHigh: 0x004e, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_4_midi_3_channel': { block: 'preset', name: 'scene_4_midi_3_channel',
+    pidLow: 0x00ce, pidHigh: 0x005e, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_4_midi_3_value': { block: 'preset', name: 'scene_4_midi_3_value',
+    pidLow: 0x00ce, pidHigh: 0x006e, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_4_midi_4_type': { block: 'preset', name: 'scene_4_midi_4_type',
+    pidLow: 0x00ce, pidHigh: 0x004f, unit: 'enum', displayMin: 0, displayMax: 129, enumValues: SCENE_MIDI_TYPE_ENUM },
+  'preset.scene_4_midi_4_channel': { block: 'preset', name: 'scene_4_midi_4_channel',
+    pidLow: 0x00ce, pidHigh: 0x005f, unit: 'count', displayMin: 1, displayMax: 16 },
+  'preset.scene_4_midi_4_value': { block: 'preset', name: 'scene_4_midi_4_value',
+    pidLow: 0x00ce, pidHigh: 0x006f, unit: 'count', displayMin: 0, displayMax: 127 },
 } as const satisfies Record<string, Param>;
 
 export type ParamKey = keyof typeof KNOWN_PARAMS;

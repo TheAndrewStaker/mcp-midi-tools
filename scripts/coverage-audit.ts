@@ -50,6 +50,17 @@ const BLOCK_TO_FAMILY: Record<string, string> = {
   preset: 'PATCH',
 };
 
+// pidLow → catalog family. Takes precedence over BLOCK_TO_FAMILY when set.
+// AM4's `amp` user-facing block spans TWO protocol blocks: preamp / power
+// amp / speaker live at pidLow 0x003a (DISTORT family); cabinet section
+// lives at pidLow 0x003e (CABINET family). Without this override the
+// `amp.cabinet_*` entries are miscategorized as DISTORT, which made the
+// audit underreport CABINET coverage as 0% (Session 41 actually shipped
+// 16 cab entries already).
+const PIDLOW_TO_FAMILY: Record<number, string> = {
+  0x003e: 'CABINET',
+};
+
 // Generic pidHigh range (shared across all blocks — out-of-catalog).
 const GENERIC_PIDHIGH_MAX = 9;
 const CHANNEL_REGISTER = 0x07d2;
@@ -166,8 +177,14 @@ const catalogParamsAddressed: Record<string, Set<number>> = {};
 for (const fam of Object.keys(familyMap)) catalogParamsAddressed[fam] = new Set();
 
 for (const p of params) {
-  const family = BLOCK_TO_FAMILY[p.block];
+  const family = PIDLOW_TO_FAMILY[p.pidLow] ?? BLOCK_TO_FAMILY[p.block];
   if (!family) continue;
+  // Ensure the cabinet-overridden family is tracked + recognized as
+  // placeable (it gets its block credit via the override even though no
+  // entry has block === 'cab').
+  if (familyMap[family] && !familyMap[family].blocks.includes(p.block)) {
+    familyMap[family].blocks.push(p.block);
+  }
   const fc = familyMap[family];
   if (!fc) continue;
   fc.shippedCount += 1;

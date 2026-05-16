@@ -1096,6 +1096,77 @@ const cases: { label: string; built: number[]; expected: string }[] = [
     built: buildSetParam('preset.routing_slot_4', 1),
     expected: 'f000017415014e011600010000000400000010037826f7',
   },
+  // Session 85 + 86 (2026-05-16): PATCH scene-MIDI message decode.
+  // 48 wire-addressable params unlocked. pidHigh = base_row +
+  // (scene-1)*4 + (msg-1); base_row 0x40/0x50/0x60 = Type/Channel/
+  // Value. Standard SET_PARAM action=0x0001, hdr4=0x0004, packed-float
+  // value. Captures:
+  //   session-85-scene-midi.pcapng — (s=1,m=1) PC ch=5 val=42
+  //   session-86-scene-midi-disambiguate.pcapng — (s=1,m=2) PC ch=7
+  //     val=50; (s=3,m=1) PC ch=9 val=60
+  // Nine goldens cover all three field rows × three (scene, msg) pairs,
+  // which locks the column packing as (scene-1)*4 + (msg-1) rather
+  // than (msg-1)*4 + (scene-1).
+  {
+    label: 'buildSetParam("preset.scene_1_midi_1_type", "PC") — session-85-scene-midi',
+    built: buildSetParam('preset.scene_1_midi_1_type', 1),
+    expected: 'f000017415014e014000010000000400000010037870f7',
+  },
+  {
+    label: 'buildSetParam("preset.scene_1_midi_1_channel", 5) — session-85-scene-midi',
+    built: buildSetParam('preset.scene_1_midi_1_channel', 5),
+    expected: 'f000017415014e01500001000000040000001404001bf7',
+  },
+  {
+    label: 'buildSetParam("preset.scene_1_midi_1_value", 42) — session-85-scene-midi',
+    built: buildSetParam('preset.scene_1_midi_1_value', 42),
+    expected: 'f000017415014e01600001000000040000000504102af7',
+  },
+  {
+    label: 'buildSetParam("preset.scene_1_midi_2_type", "PC") — session-86-scene-midi-disambiguate',
+    built: buildSetParam('preset.scene_1_midi_2_type', 1),
+    expected: 'f000017415014e014100010000000400000010037871f7',
+  },
+  {
+    label: 'buildSetParam("preset.scene_1_midi_2_channel", 7) — session-86-scene-midi-disambiguate',
+    built: buildSetParam('preset.scene_1_midi_2_channel', 7),
+    expected: 'f000017415014e01510001000000040000001c040012f7',
+  },
+  {
+    label: 'buildSetParam("preset.scene_1_midi_2_value", 50) — session-86-scene-midi-disambiguate',
+    built: buildSetParam('preset.scene_1_midi_2_value', 50),
+    expected: 'f000017415014e016100010000000400000009041027f7',
+  },
+  {
+    label: 'buildSetParam("preset.scene_3_midi_1_type", "PC") — session-86-scene-midi-disambiguate',
+    built: buildSetParam('preset.scene_3_midi_1_type', 1),
+    expected: 'f000017415014e014800010000000400000010037878f7',
+  },
+  {
+    label: 'buildSetParam("preset.scene_3_midi_1_channel", 9) — session-86-scene-midi-disambiguate',
+    built: buildSetParam('preset.scene_3_midi_1_channel', 9),
+    expected: 'f000017415014e01580001000000040000000204080df7',
+  },
+  {
+    label: 'buildSetParam("preset.scene_3_midi_1_value", 60) — session-86-scene-midi-disambiguate',
+    built: buildSetParam('preset.scene_3_midi_1_value', 60),
+    expected: 'f000017415014e01680001000000040000000e041029f7',
+  },
+  // Type=CC#016 from session-85 (s=4, m=1 → Type=18, Value=127). Locks the
+  // PC=1 / CC=N+2 encoding documented in SCENE_MIDI_TYPE_ENUM. Channel
+  // write for this slot didn't fire on the wire because AM4-Edit's default
+  // channel was already 1; only the Type and Value fields changed.
+  {
+    // Type=18 displays as "CC #016" per SCENE_MIDI_TYPE_ENUM (CC# = N - 2).
+    label: 'buildSetParam("preset.scene_4_midi_1_type", 18 = "CC #016") — session-85-scene-midi',
+    built: buildSetParam('preset.scene_4_midi_1_type', 18),
+    expected: 'f000017415014e014c00010000000400000012040809f7',
+  },
+  {
+    label: 'buildSetParam("preset.scene_4_midi_1_value", 127) — session-85-scene-midi',
+    built: buildSetParam('preset.scene_4_midi_1_value', 127),
+    expected: 'f000017415014e016c0001000000040000001f64105cf7',
+  },
 ];
 
 let pass = 0;

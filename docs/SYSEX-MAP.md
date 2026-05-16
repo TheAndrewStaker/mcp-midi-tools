@@ -1491,15 +1491,126 @@ byte-exact against the capture via `verify-msg.ts` goldens.
 
 ### Pending (catalog known, wire-untested)
 
-The remaining 82 PATCH catalog params are wire-addressable in
+The remaining 34 PATCH catalog params are wire-addressable in
 principle (same pidLow + §6p rule) but each needs a directed capture
 to confirm the value encoding for enum-typed dropdowns:
 - 4× `PATCH_SCENE_N_OUTPUT` (scene output mode)
 - 1× `PATCH_4CM` (4-cable method toggle)
-- 16× `PATCH_SCENE_N_MIDI_MSG_M` (scene MIDI message type, 4 scenes × 4 slots)
-- 16× `PATCH_SCENE_N_MIDI_CH_M` (scene MIDI channel, 4 scenes × 4 slots)
-- 16× `PATCH_SCENE_N_MIDI_VALUE_M` (scene MIDI value byte, 4 scenes × 4 slots)
 - Plus 29 remaining items — see Ghidra catalog `case_0x3c` (85 total).
+
+**Scene-MIDI closed Session 85+86 (2026-05-16) — see §6n-scene-midi
+below.** That sub-section covers the 48 `PATCH_SCENE_N_MIDI_*` params
+(message type, channel, value byte across 4 scenes × 4 message slots)
+that were listed here as pending in Session 84.
+
+---
+
+## 6n-scene-midi. Scene MIDI message bank (PATCH cols 0x40–0x6F) 🟢
+
+Closed Session 85 + 86 (2026-05-16) via two captures:
+- `samples/captured/session-85-scene-midi.pcapng` + `.png`
+- `samples/captured/session-86-scene-midi-disambiguate.pcapng` + `.png`
+
+Each preset has 4 scenes, each scene carries 4 outgoing MIDI message
+slots, each slot has 3 fields (Type / Channel / Value byte). Total:
+**48 wire-addressable params**, all on **standard SET_PARAM
+action=0x0001 with `hdr4=0x0004`** and a packed-float value. **No
+custom action needed**; identical envelope to every other AM4
+SET_PARAM write in §6a.
+
+### Wire layout
+
+```
+F0 00 01 74 15 01 [4E 01] [pidHigh_lo 00] [01 00] [00 00] [04 00]
+                                                          ^^^^^
+                                                          hdr4=0x0004
+[5-byte packed float] [cs] F7
+```
+
+- `pidLow = 0x00CE` (PATCH family — same as routing, preset rename,
+  block placement, etc.).
+- `pidHigh = base_row + (scene - 1) * 4 + (msg - 1)`
+  - `base_row 0x40` → Type field
+  - `base_row 0x50` → Channel field
+  - `base_row 0x60` → Value field
+
+That gives 16 columns (4 scenes × 4 message slots) on each of the 3
+rows. Scene is the outer loop, message slot is the inner — confirmed
+Session 86 by the disambiguating captures `(s=1, m=2)` → col 1 and
+`(s=3, m=1)` → col 8.
+
+### Type enum
+
+AM4-Edit's UI exposes only Program Change and Control Change as
+message types. The wire encoding folds the CC# into the Type enum
+itself:
+
+| Wire value | Display | Notes |
+|---|---|---|
+| `0.0` | `None` | No message — Channel/Value greyed out in UI |
+| `1.0` | `PC` | Program Change — Channel + Value carry MIDI data |
+| `N ≥ 2.0` | `CC #(N-2)` | Control Change with CC# = N-2 |
+
+Confirmed against `session-85-scene-midi.png`: AM4-Edit displays
+`CC #016` when the wire carries `Type = 18.0` (16 + 2 = 18). Display
+format uses three-digit zero-padded CC numbers with a space and hash
+(`CC #016`, not `CC16`), to match AM4-Edit's exact rendering.
+
+Defined as `SCENE_MIDI_TYPE_ENUM` in `packages/am4/src/params.ts`
+(generated at module init: `{ 0: 'None', 1: 'PC' }` plus a 128-entry
+loop for the CC range).
+
+### Channel field
+
+Wire value is `1..16` as a raw float (MIDI channel, 1-indexed display
+matches AM4-Edit). When the founder picks the default channel (1)
+without changing it, AM4-Edit emits NO wire write for that field —
+captured in `session-85`'s `(s=4, m=1)` cluster where Type and Value
+wrote but Channel did not.
+
+### Value field
+
+Wire value is `0..127` as a raw float — the MIDI program number (for
+PC) or controller value (for CC).
+
+### Shipped MCP-addressable params
+
+48 entries in `packages/am4/src/params.ts`:
+- `preset.scene_{1..4}_midi_{1..4}_type`     (16 params — enum, see above)
+- `preset.scene_{1..4}_midi_{1..4}_channel`  (16 params — count 1..16)
+- `preset.scene_{1..4}_midi_{1..4}_value`    (16 params — count 0..127)
+
+Byte-exact goldens in `scripts/verify-msg.ts`:
+- 9 from session-85 + session-86 covering 3 distinct columns × all
+  3 field rows (`(s=1,m=1)`, `(s=1,m=2)`, `(s=3,m=1)`).
+- 2 from session-85's CC capture — `(s=4,m=1)` Type=`CC #016` (wire 18)
+  and Value=127, locking the PC/CC encoding rule.
+
+Plus 5 `verify-enum-lookup` goldens covering the Type enum: `None`,
+`PC`, `CC #000`, `CC #016` (the session-85 anchor), `CC #127`.
+
+### One observed quirk for future captures
+
+AM4-Edit resets the **message-slot cursor to 1** when you switch
+scenes from the GUI. The Session 85 capture was intended as scene N →
+msg N, but the founder's writes after each scene switch landed in
+msg slot 1 every time (visible in `session-85-scene-midi.png`).
+Doesn't change the wire spec — the formula fits all 5 datapoints
+under the as-captured reading — but worth knowing for future
+scene-MIDI captures: explicitly re-click the target message-slot row
+after switching scenes, or you'll only ever exercise col 0/4/8/12.
+
+### Out of scope (still pending in PATCH family)
+
+- 4× `PATCH_SCENE_N_OUTPUT` (per-scene output mode — listed in §6n-patch).
+- 1× `PATCH_4CM` (4-cable-method toggle).
+- 29 remaining Ghidra `case_0x3c` items.
+
+The Session 84 `pidHigh=0x3E81 action=0x0017` anomaly is **NOT** on
+the scene-MIDI critical path — Session 85's directed scene-MIDI
+authoring did not trigger it. That anomaly was a different AM4-Edit
+operation (likely the "test message" buttons next to each scene
+header in the Scene MIDI page); decoding is a separate research item.
 
 ---
 
