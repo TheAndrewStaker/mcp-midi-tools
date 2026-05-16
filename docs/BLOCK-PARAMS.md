@@ -1,15 +1,59 @@
 # AM4 Block Parameters — Ground Truth Reference
 
-> **Source:** Fractal Audio Wiki (scraped 2026-04-14 via `scripts/scrape-wiki.ts P0`)
-> **Raw pages:** see `docs/wiki/` (gitignored — regenerate with the scraper)
-> **Scope:** Effect TYPE names per block. Parameter-level detail will be added
-> as specific presets are built and verified against the AM4 manual.
+> **Sources:**
+> 1. **Ghidra-extracted parameter catalog** (Session 82, 2026-05-16) — the
+>    authoritative wire-level paramId/name dictionary for every effect
+>    family AM4-Edit exposes (50 families, 1732 paramId/name pairs).
+>    Regenerate via `scripts/ghidra/run-am4-paramnames.cmd`; output lands in
+>    `samples/captured/decoded/ghidra-am4-paramnames.json` (gitignored).
+>    See `docs/ghidra-mining-workflow.md` for the recipe and
+>    `docs/SYSEX-MAP.md` §6p for the wire mapping (pidLow=block,
+>    pidHigh=paramId). Get a coverage report via
+>    `scripts/_research/am4-catalog-coverage-report.ts`.
+> 2. **Fractal Audio Wiki** (scraped 2026-04-14 via `scripts/scrape-wiki.ts P0`)
+>    — model lists and effect-type names. Raw pages: see `docs/wiki/`
+>    (gitignored — regenerate with the scraper).
+> 3. **AM4 owner's manual** — for hand-verification and display-name
+>    conventions.
+>
+> **Scope:** Effect TYPE names per block, plus block→catalog-family mapping.
+> Parameter-level detail is now machine-extractable from the Ghidra catalog
+> (paramId + symbolic name); per-param metadata (unit, range, enum values)
+> requires hardware verification and remains in `packages/am4/src/params.ts`.
 
 This document is the authoritative list of block types and effect-type names
 usable when building AM4 presets. Type names are transcribed verbatim from the
 Fractal wiki; anything marked `[FLAG — VERIFY]` is an ambiguity or gap that
 needs confirmation against the AM4 owner's manual or a sniffed preset before
 use in production code.
+
+## Block ↔ catalog family quick reference
+
+The Ghidra catalog (see SYSEX-MAP.md §6p) groups params by "effect family"
+(Fractal's internal naming). Mapping for AM4's placeable blocks plus the
+two non-placeable system blocks:
+
+| Block | pidLow | Catalog family | Catalog case | Catalog params |
+|---|---|---|---|---|
+| amp | `0x003a` | DISTORT | 0xa | 143 (shared with drive) |
+| drive | `0x0076` | DISTORT | 0xa | 143 (shared with amp) |
+| cab | `0x003e` | CABINET | 0xb | 85 |
+| reverb | `0x0042` | REVERB | 0xc | 63 |
+| delay | `0x0046` | DELAY | 0xd | 80 |
+| chorus | `0x004e` | CHORUS | 0x10 | 22 |
+| flanger | `0x0052` | FLANGER | 0x11 | 26 |
+| rotary | `0x0056` | ROTARY | 0x12 | 14 |
+| phaser | `0x005a` | PHASER | 0x13 | 28 |
+| wah | `0x005e` | WAH | 0x14 | 20 |
+| tremolo | `0x006a` | TREMOLO | 0x16 | 15 |
+| filter | `0x0072` | FILTER | 0x18 | 31 |
+| enhancer | `0x007a` | ENHANCER | 0x1a | 8 |
+| gate | `0x0092` | GATE | 0x23 | 13 |
+| volpan | `0x0066` | VOLUME | 0x28 | 11 |
+| geq | `0x0032` | GEQ | 0x8 | 13 |
+| peq | `0x0036` | PEQ | 0x9 | 27 |
+| compressor | `0x002e` | COMP | 0x7 | 28 |
+| **ingate** | `0x0025` | INPUT | 0x29 | 8 (Input Noise Gate, not slot-placeable) |
 
 ---
 
