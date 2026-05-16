@@ -1,0 +1,437 @@
+/**
+ * Coverage cross-reference audit — three-way join over Ghidra catalog,
+ * AM4-Edit UI XML, and params.ts. Catches the OUTPUT_SCENE1 class of
+ * false-coverage gap: existing per-block audit joins on (block, paramId)
+ * alone and missed cases where the catalog symbol differs from the
+ * AM4-Edit display name AND params.ts uses the display-name-derived key.
+ *
+ * Sources joined:
+ *   1. samples/captured/decoded/ghidra-am4-paramnames.json
+ *      — for each family: { paramId, symbol }.
+ *   2. samples/captured/decoded/binarydata/extracted/__block_layout*.xml
+ *      — for each UI control: parameterName (binary symbol) + name
+ *      (display string) + optional effectName (block id).
+ *   3. packages/am4/src/params.ts
+ *      — every shipped entry: block, name, pidLow, pidHigh.
+ *
+ * Classification per catalog (family, paramId, symbol):
+ *   • WIRED-MATCHED   — params.ts has an entry at this pidLow+paramId,
+ *                       its name matches the XML display string.
+ *   • WIRED-MISLABEL  — params.ts has an entry at this pidLow+paramId,
+ *                       but its name doesn't match the XML display.
+ *                       (Earlier audit would call this "wired correctly,"
+ *                       the existing per-block audit would call this
+ *                       "decoded" without flagging the rename.)
+ *   • UI-MISSING      — XML exposes this symbol with a display name,
+ *                       params.ts has nothing at the matching pidLow+
+ *                       paramId. Real wiring gap.
+ *   • GHOST           — catalog has the symbol, XML doesn't expose it.
+ *                       Likely firmware-internal; don't count against
+ *                       UI coverage.
+ *   • PIDLOW-UNKNOWN  — family has no derivable pidLow from params.ts
+ *                       (entire family un-bound — common for families
+ *                       like PITCH/MULTITAP that aren't AM4 blocks).
+ *
+ * Output: samples/captured/decoded/coverage-cross-ref-audit.md
+ */
+
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const GHIDRA_AM4 = 'samples/captured/decoded/ghidra-am4-paramnames.json';
+const PARAMS_TS = 'packages/am4/src/params.ts';
+const XML_REG = 'samples/captured/decoded/binarydata/extracted/__block_layout.xml';
+const XML_EXPERT = 'samples/captured/decoded/binarydata/extracted/__block_layout_expert.xml';
+const OUTPUT = 'samples/captured/decoded/coverage-cross-ref-audit.md';
+
+// --- 1. Load XML controls ----------------------------------------------
+
+interface XmlControl {
+  displayName: string;
+  effectName?: string;
+}
+function loadXmlControls(): Map<string, XmlControl[]> {
+  const result = new Map<string, XmlControl[]>();
+  const xmls = [readFileSync(XML_REG, 'utf-8'), readFileSync(XML_EXPERT, 'utf-8')];
+  // Each EditorControl is a single tag (self-closing). Extract attrs.
+  const tagRe = /<EditorControl\b([^>]*?)\/?>/g;
+  for (const xml of xmls) {
+    for (const m of xml.matchAll(tagRe)) {
+      const attrs = m[1];
+      const symMatch = attrs.match(/parameterName="([A-Z][A-Z0-9_]*)"/);
+      if (!symMatch) continue;
+      const sym = symMatch[1];
+      const nameMatch = attrs.match(/\bname="([^"]+)"/);
+      const effMatch = attrs.match(/effectName="([^"]+)"/);
+      const displayName = (nameMatch?.[1] ?? '').replace(/&#10;/g, ' ');
+      const ctrl: XmlControl = { displayName };
+      if (effMatch) ctrl.effectName = effMatch[1];
+      const list = result.get(sym) ?? [];
+      list.push(ctrl);
+      result.set(sym, list);
+    }
+  }
+  return result;
+}
+
+// --- 2. Load Ghidra catalog --------------------------------------------
+
+interface CatalogEntry {
+  paramId: number;
+  symbol: string;
+}
+function loadCatalog(): Map<string, CatalogEntry[]> {
+  const data = JSON.parse(readFileSync(GHIDRA_AM4, 'utf-8'));
+  const result = new Map<string, CatalogEntry[]>();
+  for (const eff of Object.values(data.effect_types) as any[]) {
+    if (!eff.effectFamily || !eff.params) continue;
+    const arr: CatalogEntry[] = eff.params
+      .filter((p: any) => p.name && p.name !== '?')
+      .map((p: any) => ({ paramId: p.paramId, symbol: p.name }));
+    result.set(eff.effectFamily, arr);
+  }
+  return result;
+}
+
+// --- 3. Load params.ts entries -----------------------------------------
+
+interface ParamEntry {
+  key: string;       // e.g. "amp.gain"
+  block: string;     // e.g. "amp"
+  name: string;      // e.g. "gain"
+  pidLow: number;
+  pidHigh: number;
+}
+function loadParamsTs(): ParamEntry[] {
+  const ts = readFileSync(PARAMS_TS, 'utf-8');
+  const re =
+    /^\s+'([a-z]+\.[a-z0-9_]+)':\s*\{[\s\S]*?block:\s*'([a-z]+)',\s*name:\s*'([a-z0-9_]+)',[\s\S]*?pidLow:\s*(0x[0-9a-fA-F]+),\s*pidHigh:\s*(0x[0-9a-fA-F]+)/gm;
+  const result: ParamEntry[] = [];
+  for (const m of ts.matchAll(re)) {
+    result.push({
+      key: m[1],
+      block: m[2],
+      name: m[3],
+      pidLow: parseInt(m[4], 16),
+      pidHigh: parseInt(m[5], 16),
+    });
+  }
+  return result;
+}
+
+// --- 4. Family → pidLow map -------------------------------------------
+//
+// Built from BLOCK_TO_FAMILY (block name → family) + PIDLOW_TO_FAMILY
+// override (for the amp/cabinet split where one user-facing block name
+// spans two protocol pidLows). The actual pidLow values are derived
+// from params.ts entries: for each block, find the pidLow of its
+// entries; that's the family's pidLow. Families with no block mapping
+// → PIDLOW-UNKNOWN (not placeable on AM4 — PITCH / MULTITAP / etc.).
+//
+// Stays in sync with scripts/coverage-audit.ts's BLOCK_TO_FAMILY +
+// PIDLOW_TO_FAMILY tables. Keep both files updated together when a
+// new block family lands.
+
+const BLOCK_TO_FAMILY: Record<string, string> = {
+  amp: 'DISTORT',
+  drive: 'DISTORT',
+  reverb: 'REVERB',
+  delay: 'DELAY',
+  chorus: 'CHORUS',
+  flanger: 'FLANGER',
+  phaser: 'PHASER',
+  rotary: 'ROTARY',
+  tremolo: 'TREMOLO',
+  wah: 'WAH',
+  filter: 'FILTER',
+  compressor: 'COMP',
+  geq: 'GEQ',
+  peq: 'PEQ',
+  gate: 'GATE',
+  enhancer: 'ENHANCER',
+  volpan: 'VOLUME',
+  ingate: 'INPUT',
+  cab: 'CABINET',
+  preset: 'PATCH',
+};
+// pidLow → family override. Wins over BLOCK_TO_FAMILY when an
+// entry's pidLow matches (e.g. amp.cabinet_* under block='amp' but
+// at pidLow=0x003e belongs to CABINET, not DISTORT).
+const PIDLOW_TO_FAMILY: Record<number, string> = {
+  0x003e: 'CABINET',
+};
+
+function derivePidlowMap(params: ParamEntry[]): Map<string, number> {
+  // family → pidLow → count
+  const counts = new Map<string, Map<number, number>>();
+  for (const p of params) {
+    const fam = PIDLOW_TO_FAMILY[p.pidLow] ?? BLOCK_TO_FAMILY[p.block];
+    if (!fam) continue;
+    const inner = counts.get(fam) ?? new Map<number, number>();
+    inner.set(p.pidLow, (inner.get(p.pidLow) ?? 0) + 1);
+    counts.set(fam, inner);
+  }
+  const result = new Map<string, number>();
+  for (const [fam, inner] of counts) {
+    let best: [number, number] = [-1, 0];
+    for (const [pl, count] of inner) {
+      if (count > best[1]) best = [pl, count];
+    }
+    if (best[0] >= 0) result.set(fam, best[0]);
+  }
+  return result;
+}
+
+function familyForEntry(p: ParamEntry): string | undefined {
+  return PIDLOW_TO_FAMILY[p.pidLow] ?? BLOCK_TO_FAMILY[p.block];
+}
+
+// --- 5. Name normalization --------------------------------------------
+
+function norm(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+function namesMatch(paramName: string, xmlDisplay: string): boolean {
+  return norm(paramName) === norm(xmlDisplay);
+}
+function symMatchesName(symbol: string, paramName: string): boolean {
+  // Catalog symbol → snake-case-ish. Strip common prefixes that map to
+  // block-name (DISTORT_, REVERB_, etc.) and any trailing _N digit.
+  const stripped = symbol.replace(/^[A-Z]+_/, '').toLowerCase();
+  return stripped === paramName || norm(stripped) === norm(paramName);
+}
+
+// --- 6. Main ----------------------------------------------------------
+
+const xml = loadXmlControls();
+const catalog = loadCatalog();
+const params = loadParamsTs();
+const pidlowMap = derivePidlowMap(params);
+
+// Index params.ts by (pidLow, pidHigh) for fast lookup.
+const paramsByAddr = new Map<string, ParamEntry>();
+for (const p of params) paramsByAddr.set(`${p.pidLow}.${p.pidHigh}`, p);
+
+type Status = 'WIRED-MATCHED' | 'WIRED-MISLABEL' | 'UI-MISSING' | 'GHOST' | 'PIDLOW-UNKNOWN';
+interface Finding {
+  family: string;
+  paramId: number;
+  symbol: string;
+  status: Status;
+  xmlDisplay?: string;
+  xmlEffectName?: string;
+  paramsTsKey?: string;
+  paramsTsName?: string;
+  notes?: string;
+}
+const findings: Finding[] = [];
+
+for (const [family, entries] of catalog) {
+  const pidLow = pidlowMap.get(family);
+  for (const { paramId, symbol } of entries) {
+    const xmlList = xml.get(symbol);
+    const xmlDisplay = xmlList?.[0]?.displayName;
+    const xmlEffectName = xmlList?.[0]?.effectName;
+
+    if (pidLow === undefined) {
+      findings.push({
+        family,
+        paramId,
+        symbol,
+        status: 'PIDLOW-UNKNOWN',
+        xmlDisplay,
+        xmlEffectName,
+        notes: 'Family has no derivable pidLow from params.ts (likely not an AM4 block).',
+      });
+      continue;
+    }
+
+    const paramEntry = paramsByAddr.get(`${pidLow}.${paramId}`);
+    if (paramEntry) {
+      // Only flag mismatch when AM4-Edit ACTUALLY displays a label. The
+      // catalog symbol is Fractal's internal name; the agent doesn't see
+      // it. If there's no UI display, there's no user-facing label to
+      // mismatch against, so treat as WIRED-MATCHED.
+      const matched = xmlDisplay ? namesMatch(paramEntry.name, xmlDisplay) : true;
+      findings.push({
+        family,
+        paramId,
+        symbol,
+        status: matched ? 'WIRED-MATCHED' : 'WIRED-MISLABEL',
+        xmlDisplay,
+        xmlEffectName,
+        paramsTsKey: paramEntry.key,
+        paramsTsName: paramEntry.name,
+      });
+    } else if (xmlList) {
+      findings.push({
+        family,
+        paramId,
+        symbol,
+        status: 'UI-MISSING',
+        xmlDisplay,
+        xmlEffectName,
+      });
+    } else {
+      findings.push({
+        family,
+        paramId,
+        symbol,
+        status: 'GHOST',
+      });
+    }
+  }
+}
+
+// --- 7. Emit markdown report ------------------------------------------
+
+const lines: string[] = [];
+const w = (s = '') => lines.push(s);
+
+w('# AM4 coverage cross-reference audit');
+w('');
+w('Three-way join over the Ghidra catalog, AM4-Edit UI XML, and');
+w('`packages/am4/src/params.ts`. Generated by `scripts/_research/');
+w('coverage-cross-ref-audit.ts` — re-run any time params.ts or the');
+w('Ghidra catalog changes.');
+w('');
+w('## Classification key');
+w('');
+w('| Status | Meaning |');
+w('|---|---|');
+w('| **WIRED-MATCHED** | params.ts has the param at the catalog-derived (pidLow, paramId) and its `name` matches the AM4-Edit display label. Healthy. |');
+w('| **WIRED-MISLABEL** | params.ts has the entry, but its `name` does NOT match the AM4-Edit display. Wired, but the LLM-facing key may not surface naturally from a "make Scene 1 Level louder" prompt. **Highest-priority class to inspect.** |');
+w('| **UI-MISSING** | AM4-Edit exposes the control, params.ts has no entry at the matching address. Real wiring gap. |');
+w('| **GHOST** | catalog symbol with no AM4-Edit UI. Firmware-internal; don\'t count against UI coverage. |');
+w('| **PIDLOW-UNKNOWN** | family has no derivable pidLow (not placeable on AM4 or never captured). |');
+w('');
+
+// Family → pidLow table
+w('## Inferred family → pidLow (from params.ts entries)');
+w('');
+w('| Family | pidLow | Notes |');
+w('|---|---|---|');
+const fams = Array.from(pidlowMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+for (const [fam, pl] of fams) {
+  w(`| ${fam} | \`0x${pl.toString(16).padStart(4, '0')}\` | derived from majority pidLow of params.ts entries whose pidHigh appears in catalog |`);
+}
+const unbound = Array.from(catalog.keys()).filter((f) => !pidlowMap.has(f)).sort();
+if (unbound.length) {
+  w('');
+  w(`Families with no derivable pidLow (${unbound.length}): ${unbound.join(', ')}`);
+}
+w('');
+
+// Summary counts per family
+w('## Summary per family');
+w('');
+w('| Family | WIRED-MATCHED | WIRED-MISLABEL | UI-MISSING | GHOST | PIDLOW-UNKNOWN |');
+w('|---|---|---|---|---|---|');
+const counts: Record<string, Record<Status, number>> = {};
+for (const f of findings) {
+  counts[f.family] ??= { 'WIRED-MATCHED': 0, 'WIRED-MISLABEL': 0, 'UI-MISSING': 0, 'GHOST': 0, 'PIDLOW-UNKNOWN': 0 };
+  counts[f.family][f.status] += 1;
+}
+const famsSorted = Object.keys(counts).sort((a, b) => {
+  const ax = counts[a], bx = counts[b];
+  // Sort by WIRED-MISLABEL desc, then UI-MISSING desc — the actionable rows first.
+  if (bx['WIRED-MISLABEL'] !== ax['WIRED-MISLABEL']) return bx['WIRED-MISLABEL'] - ax['WIRED-MISLABEL'];
+  return bx['UI-MISSING'] - ax['UI-MISSING'];
+});
+for (const f of famsSorted) {
+  const c = counts[f];
+  w(`| ${f} | ${c['WIRED-MATCHED'] || '—'} | ${c['WIRED-MISLABEL'] || '—'} | ${c['UI-MISSING'] || '—'} | ${c['GHOST'] || '—'} | ${c['PIDLOW-UNKNOWN'] || '—'} |`);
+}
+w('');
+
+// WIRED-MISLABEL section — most actionable
+w('## WIRED-MISLABEL findings (rename candidates)');
+w('');
+w('These are wired and write fine over the wire. The risk is that the');
+w('LLM-facing key (`block.name`) doesn\'t match the AM4-Edit display, so');
+w('the agent may fail to find it when the user describes the knob by its');
+w('on-screen label. Review each: rename the `name` field to match the');
+w('display, or document why the divergence is intentional.');
+w('');
+const ml = findings.filter((f) => f.status === 'WIRED-MISLABEL');
+if (ml.length === 0) {
+  w('_None found._');
+} else {
+  w('| Family | paramId | Catalog symbol | XML display | params.ts key | params.ts name |');
+  w('|---|---|---|---|---|---|');
+  for (const f of ml.sort((a, b) => a.family.localeCompare(b.family) || a.paramId - b.paramId)) {
+    w(`| ${f.family} | ${f.paramId} | \`${f.symbol}\` | ${f.xmlDisplay ? `"${f.xmlDisplay}"` : '—'} | \`${f.paramsTsKey}\` | \`${f.paramsTsName}\` |`);
+  }
+}
+w('');
+
+// UI-MISSING section
+w('## UI-MISSING findings (real wiring gaps)');
+w('');
+w('AM4-Edit exposes these controls but params.ts has nothing at the');
+w('catalog-derived address. Each row is one knob the agent currently');
+w('cannot read or write.');
+w('');
+const um = findings.filter((f) => f.status === 'UI-MISSING');
+if (um.length === 0) {
+  w('_None found._');
+} else {
+  w(`Total: ${um.length} controls. Top 50 by family / paramId:`);
+  w('');
+  w('| Family | paramId | Catalog symbol | XML display |');
+  w('|---|---|---|---|');
+  const top = um.sort((a, b) => a.family.localeCompare(b.family) || a.paramId - b.paramId).slice(0, 50);
+  for (const f of top) {
+    w(`| ${f.family} | ${f.paramId} | \`${f.symbol}\` | ${f.xmlDisplay ? `"${f.xmlDisplay}"` : '—'} |`);
+  }
+}
+w('');
+
+// GHOST section — short summary only
+w('## GHOST findings (catalog only, no AM4-Edit UI)');
+w('');
+const gh = findings.filter((f) => f.status === 'GHOST');
+w(`${gh.length} catalog symbols with no UI exposure. These are firmware-`);
+w('internal (modifier slots, scene-only state, internal calc state).');
+w('Examples: `' + gh.slice(0, 15).map((f) => f.symbol).join('`, `') + '`...');
+w('');
+w('PATCH_4CM specifically: catalog has it, XML lacks it → confirmed ghost.');
+w('Do not count against UI coverage; firmware-only flag with no AM4-Edit');
+w('control.');
+w('');
+
+writeFileSync(OUTPUT, lines.join('\n'));
+
+// Console summary
+console.log(`Wrote ${lines.length} lines to ${OUTPUT}`);
+console.log('');
+console.log('Headline counts:');
+const totals = { 'WIRED-MATCHED': 0, 'WIRED-MISLABEL': 0, 'UI-MISSING': 0, 'GHOST': 0, 'PIDLOW-UNKNOWN': 0 };
+for (const f of findings) totals[f.status]++;
+for (const [k, v] of Object.entries(totals)) console.log(`  ${k.padEnd(18)} ${v}`);
+console.log('');
+console.log(`Total catalog entries audited: ${findings.length}`);
+console.log(`Inferred pidLow for ${pidlowMap.size} families.`);
+
+// --- 8. Drift guard for preflight -------------------------------------
+//
+// Ceiling for WIRED-MISLABEL. Set to the count at the time this guard
+// was wired in. Should monotonically decrease as renames land. If a
+// params.ts edit increases the count, the audit fails preflight so the
+// drift can't ship silently.
+//
+// To lower: confirm the new count is intentional (renamed param matches
+// XML display), then update this constant.
+
+const WIRED_MISLABEL_CEILING = 135;
+if (totals['WIRED-MISLABEL'] > WIRED_MISLABEL_CEILING) {
+  console.error('');
+  console.error(`FAIL: WIRED-MISLABEL count is ${totals['WIRED-MISLABEL']}, ceiling is ${WIRED_MISLABEL_CEILING}.`);
+  console.error(`A recent params.ts change introduced ${totals['WIRED-MISLABEL'] - WIRED_MISLABEL_CEILING} new mismatch(es)`);
+  console.error(`between the entry \`name\` field and the AM4-Edit display label. See`);
+  console.error(`${OUTPUT} "WIRED-MISLABEL findings" section to identify them.`);
+  console.error(`Either rename the params.ts \`name\` to match the display, or raise`);
+  console.error(`the ceiling in this script if the divergence is intentional.`);
+  process.exit(1);
+}
+console.log('');
+console.log(`Drift guard: WIRED-MISLABEL=${totals['WIRED-MISLABEL']} ≤ ceiling=${WIRED_MISLABEL_CEILING} ✓`);
