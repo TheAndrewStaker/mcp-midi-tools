@@ -17,7 +17,7 @@
  *   npx tsx scripts/_research/validate-params-against-catalog.ts --verbose
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 
 const args = process.argv.slice(2);
 const verbose = args.includes('--verbose');
@@ -25,6 +25,11 @@ const verbose = args.includes('--verbose');
 const PARAMS_TS = 'packages/am4/src/params.ts';
 const BLOCK_TYPES_TS = 'packages/am4/src/blockTypes.ts';
 const GHIDRA_AM4 = 'samples/captured/decoded/ghidra-am4-paramnames.json';
+
+// Gracefully skip if the Ghidra catalog hasn't been regenerated
+// locally (the JSON is gitignored under samples/). The pidLow + generic
+// checks still run.
+const catalogPresent = existsSync(GHIDRA_AM4);
 
 // Parse blockTypes.ts → { block: pidLow }
 const blockTypesSrc = readFileSync(BLOCK_TYPES_TS, 'utf-8');
@@ -69,14 +74,16 @@ const GENERIC_PIDHIGH: Record<number, string> = {
 
 const CHANNEL_REGISTER = 0x07d2; // 2002
 
-// Load Ghidra catalog → { family: { paramId: name } }
-const catalog = JSON.parse(readFileSync(GHIDRA_AM4, 'utf-8'));
+// Load Ghidra catalog → { family: { paramId: name } } (if present).
 const catalogByFamily: Record<string, Record<number, string>> = {};
-for (const eff of Object.values(catalog.effect_types) as any[]) {
-  if (!eff.effectFamily) continue;
-  catalogByFamily[eff.effectFamily] ??= {};
-  for (const p of eff.params as { paramId: number; name: string }[]) {
-    catalogByFamily[eff.effectFamily][p.paramId] = p.name;
+if (catalogPresent) {
+  const catalog = JSON.parse(readFileSync(GHIDRA_AM4, 'utf-8'));
+  for (const eff of Object.values(catalog.effect_types) as any[]) {
+    if (!eff.effectFamily) continue;
+    catalogByFamily[eff.effectFamily] ??= {};
+    for (const p of eff.params as { paramId: number; name: string }[]) {
+      catalogByFamily[eff.effectFamily][p.paramId] = p.name;
+    }
   }
 }
 
@@ -96,7 +103,12 @@ for (const m of paramsTs.matchAll(entryRe)) {
 
 console.log(`Loaded ${entries.length} entries from ${PARAMS_TS}`);
 console.log(`Block-type pidLow table: ${Object.keys(blockPidLow).length} blocks`);
-console.log(`Ghidra catalog: ${Object.keys(catalogByFamily).length} families`);
+if (catalogPresent) {
+  console.log(`Ghidra catalog: ${Object.keys(catalogByFamily).length} families`);
+} else {
+  console.log(`Ghidra catalog: NOT PRESENT (regenerate via scripts/ghidra/run-am4-paramnames.cmd)`);
+  console.log(`  Skipping catalog-correctness checks; still validating pidLow + generic params.`);
+}
 console.log('');
 
 interface Issue {
@@ -167,7 +179,7 @@ for (const e of entries) {
     } else if (verbose) {
       console.log(`  ✓ ${e.key} — generic ${GENERIC_PIDHIGH[e.pidHigh]}`);
     }
-  } else {
+  } else if (catalogPresent) {
     // Block-specific paramId — must exist in catalog for the family
     // that owns this pidLow (not necessarily e.block's family — cross-
     // block addressing uses a different family's catalog).
