@@ -27,6 +27,7 @@ import { registerAxeFxIIIDiscoveryTools } from './tools/discovery.js';
 import { registerAxeFxIIIEffectTools } from './tools/effects.js';
 import { registerAxeFxIIIMetaTools } from './tools/meta.js';
 import { registerAxeFxIIINavigationTools } from './tools/navigation.js';
+import { registerAxeFxIIIParamTools } from './tools/params.js';
 import { registerAxeFxIIIUtilityTools } from './tools/utility.js';
 
 export { describeAxeFxIIIPortStatus } from './tools/meta.js';
@@ -35,6 +36,7 @@ export { resetAxeFxIIIConnection } from './tools/shared.js';
 export function registerAxeFxIIITools(server: McpServer): void {
   registerAxeFxIIINavigationTools(server);
   registerAxeFxIIIEffectTools(server);
+  registerAxeFxIIIParamTools(server);
   registerAxeFxIIIUtilityTools(server);
   registerAxeFxIIIDiscoveryTools(server);
   registerAxeFxIIIMetaTools(server);

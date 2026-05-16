@@ -73,12 +73,39 @@ export const FN_SET_GET_TEMPO = 0x14;
 export const FN_MULTIPURPOSE_RESPONSE = 0x64;
 
 /**
- * Family-inference constant: 0x02 SET_PARAMETER_VALUE is the Axe-Fx
- * II opcode for per-block parameter writes. The III may share the
- * shape — the spec PDF deliberately omits parameter writes entirely.
- * Keep here for reference; do not USE in production without a capture.
+ * 0x02 SET_PARAMETER_VALUE — Axe-Fx family opcode for per-block
+ * parameter writes. **Not in the v1.4 III spec** (Fractal deliberately
+ * omits parameter writes), but the same wire shape is community-
+ * documented for the Axe-Fx II.
+ *
+ * Evidence chain:
+ *   • prs22, Fractal Forum thread #49417 (2012): publishes the literal
+ *     wire shape `F0 00 01 74 03 02 6A 00 01 00 zz yy xx 01 ?? F7` for
+ *     setting AMP 1's INPUT_DRIVE on Axe-Fx II Mark I/II.
+ *   • fret, thread #99763 (2015): names the opcode
+ *     `MIDI_GET/SET_PARAMETER(0x02)` for II bypass-state queries.
+ *   • Chris Hurley, thread #140602 (2018): used the opcode on II XL+ to
+ *     "control the amp drive, master, etc... through sysex messages."
+ *   • simonp54, same thread: "No longer officially possible... the only
+ *     'supported' features are in the third party spec" — confirms
+ *     Fractal removed it from the v1.4 PDF but doesn't say firmware
+ *     stopped honouring it.
+ *   • Session 82 Ghidra mining of `Axe-Edit III.exe`: opcode 0x02 appears
+ *     in the message-builder caller list, so III firmware still has
+ *     code paths reachable via this opcode.
+ *
+ * Status: 🟡 wire shape ported from II's hardware-verified encoder
+ * (II uses model byte 0x03; III uses 0x10). Untested on actual III
+ * hardware as of Session 84 — no III in the founder's inventory. First
+ * III contributor running `axefx3_set_parameter` against a scratch
+ * preset confirms (or refutes) the shape; rejection arrives as a
+ * `0x64 MULTIPURPOSE_RESPONSE` and is surfaced in the tool's reply.
  */
-export const FN_SET_PARAMETER_VALUE_INFERRED = 0x02;
+export const FN_SET_PARAMETER = 0x02;
+
+/** Wire action byte: 0x01 = SET, 0x00 = QUERY. Per Axe-Fx II wiki. */
+const PARAM_ACTION_SET = 0x01;
+const PARAM_ACTION_QUERY = 0x00;
 
 /** Query sentinel — when this is the value byte, the device responds with current state. */
 export const QUERY_SENTINEL = 0x7f;
@@ -111,6 +138,131 @@ function buildEnvelope(fn: number, payload: readonly number[]): number[] {
   const body = [SYSEX_START, ...FRACTAL_MFR_PREFIX, AXE_FX_III_MODEL_ID, fn, ...payload];
   const checksum = fractalChecksum(body);
   return [...body, checksum, SYSEX_END];
+}
+
+// ── 0x02 SET/GET PARAMETER ────────────────────────────────────────
+//
+// Ported from the Axe-Fx II's hardware-verified encoder
+// (packages/axe-fx-ii/src/setParam.ts). 🟡 III hardware-untested as of
+// Session 84 — see FN_SET_PARAMETER doc-comment above for the
+// community evidence chain that motivates the port.
+
+/**
+ * Pack a 16-bit unsigned value into the wire's three 7-bit septets.
+ *
+ *   septet 0 = bits 6..0   (lowest seven bits)
+ *   septet 1 = bits 13..7  (next seven bits)
+ *   septet 2 = bits 15..14 (top two bits, zero-padded into a 7-bit byte)
+ *
+ * Valid input range 0..65534 (16-bit minus one — wiki says firmware
+ * clamps 65535 to 65534 internally). We accept the full 16-bit range
+ * so callers pass through without an extra clamp.
+ */
+export function packValue16(value: number): [number, number, number] {
+  if (!Number.isInteger(value) || value < 0 || value > 0xffff) {
+    throw new Error(`packValue16 input out of range: ${value}`);
+  }
+  return [
+    value & 0x7f,
+    (value >> 7) & 0x7f,
+    (value >> 14) & 0x03,
+  ];
+}
+
+/** Inverse of `packValue16`. Inputs may have unused upper bits — masked. */
+export function unpackValue16(b0: number, b1: number, b2: number): number {
+  return ((b0 & 0x7f)) | ((b1 & 0x7f) << 7) | ((b2 & 0x03) << 14);
+}
+
+/**
+ * SET PARAMETER (function 0x02, action 0x01).
+ *
+ *   `F0 00 01 74 10 02 [id_lo id_hi] [pid_lo pid_hi] [v0 v1 v2] 01 [cs] F7`
+ *
+ * Per Axe-Fx II wiki + community RE (see FN_SET_PARAMETER doc-comment):
+ *   - 14-bit effectId (LS-first septet pair)
+ *   - 14-bit paramId  (LS-first septet pair)
+ *   - 16-bit value packed into 3 septets via packValue16
+ *   - trailing action byte: 0x01 = SET commit
+ *
+ * Value is the raw 16-bit wire integer (0..65534). Display ↔ wire
+ * conversion is the caller's responsibility (the III has no published
+ * per-param display ranges yet — the Ghidra catalog gives paramId
+ * names but not display calibration).
+ *
+ * 🟡 Untested on Axe-Fx III hardware. Rejection arrives via
+ * `0x64 MULTIPURPOSE_RESPONSE` and is surfaced in tool replies.
+ */
+export function buildSetParameter(
+  effectId: number,
+  paramId: number,
+  value: number,
+): number[] {
+  return buildEnvelope(FN_SET_PARAMETER, [
+    ...encode14(effectId),
+    ...encode14(paramId),
+    ...packValue16(value),
+    PARAM_ACTION_SET,
+  ]);
+}
+
+/**
+ * GET PARAMETER (function 0x02, action 0x00). Value field is sent as
+ * three zero septets per wiki: "When you are getting a parameter value
+ * you still have to include a parameter value with your message but
+ * this value can be 0."
+ */
+export function buildGetParameter(effectId: number, paramId: number): number[] {
+  return buildEnvelope(FN_SET_PARAMETER, [
+    ...encode14(effectId),
+    ...encode14(paramId),
+    0x00, 0x00, 0x00,
+    PARAM_ACTION_QUERY,
+  ]);
+}
+
+/**
+ * Block-bypass via SET_PARAMETER (paramId 255 is the bypass register
+ * per Axe-Fx II wiki). The III v1.4 spec exposes a separate 0x0A
+ * SET_BYPASS opcode — prefer that one when targeting just bypass.
+ * This builder exists for completeness + as a fallback in case the
+ * 0x02 path turns out to be the only one III firmware honors.
+ *
+ * 🟡 III-untested.
+ */
+export function buildSetParameterBypass(effectId: number, bypassed: boolean): number[] {
+  return buildSetParameter(effectId, 255, bypassed ? 1 : 0);
+}
+
+/** Predicate: is this an inbound 0x02 PARAMETER response frame? */
+export function isSetGetParameterResponse(bytes: readonly number[]): boolean {
+  return isAxeFxIIIFrame(bytes, FN_SET_PARAMETER);
+}
+
+/**
+ * Parse the inbound 0x02 PARAMETER response. Returns
+ * `{ effectId, paramId, value }`. The II wiki documents a label suffix
+ * after the value; the III's reply shape is unverified — we read just
+ * the wire-deterministic fields (effectId + paramId + 16-bit value)
+ * and skip any trailing bytes.
+ */
+export function parseSetGetParameterResponse(bytes: readonly number[]): {
+  effectId: number;
+  paramId: number;
+  value: number;
+} {
+  if (!isSetGetParameterResponse(bytes)) {
+    throw new Error(`parseSetGetParameterResponse: not a 0x02 frame (len=${bytes.length})`);
+  }
+  const payload = bytes.slice(6, -2);
+  if (payload.length < 7) {
+    throw new Error(`parseSetGetParameterResponse: payload too short (${payload.length}B)`);
+  }
+  return {
+    effectId: decode14(payload[0], payload[1]),
+    paramId: decode14(payload[2], payload[3]),
+    value: unpackValue16(payload[4], payload[5], payload[6]),
+  };
 }
 
 // ── 0x0A SET/GET BYPASS ────────────────────────────────────────────

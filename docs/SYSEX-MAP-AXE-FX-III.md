@@ -193,6 +193,116 @@ The list below is preserved as a historical record:
 | 9 | `FN_FRONT_PANEL_CHANGE = 0x21` is referenced in design notes as the III dirty signal. Not in v1.4 PDF. Source unidentified. | `setParam.ts:59`, `docs/axefx3-design-notes.md` | Treat as unverified. The PDF documents only `0x10` (tempo down-beat) and `0x11` (tuner) as push frames. |
 | 10 | Block roster (`blockTypes.ts`) ships every block with `id: null` claiming "effectId pending capture." Effect IDs ARE in the spec Appendix 1 — only AMP and post-firmware-1.13 blocks are unspecified. | `blockTypes.ts` | Populate `id:` from Appendix 1. Leave AMP, NAM, Dynamic Distortion as `null`. |
 
+## 0x02 SET_PARAMETER — community-verified on II, ported to III 🟡
+
+**Status:** wire shape ported from the Axe-Fx II's hardware-verified
+encoder (`packages/axe-fx-ii/src/setParam.ts`). 🟡 III hardware-
+untested as of Session 84 — no III in the founder's inventory. Built,
+documented, and shipped via `axefx3_set_parameter` /
+`axefx3_get_parameter` MCP tools so the first III contributor to run
+one of them against a scratch preset can convert this from 🟡 to 🟢
+in one MIDI send.
+
+### The opcode is not in v1.4, but community has documented it
+
+Fractal removed `0x02` from the published v1.4 PDF on purpose. But
+forum evidence (Session 84 batch search,
+`docs/_private/forum-search-batch-2026-05-16T15-43-33-316Z.json`)
+confirms it still exists in the firmware:
+
+1. **prs22, forum thread #49417 (2012)** — posts the literal wire
+   shape `F0 00 01 74 03 02 6A 00 01 00 zz yy xx 01 ?? F7` for setting
+   AMP 1's INPUT_DRIVE on an Axe-Fx II Mark I/II. This is the canonical
+   wire shape we ported.
+2. **fret, thread #99763 (2015)** — names the opcode explicitly:
+   *"querying the state of instant access switches using the
+   **MIDI_GET/SET_PARAMETER(0x02)** sysex command and the bypass
+   parameter."*
+3. **Chris Hurley, thread #140602 (2018)** — used the opcode on an
+   Axe-Fx II XL+: *"controlled the amp drive, master, etc... through
+   sysex messages. I preferred setting the knob position via sysex."*
+4. **simonp54 reply, same thread:** *"No longer officially possible...
+   the only 'supported' features are in the third party spec at the top
+   of this thread."* Confirms Fractal removed the opcode from public
+   docs but doesn't say firmware stopped honoring it.
+5. **Session 82 Ghidra mining of `Axe-Edit III.exe`** found `0x02`
+   in the generic message-builder caller list — so III firmware still
+   has code paths reachable via this opcode (the AxeEdit III binary
+   itself sends them).
+
+### Wire shape (16 bytes)
+
+```
+F0 00 01 74 10 02
+  [id_lo id_hi]      14-bit effect ID per v1.4 Appendix 1 (LS-first)
+  [pid_lo pid_hi]    14-bit paramId (LS-first) — see Ghidra catalog
+  [v0 v1 v2]         16-bit value packed into 3 septets:
+                       v0 = bits 6..0
+                       v1 = bits 13..7
+                       v2 = bits 15..14
+  [action]           0x01 = SET commit, 0x00 = QUERY
+  [cs] F7            checksum + SysEx end
+```
+
+Value range is 0..65534 (16-bit minus one — wiki notes firmware
+clamps 65535 → 65534). Display ↔ wire conversion is the caller's
+responsibility on the III: no public per-param display calibration
+exists. For paramId → symbolic-name lookup, use the Ghidra catalog at
+`samples/captured/decoded/ghidra-axeedit3-paramnames.json` (49 effect
+families, 2216 paramIds, mined Session 82).
+
+### What you can do with this right now
+
+Even before HW verification, the encoder is shipping with byte-exact
+goldens (`scripts/verify-axe-fx-iii-encoding.ts`). Tools and helpers:
+
+- `buildSetParameter(effectId, paramId, value)` — builds the 16-byte
+  SET wire form.
+- `buildGetParameter(effectId, paramId)` — builds the QUERY form.
+- `buildSetParameterBypass(effectId, bypassed)` — convenience that
+  writes paramId 255 (the II's bypass register). The III v1.4 also
+  exposes `0x0A SET_BYPASS` — prefer that one unless testing whether
+  the III also honors 0x02 path.
+- `parseSetGetParameterResponse(bytes)` — reads back `(effectId,
+  paramId, value)` from inbound 0x02 frames.
+
+MCP tools `axefx3_set_parameter` + `axefx3_get_parameter` wrap these
+and bracket every SET with a 250 ms 0x64 MULTIPURPOSE_RESPONSE listener
+(via `sendAndWatchForError`). If the III firmware rejects the opcode
+(unlikely given the Ghidra finding, but possible), the rejection
+arrives as a `0x64` error frame and is surfaced verbatim in the tool's
+reply — not a silent failure.
+
+### What a III contributor confirms in one MIDI send
+
+Open a scratch preset that contains Reverb 1, set up MCP, run:
+
+```
+axefx3_get_parameter(block="Reverb 1", param_id=0)
+```
+
+paramId 0 of REVERB is `REVERB_TYPE` per Ghidra catalog. Three
+possible outcomes:
+
+1. **Tool returns a numeric value** (likely the active reverb-type
+   index, 0..N). → 🟢 wire shape confirmed. III honors the same 0x02
+   shape as II. 2216 paramIds become writable.
+2. **Tool returns a `0x64 MULTIPURPOSE_RESPONSE`** with code
+   `MIDI_ERROR_MSG_NOT_RECOGNIZED` (0x04) or
+   `MIDI_ERROR_BAD_ARGUMENT` (0x03). → III firmware actively rejects.
+   Look at the echoed_fn — if it's 0x02 we have a definitive negative;
+   if it's something else, the wire envelope was malformed before fn
+   parsing.
+3. **Tool times out with no response.** → III silently ignores. Most
+   likely meaning: the opcode reaches the parameter dispatcher but no
+   reply is generated (II's GET also lacks ack on certain blocks per
+   wiki). For SET, this is acceptable; for GET, it indicates we need a
+   different query path (possibly fn=0x1F per Session 82 Ghidra).
+
+Whichever outcome lands, edit this section to lock the state.
+
+---
+
 ## Community-captured wire confirmations
 
 Several of our builders have been independently verified against

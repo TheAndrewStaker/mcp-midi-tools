@@ -30,6 +30,11 @@ import {
   buildSetTempo,
   buildGetTempo,
   buildStatusDump,
+  buildSetParameter,
+  buildGetParameter,
+  buildSetParameterBypass,
+  packValue16,
+  unpackValue16,
   isSetGetBypassResponse,
   isSetGetChannelResponse,
   isSetGetSceneResponse,
@@ -38,6 +43,7 @@ import {
   isSetGetLooperResponse,
   isSetGetTempoResponse,
   isStatusDumpResponse,
+  isSetGetParameterResponse,
   isMultipurposeResponse,
   parseBypassResponse,
   parseChannelResponse,
@@ -181,6 +187,62 @@ check('buildSetTempo(120)', buildSetTempo(120),
   'f000017410' + '14' + '7800' + '79' + 'f7');
 check('buildGetTempo()', buildGetTempo(),
   'f000017410' + '14' + '7f7f' + '01' + 'f7');
+
+// ── 0x02 SET/GET PARAMETER (🟡 III hardware-untested) ──────────────
+// Wire shape ported from the Axe-Fx II's hardware-verified encoder.
+// Goldens here lock the encoder shape; they don't certify the III
+// firmware honors the writes. A III contributor verifies via the
+// axefx3_set_parameter MCP tool against a scratch preset.
+console.log('\nset_parameter / get_parameter (function 0x02, 🟡 III-untested):');
+
+// Reverb 1 = effect ID 66 = 0x42. paramId 0 = REVERB_TYPE per Ghidra
+// catalog. Three septets for 16-bit value, then action byte.
+//
+// buildSetParameter(66, 0, 0):
+//   F0 00 01 74 10 02 [42 00] [00 00] [00 00 00] [01] [cs] F7
+//   XOR: F0^0^1^74^10^02^42^00^00^00^00^00^00^01 = 0xD4 → cs = 0x54
+check('buildSetParameter(66, 0, 0) — Reverb 1, paramId 0, min',
+  buildSetParameter(66, 0, 0),
+  'f000017410' + '02' + '4200' + '0000' + '000000' + '01' + '54' + 'f7');
+
+// buildSetParameter(66, 0, 65534):
+//   F0 00 01 74 10 02 [42 00] [00 00] [7E 7F 03] [01] [cs] F7
+//   XOR: F0^0^1^74^10^02^42^0^0^0^7E^7F^03^01 = ...
+check('buildSetParameter(66, 0, 65534) — Reverb 1, paramId 0, max',
+  buildSetParameter(66, 0, 65534),
+  'f000017410' + '02' + '4200' + '0000' + '7e7f03' + '01' + '56' + 'f7');
+
+// buildSetParameter(66, 11, 32767) — Reverb 1, paramId 11, mid-range
+// packValue16(32767 = 0x7FFF) = [0x7F, 0x7F, 0x01]
+check('buildSetParameter(66, 11, 32767) — Reverb 1, paramId 11, mid',
+  buildSetParameter(66, 11, 32767),
+  'f000017410' + '02' + '4200' + '0b00' + '7f7f01' + '01' + '5e' + 'f7');
+
+// buildGetParameter(66, 0):
+//   F0 00 01 74 10 02 [42 00] [00 00] [00 00 00] [00] [cs] F7
+//   XOR: F0^0^1^74^10^02^42^0^0^0^0^0^0^0 = 0xD5 → cs = 0x55
+check('buildGetParameter(66, 0) — Reverb 1 query paramId 0',
+  buildGetParameter(66, 0),
+  'f000017410' + '02' + '4200' + '0000' + '000000' + '00' + '55' + 'f7');
+
+// buildSetParameterBypass(66, true) = buildSetParameter(66, 255, 1)
+// paramId 255 = 0xFF = encode14 [0x7F, 0x01]. value 1 → packValue16 [0x01, 0x00, 0x00].
+check('buildSetParameterBypass(66, true) — Reverb 1 bypass via 0x02 path',
+  buildSetParameterBypass(66, true),
+  'f000017410' + '02' + '4200' + '7f01' + '010000' + '01' + '2b' + 'f7');
+
+// packValue16 round-trips
+checkEqual('packValue16(0)',     packValue16(0),     [0x00, 0x00, 0x00] as [number, number, number]);
+checkEqual('packValue16(65534)', packValue16(65534), [0x7e, 0x7f, 0x03] as [number, number, number]);
+checkEqual('packValue16(32767)', packValue16(32767), [0x7f, 0x7f, 0x01] as [number, number, number]);
+checkEqual('unpackValue16(0,0,0)',     unpackValue16(0, 0, 0),       0);
+checkEqual('unpackValue16(0x7e,0x7f,0x03)', unpackValue16(0x7e, 0x7f, 0x03), 65534);
+checkEqual('unpackValue16(0x7f,0x7f,0x01)', unpackValue16(0x7f, 0x7f, 0x01), 32767);
+
+// isSetGetParameterResponse predicate — matches any 0x02 frame
+const fakeParamResponse = [0xf0, 0x00, 0x01, 0x74, 0x10, 0x02, 0x42, 0x00, 0x0b, 0x00, 0x7f, 0x7f, 0x01, 0x00, 0x5f, 0xf7];
+checkEqual('isSetGetParameterResponse(fake 0x02 frame)', isSetGetParameterResponse(fakeParamResponse), true);
+checkEqual('isSetGetParameterResponse(SET_BYPASS frame)', isSetGetParameterResponse([0xf0, 0x00, 0x01, 0x74, 0x10, 0x0a, 0x42, 0x00, 0x00, 0x5d, 0xf7]), false);
 
 // ── Range-check refusals ────────────────────────────────────────────
 console.log('\nrange-check refusals:');
