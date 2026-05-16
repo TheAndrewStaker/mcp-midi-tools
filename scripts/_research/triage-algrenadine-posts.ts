@@ -191,6 +191,28 @@ for (const t of candidates) {
   console.log(`    "${t.title}"`);
 }
 
+// Ready-to-paste JS array for the batch scraper. The user copies
+// THIS block into forum-scrape-threads-batch.js and runs it once.
+console.log('\n' + '─'.repeat(72));
+console.log('Paste this into the THREAD_URLS array in docs/_private/forum-scrape-threads-batch.js:\n');
+const SCRAPE_THRESHOLD = 10;
+const MEGA_THREAD_POST_THRESHOLD = 50;
+const scrapeTargets = candidates
+  .filter((t) => t.postCount < MEGA_THREAD_POST_THRESHOLD)
+  .map((t) => `    'https://forum.fractalaudio.com/threads/${t.threadId}/',  // [score ${t.totalScore}, ${t.postCount} posts] ${t.title.slice(0, 50)}`);
+console.log('  const THREAD_URLS = [');
+for (const line of scrapeTargets) console.log(line);
+console.log('  ];');
+
+const skipped = candidates.filter((t) => t.postCount >= MEGA_THREAD_POST_THRESHOLD);
+if (skipped.length > 0) {
+  console.log(`\nSkipped (${MEGA_THREAD_POST_THRESHOLD}+ matching posts — spot-scrape by URL instead of full thread):`);
+  for (const t of skipped) {
+    console.log(`  ${t.title} (${t.postCount} posts, score ${t.totalScore})`);
+    console.log(`    https://forum.fractalaudio.com/threads/${t.threadId}/`);
+  }
+}
+
 console.log('\nDone.');
-console.log(`\nNext: walk each high-score thread with docs/_private/forum-scrape-thread.js.`);
-console.log(`Drop the resulting forum-thread-*.txt files into docs/_private/.`);
+console.log(`\nNext: edit docs/_private/forum-scrape-threads-batch.js with the array above,`);
+console.log(`then paste it into the forum's dev tools console. One download covers them all.`);
