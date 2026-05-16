@@ -56,6 +56,23 @@ export const FN_STATUS_DUMP = 0x13;
 export const FN_SET_GET_TEMPO = 0x14;
 
 /**
+ * 0x64 MULTIPURPOSE_RESPONSE — the III's error channel.
+ *
+ * When the III receives a malformed SysEx or an unsupported function it
+ * replies with:
+ *
+ *   `F0 00 01 74 10 64 [echoed_fn] [result_code] [cs] F7`   (10 bytes)
+ *
+ * `echoed_fn` is the function byte the host sent that the device
+ * rejected; `result_code` is the device's reason byte (0x00 has been
+ * seen for "general / checksum error", 0x05 has been seen for "NACK"
+ * during preset-store experiments). Wire shape is documented in v1.4
+ * and confirmed against a 2018 community capture — see
+ * `docs/axefx3-fn01-decode.md`.
+ */
+export const FN_MULTIPURPOSE_RESPONSE = 0x64;
+
+/**
  * Family-inference constant: 0x02 SET_PARAMETER_VALUE is the Axe-Fx
  * II opcode for per-block parameter writes. The III may share the
  * shape — the spec PDF deliberately omits parameter writes entirely.
@@ -364,6 +381,9 @@ export function isStatusDumpResponse(bytes: readonly number[]): boolean {
 export function isSetGetTempoResponse(bytes: readonly number[]): boolean {
   return isAxeFxIIIFrame(bytes, FN_SET_GET_TEMPO);
 }
+export function isMultipurposeResponse(bytes: readonly number[]): boolean {
+  return isAxeFxIIIFrame(bytes, FN_MULTIPURPOSE_RESPONSE);
+}
 
 /**
  * Parse a 0x0A SET/GET BYPASS response. Payload is `[id_lo, id_hi, dd]`.
@@ -491,6 +511,46 @@ export function parseTempoResponse(bytes: readonly number[]): { bpm: number } {
   const payload = bytes.slice(6, -2);
   if (payload.length < 2) throw new Error('parseTempoResponse: payload too short');
   return { bpm: decode14(payload[0], payload[1]) };
+}
+
+/**
+ * Parse a 0x64 MULTIPURPOSE_RESPONSE frame. Payload is `[echoed_fn, result_code]`.
+ *
+ *   `F0 00 01 74 10 64 [echoed_fn] [result_code] [cs] F7`
+ *
+ * Known `result_code` meanings (incomplete — Fractal doesn't publish a
+ * full table):
+ *   - `0x00` — general / checksum error
+ *   - `0x05` — NACK (seen during preset-store experiments)
+ *
+ * Anything else surfaces as the raw byte. Callers convert this to a
+ * warning string in their tool response.
+ */
+export function parseMultipurposeResponse(bytes: readonly number[]): {
+  echoedFn: number;
+  resultCode: number;
+} {
+  if (!isMultipurposeResponse(bytes)) {
+    throw new Error(`parseMultipurposeResponse: not a 0x64 frame (len=${bytes.length})`);
+  }
+  const payload = bytes.slice(6, -2);
+  if (payload.length < 2) {
+    throw new Error(`parseMultipurposeResponse: payload too short (${payload.length}B)`);
+  }
+  return { echoedFn: payload[0] & 0x7f, resultCode: payload[1] & 0x7f };
+}
+
+/**
+ * Human-readable label for a known `result_code` byte. Returns
+ * `undefined` for codes not yet documented; callers fall back to the
+ * raw hex value.
+ */
+export function describeMultipurposeResultCode(code: number): string | undefined {
+  switch (code & 0x7f) {
+    case 0x00: return 'general error (often: bad checksum)';
+    case 0x05: return 'NACK';
+    default:   return undefined;
+  }
 }
 
 /**

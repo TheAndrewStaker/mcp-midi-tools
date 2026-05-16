@@ -32,6 +32,8 @@ import {
   GET_RESPONSE_TIMEOUT_MS,
   NO_ACK_NOTE,
   ensureConn,
+  formatMultipurposeError,
+  sendAndWatchForError,
   toHex,
 } from './shared.js';
 
@@ -53,13 +55,17 @@ export function registerAxeFxIIIUtilityTools(server: McpServer): void {
   }, async () => {
     const bytes = buildTempoTap();
     const c = ensureConn();
-    c.send(bytes);
+    const errorReport = await sendAndWatchForError(c, bytes);
+    const errorBlock = errorReport
+      ? `\n${formatMultipurposeError(errorReport)}\n`
+      : '';
     return {
       content: [{
         type: 'text',
         text:
           `Sent TEMPO_TAP.\n` +
           `Wrote ${bytes.length} bytes: ${toHex(bytes)}\n` +
+          errorBlock +
           `\n${NO_ACK_NOTE}\n\n${BETA_NOTE}`,
       }],
     };
@@ -87,13 +93,17 @@ export function registerAxeFxIIIUtilityTools(server: McpServer): void {
   }, async ({ bpm }) => {
     const bytes = buildSetTempo(bpm);
     const c = ensureConn();
-    c.send(bytes);
+    const errorReport = await sendAndWatchForError(c, bytes);
+    const errorBlock = errorReport
+      ? `\n${formatMultipurposeError(errorReport)}\n`
+      : '';
     return {
       content: [{
         type: 'text',
         text:
           `Sent SET_TEMPO → ${bpm} BPM.\n` +
           `Wrote ${bytes.length} bytes: ${toHex(bytes)}\n` +
+          errorBlock +
           `\n${NO_ACK_NOTE}\n\n${BETA_NOTE}`,
       }],
     };
@@ -157,13 +167,17 @@ export function registerAxeFxIIIUtilityTools(server: McpServer): void {
   }, async ({ on }) => {
     const bytes = buildSetTuner(on);
     const c = ensureConn();
-    c.send(bytes);
+    const errorReport = await sendAndWatchForError(c, bytes);
+    const errorBlock = errorReport
+      ? `\n${formatMultipurposeError(errorReport)}\n`
+      : '';
     return {
       content: [{
         type: 'text',
         text:
           `Sent TUNER_ON_OFF → ${on ? 'ON' : 'OFF'}.\n` +
           `Wrote ${bytes.length} bytes: ${toHex(bytes)}\n` +
+          errorBlock +
           `\n${NO_ACK_NOTE}\n\n${BETA_NOTE}`,
       }],
     };
@@ -193,13 +207,17 @@ export function registerAxeFxIIIUtilityTools(server: McpServer): void {
   }, async ({ action }) => {
     const bytes = buildSetLooper(action as LooperAction);
     const c = ensureConn();
-    c.send(bytes);
+    const errorReport = await sendAndWatchForError(c, bytes);
+    const errorBlock = errorReport
+      ? `\n${formatMultipurposeError(errorReport)}\n`
+      : '';
     return {
       content: [{
         type: 'text',
         text:
           `Sent SET_LOOPER → ${action}.\n` +
           `Wrote ${bytes.length} bytes: ${toHex(bytes)}\n` +
+          errorBlock +
           `\n${NO_ACK_NOTE}\n\n${BETA_NOTE}`,
       }],
     };

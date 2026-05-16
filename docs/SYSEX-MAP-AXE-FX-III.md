@@ -280,10 +280,16 @@ Example: a host sent QUERY_SCENE_NAME (0x0E) with a bad checksum.
 The III responded `F0 00 01 74 10 64 0E 00 7F F7` — function 0x64,
 echoed 0x0E, result code 0x00, valid checksum 0x7F.
 
-Our `axefx3_*` tools today don't parse 0x64. Adding a listener to
-the response window of write tools would let us surface clean error
-messages ("device rejected SET_PARAM, error code N") instead of
-silent failures.
+**Status: shipped (Session 80).** The III tools now bracket each
+fire-and-forget SET write with a 250ms 0x64 listener
+(`sendAndWatchForError` in `packages/axe-fx-iii/src/tools/shared.ts`).
+When a 0x64 arrives it surfaces as a warning in the tool response
+text — `(echoed_fn, result_code)` plus a human label for known codes.
+Byte-exact predicate + parser goldens (including the community-captured
+`F0 00 01 74 10 64 0E 00 7F F7` frame) live in
+`scripts/verify-axe-fx-iii-encoding.ts`. Known `result_code` labels:
+`0x00` = general / checksum error, `0x05` = NACK; anything else
+surfaces as a raw hex byte.
 
 ## Effect IDs in v1.4 Appendix 1 that are NOT 3rd-party addressable
 
@@ -297,9 +303,13 @@ surface (0x0A bypass / 0x0B channel / 0x13 status dump):
 - `ID_FOOTCONTROLLER` (199) — FC interface only
 - `ID_PRESET_FC` (200) — internal
 
-Our `blockTypes.ts` should mark these as `addressable: false` so
-`axefx3_set_bypass` / `axefx3_set_channel` decline cleanly for
-them rather than emitting useless writes.
+**Status: shipped (Session 80).** `packages/axe-fx-iii/src/blockTypes.ts`
+now marks these four entries `addressable: false`, and
+`resolveEffectId` refuses them with a clean message naming the four
+non-addressable IDs. `axefx3_list_blocks` surfaces the addressable
+column so the agent can see the FC-only blocks before attempting a
+write. Goldens in `scripts/verify-axe-fx-iii-encoding.ts` cover all
+four refusal cases.
 
 ## BPM table reference
 

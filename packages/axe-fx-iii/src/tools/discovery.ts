@@ -140,8 +140,8 @@ export function registerAxeFxIIIDiscoveryTools(server: McpServer): void {
     const lines: string[] = [];
     lines.push(`Axe-Fx III block roster (${AXE_FX_III_BLOCKS.length} entries):`);
     lines.push('');
-    lines.push('  group | name                       | instances | effect IDs       | confidence');
-    lines.push('  ' + '-'.repeat(82));
+    lines.push('  group | name                       | instances | effect IDs       | confidence       | addressable?');
+    lines.push('  ' + '-'.repeat(98));
     for (const b of AXE_FX_III_BLOCKS) {
       const code = b.groupCode.padEnd(5);
       const name = b.name.padEnd(26);
@@ -152,13 +152,20 @@ export function registerAxeFxIIIDiscoveryTools(server: McpServer): void {
           : b.instances === 1
             ? `${b.firstId}              `.padEnd(16)
             : `${b.firstId}..${b.firstId + b.instances - 1}         `.padEnd(16);
-      const conf = b.confidence;
-      lines.push(`  ${code} | ${name} |     ${inst}    | ${ids} | ${conf}`);
+      const conf = b.confidence.padEnd(16);
+      const addr = b.firstId === null
+        ? 'no (no ID)'
+        : b.addressable === false
+          ? 'no (FC-only)'
+          : 'yes';
+      lines.push(`  ${code} | ${name} |     ${inst}    | ${ids} | ${conf} | ${addr}`);
     }
     lines.push('');
     lines.push('To address a block via SysEx (bypass / channel writes), pass the');
     lines.push('block name + instance number to axefx3_set_bypass / axefx3_set_channel.');
-    lines.push('Effect IDs are resolved internally from this table.');
+    lines.push('Effect IDs are resolved internally from this table. Blocks marked');
+    lines.push('"no (FC-only)" are listed in v1.4 but only respond to the Foot');
+    lines.push('Controller interface — set_bypass / set_channel refuse for these.');
     lines.push('');
     lines.push(BETA_NOTE);
     return {

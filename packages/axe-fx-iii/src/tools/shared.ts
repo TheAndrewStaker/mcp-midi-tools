@@ -14,6 +14,11 @@
  * an Axe-Fx III. Tool descriptions surface this caveat to the agent.
  */
 
+import {
+  describeMultipurposeResultCode,
+  isMultipurposeResponse,
+  parseMultipurposeResponse,
+} from '../setParam.js';
 import { connectAxeFxIII, type MidiConnection } from '../midi.js';
 
 /**
@@ -88,4 +93,69 @@ export function resetAxeFxIIIConnection(): {
 
 export function toHex(bytes: readonly number[]): string {
   return bytes.map((b) => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+}
+
+// -- 0x64 MULTIPURPOSE_RESPONSE error-channel listener --------------------
+
+/**
+ * Window (in ms) we hold open after a fire-and-forget SET write to catch
+ * a `0x64 MULTIPURPOSE_RESPONSE` from the III. The III emits 0x64 within
+ * ~30–60 ms over USB when it rejects a frame; 250 ms is generous enough
+ * to absorb scheduler jitter without slowing successful writes meaningfully
+ * (success path still returns immediately on timeout — the cost is the
+ * timeout itself when nothing comes back, which is the common case).
+ */
+export const ERROR_RESPONSE_TIMEOUT_MS = 250;
+
+export interface MultipurposeErrorReport {
+  echoedFn: number;
+  resultCode: number;
+  /** Human label for known result codes; `undefined` for unknown bytes. */
+  description: string | undefined;
+  /** Full inbound frame, for diagnostic display. */
+  rawBytes: number[];
+}
+
+/**
+ * Send a SET / fire-and-forget frame and watch for a 0x64
+ * MULTIPURPOSE_RESPONSE within `ERROR_RESPONSE_TIMEOUT_MS`. The III only
+ * emits 0x64 on rejection; the common (success) path is a timeout, which
+ * resolves to `undefined`.
+ *
+ * IMPORTANT: register the listener BEFORE calling `c.send()` so the
+ * response can't race ahead of the listener (matches the same discipline
+ * used by `*_get_*` tools).
+ */
+export async function sendAndWatchForError(
+  c: MidiConnection,
+  bytes: number[],
+): Promise<MultipurposeErrorReport | undefined> {
+  const errorPromise = c
+    .receiveSysExMatching(isMultipurposeResponse, ERROR_RESPONSE_TIMEOUT_MS)
+    .catch(() => undefined as number[] | undefined);
+  c.send(bytes);
+  const raw = await errorPromise;
+  if (!raw) return undefined;
+  const { echoedFn, resultCode } = parseMultipurposeResponse(raw);
+  return {
+    echoedFn,
+    resultCode,
+    description: describeMultipurposeResultCode(resultCode),
+    rawBytes: raw,
+  };
+}
+
+/**
+ * Format a `MultipurposeErrorReport` into the warning string we append
+ * to a tool's response text. Keep terse — agents read the whole response.
+ */
+export function formatMultipurposeError(err: MultipurposeErrorReport): string {
+  const fnHex = err.echoedFn.toString(16).padStart(2, '0').toUpperCase();
+  const codeHex = err.resultCode.toString(16).padStart(2, '0').toUpperCase();
+  const label = err.description ?? `(unknown code)`;
+  return [
+    `⚠ Device rejected the write — 0x64 MULTIPURPOSE_RESPONSE received.`,
+    `   echoed_fn=0x${fnHex}, result_code=0x${codeHex} (${label}).`,
+    `   Recv (${err.rawBytes.length}B): ${toHex(err.rawBytes)}`,
+  ].join('\n');
 }

@@ -52,6 +52,20 @@ export interface AxeFxIIIBlock {
   availability?: 'iii-only' | 'iii+fm9' | 'iii+fm9+fm3' | 'utility-only';
   /** Confidence tag for this entry. */
   confidence: ConfidenceTag;
+  /**
+   * False when v1.4 lists the effect ID but the block is NOT controllable
+   * via the 3rd-party MIDI surface (e.g. internal Control/FC/MIDI blocks
+   * that respond to FC interface only). `set_bypass` / `set_channel`
+   * refuse with a clean error for these. Defaults to true when absent.
+   *
+   * Confirmed non-addressable from community RE (forum thread #140602,
+   * 2019):
+   *   - ID_CONTROL (2)          → Controllers
+   *   - ID_MIDIBLOCK (190)      → Scene MIDI
+   *   - ID_FOOTCONTROLLER (199) → Foot Controller
+   *   - ID_PRESET_FC (200)      → Preset FC
+   */
+  addressable?: boolean;
 }
 
 /**
@@ -61,7 +75,7 @@ export interface AxeFxIIIBlock {
  */
 export const AXE_FX_III_BLOCKS: readonly AxeFxIIIBlock[] = [
   // Compositing utilities (singletons, IDs from PDF Appendix)
-  { firstId: 2,    instances: 1, name: 'Controllers',          groupCode: 'CTR', confidence: 'spec-v1.4' },
+  { firstId: 2,    instances: 1, name: 'Controllers',          groupCode: 'CTR', confidence: 'spec-v1.4', addressable: false },
   // (IDs 3-34 reserved or unenumerated in v1.4)
   { firstId: 35,   instances: 1, name: 'Tuner',                groupCode: 'TUN', confidence: 'spec-v1.4' },
   { firstId: 36,   instances: 1, name: 'IR Capture',           groupCode: 'IRC', availability: 'utility-only', confidence: 'spec-v1.4' },
@@ -105,11 +119,11 @@ export const AXE_FX_III_BLOCKS: readonly AxeFxIIIBlock[] = [
   { firstId: 178,  instances: 4, name: 'Plex Delay',           groupCode: 'PLX', confidence: 'spec-v1.4' },
   { firstId: 182,  instances: 4, name: 'Send',                 groupCode: 'SND', confidence: 'spec-v1.4' },
   { firstId: 186,  instances: 4, name: 'Return',               groupCode: 'RTN', confidence: 'spec-v1.4' },
-  { firstId: 190,  instances: 1, name: 'Scene MIDI',           groupCode: 'SMI', confidence: 'spec-v1.4' },
+  { firstId: 190,  instances: 1, name: 'Scene MIDI',           groupCode: 'SMI', confidence: 'spec-v1.4', addressable: false },
   { firstId: 191,  instances: 4, name: 'Multiplexer',          groupCode: 'MUX', confidence: 'spec-v1.4' },
   { firstId: 195,  instances: 4, name: 'IR Player',            groupCode: 'IRP', availability: 'iii-only', confidence: 'spec-v1.4' },
-  { firstId: 199,  instances: 1, name: 'Foot Controller',      groupCode: 'FC',  confidence: 'spec-v1.4' },
-  { firstId: 200,  instances: 1, name: 'Preset FC',            groupCode: 'PFC', confidence: 'spec-v1.4' },
+  { firstId: 199,  instances: 1, name: 'Foot Controller',      groupCode: 'FC',  confidence: 'spec-v1.4', addressable: false },
+  { firstId: 200,  instances: 1, name: 'Preset FC',            groupCode: 'PFC', confidence: 'spec-v1.4', addressable: false },
 
   // ── Blocks NOT in v1.4 Appendix 1 ───────────────────────────────
   // AMP is mysteriously absent from v1.4 — either in the 3..34
@@ -187,6 +201,16 @@ export function resolveEffectId(
       `Axe-Fx III "${block.name}" has no effect ID in the v1.4 spec ` +
         '(either reserved / unenumerated or added in firmware > 1.13). ' +
         `${block.confidence === 'pending-capture' ? 'Run axefx3_status_dump against a preset that contains this block to decode its real effect ID.' : 'This block is shipping editor-only and may not be addressable via 3rd-party MIDI.'}`,
+    );
+  }
+  if (block.addressable === false) {
+    throw new Error(
+      `Axe-Fx III "${block.name}" (effect ID ${block.firstId}) is listed in ` +
+        'v1.4 Appendix 1 but is NOT controllable via the 3rd-party MIDI ' +
+        "surface — it's an internal / FC-only block. set_bypass and " +
+        'set_channel will not affect it. ' +
+        '(Confirmed: ID_CONTROL=2, ID_MIDIBLOCK=190, ID_FOOTCONTROLLER=199, ' +
+        'ID_PRESET_FC=200.)',
     );
   }
   if (resolvedInstance < 1 || resolvedInstance > block.instances) {

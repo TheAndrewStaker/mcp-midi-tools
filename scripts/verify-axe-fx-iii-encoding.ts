@@ -38,6 +38,7 @@ import {
   isSetGetLooperResponse,
   isSetGetTempoResponse,
   isStatusDumpResponse,
+  isMultipurposeResponse,
   parseBypassResponse,
   parseChannelResponse,
   parseSceneResponse,
@@ -46,6 +47,8 @@ import {
   parseLooperStateResponse,
   parseTempoResponse,
   parseStatusDumpResponse,
+  parseMultipurposeResponse,
+  describeMultipurposeResultCode,
 } from '@mcp-midi-control/axe-fx-iii/setParam.js';
 import { resolveEffectId, AXE_FX_III_BLOCKS } from '@mcp-midi-control/axe-fx-iii/blockTypes.js';
 import { fractalChecksum } from '@mcp-midi-control/core/fractal-shared/checksum.js';
@@ -205,10 +208,21 @@ checkEqual('resolveEffectId("Reverb 2")',     resolveEffectId('Reverb 2'),     6
 checkEqual('resolveEffectId("Drive 1")',      resolveEffectId('Drive 1'),      58);
 checkEqual('resolveEffectId("Drive 4")',      resolveEffectId('Drive 4'),      61);
 checkEqual('resolveEffectId("DRV", 3)',       resolveEffectId('DRV', 3),       60);
-checkEqual('resolveEffectId("Scene MIDI")',   resolveEffectId('Scene MIDI'),   190);
 checkThrows('resolveEffectId("Amp") throws (not in v1.4)', () => resolveEffectId('Amp'), /no effect ID in the v1.4 spec/);
 checkThrows('resolveEffectId("NAM") throws (post-1.13)', () => resolveEffectId('NAM'), /no effect ID in the v1.4 spec/);
 checkThrows('resolveEffectId("Bogus")', () => resolveEffectId('Bogus'), /Unknown Axe-Fx III block/);
+
+// Non-addressable v1.4 entries refuse cleanly — confirmed by community
+// RE (forum thread #140602): IDs 2, 190, 199, 200 are listed in v1.4
+// but not controllable via the 3rd-party MIDI surface.
+checkThrows('resolveEffectId("Controllers") refuses (ID 2, non-addressable)',
+  () => resolveEffectId('Controllers'), /NOT controllable via the 3rd-party MIDI/);
+checkThrows('resolveEffectId("Scene MIDI") refuses (ID 190, non-addressable)',
+  () => resolveEffectId('Scene MIDI'), /NOT controllable via the 3rd-party MIDI/);
+checkThrows('resolveEffectId("Foot Controller") refuses (ID 199, non-addressable)',
+  () => resolveEffectId('Foot Controller'), /NOT controllable via the 3rd-party MIDI/);
+checkThrows('resolveEffectId("Preset FC") refuses (ID 200, non-addressable)',
+  () => resolveEffectId('Preset FC'), /NOT controllable via the 3rd-party MIDI/);
 
 // Verify the catalog is internally consistent — every 'spec-v1.4'
 // entry has a firstId; nothing else does.
@@ -341,6 +355,49 @@ console.log('\nresponse predicates + parsers:');
   try { parseStatusDumpResponse(bad); } catch (err) { caught = (err as Error).message; }
   checkEqual('parseStatusDumpResponse rejects non-triple payload',
     typeof caught === 'string' && /multiple of 3/.test(caught), true);
+}
+
+// 0x64 MULTIPURPOSE_RESPONSE: community-captured wire shape
+//   F0 00 01 74 10 64 0E 00 7F F7
+// echoed_fn=0x0E (QUERY_SCENE_NAME), result_code=0x00 (general / checksum).
+// This is the exact byte sequence in docs/axefx3-fn01-decode.md §0x64.
+console.log('\nmultipurpose_response (function 0x64):');
+{
+  const captured = asBytes('f000017410' + '64' + '0e00' + '7f' + 'f7');
+  // Sanity-check the published checksum matches our fractalChecksum().
+  const head = [0xf0, 0x00, 0x01, 0x74, 0x10, 0x64, 0x0e, 0x00];
+  const recomputed = [...head, fractalChecksum(head), 0xf7];
+  checkEqual('captured 0x64 frame matches fractalChecksum recomputation',
+    hex(captured), hex(recomputed));
+  checkEqual('isMultipurposeResponse(captured)',
+    isMultipurposeResponse(captured), true);
+  checkEqual('parseMultipurposeResponse(captured)',
+    parseMultipurposeResponse(captured),
+    { echoedFn: 0x0e, resultCode: 0x00 });
+  checkEqual('describeMultipurposeResultCode(0x00)',
+    describeMultipurposeResultCode(0x00), 'general error (often: bad checksum)');
+  checkEqual('describeMultipurposeResultCode(0x05)',
+    describeMultipurposeResultCode(0x05), 'NACK');
+  checkEqual('describeMultipurposeResultCode(0x42) — unknown',
+    describeMultipurposeResultCode(0x42), undefined);
+}
+
+// Round-trip a synthesized 0x64 frame with a non-zero result code.
+{
+  const head = [0xf0, 0x00, 0x01, 0x74, 0x10, 0x64, 0x02, 0x05];
+  const synth = [...head, fractalChecksum(head), 0xf7];
+  checkEqual('parseMultipurposeResponse(synth NACK)',
+    parseMultipurposeResponse(synth),
+    { echoedFn: 0x02, resultCode: 0x05 });
+}
+
+// Non-0x64 frames must NOT match the 0x64 predicate.
+{
+  // A real 0x0D (QUERY PATCH NAME) frame must not be recognised as 0x64.
+  const head = [0xf0, 0x00, 0x01, 0x74, 0x10, 0x0d, 0x00, 0x00];
+  const synth = [...head, fractalChecksum(head), 0xf7];
+  checkEqual('isMultipurposeResponse(0x0D frame)',
+    isMultipurposeResponse(synth), false);
 }
 
 if (failures > 0) {

@@ -32,6 +32,8 @@ import {
   GET_RESPONSE_TIMEOUT_MS,
   NO_ACK_NOTE,
   ensureConn,
+  formatMultipurposeError,
+  sendAndWatchForError,
   toHex,
 } from './shared.js';
 
@@ -73,7 +75,10 @@ export function registerAxeFxIIIEffectTools(server: McpServer): void {
     const effectId = resolveEffectId(block);
     const bytes = buildSetBypass(effectId, bypassed);
     const c = ensureConn();
-    c.send(bytes);
+    const errorReport = await sendAndWatchForError(c, bytes);
+    const errorBlock = errorReport
+      ? `\n${formatMultipurposeError(errorReport)}\n`
+      : '';
     return {
       content: [{
         type: 'text',
@@ -81,6 +86,7 @@ export function registerAxeFxIIIEffectTools(server: McpServer): void {
           `Sent SET_BYPASS → ${block} (effect ID ${effectId}) ` +
           `${bypassed ? 'BYPASSED' : 'ENGAGED'}.\n` +
           `Wrote ${bytes.length} bytes: ${toHex(bytes)}\n` +
+          errorBlock +
           `\n${NO_ACK_NOTE}\n\n${BETA_NOTE}`,
       }],
     };
@@ -157,7 +163,10 @@ export function registerAxeFxIIIEffectTools(server: McpServer): void {
     const wireChannel = CHANNEL_VALUES[channel];
     const bytes = buildSetChannel(effectId, wireChannel);
     const c = ensureConn();
-    c.send(bytes);
+    const errorReport = await sendAndWatchForError(c, bytes);
+    const errorBlock = errorReport
+      ? `\n${formatMultipurposeError(errorReport)}\n`
+      : '';
     return {
       content: [{
         type: 'text',
@@ -165,6 +174,7 @@ export function registerAxeFxIIIEffectTools(server: McpServer): void {
           `Sent SET_CHANNEL → ${block} (effect ID ${effectId}) ` +
           `channel=${channel}.\n` +
           `Wrote ${bytes.length} bytes: ${toHex(bytes)}\n` +
+          errorBlock +
           `\n${NO_ACK_NOTE}\n\n${BETA_NOTE}`,
       }],
     };
