@@ -113,6 +113,7 @@ verification status against the founder's XL+ where applicable:
 | 0x13 | GET_CPU_USAGE | both | 🟡 wiki |
 | 0x14 | GET_PRESET_NUMBER (read) / MIDI_SET_PRESET (legacy write) | both | 🟡 wiki — 14-bit preset number (XL+ range 0-767). **Captured response payload is MSB-first**, not LSB-first as the wiki suggests — see § 6b below. |
 | 0x17 | GET_MIDI_CHANNEL | both | 🟡 wiki |
+| **0x1C** | **BANK_DUMP_REQUEST** | req | **🟢 wire-confirmed** (community capture, multiple authors) — 2-byte payload `[bank_id, cs]` where bank_id = 0 (Bank A), 1 (B), 2 (C), 3 (System). Device responds with the corresponding bank as a 0x77/0x78/0x79 envelope sequence. Captured wire: `F0 00 01 74 03 1C 00 1A F7` (Bank A), `…1C 01 1B F7` (B), `…1C 02 18 F7` (C), `…1C 03 19 F7` (System). |
 | **0x1D** | **STORE_PRESET (save-to-location)** | req | **🟢 wire-confirmed XL+ Q8.02 (Session 61 capture + HW-102 round-trip, 2026-05-11)** — 2-byte payload `[preset_high, preset_low]` MSB-first; device responds with 0x64 echoing 0x1D + result_code |
 | **0x20** | **GET_GRID_LAYOUT_AND_ROUTING** | both | **🟢 wire-confirmed XL+ Q8.02 (Session 69 captures, 2026-05-12)** — 200-byte frame, 192-byte payload, column-major (12 cols × 4 rows × 4 bytes/cell). Each cell `[blockId_lo, blockId_hi, routing_mask, byte3]`. See § 5c. |
 | 0x21 | FRONT_PANEL_CHANGE_DETECTED | resp | 🟡 wiki — broadcast by device after 0x08 handshake |

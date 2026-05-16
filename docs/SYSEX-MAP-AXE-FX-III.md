@@ -193,6 +193,96 @@ The list below is preserved as a historical record:
 | 9 | `FN_FRONT_PANEL_CHANGE = 0x21` is referenced in design notes as the III dirty signal. Not in v1.4 PDF. Source unidentified. | `setParam.ts:59`, `docs/axefx3-design-notes.md` | Treat as unverified. The PDF documents only `0x10` (tempo down-beat) and `0x11` (tuner) as push frames. |
 | 10 | Block roster (`blockTypes.ts`) ships every block with `id: null` claiming "effectId pending capture." Effect IDs ARE in the spec Appendix 1 — only AMP and post-firmware-1.13 blocks are unspecified. | `blockTypes.ts` | Populate `id:` from Appendix 1. Leave AMP, NAM, Dynamic Distortion as `null`. |
 
+## Community-captured wire confirmations
+
+Several of our builders have been independently verified against
+real-world SysEx captures posted publicly to the Fractal Forum.
+This is hardware-verification-equivalent for these operations even
+though the project doesn't own an Axe-Fx III.
+
+| Builder | Forum-confirmed wire | Our golden | Match |
+|---|---|---|---|
+| `set_bypass(Reverb 1, false)` (function 0x0A, effect ID 66 = Reverb 1) | `F0 00 01 74 10 0A 42 00 00 5D F7` (forum thread #184833, captured from a third-party MIDI controller) | `f0000174100a4200005df7` | ✓ |
+| `switch_scene(1..8)` (function 0x0C, scenes wire 0..7) | All 8 wire forms `F0 00 01 74 10 0C [wire] [cs] F7` (forum thread #182318, 2022-03, "correct and tested") | All 8 matches | ✓ |
+| `set_tempo(120)` (function 0x14, BPM 120 = 0x78) | `F0 00 01 74 10 14 78 00 79 F7` (forum thread #162904, community example) | `f0000174101478007 9f7` | ✓ |
+| `get_tempo()` (function 0x14, sentinel 7F 7F) | `F0 00 01 74 10 14 7F 7F 01 F7` (forum thread #140602) | `f000017410147f7f01f7` | ✓ |
+
+**Caveats:**
+
+- **`get_tempo` reportedly had a side-effect on early-firmware III**
+  (forum bug report 2018-09-06, firmware ~1.x era): sending the get
+  request actually SET the tempo to 250 BPM (the max). Current
+  firmware is 32.03 and the bug was reported to FractalAudio
+  directly; assume fixed unless a tester reports otherwise. The
+  tool description for `axefx3_get_tempo` should mention this so a
+  user with weird tempo behavior on old firmware can blame the
+  right thing.
+
+- **`set_bypass` wire example** uses an external MIDI controller
+  sending to the III's USB-MIDI port. Verifies the wire shape but
+  not the round-trip ack (the III may or may not echo a 0x0A
+  response — capture didn't include the response window).
+
+- **Additional set_bypass capture** (forum thread #218547, user
+  observing unwanted block muting): `F0 00 01 74 10 0A 25 00 01 3B F7`
+  — function 0x0A, effect ID `25 00` = 37 (Input 1 per v1.4
+  Appendix), dd=1 (bypassed), cs=0x3B. Verifies our effect-ID
+  resolution for `Input 1`.
+
+## Undocumented function bytes seen in the wild
+
+The v1.4 PDF documents 0x0A through 0x14 plus 0x13. Several captures
+show **function bytes outside that range** being used in real III
+traffic. These are likely the "set parameter / set modifier" calls
+the public spec deliberately omits.
+
+### Function 0x01 — long-payload write (likely SET_PARAMETER / SET_MODIFIER)
+
+Examples from captures of AxeEdit III / FC-12 footswitch traffic:
+
+```
+Amp 1 Boost on:  F0 00 01 74 10 01 52 00 3A 00 28 00 00 00 00 7C 03 00 00 00 00 2B F7
+Amp 1 Boost off: F0 00 01 74 10 01 52 00 3A 00 28 00 00 00 00 00 00 00 00 00 00 54 F7
+Amp 2 Boost on:  F0 00 01 74 10 01 52 00 3B 00 28 00 00 00 00 7C 03 00 00 00 00 2A F7
+```
+
+22-byte payload after the function byte. Tentative field shape:
+`[effect_id × 2][param_id × 2][?? × 4][value × 6][?? × 6][cs] F7`.
+The two examples that differ only by enable/disable (boost-on vs
+boost-off) confirm the value field is the `7C 03 → 00 00` swap.
+Decoding the field layout precisely would require pairing several
+captures with known parameter values — a target for any future
+`set_param` work.
+
+Note that v1.4 doesn't reserve 0x01 for any documented purpose, and
+the Axe-Fx II family uses 0x01 for `GET_BLOCK_PARAMETERS_LIST` (a
+different function) — the III repurposed the same byte for what
+appears to be parameter-write.
+
+### Function 0x21 — front-panel-change auto-push
+
+Multiple captures of "AxeFXIII MIDI Input receives TONS of messages"
+threads show frames with function byte 0x21 streaming during
+front-panel knob movement. Earlier this was attributed to design-
+note speculation; the capture confirms it's a real device-emitted
+function. Useful for any future dirty-state detection.
+
+## BPM table reference
+
+Forum thread "All Axe Fx III BPM Tempo SysEx 1-200bpm" published
+the full 1-200 BPM mapping for function 0x14. Pattern confirms our
+`buildSetTempo` builder:
+
+| BPM | Wire |
+|---|---|
+| 1 | `F0 00 01 74 10 14 01 00 00 F7` |
+| 2 | `F0 00 01 74 10 14 02 00 03 F7` |
+| 120 | `F0 00 01 74 10 14 78 00 79 F7` (matches our golden) |
+
+For BPM > 127, the septet-pair encoding splits into the second byte
+(spec: `dd dd` LS-first). Full 200-BPM dataset available in
+`docs/_private/` corpus.
+
 ## Operations we CAN ship now from the spec alone
 
 Given the function-byte map + Appendix 1 effect IDs:

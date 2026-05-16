@@ -125,6 +125,13 @@ ID `0x12` (mode switch).
 | Effects | `F0 00 01 74 15 12 4A 48 F7` | 0x12 | 0x4A | 0x48 |
 | Tuner / tap | `F0 00 01 74 15 12 18 1A F7` | 0x12 | 0x18 | 0x1A |
 
+**Wire confirmation:** all 5 mode-switch commands above match
+independent community captures posted to the Fractal Forum
+("AM4 Tips and Tricks" and "Wish: Midi CC# to choose between 5 modes"
+threads, multiple authors). The wire bytes our `am4_*` tools produce
+are byte-for-byte identical to what community testers verified
+controlled the AM4 mode select.
+
 ### Sibling VP4 (0x14) — same function, different args
 
 | Mode | SysEx | Arg |
