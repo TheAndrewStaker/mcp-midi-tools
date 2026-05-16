@@ -267,6 +267,40 @@ front-panel knob movement. Earlier this was attributed to design-
 note speculation; the capture confirms it's a real device-emitted
 function. Useful for any future dirty-state detection.
 
+### Function 0x64 — MULTIPURPOSE_RESPONSE (error / ack channel)
+
+In the v1.4 PDF as the response opcode. A real-world capture
+confirms the wire shape when the III rejects a malformed request:
+
+```
+F0 00 01 74 10 64 [echoed_fn] [result_code] [cs] F7
+```
+
+Example: a host sent QUERY_SCENE_NAME (0x0E) with a bad checksum.
+The III responded `F0 00 01 74 10 64 0E 00 7F F7` — function 0x64,
+echoed 0x0E, result code 0x00, valid checksum 0x7F.
+
+Our `axefx3_*` tools today don't parse 0x64. Adding a listener to
+the response window of write tools would let us surface clean error
+messages ("device rejected SET_PARAM, error code N") instead of
+silent failures.
+
+## Effect IDs in v1.4 Appendix 1 that are NOT 3rd-party addressable
+
+The Appendix 1 effect-ID table enumerates internal blocks too. Per
+community confirmation in thread #140602 (2019), the following IDs
+are in the list but **not controllable** via the 3rd-party MIDI
+surface (0x0A bypass / 0x0B channel / 0x13 status dump):
+
+- `ID_CONTROL` (2) — internal "control switch", FC-controlled
+- `ID_MIDIBLOCK` (190) — internal-only
+- `ID_FOOTCONTROLLER` (199) — FC interface only
+- `ID_PRESET_FC` (200) — internal
+
+Our `blockTypes.ts` should mark these as `addressable: false` so
+`axefx3_set_bypass` / `axefx3_set_channel` decline cleanly for
+them rather than emitting useless writes.
+
 ## BPM table reference
 
 Forum thread "All Axe Fx III BPM Tempo SysEx 1-200bpm" published

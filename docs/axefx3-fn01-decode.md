@@ -5,41 +5,59 @@ unique 23-byte captures + 2 unique 87-byte captures (2026-05-15
 community scrape). Sub-action codes confirmed; per-block param-ID
 table still TBD.
 
-## Headline: 0x01 is GET_BLOCK_PARAMETERS_LIST — multi-mode envelope
+## Headline: 0x01 carries multiple ops; III parameter-list query is unclear
 
-Function 0x01 on the Axe-Fx III is the **same** function as on the
-Axe-Fx II: `GET_BLOCK_PARAMETERS_LIST`. This is independently
-confirmed by community posts in two forum threads:
+Function 0x01 on the Axe-Fx III generation reuses the function-byte
+the Axe-Fx II spec assigned to `GET_BLOCK_PARAMETERS_LIST`, BUT:
 
-- Thread #161230: *"function call 0x01 which is GET_BLOCK_PARAMETERS_LIST"*
-  (with a link to the Axe-Fx II wiki entry).
-- Thread #140602 (Third-Party MIDI Spec): a user describes the
-  workflow as "calling function 0x01 after receive the status dump
-  response (0x13)" — exactly the II-pattern: enumerate blocks via
-  STATUS_DUMP, then query each block's parameter list with 0x01.
-- Thread #192151 (DIY controller share thread): a community member
-  calls 0x01 with `blockid == 106` and receives a stream of
-  `i = N, id = NN` records — the parameter-list response in
-  action.
+- Empirical attempts to call it on the FM3 (same family) return
+  what looks like a stub/empty response — see "Failed
+  GET_BLOCK_PARAMETERS_LIST attempt" below.
+- The III's published v1.4 third-party MIDI PDF deliberately omits
+  this function entirely.
+- Community posts in this corpus describe 0x01 by its II name but
+  also describe it as the workflow they expect to do `after the
+  status dump response (0x13)` — i.e. a *hoped-for* workflow, not
+  a confirmed working one.
 
-The function carries different operations distinguished by a 2-byte
-**action / mode code** at offsets 6-7. Three modes observed:
+So: **0x01 is the right opcode but the III may have changed the
+call semantics from what the Axe-Fx II wiki describes.** The
+function-name "GET_BLOCK_PARAMETERS_LIST" is more aspirational than
+demonstrated.
 
-| Action (pos 6-7) | Length | Direction | Role |
+What IS confirmed from captures: 0x01 carries multiple operations
+distinguished by a 2-byte action / mode code at offsets 6-7.
+
+| Action (pos 6-7) | Length | Direction | Empirically |
 |---|---|---|---|
-| `52 00` | 23 bytes | host → device | **SET_PARAMETER** (set a single block parameter value) |
-| `04 01` | 23 bytes | device → host | **STATE_BROADCAST** (device announces a parameter / modifier state change) |
-| `01 00` | 87 bytes | device → host | **PARAMETERS_LIST response** (one record from the block's parameter list — multiple records emitted per query) |
+| `52 00` | 23 bytes | host → device | **SET_PARAMETER** — confirmed by the FC-12 boost on/off labeled captures. The value field at pos 15-16 is the only thing that changes between ON and OFF. |
+| `04 01` | 23 bytes | device → host | **STATE_BROADCAST** — observed in passive sniffs of AxeEdit III ↔ III traffic. Effect IDs cover the v1.4 Appendix 1 range. Likely the device announcing parameter / modifier state during normal operation. |
+| `01 00` | 87 bytes | device → host | **Long broadcast** — also observed in passive sniffs. Earlier writeup hypothesized this was a parameters-list dump; the empirical FM3 attempt (below) makes that claim weaker. Could be a block-state snapshot for a single block instead. |
 
-The 87-byte `01 00` captures aren't a single state dump as we first
-hypothesized — they're individual records in a multi-message response
-stream. The III emits one 0x01-with-`01 00` for each parameter in
-the queried block, until the list is exhausted.
+## Failed GET_BLOCK_PARAMETERS_LIST attempt (FM3, 2024)
 
-This means the III's `get_param` / `list_params` operations are
-already in our reach: send `0x01` with the right query-mode action
-code (probably `01 00` with the block ID, no value), parse the
-stream of responses.
+A community member calling 0x01 with `blockid == 106` (the Axe-Fx II
+wiki's `Amp 1` effect ID) on an FM3 (model byte 0x11) got back a
+single 23-byte response, not the documented `BATCH_LIST_REQUEST_START
+... BATCH_LIST_REQUEST_COMPLETE` envelope:
+
+```
+Request:  (not captured; called GET_BLOCK_PARAMETERS_LIST blockid=106)
+Response: F0 00 01 74 11 01 6A 00 7F 77 00 00 00 00 00 00 00 02 00 00 00 75 F7
+```
+
+- Effect ID `6A 00` = 106 echoed back
+- Byte at pos 8 = `7F` — strong "not supported / no list" candidate
+  (we have no other 23-byte 0x01 capture where pos 8 is `7F`)
+- Rest of payload mostly zeros
+- Checksum `75` validates
+
+Interpretation: the III/FM3 generation may have **deliberately
+disabled** parameter-list dumps in the third-party interface — the
+v1.4 PDF's omission of 0x01 was an intentional removal, not an
+oversight. Decoding `set_param` likely requires sniffing AxeEdit
+III's traffic directly (as community RE has been advising all
+along), not calling 0x01.
 
 **Why this matters:** function 0x01 is the III's parameter-write
 SysEx, **not in the v1.4 third-party MIDI PDF**. Decoding it unlocks
@@ -174,33 +192,63 @@ shape but device-emitted, different field layout.
 **STATE_DUMP (`01 00`) is 87 bytes** with much richer payload.
 Likely the "all parameters of this block" envelope.
 
+## The 0x64 MULTIPURPOSE_RESPONSE error channel (confirmed)
+
+When the III receives a malformed SysEx or an unsupported function,
+it responds with v1.4's documented `0x64 MULTIPURPOSE_RESPONSE`.
+Wire shape from a real capture:
+
+```
+F0 00 01 74 10 64 [echoed_fn] [result_code] [cs] F7
+```
+
+Example from a community capture: a host sent a `0x0E QUERY_SCENE_NAME`
+with an incorrect checksum and got back:
+
+```
+F0 00 01 74 10 64 0E 00 7F F7
+```
+
+- `0E` = the function byte that errored (echo)
+- `00` = result code (likely "general error" / "bad checksum")
+- `7F` = checksum (validates: `F0^00^01^74^10^64^0E^00 = 0xFF & 0x7F = 0x7F`)
+
+Useful for our tools — when we send and get a 0x64 back, we can
+parse it as `(echoed_fn, result_code)` and surface a clean error
+to the agent. Today our `axefx3_*` tools fire-and-forget; adding
+a 0x64 listener to the response window would catch malformed-write
+errors.
+
+## Some v1.4 effect IDs aren't actually controllable
+
+A community thread (2019) clarifies that several effect IDs in the
+v1.4 Appendix 1 table are listed but NOT addressable via the
+third-party MIDI surface:
+
+- `ID_CONTROL` (2) — internal "control switch", FC-controlled only
+- `ID_MIDIBLOCK` (190) — internal-only
+- `ID_FOOTCONTROLLER` (199) — controlled via FC interface, not 3rd-party
+- `ID_PRESET_FC` (200) — internal
+
+So the Appendix 1 table is the III's full block enumeration but the
+*addressable subset* via 0x0A / 0x0B / 0x13 is narrower. Our
+`blockTypes.ts` should mark these four as `addressable: false` to
+keep the `set_bypass` / `set_channel` tools from offering them.
+
 ## What we still need
 
-**Per-block, per-parameter ID dictionary.** Biggest gap. We've
-confirmed param ID `28 00` (= 40) for the Drive block boost
-operation, but don't know what "param 40" is in human terms (Drive
-Mix? Output Level? Boost flag?). To populate `set_param`:
+**Per-block, per-parameter ID dictionary** — still the biggest gap.
+We've confirmed param ID `28 00` (= 40) for the Drive block boost
+operation, but don't know what "param 40" is in human terms.
 
-- **One capture per (block_type, parameter) pair** with a known
-  human-readable value. AxeEdit III firing a single-knob change
-  paired with a screenshot of the affected knob is the canonical
-  data point.
+The clean path is **sniffing AxeEdit III directly** — capture USBPcap
+of AxeEdit firing a single knob change on a known block, and
+extract the `52 00` SET_PARAMETER frame. Each known (knob, value)
+→ (effect_id, param_id, value) decode is one row of the table.
 
-- **Same param at multiple values** to verify linearity. Most
-  Fractal parameters are 16-bit unsigned packed into the septet
-  pair. Worth confirming by capturing e.g. Drive's Drive knob at
-  0%, 50%, 100% and checking the value bytes scale linearly.
-
-**Verify the `01 00` STATE_DUMP query direction.** If sending
-`F0 00 01 74 10 01 01 00 [effect_id] [cs] F7` (host→device, short
-form, hypothetical) triggers the device to dump the long 87-byte
-state for that block, that's a `get_params(block)` decode for
-free — no per-param-ID table needed for reads.
-
-**Decode the 87-byte STATE_DUMP payload.** 79 bytes of data after
-the effect ID. Almost certainly a packed parameter list — but the
-ordering and which-param-is-where requires pairing with AxeEdit's
-display for that block.
+The 0x01 GET_BLOCK_PARAMETERS_LIST shortcut may not be viable on
+the III as documented for II — the FM3 attempt above suggests
+this path is blocked.
 
 ## Cross-references
 
