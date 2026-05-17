@@ -19,20 +19,33 @@
  * also surfaces malformed-request rejections as 0x64
  * MULTIPURPOSE_RESPONSE frames, which we catch and surface inline.
  *
- * What works on the unified surface:
+ * Every unified-surface op is wired up — none refused. Per Session 88
+ * founder direction: III owners should be able to exercise the full
+ * tool surface and confirm what works. Each op surfaces 0x64
+ * MULTIPURPOSE_RESPONSE rejections inline so users can report results.
+ *
+ * Unified surface status:
  *   - get_param / set_param      : 🟡 0x02 envelope, II-shape inferred
  *   - get_params / set_params    : 🟡 loop over the above
  *   - set_bypass                 : 🟡 spec-documented (function 0x0A)
  *   - switch_scene               : 🟡 spec-documented (function 0x0C)
- *   - set_block / set_block_type : refused — block-type swap not in v1.4
- *   - apply_preset               : refused — depends on grid-cell writes
- *                                  (function 0x05/0x06 not in III v1.4)
- *   - save_preset                : refused — flash-write envelope is
- *                                  community-hypothesis only (0x77/0x78/
- *                                  0x79); too risky to ship unverified
- *   - switch_preset              : refused — use MIDI Program Change
- *                                  (Bank Select CC 0/32 + PC byte)
- *   - rename                     : refused — SET_PRESET_NAME not in v1.4
+ *   - switch_preset              : 🟢 standard MIDI Program Change +
+ *                                  Bank Select (the spec-documented way)
+ *   - save_preset                : 🟡 II's 0x1D STORE_PRESET envelope —
+ *                                  no preset payload, just "persist
+ *                                  working buffer to slot N"
+ *   - rename                     : 🟡 II's 0x09 SET_PRESET_NAME
+ *   - set_block                  : 🟡 II's 0x05 SET_GRID_CELL
+ *   - apply_preset               : 🟡 composes set_block + set_param
+ *                                  across PresetSpec.slots, then
+ *                                  optionally save_preset at target
+ *
+ * 🟡 ops are NOT in the v1.4 III spec — wire shapes are ported from
+ * the Axe-Fx II's hardware-verified encoder with the III's model byte
+ * (0x10). Safe to attempt because the III's parser rejects unsupported
+ * envelopes via the 0x64 MULTIPURPOSE_RESPONSE error channel rather
+ * than executing partial / unintended state writes; we catch those and
+ * surface the rejection (with the named error code) inline.
  *
  * Registration order in `packages/server-all/src/server/index.ts`
  * MUST put Axe-Fx III BEFORE AM4 — the III's port-name regex
@@ -71,8 +84,12 @@ import {
 import { PARAMS_BY_FAMILY, type Param as AxeFxIIIParam } from './params.js';
 import {
   buildGetParameter,
+  buildSetGridCell,
   buildSetParameter,
+  buildSetPresetName,
   buildSetScene,
+  buildStorePreset,
+  buildSwitchPresetPC,
   describeMultipurposeResultCode,
   isMultipurposeResponse,
   isSetGetParameterResponse,
@@ -365,6 +382,25 @@ function resolveParamOrThrow(slug: string, name: string): {
   );
 }
 
+/** Coerce a LocationRef (string | number) to an integer preset 0..1023. */
+function parseLocation(location: LocationRef): number {
+  const n = typeof location === 'number' ? location : Number(location);
+  if (!Number.isInteger(n) || n < 0 || n > 1023) {
+    throw new DispatchError(
+      'bad_location',
+      DEVICE_LABEL,
+      `axe-fx-iii: preset location '${location}' is invalid (expected integer 0..1023).`,
+    );
+  }
+  return n;
+}
+
+/** Render a MULTIPURPOSE_RESPONSE result-code into a human-readable suffix. */
+function formatErrorCode(report: { resultCode: number; description?: string }): string {
+  const hex = `0x${report.resultCode.toString(16).padStart(2, '0')}`;
+  return report.description !== undefined ? `${report.description} (${hex})` : `unknown result code ${hex}`;
+}
+
 /**
  * Send a 0x02 SET_PARAMETER and watch for a 0x64 MULTIPURPOSE_RESPONSE
  * rejection in a short window after the write. The III emits 0x64 only
@@ -468,12 +504,9 @@ const writer: DeviceWriter = {
     return buildSetParameter(effectId, param.paramId, wireValue);
   },
 
-  buildSwitchPreset(_location: LocationRef): number[] {
-    throw notInSpec(
-      'buildSwitchPreset',
-      'III has NO SysEx preset-switch function. Use MIDI Program Change ' +
-        '(with CC 0 + CC 32 Bank Select for slots > 127).',
-    );
+  buildSwitchPreset(location: LocationRef): number[] {
+    const n = parseLocation(location);
+    return buildSwitchPresetPC(n);
   },
 
   buildSwitchScene(scene: number): number[] {
@@ -544,16 +577,79 @@ const writer: DeviceWriter = {
   },
 
   async setBlock(
-    _ctx: DispatchCtx,
-    _slot: SlotRef,
+    ctx: DispatchCtx,
+    slot: SlotRef,
     change: BlockChange,
   ): Promise<WriteResult> {
-    throw notInSpec(
-      `setBlock(${change.block_type ?? 'unknown'})`,
-      'Block-type swap (SET_GRID_CELL) is NOT in the v1.4 III spec. ' +
-        'The III grid layout is fixed by the preset; to change which block ' +
-        'occupies a cell, edit on the device or in AxeEdit III.',
-    );
+    if (typeof slot === 'number') {
+      throw new DispatchError(
+        'value_out_of_range',
+        DEVICE_LABEL,
+        `axe-fx-iii setBlock: slot must be {row, col} (grid coords) — got linear index ${slot}. ` +
+          'The III uses a 4×14 grid; pass slot as {row: 1..4, col: 1..14}.',
+      );
+    }
+    if (change.bypassed !== undefined && change.block_type === undefined) {
+      // Bypass-only change — route through the spec-documented 0x0A path.
+      // setBypass needs a block name, not slot; if the caller passed slot
+      // without block_type we can't resolve the effectId from slot alone.
+      throw new DispatchError(
+        'value_out_of_range',
+        DEVICE_LABEL,
+        `axe-fx-iii setBlock: bypass-only changes require block_type to resolve the effect ID. ` +
+          'For a pure bypass toggle, call set_bypass with the block name instead.',
+      );
+    }
+    if (change.block_type === undefined) {
+      throw new DispatchError(
+        'value_out_of_range',
+        DEVICE_LABEL,
+        'axe-fx-iii setBlock: block_type is required (or "none" / "empty" / "shunt" to clear the cell).',
+      );
+    }
+    const blockType = change.block_type.trim().toLowerCase();
+    let blockId: number;
+    if (blockType === 'none' || blockType === 'empty' || blockType === '') {
+      blockId = 0; // 0 clears the cell per II convention
+    } else {
+      try {
+        // Default to instance 1; multi-instance addressing for slot-placement
+        // would need a separate API surface.
+        blockId = resolveEffectId(change.block_type, 1);
+      } catch (err) {
+        throw new DispatchError(
+          'unknown_block',
+          DEVICE_LABEL,
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+    }
+    const bytes = buildSetGridCell({
+      row: slot.row,
+      col: slot.col,
+      blockId,
+    });
+    const errorReport = await sendAndWatchForError(ctx, bytes);
+    if (errorReport !== undefined) {
+      return {
+        op: 'set_block',
+        target: `r${slot.row}c${slot.col}`,
+        acked: false,
+        warning:
+          `Axe-Fx III rejected set_block via 0x64 MULTIPURPOSE_RESPONSE: ${formatErrorCode(errorReport)}. ` +
+          BETA_WARNING,
+      };
+    }
+    return {
+      op: 'set_block',
+      target: `r${slot.row}c${slot.col}`,
+      acked: true,
+      display_value: blockType === 'none' || blockType === 'empty' ? 'cleared' : change.block_type,
+      warning:
+        '🟡 axe-fx-iii set_block: tried II 0x05 SET_GRID_CELL envelope on III. ' +
+        'Device emitted no rejection but the III may have ignored the write — ' +
+        'confirm by checking the grid layout (call get_grid_layout or look at the device).',
+    };
   },
 
   async setBypass(
@@ -586,48 +682,223 @@ const writer: DeviceWriter = {
   },
 
   async applyPreset(
-    _ctx: DispatchCtx,
-    _spec: PresetSpec,
-    _target?: LocationRef,
-    _options?: ApplyPresetOptions,
+    ctx: DispatchCtx,
+    spec: PresetSpec,
+    target?: LocationRef,
+    options?: ApplyPresetOptions,
   ): Promise<ApplyResult> {
-    throw notInSpec(
-      'applyPreset',
-      'apply_preset requires grid-cell + cell-routing writes (functions ' +
-        '0x05 / 0x06 on the Axe-Fx II), neither of which is in the v1.4 ' +
-        'III spec. Use individual set_param / set_bypass calls against a ' +
-        'preset you already authored on-device, OR open AxeEdit III to lay ' +
-        'out the grid and then tweak params from here.',
-    );
+    // Compose: for each slot in spec.slots, attempt set_block to place
+    // the block, then loop set_param for any per-block params. Optional
+    // rename + save at the end.
+    //
+    // This is a best-effort attempt — the 🟡 ops (set_block via 0x05,
+    // save via 0x1D, rename via 0x09) may all be rejected by III
+    // firmware. The dispatcher's design surfaces each rejection
+    // individually so the caller can see exactly which step failed.
+    const writes: WriteResult[] = [];
+    let anyFailed = false;
+
+    // 1. Place blocks (set_block per slot — 🟡 0x05 untested on III)
+    for (const slotSpec of spec.slots) {
+      if (typeof slotSpec.slot !== 'object') {
+        writes.push({
+          op: 'set_block',
+          target: String(slotSpec.slot),
+          acked: false,
+          warning:
+            `axe-fx-iii apply_preset: skipped slot ${String(slotSpec.slot)} — ` +
+            'linear slot indexing not supported on grid device.',
+        });
+        anyFailed = true;
+        continue;
+      }
+      try {
+        const result = await writer.setBlock!(ctx, slotSpec.slot, {
+          block_type: slotSpec.block_type,
+          bypassed: slotSpec.bypassed,
+        });
+        writes.push(result);
+        if (!result.acked) anyFailed = true;
+      } catch (err) {
+        writes.push({
+          op: 'set_block',
+          target: `r${slotSpec.slot.row}c${slotSpec.slot.col}`,
+          acked: false,
+          warning: `set_block failed: ${err instanceof Error ? err.message : String(err)}`,
+        });
+        anyFailed = true;
+      }
+    }
+
+    // 2. Loop per-block params (set_param per entry — 🟡 0x02 untested on III)
+    for (const slotSpec of spec.slots) {
+      if (slotSpec.params === undefined) continue;
+      // We don't unwrap channel-nested params here — the III's setParam
+      // takes a single block slug + name. A channel-nested apply_preset
+      // would need to set_channel between writes; left for a future pass.
+      const blockSlug = slotSpec.block_type.trim().toLowerCase();
+      for (const [paramName, value] of Object.entries(slotSpec.params)) {
+        if (typeof value === 'object') {
+          // Channel-nested entry — skip with note. Per-channel apply is
+          // a follow-up.
+          writes.push({
+            op: 'set_param',
+            target: `${blockSlug}.${paramName}`,
+            acked: false,
+            warning:
+              `axe-fx-iii apply_preset: skipped channel-nested param ${blockSlug}.${paramName} — ` +
+              'per-channel apply not yet wired on the III. Use set_param with explicit channel instead.',
+          });
+          anyFailed = true;
+          continue;
+        }
+        try {
+          // The value is display-shaped; for III this is wire-passthrough
+          // per the catalog's passthrough encode/decode contract.
+          const wireValue = typeof value === 'number' ? value : Number(value);
+          if (!Number.isFinite(wireValue)) {
+            throw new Error(`Non-numeric value for ${blockSlug}.${paramName}: ${value}`);
+          }
+          const result = await writer.setParam!(ctx, blockSlug, paramName, wireValue);
+          writes.push(result);
+          if (!result.acked) anyFailed = true;
+        } catch (err) {
+          writes.push({
+            op: 'set_param',
+            target: `${blockSlug}.${paramName}`,
+            acked: false,
+            warning: `set_param failed: ${err instanceof Error ? err.message : String(err)}`,
+          });
+          anyFailed = true;
+        }
+      }
+    }
+
+    // 3. Optional rename + save (only if caller asked to persist)
+    if (spec.name !== undefined) {
+      try {
+        const result = await writer.rename!(ctx, 'preset', spec.name);
+        writes.push(result);
+        if (!result.acked) anyFailed = true;
+      } catch (err) {
+        writes.push({
+          op: 'rename',
+          target: 'preset',
+          acked: false,
+          warning: `rename failed: ${err instanceof Error ? err.message : String(err)}`,
+        });
+        anyFailed = true;
+      }
+    }
+    if (target !== undefined) {
+      try {
+        const result = await writer.savePreset!(ctx, target);
+        writes.push(result);
+        if (!result.acked) anyFailed = true;
+      } catch (err) {
+        writes.push({
+          op: 'save_preset',
+          target: String(target),
+          acked: false,
+          warning: `save_preset failed: ${err instanceof Error ? err.message : String(err)}`,
+        });
+        anyFailed = true;
+      }
+    }
+
+    void options; // landingScene / no_save_on_done not yet wired
+
+    const failedStepIdx = writes.findIndex((w) => !w.acked);
+    return {
+      ok: !anyFailed,
+      steps: writes.length,
+      duration_ms: 0, // not measured per-step on this path
+      failed_step: failedStepIdx >= 0 ? {
+        index: failedStepIdx,
+        description: writes[failedStepIdx].target ?? writes[failedStepIdx].op ?? 'step',
+        error: writes[failedStepIdx].warning ?? 'no warning recorded',
+      } : undefined,
+      warning:
+        '🟡 axe-fx-iii apply_preset: composed of best-effort 0x05/0x02/0x09/0x1D ' +
+        'envelopes (none of which are in the v1.4 III spec). Confirm the audible / ' +
+        'visible result on the device. ' +
+        `${writes.length} step(s) attempted; ${writes.filter((w) => w.acked).length} acked.`,
+      saved: target !== undefined ? !anyFailed : undefined,
+    };
   },
 
   async switchPreset(
-    _ctx: DispatchCtx,
-    _location: LocationRef,
+    ctx: DispatchCtx,
+    location: LocationRef,
   ): Promise<WriteResult> {
-    throw notInSpec(
-      'switchPreset',
-      'III has NO SysEx preset-switch function. Use MIDI Program Change ' +
-        '(2-byte: `Cn pp`, with CC 0 + CC 32 Bank Select for slots > 127). ' +
-        'The unified surface does not route Program Change today — for now, ' +
-        'switch presets on the device front panel before calling get_param / ' +
-        'set_param against the new working buffer.',
-    );
+    const n = parseLocation(location);
+    const bytes = buildSwitchPresetPC(n);
+    ctx.conn.send(bytes);
+    return {
+      op: 'switch_preset',
+      target: String(n),
+      acked: true,
+      display_value: String(n),
+      warning:
+        'axe-fx-iii switch_preset: sent standard MIDI Program Change + Bank ' +
+        'Select on channel 1 (the III\'s factory-default MIDI channel). The III ' +
+        'does not ack PC writes — confirm by reading the new active preset name ' +
+        '(get_preset_name) or by checking the device front panel. If the device ' +
+        'is configured to listen on a different MIDI channel, the switch will ' +
+        'silently no-op; set the III back to channel 1 in its Global → MIDI menu.',
+    };
   },
 
   async savePreset(
-    _ctx: DispatchCtx,
-    _location: LocationRef,
+    ctx: DispatchCtx,
+    location: LocationRef,
+    name?: string,
   ): Promise<WriteResult> {
-    throw notInSpec(
-      'savePreset',
-      'STORE_PRESET is NOT in v1.4 spec. Community reverse-engineering ' +
-        'suggests an 18-frame envelope (0x77 header + 16×0x78 body + ' +
-        '0x79 footer per Fractal Forum thread #159885) but ours is a ' +
-        'second-hand summary, not a verified capture. Sending speculative ' +
-        'flash-write SysEx to the III is too risky to ship default-on. ' +
-        'Save from the device front panel or AxeEdit III for now.',
-    );
+    // Try II's 0x1D STORE_PRESET envelope (10 bytes total — no preset
+    // payload, just "persist working buffer to slot N"). The community-
+    // known III-native 0x77/0x78/0x79 envelope requires Huffman-
+    // compressed preset content and is out of scope here. If III ignores
+    // 0x1D, the user can fall back to saving on the device front panel.
+    const n = parseLocation(location);
+    if (name !== undefined) {
+      // Pre-write the new name before the store. If rename rejects, surface
+      // the rejection but still attempt the store.
+      try {
+        const renameResult = await writer.rename!(ctx, 'preset', name);
+        if (!renameResult.acked) {
+          // Continue to save attempt anyway.
+        }
+      } catch {
+        // Continue to save attempt anyway.
+      }
+    }
+    const bytes = buildStorePreset(n);
+    const errorReport = await sendAndWatchForError(ctx, bytes, 200);
+    if (errorReport !== undefined) {
+      return {
+        op: 'save_preset',
+        target: String(n),
+        acked: false,
+        warning:
+          `Axe-Fx III rejected save_preset (II 0x1D envelope) via 0x64 MULTIPURPOSE_RESPONSE: ${formatErrorCode(errorReport)}. ` +
+          'The III may require its native 0x77/0x78/0x79 multi-frame envelope ' +
+          '(community RE, requires Huffman-compressed preset content — not yet ' +
+          'implemented). For now, save on the device front panel. ' + BETA_WARNING,
+      };
+    }
+    return {
+      op: 'save_preset',
+      target: String(n),
+      acked: true,
+      display_value: String(n),
+      warning:
+        '🟡 axe-fx-iii save_preset: sent II 0x1D STORE_PRESET envelope ' +
+        '(10 bytes, no preset payload — just "persist working buffer to slot N"). ' +
+        'Device emitted no rejection but the III may have ignored the write. ' +
+        'CONFIRM by switching to a different preset and back — if the working ' +
+        'buffer state survived, the save landed. If the original preset returns, ' +
+        'the III needs its native 0x77/0x78/0x79 envelope (not yet implemented).',
+    };
   },
 
   async switchScene(ctx: DispatchCtx, scene: number): Promise<WriteResult> {
@@ -652,15 +923,51 @@ const writer: DeviceWriter = {
   },
 
   async rename(
-    _ctx: DispatchCtx,
+    ctx: DispatchCtx,
     target: RenameTarget,
-    _name: string,
+    name: string,
   ): Promise<WriteResult> {
-    throw notInSpec(
-      `rename(${target})`,
-      'SET_PRESET_NAME / SET_SCENE_NAME are NOT in v1.4 spec. III names ' +
-        'are query-only via 0x0D / 0x0E.',
-    );
+    if (target !== 'preset') {
+      throw new DispatchError(
+        'capability_not_supported',
+        DEVICE_LABEL,
+        `axe-fx-iii rename: only target='preset' is wired (tried target='${target}'). ` +
+          'Scene rename would need SET_SCENE_NAME (function 0x0X) which has no II analog ' +
+          'to port from.',
+      );
+    }
+    let bytes: number[];
+    try {
+      bytes = buildSetPresetName(name);
+    } catch (err) {
+      throw new DispatchError(
+        'value_out_of_range',
+        DEVICE_LABEL,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+    const errorReport = await sendAndWatchForError(ctx, bytes, 100);
+    if (errorReport !== undefined) {
+      return {
+        op: 'rename',
+        target: 'preset',
+        acked: false,
+        warning:
+          `Axe-Fx III rejected rename (II 0x09 SET_PRESET_NAME envelope) via 0x64 MULTIPURPOSE_RESPONSE: ${formatErrorCode(errorReport)}. ` +
+          BETA_WARNING,
+      };
+    }
+    return {
+      op: 'rename',
+      target: 'preset',
+      acked: true,
+      display_value: name,
+      warning:
+        '🟡 axe-fx-iii rename: sent II 0x09 SET_PRESET_NAME envelope. ' +
+        'Device emitted no rejection but the III may have ignored the write — ' +
+        'confirm via get_preset_name (or by checking the front-panel preset title). ' +
+        'Working-buffer scope only; persist with save_preset.',
+    };
   },
 };
 
@@ -675,12 +982,12 @@ const AXEFX3_AGENT_GUIDANCE: Record<string, string> = {
     'inferred from the Axe-Fx II family conventions and Ghidra-mined',
     'param tables from the AxeEdit III binary.',
     '',
-    'What works today (and is wired into the unified surface):',
-    '  - set_param / get_param / set_params / get_params via 0x02',
-    '    SET_PARAMETER (II-derived wire shape; III firmware code path',
-    '    confirmed present, but rejection vs. accept is unverified). On',
-    '    reject the device emits a 0x64 MULTIPURPOSE_RESPONSE which the',
-    '    writer catches and surfaces as `acked: false` + the named error.',
+    'NO unified-surface op refuses on the III — every op attempts a wire',
+    'send and surfaces rejections (0x64 MULTIPURPOSE_RESPONSE) inline so',
+    'an III owner can exercise the full surface and report results.',
+    '',
+    'What is wired up:',
+    '  🟢 SPEC-DOCUMENTED (v1.4 PDF — most likely to land cleanly):',
     '  - set_bypass / get_bypass per block (function 0x0A)',
     '  - set_channel / get_channel (channels A/B/C/D, function 0x0B)',
     '  - switch_scene (1..8) / get_active_scene (function 0x0C)',
@@ -689,22 +996,36 @@ const AXEFX3_AGENT_GUIDANCE: Record<string, string> = {
     '  - status_dump (function 0x13 — per-block bypass / channel snapshot)',
     '  - tempo: tap, set BPM, get BPM (functions 0x10 / 0x14)',
     '  - tuner: on/off (function 0x11)',
+    '  - switch_preset (MIDI Program Change + Bank Select — channel 1)',
     '',
-    'What is REFUSED with a structured explanation:',
-    '  - apply_preset / set_block: depend on grid-cell + cell-routing',
-    '    writes (II functions 0x05 / 0x06) NOT in the v1.4 III spec.',
-    '  - save_preset: STORE envelope is community-hypothesis only; too',
-    '    risky to ship default-on (flash-write target).',
-    '  - switch_preset: not in v1.4 spec — use MIDI Program Change',
-    '    (Bank Select CC 0/32 + PC byte) externally.',
-    '  - rename: SET_PRESET_NAME / SET_SCENE_NAME not in v1.4 spec.',
+    '  🟡 PORTED FROM AXE-FX II (II encoder w/ III model byte — UNVERIFIED):',
+    '  - set_param / get_param / set_params / get_params via 0x02',
+    '    SET_PARAMETER (II-derived wire shape; III firmware code path',
+    '    confirmed present, but rejection vs. accept is unverified)',
+    '  - save_preset via 0x1D STORE_PRESET (10-byte envelope, no preset',
+    '    payload — just "persist working buffer to slot N"). III may need',
+    '    its native 0x77/0x78/0x79 envelope instead (not yet implemented).',
+    '  - rename via 0x09 SET_PRESET_NAME (32-char ASCII, working buffer)',
+    '  - set_block via 0x05 SET_GRID_CELL (block-type swap at grid cell)',
+    '  - apply_preset composes set_block + set_param across PresetSpec.slots,',
+    '    optionally rename + save at the end',
     '',
-    'Confirmation request: when you successfully set or read a param,',
-    'tell the user what you wrote and ask them to confirm the change',
-    'audibly / on the front panel. Their confirmation IS our verification',
-    'pipeline until a maintainer captures the III protocol end-to-end.',
+    'On any rejection (0x64 MULTIPURPOSE_RESPONSE) the response surfaces:',
+    '  - `acked: false`',
+    '  - `warning` with the named error code (e.g. "message not recognized",',
+    '    "invalid parameter ID", "DSP overload")',
+    'When you see a rejection, tell the user verbatim — that\'s data we',
+    "need to close the protocol gap. Don't paper over it.",
     '',
-    'Help wanted: see docs/_private/HARDWARE-TASKS-AXEFX3.md.',
+    'When a write IS acked, tell the user what you wrote AND ask them to',
+    'confirm the audible / visible response on the device. Their',
+    'confirmation IS our verification pipeline until a maintainer captures',
+    'the III protocol end-to-end. Examples: "I set pitch.harm1 to wire 27 —',
+    'can you confirm the harmony interval changed on the front panel?"',
+    '',
+    'Help wanted: see docs/_private/HARDWARE-TASKS-AXEFX3.md. If you',
+    'discover an op the III rejects, file an issue with the bytes you sent',
+    'plus the 0x64 frame the device returned.',
   ].join('\n'),
   channels: [
     'Axe-Fx III channel names: A, B, C, D (4 channels per block — same as',

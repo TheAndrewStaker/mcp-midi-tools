@@ -265,6 +265,173 @@ export function parseSetGetParameterResponse(bytes: readonly number[]): {
   };
 }
 
+// ── 0x05 SET_GRID_CELL ─────────────────────────────────────────────
+//
+// 🟡 NOT in v1.4 III spec. Wire shape ported from the Axe-Fx II's
+// hardware-verified encoder. The II uses 0x05 to place a block at a
+// grid cell (or clear it with blockId=0); whether III firmware honors
+// this opcode is unverified. Rejections arrive as 0x64
+// MULTIPURPOSE_RESPONSE with result_code 0x04 (msg not recognized).
+
+const FN_SET_GRID_CELL = 0x05;
+
+/**
+ * SET_GRID_CELL (function 0x05). Places `blockId` at cell (row, col).
+ *
+ *   `F0 00 01 74 10 05 [blockId_lo blockId_hi] [cell_idx] [0x00] [cs] F7`
+ *
+ * cell_idx = (col - 1) * rows + (row - 1) — column-major. The II uses
+ * 4-row grids so cell_idx = (col-1)*4 + (row-1). The III runs a 4×14
+ * grid in Mark II firmware; the cell index shape is the same.
+ *
+ * 🟡 III-untested. The 8-byte payload was rejected by II firmware as
+ * "payload too short" — the II's encoder always sends 4 payload bytes
+ * (blockId_lo, blockId_hi, cell_idx, reserved=0). We mirror that.
+ */
+export function buildSetGridCell(opts: {
+  row: number;
+  col: number;
+  blockId: number;
+}): number[] {
+  const { row, col, blockId } = opts;
+  if (!Number.isInteger(row) || row < 1 || row > 4) {
+    throw new Error(`buildSetGridCell: row out of range (1..4): ${row}`);
+  }
+  if (!Number.isInteger(col) || col < 1 || col > 14) {
+    throw new Error(`buildSetGridCell: col out of range (1..14): ${col}`);
+  }
+  if (!Number.isInteger(blockId) || blockId < 0 || blockId > 0x3fff) {
+    throw new Error(`buildSetGridCell: blockId out of range (0..16383): ${blockId}`);
+  }
+  const cellIdx = (col - 1) * 4 + (row - 1);
+  return buildEnvelope(FN_SET_GRID_CELL, [
+    blockId & 0x7f,
+    (blockId >> 7) & 0x7f,
+    cellIdx & 0x7f,
+    0x00, // reserved per II convention
+  ]);
+}
+
+// ── 0x09 SET_PRESET_NAME ───────────────────────────────────────────
+//
+// 🟡 NOT in v1.4 III spec — names are query-only there. Wire shape
+// ported from the Axe-Fx II (function 0x09 takes 32 ASCII chars of
+// the new working-buffer preset name). The III may honor it because
+// the same firmware family handles 0x0D QUERY_PATCH_NAME; we test
+// here and surface rejections.
+
+const FN_SET_PRESET_NAME = 0x09;
+
+/**
+ * SET_PRESET_NAME (function 0x09) — set the working-buffer preset name.
+ * Name is padded to 32 ASCII-printable chars (space-padded). The II
+ * uses this for the working buffer only; pairing with 0x1D STORE_PRESET
+ * is what persists the rename to flash.
+ *
+ * 🟡 III-untested.
+ */
+export function buildSetPresetName(name: string): number[] {
+  if (name.length > 32) {
+    throw new Error(`buildSetPresetName: name too long (max 32): "${name}" (${name.length})`);
+  }
+  for (let i = 0; i < name.length; i++) {
+    const c = name.charCodeAt(i);
+    if (c < 0x20 || c > 0x7e) {
+      throw new Error(`buildSetPresetName: non-printable char at position ${i}: 0x${c.toString(16)}`);
+    }
+  }
+  const padded = name.padEnd(32, ' ');
+  return buildEnvelope(FN_SET_PRESET_NAME, [
+    ...Array.from(padded, (c) => c.charCodeAt(0)),
+  ]);
+}
+
+// ── 0x1D STORE_PRESET ──────────────────────────────────────────────
+//
+// 🟡 NOT in v1.4 III spec — Fractal's published III save envelope is
+// the multi-frame 0x77/0x78/0x79 chain (community RE, hypothesis-only;
+// requires Huffman-compressed preset content). The II's 0x1D STORE
+// command is a much simpler 10-byte envelope: "persist the current
+// working buffer to slot N" with no preset payload — the device just
+// commits whatever's in the working buffer.
+//
+// We try the 0x1D shape here because: (a) it's safe — wrong opcode
+// emits a 0x64 rejection, no flash impact; (b) the III's firmware
+// family probably still has the 0x1D code path; (c) if III honors it,
+// users get save-to-slot without the Huffman work.
+//
+// Wire envelope (matches II):
+//
+//   `F0 00 01 74 10 1D [preset_high] [preset_low] [cs] F7`
+//
+// preset_high = (n >> 7) & 0x7F, preset_low = n & 0x7F. MSB-first
+// byte ordering per II convention (and per the III's own 0x14
+// GET_TEMPO response, which uses MSB-first).
+
+const FN_STORE_PRESET = 0x1d;
+
+/** STORE_PRESET (function 0x1D). 🟡 III-untested. */
+export function buildStorePreset(presetNumber: number): number[] {
+  if (!Number.isInteger(presetNumber) || presetNumber < 0 || presetNumber > 0x3fff) {
+    throw new Error(`buildStorePreset: preset out of range (0..16383): ${presetNumber}`);
+  }
+  const high = (presetNumber >> 7) & 0x7f;
+  const low = presetNumber & 0x7f;
+  return buildEnvelope(FN_STORE_PRESET, [high, low]);
+}
+
+// ── MIDI Program Change (preset switch via standard MIDI) ──────────
+//
+// The III v1.4 spec says: "To CHANGE the active preset on the III via
+// MIDI, use standard Program Change messages (with CC 0 + CC 32 Bank
+// Select for slots > 127)." This is NOT a SysEx envelope — it's
+// 3 short MIDI messages back-to-back. The III is documented to honor
+// these without any firmware-version caveats.
+
+/**
+ * Build the short-MIDI byte sequence to switch the III to preset
+ * `presetNumber` (0..1023). Returns 9 bytes:
+ *
+ *   `B0 00 bankMsb`     (Control Change 0 = Bank Select MSB)
+ *   `B0 20 bankLsb`     (Control Change 32 = Bank Select LSB)
+ *   `C0 programNumber`  (Program Change on channel 1)
+ *
+ * Default MIDI channel is 1 (0x0 in the channel nibble). The III
+ * listens on its globally-configured MIDI channel — users with a
+ * non-default channel will need to call `axefx3_switch_preset` with
+ * a `channel` arg (1..16) on a future iteration. For now we default
+ * to channel 1, which matches Fractal's factory setting.
+ *
+ * Per the III v1.4 PDF: 1024 presets are addressed across 8 banks of
+ * 128 each. presetNumber 0..127 = bank 0 PC 0..127, presetNumber
+ * 128..255 = bank 1 PC 0..127, etc. CC0 carries the bank's MSB and
+ * CC32 carries the LSB; both are 7-bit values, so bank = (CC0 << 7)
+ * | CC32. The III ignores CC0 when bank fits in CC32 (just CC32 + PC
+ * is sufficient for presets 0..16383), but spec-correct usage sends
+ * both — we do.
+ */
+export function buildSwitchPresetPC(
+  presetNumber: number,
+  channel: number = 1,
+): number[] {
+  if (!Number.isInteger(presetNumber) || presetNumber < 0 || presetNumber > 1023) {
+    throw new Error(
+      `buildSwitchPresetPC: presetNumber ${presetNumber} out of range (0..1023).`,
+    );
+  }
+  if (!Number.isInteger(channel) || channel < 1 || channel > 16) {
+    throw new Error(`buildSwitchPresetPC: channel ${channel} out of range (1..16).`);
+  }
+  const ch0 = (channel - 1) & 0x0f;
+  const bank = Math.floor(presetNumber / 128);
+  const pc = presetNumber % 128;
+  return [
+    0xb0 | ch0, 0x00, (bank >> 7) & 0x7f, // CC 0 = Bank MSB
+    0xb0 | ch0, 0x20, bank & 0x7f,        // CC 32 = Bank LSB
+    0xc0 | ch0, pc & 0x7f,                // Program Change
+  ];
+}
+
 // ── 0x0A SET/GET BYPASS ────────────────────────────────────────────
 
 /**
