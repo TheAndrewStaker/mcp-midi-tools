@@ -1,6 +1,8 @@
 /**
  * Emit `packages/axe-fx-iii/src/params.ts` — paramId/name catalog
- * skeleton seeded from the Ghidra-mined Axe-Edit III dispatcher table.
+ * seeded from the Ghidra-mined Axe-Edit III dispatcher table and
+ * calibrated against AM4's hardware-verified display ranges where
+ * the III's family matches AM4's.
  *
  * Background. Session 82 mined `FUN_140397a40`, the effect-type
  * dispatcher in Axe-Edit III v1.14.31. Each `case 0xN` of that switch
@@ -9,6 +11,24 @@
  * to `samples/captured/decoded/ghidra-axeedit3-paramnames.json` —
  * 49 effect families, ~2.2k paramIds total. (The JSON is gitignored
  * under `samples/`; read it via the absolute path baked in below.)
+ *
+ * Two input sources are supported:
+ *
+ *   1. Ghidra JSON (primary, fresh re-mining):
+ *      `samples/captured/decoded/ghidra-axeedit3-paramnames.json`.
+ *      Used when present — this is the canonical source.
+ *
+ *   2. The committed `packages/axe-fx-iii/src/params.ts` itself
+ *      (fallback). Parsed for its existing `PARAMS` array entries
+ *      `(family, paramId, name)`. The committed file is, by
+ *      construction, a faithful reproduction of the JSON, so this
+ *      fallback re-emits the same shipping catalog without losing
+ *      data. Used when the JSON is absent (e.g. running in a fresh
+ *      worktree where `samples/` hasn't been populated).
+ *
+ * Either way, the emit step layers AM4-derived display calibration
+ * over the catalog — see `./axefx3-am4-overrides.ts` for the join
+ * strategy and caveats.
  *
  * What we KNOW about each entry:
  *   - the effect family (REVERB, DELAY, COMP, …)
@@ -21,29 +41,39 @@
  *   - the symbol name Axe-Edit III uses internally (e.g. `REVERB_TYPE`,
  *     `COMP_THRESH`)
  *
- * What we do NOT know (deliberately deferred — needs III hardware):
- *   - display unit (dB, ms, knob 0..10, enum, …)
+ * What we INFER from AM4 (where the family maps cleanly):
+ *   - display unit (dB, ms, knob 0..10, enum, …) — ported from the
+ *     same-named AM4 param via AM4's hardware-verified catalog
  *   - display range (min, max)
  *   - per-param scaling (linear vs log10)
- *   - enum value tables (the symbol name `COMP_TYPE` doesn't expose the
- *     enum vocabulary — that needs a separate Ghidra pass + capture)
  *
- * Until hardware verification lands, every entry stamps `unit:
- * 'unverified'`. An audit grep for `'unverified'` finds everything that
- * still needs III-side calibration. The 0x02 SET_PARAMETER tool surface
- * does NOT consume this metadata today (it accepts raw 16-bit wire
- * values from the caller), so a documentary-only catalog is safe to
- * ship — it gives `axefx3_list_params` and per-paramId name lookup a
- * source of truth without pretending we know more than we do.
+ * Inferred entries are marked `// inferred from AM4` in the emitted
+ * file so an audit can distinguish them from `'unverified'` entries
+ * still awaiting III hardware confirmation. The inference is safe
+ * because the AM4 and III share Fractal's design language — the
+ * musically useful range of "reverb time" is the same on both
+ * devices — but is NOT a substitute for III-side verification of
+ * the wire-value scaling (16-bit linear vs log packing, sign/offset
+ * conventions, etc.). When III hardware verification lands, the
+ * `inferred` marker flips to `verified`.
+ *
+ * What we do NOT infer (deliberately):
+ *   - enum value tables. AM4's `reverb.type` has 79 reverb algorithm
+ *     names; the III's REVERB_TYPE has more. Copying AM4's names onto
+ *     an III enum would be misleading. Inferred enum entries emit
+ *     `unit: 'enum'` with no `enumValues` field — that's an honest
+ *     "this is an enum, but the menu vocabulary is III-specific."
  *
  * Pipeline (idempotent — re-running emits a byte-stable file):
- *   1. Read JSON from `samples/captured/decoded/ghidra-axeedit3-paramnames.json`.
- *   2. Iterate `effect_types.case_0xN` in numeric caseIdx order.
- *      - Skip cases without an `effectFamily` field (case 0x3a in the
- *        current catalog has `paramCount: 0` and no family — they're
- *        empty dispatcher slots).
- *   3. For each family, sort params by paramId ascending.
- *   4. Emit a TypeScript file with: Unit type, Param interface,
+ *   1. Load catalog from JSON (if present) or from the committed
+ *      params.ts (fallback). Either source produces the same
+ *      `(family, paramId, name)` triples.
+ *   2. Load AM4 calibration overrides from `cacheParams.ts`.
+ *   3. Iterate families in dispatcher-case order, params in paramId
+ *      ascending order.
+ *   4. For each entry, look up an AM4 override by `(family, name)`.
+ *      If a hit, emit calibrated fields + comment.
+ *   5. Emit a TypeScript file with: Unit union, Param interface,
  *      `PARAMS` flat array, `PARAMS_BY_FAMILY` map, and
  *      `PARAM_BY_KEY` map keyed by `'FAMILY.NAME'`.
  *
@@ -53,9 +83,15 @@
  * Output is committed alongside this script — both files travel
  * together so future agents can reproduce.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import {
+  findAm4Override,
+  loadAm4ParamOverrides,
+  type Am4Override,
+} from './axefx3-am4-overrides.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..');
@@ -125,26 +161,28 @@ function emitString(s: string): string {
   return `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }
 
-// ── Main ───────────────────────────────────────────────────────────
+// ── Catalog loaders (JSON primary, params.ts fallback) ─────────────
 
-function main(): void {
+type FlatEntry = {
+  family: string;
+  paramId: number;
+  name: string;
+  caseIdx: number;
+};
+
+/**
+ * Read the Ghidra-mined JSON catalog and produce sorted FlatEntry rows.
+ * Throws if the file is malformed; caller should fall back to the
+ * params.ts loader when the file is absent.
+ */
+function loadCatalogFromJson(): { flat: FlatEntry[]; cases: { effectFamily: string; caseIdx: number }[] } {
   const raw = readFileSync(CATALOG_PATH, 'utf8');
   const catalog: Catalog = JSON.parse(raw);
-
-  // Collect (family → sorted params) — sorted by paramId ascending so
-  // the emitted file is byte-stable across runs.
   const cases = Object.values(catalog.effect_types)
     .filter((c): c is CatalogCase & { effectFamily: string } =>
       typeof c.effectFamily === 'string' && c.params.length > 0,
     )
     .sort((a, b) => a.caseIdx - b.caseIdx);
-
-  type FlatEntry = {
-    family: string;
-    paramId: number;
-    name: string;
-    caseIdx: number;
-  };
 
   const flat: FlatEntry[] = [];
   for (const c of cases) {
@@ -158,6 +196,111 @@ function main(): void {
       });
     }
   }
+  return {
+    flat,
+    cases: cases.map((c) => ({ effectFamily: c.effectFamily, caseIdx: c.caseIdx })),
+  };
+}
+
+/**
+ * Fallback loader. Parses the committed `packages/axe-fx-iii/src/params.ts`
+ * — specifically its `PARAMS` array entries — back into FlatEntry rows.
+ * Used when the Ghidra JSON is absent (e.g. fresh worktrees without
+ * `samples/`). The committed file is, by construction, an exact
+ * representation of the JSON the last generator run consumed, so this
+ * round-trip preserves the catalog faithfully.
+ *
+ * The synthetic caseIdx is a within-file appearance order — the
+ * committed file groups by family in dispatcher-case order already,
+ * so first-seen-family-index reproduces the original ordering for
+ * byte-stable re-emit.
+ */
+function loadCatalogFromParamsTs(): { flat: FlatEntry[]; cases: { effectFamily: string; caseIdx: number }[] } {
+  if (!existsSync(OUTPUT_PATH)) {
+    throw new Error(
+      `Neither the Ghidra JSON (${CATALOG_PATH}) nor the committed params.ts ` +
+      `(${OUTPUT_PATH}) is readable. Cannot generate. Re-mine with ` +
+      `scripts/ghidra/run-axeedit3-paramnames.cmd to produce the JSON.`,
+    );
+  }
+  const src = readFileSync(OUTPUT_PATH, 'utf8');
+
+  // Find the start of the PARAMS array literal and read entries until
+  // the closing `];`. Each entry shape:
+  //   { family: 'REVERB', paramId: 0, name: 'REVERB_TYPE', unit: 'unverified' },
+  // We tolerate optional trailing fields (displayMin/displayMax/scaling)
+  // and an optional trailing `// inferred from AM4` comment — those
+  // come from prior calibrated runs.
+  const startMarker = 'export const PARAMS: readonly Param[] = [';
+  const startIdx = src.indexOf(startMarker);
+  if (startIdx < 0) {
+    throw new Error(
+      `Fallback loader: could not locate PARAMS array in ${OUTPUT_PATH}. ` +
+      `The committed file may have been hand-edited or the emit format changed.`,
+    );
+  }
+  // Read until the matching '];' that terminates the array.
+  const endIdx = src.indexOf('\n];', startIdx);
+  if (endIdx < 0) {
+    throw new Error(
+      `Fallback loader: could not locate end of PARAMS array in ${OUTPUT_PATH}.`,
+    );
+  }
+  const body = src.substring(startIdx + startMarker.length, endIdx);
+  // Match each entry. Capture only `family`, `paramId`, `name` — the
+  // rest is re-derived from AM4 overrides on this pass.
+  const entryRe = /\{\s*family:\s*'([A-Z][A-Z0-9_]*)'\s*,\s*paramId:\s*(\d+)\s*,\s*name:\s*'([A-Z][A-Z0-9_]*)'/g;
+
+  const flat: FlatEntry[] = [];
+  // We assign caseIdx by first-seen-family order so the emit grouping
+  // matches whatever order the existing file had — that's the original
+  // dispatcher-case order.
+  const familyCaseIdx = new Map<string, number>();
+  let nextCaseIdx = 1;
+
+  let m: RegExpExecArray | null;
+  while ((m = entryRe.exec(body)) !== null) {
+    const family = m[1];
+    const paramId = Number(m[2]);
+    const name = m[3];
+    let caseIdx = familyCaseIdx.get(family);
+    if (caseIdx === undefined) {
+      caseIdx = nextCaseIdx++;
+      familyCaseIdx.set(family, caseIdx);
+    }
+    flat.push({ family, paramId, name, caseIdx });
+  }
+
+  if (flat.length === 0) {
+    throw new Error(
+      `Fallback loader: parsed 0 entries from ${OUTPUT_PATH} PARAMS array. ` +
+      `Emit format probably changed; update the regex in loadCatalogFromParamsTs.`,
+    );
+  }
+
+  // Build the cases list in first-seen order.
+  const cases: { effectFamily: string; caseIdx: number }[] = [];
+  for (const [family, idx] of familyCaseIdx) {
+    cases.push({ effectFamily: family, caseIdx: idx });
+  }
+  cases.sort((a, b) => a.caseIdx - b.caseIdx);
+
+  return { flat, cases };
+}
+
+// ── Main ───────────────────────────────────────────────────────────
+
+function main(): void {
+  // Source selection: JSON if available (canonical), otherwise the
+  // committed params.ts (faithful fallback). Always emit the same
+  // bytes for the same source — that's the idempotency contract.
+  const useJson = existsSync(CATALOG_PATH);
+  const { flat, cases } = useJson ? loadCatalogFromJson() : loadCatalogFromParamsTs();
+  const catalogSource = useJson ? 'ghidra-axeedit3-paramnames.json' : 'committed params.ts (fallback)';
+
+  // Load AM4 calibration overrides up-front. Map of 'block.name' →
+  // hardware-verified unit/range. Joined per III catalog entry below.
+  const am4Overrides = loadAm4ParamOverrides();
 
   // Sanity: count per family.
   const familyCounts: Record<string, number> = {};
@@ -201,28 +344,114 @@ function main(): void {
   const totalCount = flat.length;
   const familyCount = cases.length;
 
+  // Pre-compute the AM4 override (if any) for every entry — used by
+  // every emit step below. Deterministic and pure.
+  const overrideByEntry: Map<string, Am4Override | undefined> = new Map();
+  let calibratedCount = 0;
+  const calibratedByFamily: Record<string, number> = {};
+  for (const e of flat) {
+    const ov = findAm4Override(e.family, e.name, am4Overrides);
+    const key = `${e.family}.${e.name}`;
+    overrideByEntry.set(key, ov);
+    if (ov) {
+      calibratedCount += 1;
+      calibratedByFamily[e.family] = (calibratedByFamily[e.family] ?? 0) + 1;
+    }
+  }
+
+  // ── Emit helper: one Param literal ───────────────────────────────
+  //
+  // Calibrated entries carry `unit`, `displayMin`, `displayMax`,
+  // optional `scaling`, plus the `// inferred from AM4` trailing
+  // comment. Uncalibrated entries stay `unit: 'unverified'`.
+  //
+  // The Unit union emitted at the top of the file enumerates the
+  // calibrated units actually used + the always-present 'unverified'
+  // sentinel — so an entry like `unit: 'knob_0_10'` typechecks
+  // without manual maintenance of the union.
+  function emitEntry(e: FlatEntry, indent: string): string {
+    const head = `${indent}{ family: ${emitString(e.family)}, paramId: ${e.paramId}, name: ${emitString(e.name)},`;
+    const ov = overrideByEntry.get(`${e.family}.${e.name}`);
+    if (!ov) {
+      return `${head} unit: 'unverified' },`;
+    }
+    // For enum entries: emit `unit: 'enum'` WITHOUT displayMin /
+    // displayMax. The AM4's enum cardinality is firmware-specific
+    // (AM4's REVERB has 79 algorithms; the III has more), and
+    // surfacing AM4's count would falsely suggest the III's vocabulary
+    // is bounded the same way. The III's enum cardinality needs III-
+    // side Ghidra mining or capture.
+    if (ov.enum || ov.unit === 'enum') {
+      return `${head} unit: 'enum' }, // inferred from AM4`;
+    }
+    const scalingClause = ov.scaling
+      ? `, scaling: ${emitString(ov.scaling)}`
+      : '';
+    return `${head} unit: ${emitString(ov.unit)}, displayMin: ${formatNumeric(ov.displayMin)}, displayMax: ${formatNumeric(ov.displayMax)}${scalingClause} }, // inferred from AM4`;
+  }
+
+  // Collect the set of distinct calibrated units actually used, so
+  // the Unit union exactly matches what's in the file. 'unverified'
+  // is always part of the union (for un-ported entries).
+  const usedUnits = new Set<string>(['unverified']);
+  for (const ov of overrideByEntry.values()) {
+    if (ov) usedUnits.add(ov.unit);
+  }
+  const unitUnion = [...usedUnits].sort().map((u) => `'${u}'`).join(' | ');
+
   // ── Emit TypeScript ──────────────────────────────────────────────
+
+  const calibratedSummary = Object.entries(calibratedByFamily)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([fam, n]) => `${fam}=${n}`)
+    .join(', ');
 
   const lines: string[] = [];
   lines.push("/**");
-  lines.push(" * Axe-Fx III parameter catalog — SKELETON.");
+  lines.push(" * Axe-Fx III parameter catalog.");
   lines.push(" *");
   lines.push(" * Auto-generated by");
   lines.push(" *   scripts/_research/generate-axefx3-params-from-catalog.ts");
   lines.push(" * from");
   lines.push(" *   samples/captured/decoded/ghidra-axeedit3-paramnames.json");
   lines.push(" * (Ghidra-mined Axe-Edit III v1.14.31 effect-type dispatcher");
-  lines.push(" * FUN_140397a40 — Session 82). DO NOT HAND-EDIT — re-run the");
-  lines.push(" * generator to refresh.");
+  lines.push(" * FUN_140397a40 — Session 82), with AM4-derived display");
+  lines.push(" * calibration layered on top (see");
+  lines.push(" * `scripts/_research/axefx3-am4-overrides.ts`). DO NOT HAND-EDIT");
+  lines.push(" * — re-run the generator to refresh.");
   lines.push(" *");
   lines.push(" * Coverage:");
   lines.push(` *   - ${totalCount} parameters across ${familyCount} effect families.`);
-  lines.push(" *   - Every entry stamps `unit: 'unverified'`. The 0x02");
-  lines.push(" *     SET_PARAMETER tool surface accepts raw 16-bit wire values");
-  lines.push(" *     from the caller — display ↔ wire calibration is NOT yet");
-  lines.push(" *     known for the III and lives outside this catalog. An audit");
-  lines.push(" *     grep for `'unverified'` finds everything still needing");
-  lines.push(" *     III hardware verification.");
+  lines.push(` *   - ${calibratedCount} entries carry AM4-inferred display`);
+  lines.push(" *     calibration (`// inferred from AM4` trailing comment +");
+  lines.push(" *     non-`'unverified'` unit + displayMin/Max + optional scaling).");
+  lines.push(` *   - ${totalCount - calibratedCount} entries remain \`unit: 'unverified'\``);
+  lines.push(" *     (III-specific blocks like CABINET/FUZZ/IRPLAYER, or AM4-mapped");
+  lines.push(" *     families where the III's symbol has no AM4 analog).");
+  lines.push(" *");
+  lines.push(" * Calibration sources (per-family inferred count):");
+  if (calibratedSummary.length > 0) {
+    lines.push(` *   ${calibratedSummary}`);
+  } else {
+    lines.push(" *   (none — AM4 cacheParams.ts is empty?)");
+  }
+  lines.push(" *");
+  lines.push(" * Inferred-from-AM4 caveat:");
+  lines.push(" *   - AM4 is the closest hardware-verified analog Fractal device.");
+  lines.push(" *     Same vendor, same naming convention, similar musical scope.");
+  lines.push(" *     The inferred display range (e.g. reverb time 0.1..100 s,");
+  lines.push(" *     drive 0..10 knob) is correct as a *display* convention —");
+  lines.push(" *     this is what Fractal's UI shows for the knob across both");
+  lines.push(" *     devices.");
+  lines.push(" *   - The III's wire encoding for the displayed value is NOT");
+  lines.push(" *     yet verified. AM4 packs values into normalized [0,1] Q15;");
+  lines.push(" *     the III packs into a 16-bit linear field via packValue16.");
+  lines.push(" *     Display↔wire conversion still requires III-side capture.");
+  lines.push(" *   - Enum entries inherit `unit: 'enum'` from AM4 but DO NOT");
+  lines.push(" *     ship AM4's enumValues table. III firmware adds reverb");
+  lines.push(" *     types, amp models, etc. post-AM4 — copying AM4's vocabulary");
+  lines.push(" *     verbatim would mislead the agent. The III's enum vocabulary");
+  lines.push(" *     needs III-side Ghidra mining or hardware capture.");
   lines.push(" *");
   lines.push(" * Wire constraints (see ./setParam.ts):");
   lines.push(" *   - paramId is sent as a 14-bit septet pair → wire range is");
@@ -249,6 +478,8 @@ function main(): void {
   lines.push(" * SET_PARAMETER wire shape itself was ported from the Axe-Fx II");
   lines.push(" * encoder; whether III firmware honors it (and on which");
   lines.push(" * paramIds) is the next III contributor's verification task.");
+  lines.push(" * See `scripts/_research/probe-axefx3-setparam-hypothesis.ts`");
+  lines.push(" * for the ranked hypothesis probe.");
   lines.push(" */");
   lines.push("");
   lines.push("// ── Types ──────────────────────────────────────────────────────────");
@@ -256,13 +487,15 @@ function main(): void {
   lines.push("/**");
   lines.push(" * Display-unit tag for an Axe-Fx III parameter.");
   lines.push(" *");
-  lines.push(" * Currently the only value is `'unverified'` — a sentinel that the");
-  lines.push(" * per-paramId display calibration is not yet known. When III");
-  lines.push(" * hardware verification surfaces real units (dB, ms, knob_0_10,");
-  lines.push(" * enum, …) this union expands and per-entry unit fields flip from");
-  lines.push(" * `'unverified'` to the real tag.");
+  lines.push(" * `'unverified'` is the default for entries the generator could");
+  lines.push(" * not infer (the AM4 has no matching parameter, or the III family");
+  lines.push(" * has no AM4 analog). Other tags are AM4-derived display");
+  lines.push(" * conventions — they describe the user-facing scale (dB, ms,");
+  lines.push(" * knob_0_10, etc.) but NOT the III's wire encoding. Display↔wire");
+  lines.push(" * conversion is still the caller's responsibility on the III");
+  lines.push(" * until hardware verification lands.");
   lines.push(" */");
-  lines.push("export type Unit = 'unverified';");
+  lines.push(`export type Unit = ${unitUnion};`);
   lines.push("");
   lines.push("/** One entry in the Axe-Fx III parameter catalog. */");
   lines.push("export interface Param {");
@@ -285,9 +518,25 @@ function main(): void {
   lines.push("  name: string;");
   lines.push("  /**");
   lines.push("   * Display unit tag. `'unverified'` until III hardware confirms");
-  lines.push("   * the real shape — see file-level header.");
+  lines.push("   * the real shape; otherwise inferred from AM4 (see file-level");
+  lines.push("   * header for the caveat — these are display conventions, not");
+  lines.push("   * wire encodings).");
   lines.push("   */");
   lines.push("  unit: Unit;");
+  lines.push("  /**");
+  lines.push("   * Display range minimum. Populated for AM4-inferred entries");
+  lines.push("   * (`// inferred from AM4` trailing comment), absent for");
+  lines.push("   * `unit: 'unverified'` entries.");
+  lines.push("   */");
+  lines.push("  displayMin?: number;");
+  lines.push("  /** Display range maximum. Same population rule as `displayMin`. */");
+  lines.push("  displayMax?: number;");
+  lines.push("  /**");
+  lines.push("   * Optional non-linear scaling, AM4-inferred. `'log10'` for");
+  lines.push("   * time / frequency knobs that span multiple decades. Absent");
+  lines.push("   * for linear knobs or `'unverified'` entries.");
+  lines.push("   */");
+  lines.push("  scaling?: 'linear' | 'log10';");
   lines.push("}");
   lines.push("");
   lines.push("// ── Catalog data ───────────────────────────────────────────────────");
@@ -300,9 +549,7 @@ function main(): void {
   lines.push(" */");
   lines.push("export const PARAMS: readonly Param[] = [");
   for (const e of flat) {
-    lines.push(
-      `  { family: ${emitString(e.family)}, paramId: ${e.paramId}, name: ${emitString(e.name)}, unit: 'unverified' },`,
-    );
+    lines.push(emitEntry(e, '  '));
   }
   lines.push("];");
   lines.push("");
@@ -324,9 +571,7 @@ function main(): void {
   for (const [family, entries] of byFamily) {
     lines.push(`  ${emitKey(family)}: [`);
     for (const e of entries) {
-      lines.push(
-        `    { family: ${emitString(e.family)}, paramId: ${e.paramId}, name: ${emitString(e.name)}, unit: 'unverified' },`,
-      );
+      lines.push(emitEntry(e, '    '));
     }
     lines.push(`  ],`);
   }
@@ -342,9 +587,18 @@ function main(): void {
   lines.push("export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {");
   for (const e of flat) {
     const key = `${e.family}.${e.name}`;
-    lines.push(
-      `  ${emitKey(key)}: { family: ${emitString(e.family)}, paramId: ${e.paramId}, name: ${emitString(e.name)}, unit: 'unverified' },`,
-    );
+    // Reuse emitEntry by stripping the trailing comma + comment so the
+    // line slots into an object-literal value slot cleanly.
+    const entry = emitEntry(e, '');
+    // emitEntry returns either:
+    //   `{ family: 'X', ... unit: 'unverified' },`
+    // or
+    //   `{ family: 'X', ... }, // inferred from AM4`
+    // We need the bare object literal followed by `,` for the key map.
+    const bareObject = entry
+      .replace(/, \/\/ inferred from AM4$/, '')
+      .replace(/,$/, '');
+    lines.push(`  ${emitKey(key)}: ${bareObject},${entry.includes('// inferred from AM4') ? ' // inferred from AM4' : ''}`);
   }
   lines.push("};");
   lines.push("");
@@ -364,10 +618,29 @@ function main(): void {
     .join(', ');
   console.log(
     `generate-axefx3-params-from-catalog: wrote ${OUTPUT_PATH}\n` +
+    `  source: ${catalogSource}\n` +
     `  ${totalCount} params across ${familyCount} families\n` +
+    `  ${calibratedCount} entries calibrated from AM4 overrides\n` +
+    `  calibrated by family: ${calibratedSummary || '(none)'}\n` +
     `  ${overlayCount} firmware-legacy paramId overlays (FLANGER_OLD_* etc.)\n` +
     `  families: ${familySummary}`,
   );
+}
+
+/**
+ * Format a number for emit as a TS numeric literal. Integers emit as
+ * integers; floats emit with their minimum-precision string (no
+ * trailing zero padding, no exponent unless huge). Negative values
+ * preserved. The goal is byte-stability and readability — round-trip
+ * `parseFloat(formatNumeric(x)) === x` for the AM4 source values we
+ * see (integers, halves, decimal cents like 0.1, 10000, -100).
+ */
+function formatNumeric(n: number): string {
+  if (Number.isInteger(n)) return String(n);
+  // Avoid scientific notation; AM4 ranges fit comfortably in fixed.
+  // `String(0.1)` returns `'0.1'`, `String(-100.5)` returns `'-100.5'` —
+  // both fine. Larger floats round-trip via JS's default formatter.
+  return String(n);
 }
 
 main();
