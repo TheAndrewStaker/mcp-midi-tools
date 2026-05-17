@@ -175,10 +175,8 @@ export const CACHE_PARAMS = {
     unit: 'ms', displayMin: 0, displayMax: 50,
     scaling: 'log10',
   },
-  // renamed for UI-label match (audit row: DISTORT 77) — mirror of params.ts;
-  // re-sync paramNames.ts on next regen to keep this stable.
-  'amp.clarity': {
-    block: 'amp', name: 'clarity',
+  'amp.compressor_clarity': {
+    block: 'amp', name: 'compressor_clarity',
     pidLow: 0x003a, pidHigh: 0x004d,
     unit: 'knob_0_10', displayMin: 0, displayMax: 10,
     scaling: 'log10',
@@ -193,15 +191,13 @@ export const CACHE_PARAMS = {
     pidLow: 0x003a, pidHigh: 0x0051,
     unit: 'knob_0_10', displayMin: 0, displayMax: 10,
   },
-  // renamed for UI-label match (audit row: DISTORT 82) — mirror of params.ts
-  'amp.amount': {
-    block: 'amp', name: 'amount',
+  'amp.compressor_amount': {
+    block: 'amp', name: 'compressor_amount',
     pidLow: 0x003a, pidHigh: 0x0052,
     unit: 'knob_0_10', displayMin: 0, displayMax: 10,
   },
-  // renamed for UI-label match (audit row: DISTORT 83) — mirror of params.ts
-  'amp.threshold': {
-    block: 'amp', name: 'threshold',
+  'amp.compressor_threshold': {
+    block: 'amp', name: 'compressor_threshold',
     pidLow: 0x003a, pidHigh: 0x0053,
     unit: 'db', displayMin: -60, displayMax: 0,
   },
@@ -681,15 +677,13 @@ export const CACHE_PARAMS = {
     pidLow: 0x0042, pidHigh: 0x0037,
     unit: 'percent', displayMin: 0, displayMax: 100,
   },
-  // renamed for UI-label match (audit row: REVERB 56) — mirror of params.ts
-  'reverb.voice_1_shift': {
-    block: 'reverb', name: 'voice_1_shift',
+  'reverb.shift_1': {
+    block: 'reverb', name: 'shift_1',
     pidLow: 0x0042, pidHigh: 0x0038,
     unit: 'semitones', displayMin: -24, displayMax: 24,
   },
-  // renamed for UI-label match (audit row: REVERB 57) — mirror of params.ts
-  'reverb.voice_2_shift': {
-    block: 'reverb', name: 'voice_2_shift',
+  'reverb.shift_2': {
+    block: 'reverb', name: 'shift_2',
     pidLow: 0x0042, pidHigh: 0x0039,
     unit: 'semitones', displayMin: -24, displayMax: 24,
   },
@@ -902,9 +896,8 @@ export const CACHE_PARAMS = {
     unit: 'ms', displayMin: 1, displayMax: 1000,
     scaling: 'log10',
   },
-  // renamed for UI-label match (audit row: DELAY 49) — mirror of params.ts
-  'delay.diffuser': {
-    block: 'delay', name: 'diffuser',
+  'delay.diffusor': {
+    block: 'delay', name: 'diffusor',
     pidLow: 0x0046, pidHigh: 0x0031,
     unit: 'percent', displayMin: 0, displayMax: 100,
   },
@@ -1085,15 +1078,13 @@ export const CACHE_PARAMS = {
     pidLow: 0x004e, pidHigh: 0x0015,
     unit: 'percent', displayMin: 0, displayMax: 100,
   },
-  // renamed for UI-label match (audit row: CHORUS 22) — mirror of params.ts
-  'chorus.rate_right': {
-    block: 'chorus', name: 'rate_right',
+  'chorus.lfo_rate': {
+    block: 'chorus', name: 'lfo_rate',
     pidLow: 0x004e, pidHigh: 0x0016,
     unit: 'hz', displayMin: 0.1, displayMax: 10,
   },
-  // renamed for UI-label match (audit row: CHORUS 23) — mirror of params.ts
-  'chorus.lfo_2_depth': {
-    block: 'chorus', name: 'lfo_2_depth',
+  'chorus.width': {
+    block: 'chorus', name: 'width',
     pidLow: 0x004e, pidHigh: 0x0017,
     unit: 'percent', displayMin: 0, displayMax: 100,
   },
@@ -1103,15 +1094,13 @@ export const CACHE_PARAMS = {
     unit: 'knob_0_10', displayMin: 0.5, displayMax: 500,
     scaling: 'log10',
   },
-  // renamed for UI-label match (audit row: CHORUS 25) — mirror of params.ts
-  'chorus.low_cut': {
-    block: 'chorus', name: 'low_cut',
+  'chorus.lfo_freq': {
+    block: 'chorus', name: 'lfo_freq',
     pidLow: 0x004e, pidHigh: 0x0019,
     unit: 'hz', displayMin: 20, displayMax: 2000,
   },
-  // renamed for UI-label match (audit row: CHORUS 26) — mirror of params.ts
-  'chorus.stereo_spread': {
-    block: 'chorus', name: 'stereo_spread',
+  'chorus.lfo_depth_2': {
+    block: 'chorus', name: 'lfo_depth_2',
     pidLow: 0x004e, pidHigh: 0x001a,
     unit: 'bipolar_percent', displayMin: -200, displayMax: 200,
   },
@@ -1320,15 +1309,13 @@ export const CACHE_PARAMS = {
     unit: 'enum', displayMin: 0, displayMax: 8,
     enumValues: WAH_TYPES_VALUES,
   },
-  // renamed for UI-label match (audit row: WAH 11) — mirror of params.ts
-  'wah.minimum_frequency': {
-    block: 'wah', name: 'minimum_frequency',
+  'wah.min_frequency': {
+    block: 'wah', name: 'min_frequency',
     pidLow: 0x005e, pidHigh: 0x000b,
     unit: 'hz', displayMin: 100, displayMax: 1000,
   },
-  // renamed for UI-label match (audit row: WAH 12) — mirror of params.ts
-  'wah.maximum_frequency': {
-    block: 'wah', name: 'maximum_frequency',
+  'wah.max_frequency': {
+    block: 'wah', name: 'max_frequency',
     pidLow: 0x005e, pidHigh: 0x000c,
     unit: 'hz', displayMin: 500, displayMax: 5000,
   },
@@ -1430,16 +1417,14 @@ export const CACHE_PARAMS = {
     unit: 'ratio', displayMin: 1, displayMax: 20,
     scaling: 'log10',
   },
-  // renamed for UI-label match (audit row: COMP 12) — mirror of params.ts
-  'compressor.attack_time': {
-    block: 'compressor', name: 'attack_time',
+  'compressor.attack': {
+    block: 'compressor', name: 'attack',
     pidLow: 0x002e, pidHigh: 0x000c,
     unit: 'ms', displayMin: 0.1, displayMax: 100,
     scaling: 'log10',
   },
-  // renamed for UI-label match (audit row: COMP 13) — mirror of params.ts
-  'compressor.release_time': {
-    block: 'compressor', name: 'release_time',
+  'compressor.release': {
+    block: 'compressor', name: 'release',
     pidLow: 0x002e, pidHigh: 0x000d,
     unit: 'ms', displayMin: 2, displayMax: 2000,
     scaling: 'log10',
@@ -1621,9 +1606,8 @@ export const CACHE_PARAMS = {
     unit: 'enum', displayMin: 0, displayMax: 17,
     enumValues: FILTER_TYPES_VALUES,
   },
-  // renamed for UI-label match (audit row: FILTER 11) — mirror of params.ts
-  'filter.frequency': {
-    block: 'filter', name: 'frequency',
+  'filter.freq': {
+    block: 'filter', name: 'freq',
     pidLow: 0x0072, pidHigh: 0x000b,
     unit: 'hz', displayMin: 20, displayMax: 20000,
   },
