@@ -435,7 +435,10 @@ console.log(`Inferred pidLow for ${pidlowMap.size} families.`);
 //   - amp.presence_prepresence ≠ "Treble" — XML label misleading; resolver
 //                                            keeps the dedupe suffix
 //   - amp.pa_high_cut ≠ "Tone"            — pa_ prefix mirrors power-amp family
-const WIRED_MISLABEL_CEILING = 143;
+// Session 90 (2026-05-16): tightened 143 → 112 after Session A's
+// WIRED-MISLABEL review pass (renames moved 23 entries from MISLABEL
+// to MATCHED). Drift guard remains tight against future regressions.
+const WIRED_MISLABEL_CEILING = 112;
 if (totals['WIRED-MISLABEL'] > WIRED_MISLABEL_CEILING) {
   console.error('');
   console.error(`FAIL: WIRED-MISLABEL count is ${totals['WIRED-MISLABEL']}, ceiling is ${WIRED_MISLABEL_CEILING}.`);

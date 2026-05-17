@@ -371,11 +371,12 @@ export const PARAM_ALIASES: Record<string, string> = {
   // Panel-name vs AM4-name mismatches surfaced by HW-064 (2026-05-05):
   // vintage Fender amps display "Volume" on the front panel but AM4
   // calls the same knob `gain`; drive panels say "Drive" but agents
-  // reach for "gain" by analogy with amp; reverb's "predelay" is
-  // smashed (every other audio API uses pre_delay or preDelay).
+  // reach for "gain" by analogy with amp.
   'amp.volume': 'amp.gain',
   'drive.gain': 'drive.drive',
-  'reverb.pre_delay': 'reverb.predelay',
+  // NOTE: 'reverb.pre_delay' alias removed — canonical key is now
+  // 'reverb.pre_delay' itself (renamed from 'reverb.predelay' for
+  // UI-label match, audit row REVERB 19).
 };
 
 /**
@@ -515,8 +516,9 @@ export const KNOWN_PARAMS = {
   // power amp. MID places it between the last two triode stages.
   // END places it after the power amp (physically impossible with
   // a real amp)." PRE-MID is the 5th option.
-  'amp.tonestack_location': {
-    block: 'amp', name: 'tonestack_location',
+  // renamed for UI-label match (audit row: DISTORT 24)
+  'amp.location': {
+    block: 'amp', name: 'location',
     displayLabel: 'Location',
     pidLow: 0x003a, pidHigh: 0x0018,
     unit: 'enum', displayMin: 0, displayMax: 4,
@@ -622,8 +624,9 @@ export const KNOWN_PARAMS = {
   'amp.geq_band_6': { block: 'amp', name: 'geq_band_6', displayLabel: '2K', pidLow: 0x003a, pidHigh: 0x0043, unit: 'amp_geq_band', displayMin: -12, displayMax: 12 },
   'amp.geq_band_7': { block: 'amp', name: 'geq_band_7', displayLabel: '4K', pidLow: 0x003a, pidHigh: 0x0044, unit: 'amp_geq_band', displayMin: -12, displayMax: 12 },
   'amp.geq_band_8': { block: 'amp', name: 'geq_band_8', displayLabel: '8K', pidLow: 0x003a, pidHigh: 0x0045, unit: 'amp_geq_band', displayMin: -12, displayMax: 12 },
-  'amp.compressor_clarity': {
-    block: 'amp', name: 'compressor_clarity',
+  // renamed for UI-label match (audit row: DISTORT 77)
+  'amp.clarity': {
+    block: 'amp', name: 'clarity',
     displayLabel: 'Clarity',
     pidLow: 0x003a, pidHigh: 0x004d,
     unit: 'knob_0_10', displayMin: 0, displayMax: 10,
@@ -632,14 +635,16 @@ export const KNOWN_PARAMS = {
     // cache-derived scaling and keep verify-cache-params byte-exact.
     scaling: 'log10',
   },
-  'amp.compressor_amount': {
-    block: 'amp', name: 'compressor_amount',
+  // renamed for UI-label match (audit row: DISTORT 82)
+  'amp.amount': {
+    block: 'amp', name: 'amount',
     displayLabel: 'Amount',
     pidLow: 0x003a, pidHigh: 0x0052,
     unit: 'knob_0_10', displayMin: 0, displayMax: 10,
   },
-  'amp.compressor_threshold': {
-    block: 'amp', name: 'compressor_threshold',
+  // renamed for UI-label match (audit row: DISTORT 83)
+  'amp.threshold': {
+    block: 'amp', name: 'threshold',
     displayLabel: 'Threshold',
     pidLow: 0x003a, pidHigh: 0x0053,
     unit: 'db', displayMin: -60, displayMax: 0,
@@ -654,8 +659,9 @@ export const KNOWN_PARAMS = {
     // structural (encode scale 1, cache c=1). Suppress the suffix.
     displayUnit: '',
   },
-  'amp.fat_switch': {
-    block: 'amp', name: 'fat_switch',
+  // renamed for UI-label match (audit row: DISTORT 85)
+  'amp.fat': {
+    block: 'amp', name: 'fat',
     displayLabel: 'Fat',
     pidLow: 0x003a, pidHigh: 0x0055,
     // IDEAL.Fat Switch — wiggle adjacency pins it right after Cut
@@ -821,16 +827,18 @@ export const KNOWN_PARAMS = {
     // / amp.master_bias_excursion on the Power Amp tab.
     unit: 'percent', displayMin: 0, displayMax: 100,
   },
-  'amp.preamp_high_cut_freq': {
-    block: 'amp', name: 'preamp_high_cut_freq',
+  // renamed for UI-label match (audit row: DISTORT 17)
+  'amp.high_cut_frequency': {
+    block: 'amp', name: 'high_cut_frequency',
     displayLabel: 'High Cut Frequency',
     pidLow: 0x003a, pidHigh: 0x0011,
     // Preamp.Preamp.High Cut Frequency — bottom row of the PREAMP
     // section. Screenshot 9999.1 Hz raw.
     unit: 'hz', displayMin: 20, displayMax: 20000,
   },
-  'amp.input_eq_low_cut': {
-    block: 'amp', name: 'input_eq_low_cut',
+  // renamed for UI-label match (audit row: DISTORT 16)
+  'amp.low_cut': {
+    block: 'amp', name: 'low_cut',
     displayLabel: 'Low Cut',
     pidLow: 0x003a, pidHigh: 0x0010,
     // Preamp.Input EQ.Low Cut. Screenshot 130.0 Hz raw.
@@ -843,8 +851,9 @@ export const KNOWN_PARAMS = {
     // Preamp.Input EQ.Gain. Screenshot 11.00 dB raw.
     unit: 'db', displayMin: -20, displayMax: 20,
   },
-  'amp.input_eq_q': {
-    block: 'amp', name: 'input_eq_q',
+  // renamed for UI-label match (audit row: DISTORT 78)
+  'amp.q': {
+    block: 'amp', name: 'q',
     displayLabel: 'Q',
     pidLow: 0x003a, pidHigh: 0x004e,
     // Preamp.Input EQ.Q. Screenshot 0.120 raw count.
@@ -863,8 +872,9 @@ export const KNOWN_PARAMS = {
     // (which sits at 0x005f wire=0.700 → display 7.00).
     unit: 'knob_0_10', displayMin: 0, displayMax: 10,
   },
-  'amp.negative_feedback': {
-    block: 'amp', name: 'negative_feedback',
+  // renamed for UI-label match (audit row: DISTORT 31)
+  'amp.negative_fb': {
+    block: 'amp', name: 'negative_fb',
     displayLabel: 'Negative FB',
     pidLow: 0x003a, pidHigh: 0x001f,
     // Power Amp.Power Amp.Negative Feedback. Screenshot 4.44 — percent
@@ -906,8 +916,9 @@ export const KNOWN_PARAMS = {
     // to the cache truth (50..500 Hz, real Hz this time).
     unit: 'hz', displayMin: 50, displayMax: 500,
   },
-  'amp.cathode_follower_harmonics': {
-    block: 'amp', name: 'cathode_follower_harmonics',
+  // renamed for UI-label match (audit row: DISTORT 40)
+  'amp.harmonics': {
+    block: 'amp', name: 'harmonics',
     displayLabel: 'Harmonics',
     pidLow: 0x003a, pidHigh: 0x0028,
     // Power Amp.Cathode Follower.Harmonics. Screenshot 0.150 Hz —
@@ -1000,8 +1011,9 @@ export const KNOWN_PARAMS = {
     // Typical range 50/60 Hz mains; AM4-Edit allows wider sweep.
     unit: 'hz', displayMin: 30, displayMax: 200,
   },
-  'amp.power_tube_hardness': {
-    block: 'amp', name: 'power_tube_hardness',
+  // renamed for UI-label match (audit row: DISTORT 95)
+  'amp.hardness': {
+    block: 'amp', name: 'hardness',
     displayLabel: 'Hardness',
     pidLow: 0x003a, pidHigh: 0x005f,
     // Power Amp.Power Tubes.Hardness. Screenshot 7.00 (knob_0_10).
@@ -1129,7 +1141,7 @@ export const KNOWN_PARAMS = {
     pidLow: 0x003a, pidHigh: 0x007a,
     // Speaker.Speaker.Compression. Screenshot 8.88 (knob_0_10).
     // Named with `spkr_` prefix to distinguish from the Compressor
-    // section's `compressor_amount` / `compressor_clarity` etc.
+    // section's `compression` register (cacheParams.ts pidHigh=0x0057).
     unit: 'knob_0_10', displayMin: 0, displayMax: 10,
   },
   'amp.compliance': {
@@ -1139,8 +1151,9 @@ export const KNOWN_PARAMS = {
     // Speaker.Speaker.Compliance. Screenshot 99.0 % (wire 0.990).
     unit: 'percent', displayMin: 0, displayMax: 100,
   },
-  'amp.spkr_time_constant': {
-    block: 'amp', name: 'spkr_time_constant',
+  // renamed for UI-label match (audit row: DISTORT 123)
+  'amp.time_constant': {
+    block: 'amp', name: 'time_constant',
     displayLabel: 'Time Constant',
     pidLow: 0x003a, pidHigh: 0x007b,
     // Speaker.Speaker.Time Constant. Screenshot 1000.0 ms (wire 1.000
@@ -1613,13 +1626,14 @@ export const KNOWN_PARAMS = {
     pidLow: 0x0042, pidHigh: 0x000b,
     unit: 'seconds', displayMin: 0.1, displayMax: 100,
   },
-  'reverb.predelay': {
+  // renamed for UI-label match (audit row: REVERB 19)
+  'reverb.pre_delay': {
     // BK-033 fix (HW-025 #1, Session 30): true address is pidHigh=0x0013,
     // not 0x0010. AM4-Edit capture for Pre-Delay→85 ms wrote 0x0042/0x0013
     // with float32(0.085) — confirms the `ms` unit's ÷1000 scale is right.
     // The 0x0010 register was a cache-derived guess that was structurally
     // plausible (range matched) but wrote to nothing. See SYSEX-MAP §6j.
-    block: 'reverb', name: 'predelay',
+    block: 'reverb', name: 'pre_delay',
     displayLabel: 'Pre-Delay',
     pidLow: 0x0042, pidHigh: 0x0013,
     unit: 'ms', displayMin: 0, displayMax: 250,
@@ -1760,14 +1774,16 @@ export const KNOWN_PARAMS = {
     // 91.83% matches screenshot "Drip 91.8 %". Spring-engine specific.
     unit: 'percent', displayMin: 0, displayMax: 100,
   },
-  'reverb.shift_1': {
-    block: 'reverb', name: 'shift_1',
+  // renamed for UI-label match (audit row: REVERB 56)
+  'reverb.voice_1_shift': {
+    block: 'reverb', name: 'voice_1_shift',
     displayLabel: 'Voice 1 Shift',
     pidLow: 0x0042, pidHigh: 0x0038,
     unit: 'semitones', displayMin: -24, displayMax: 24,
   },
-  'reverb.shift_2': {
-    block: 'reverb', name: 'shift_2',
+  // renamed for UI-label match (audit row: REVERB 57)
+  'reverb.voice_2_shift': {
+    block: 'reverb', name: 'voice_2_shift',
     displayLabel: 'Voice 2 Shift',
     pidLow: 0x0042, pidHigh: 0x0039,
     unit: 'semitones', displayMin: -24, displayMax: 24,
@@ -1916,8 +1932,9 @@ export const KNOWN_PARAMS = {
     pidLow: 0x0046, pidHigh: 0x0030,
     unit: 'ms', displayMin: 1, displayMax: 1000, scaling: 'log10',
   },
-  'delay.diffusor': {
-    block: 'delay', name: 'diffusor',
+  // renamed for UI-label match (audit row: DELAY 49)
+  'delay.diffuser': {
+    block: 'delay', name: 'diffuser',
     displayLabel: 'Diffuser',
     pidLow: 0x0046, pidHigh: 0x0031,
     unit: 'percent', displayMin: 0, displayMax: 100,
@@ -2039,8 +2056,9 @@ export const KNOWN_PARAMS = {
     pidLow: 0x0046, pidHigh: 0x0058,
     unit: 'percent', displayMin: 0, displayMax: 100,
   },
-  'delay.stack_hold': {
-    block: 'delay', name: 'stack_hold',
+  // renamed for UI-label match (audit row: DELAY 31)
+  'delay.repeat_stack_hold': {
+    block: 'delay', name: 'repeat_stack_hold',
     displayLabel: 'Repeat Stack/Hold',
     pidLow: 0x0046, pidHigh: 0x001f,
     // Cache id=31: enum [OFF|STACK|HOLD]. Hand-authored — generator
@@ -2180,8 +2198,9 @@ export const KNOWN_PARAMS = {
     pidLow: 0x004e, pidHigh: 0x0000,
     unit: 'db', displayMin: -80, displayMax: 20,
   },
-  'chorus.time': {
-    block: 'chorus', name: 'time',
+  // renamed for UI-label match (audit row: CHORUS 16)
+  'chorus.delay_time': {
+    block: 'chorus', name: 'delay_time',
     displayLabel: 'Delay Time',
     pidLow: 0x004e, pidHigh: 0x0010,
     // Cache id=16: float a=0.0001 b=0.05 c=1000 → display 0.1..50 ms.
@@ -2227,8 +2246,9 @@ export const KNOWN_PARAMS = {
     unit: 'enum', displayMin: 0, displayMax: 2,
     enumValues: { 0: 'OFF', 1: 'LOW', 2: 'HIGH' },
   },
-  'chorus.dimension_mode': {
-    block: 'chorus', name: 'dimension_mode',
+  // renamed for UI-label match (audit row: CHORUS 27)
+  'chorus.mode': {
+    block: 'chorus', name: 'mode',
     displayLabel: 'Mode',
     pidLow: 0x004e, pidHigh: 0x001b,
     unit: 'enum', displayMin: 0, displayMax: 3,
@@ -2252,14 +2272,16 @@ export const KNOWN_PARAMS = {
     pidLow: 0x004e, pidHigh: 0x0015,
     unit: 'percent', displayMin: 0, displayMax: 100,
   },
-  'chorus.lfo_rate': {
-    block: 'chorus', name: 'lfo_rate',
+  // renamed for UI-label match (audit row: CHORUS 22)
+  'chorus.rate_right': {
+    block: 'chorus', name: 'rate_right',
     displayLabel: 'Rate Right',
     pidLow: 0x004e, pidHigh: 0x0016,
     unit: 'hz', displayMin: 0.1, displayMax: 10,
   },
-  'chorus.width': {
-    block: 'chorus', name: 'width',
+  // renamed for UI-label match (audit row: CHORUS 23)
+  'chorus.lfo_2_depth': {
+    block: 'chorus', name: 'lfo_2_depth',
     displayLabel: 'LFO 2 Depth',
     pidLow: 0x004e, pidHigh: 0x0017,
     unit: 'percent', displayMin: 0, displayMax: 100,
@@ -2274,14 +2296,16 @@ export const KNOWN_PARAMS = {
     unit: 'knob_0_10', displayMin: 0.5, displayMax: 500,
     scaling: 'log10',
   },
-  'chorus.lfo_freq': {
-    block: 'chorus', name: 'lfo_freq',
+  // renamed for UI-label match (audit row: CHORUS 25)
+  'chorus.low_cut': {
+    block: 'chorus', name: 'low_cut',
     displayLabel: 'Low Cut',
     pidLow: 0x004e, pidHigh: 0x0019,
     unit: 'hz', displayMin: 20, displayMax: 2000,
   },
-  'chorus.lfo_depth_2': {
-    block: 'chorus', name: 'lfo_depth_2',
+  // renamed for UI-label match (audit row: CHORUS 26)
+  'chorus.stereo_spread': {
+    block: 'chorus', name: 'stereo_spread',
     displayLabel: 'Stereo Spread',
     pidLow: 0x004e, pidHigh: 0x001a,
     // Cache id=26: float a=-2 b=2 c=100 → display = wire × 100,
@@ -2460,14 +2484,16 @@ export const KNOWN_PARAMS = {
     unit: 'enum', displayMin: 0, displayMax: 1,
     enumValues: { 0: 'Thru', 1: 'Mute' },
   },
-  'wah.min_frequency': {
-    block: 'wah', name: 'min_frequency',
+  // renamed for UI-label match (audit row: WAH 11)
+  'wah.minimum_frequency': {
+    block: 'wah', name: 'minimum_frequency',
     displayLabel: 'Minimum Frequency',
     pidLow: 0x005e, pidHigh: 0x000b,
     unit: 'hz', displayMin: 100, displayMax: 1000,
   },
-  'wah.max_frequency': {
-    block: 'wah', name: 'max_frequency',
+  // renamed for UI-label match (audit row: WAH 12)
+  'wah.maximum_frequency': {
+    block: 'wah', name: 'maximum_frequency',
     displayLabel: 'Maximum Frequency',
     pidLow: 0x005e, pidHigh: 0x000c,
     // Cache id=12: a=500 b=5000 c=1.
@@ -2589,8 +2615,9 @@ export const KNOWN_PARAMS = {
     // register stores Q15 of log10-normalized internal across [1..20].
     unit: 'ratio', displayMin: 1, displayMax: 20, scaling: 'log10',
   },
-  'compressor.attack': {
-    block: 'compressor', name: 'attack',
+  // renamed for UI-label match (audit row: COMP 12)
+  'compressor.attack_time': {
+    block: 'compressor', name: 'attack_time',
     displayLabel: 'Attack Time',
     pidLow: 0x002e, pidHigh: 0x000c,
     // Cache id=12: float a=0.0001 b=0.1 c=1000 → 0.1..100 ms.
@@ -2599,8 +2626,9 @@ export const KNOWN_PARAMS = {
     // with old linear rule; with log10 rule, internal 0.867 → 40.0 ms.
     unit: 'ms', displayMin: 0.1, displayMax: 100, scaling: 'log10',
   },
-  'compressor.release': {
-    block: 'compressor', name: 'release',
+  // renamed for UI-label match (audit row: COMP 13)
+  'compressor.release_time': {
+    block: 'compressor', name: 'release_time',
     displayLabel: 'Release Time',
     pidLow: 0x002e, pidHigh: 0x000d,
     // Cache id=13: float a=0.002 b=2 c=1000 → 2..2000 ms.
@@ -2782,15 +2810,16 @@ export const KNOWN_PARAMS = {
     unit: 'enum', displayMin: 0, displayMax: 17,
     enumValues: FILTER_TYPES_VALUES,
   },
-  'filter.freq': {
+  // renamed for UI-label match (audit row: FILTER 11)
+  'filter.frequency': {
     // Blocks Guide §Filter: Frequency is the filter cutoff. 20..20000 Hz,
     // c=1 raw (uses 'hz' unit). HW-024 (Session 30 cont 3): wire-verified
     // on Low-Pass at 1250 Hz; readback was 1249.9 Hz. The 0.1 Hz drift is
     // float→fixed-point quantization noise in the firmware (8e-5 relative
     // error), not a wire-layer encoding bug — drift scales with frequency.
     // Functionally inaudible; do not assume exact equality on round-trip
-    // when comparing presets that differ only in filter.freq.
-    block: 'filter', name: 'freq',
+    // when comparing presets that differ only in filter.frequency.
+    block: 'filter', name: 'frequency',
     displayLabel: 'Frequency',
     pidLow: 0x0072, pidHigh: 0x000b,
     unit: 'hz', displayMin: 20, displayMax: 20000,
@@ -3077,8 +3106,9 @@ export const KNOWN_PARAMS = {
   // Likely 5-entry enum {0:Hard, 1:Med Hard, 2:Med, 3:Med Soft, 4:Soft}
   // per typical compressor/gate UX — only the observed entry is
   // registered until founder confirms the full table.
-  'gate.knee_type': {
-    block: 'gate', name: 'knee_type',
+  // renamed for UI-label match (audit row: GATE 22)
+  'gate.knee': {
+    block: 'gate', name: 'knee',
     displayLabel: 'Knee',
     pidLow: 0x0092, pidHigh: 0x0016,
     unit: 'enum', displayMin: 0, displayMax: 4,
@@ -3144,14 +3174,16 @@ export const KNOWN_PARAMS = {
     pidLow: 0x0066, pidHigh: 0x000a,
     unit: 'knob_0_10', displayMin: 0, displayMax: 10,
   },
-  'volpan.pan_l': {
-    block: 'volpan', name: 'pan_l',
+  // renamed for UI-label match (audit row: VOLUME 12)
+  'volpan.pan_left': {
+    block: 'volpan', name: 'pan_left',
     displayLabel: 'Pan Left',
     pidLow: 0x0066, pidHigh: 0x000c,
     unit: 'bipolar_percent', displayMin: -100, displayMax: 100,
   },
-  'volpan.pan_r': {
-    block: 'volpan', name: 'pan_r',
+  // renamed for UI-label match (audit row: VOLUME 13)
+  'volpan.pan_right': {
+    block: 'volpan', name: 'pan_right',
     displayLabel: 'Pan Right',
     pidLow: 0x0066, pidHigh: 0x000d,
     unit: 'bipolar_percent', displayMin: -100, displayMax: 100,

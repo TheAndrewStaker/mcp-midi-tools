@@ -314,8 +314,8 @@ const cases: { label: string; built: number[]; expected: string }[] = [
     expected: 'f0000174150142000f00010000000400007701437814f7',
   },
   {
-    label: 'buildSetParam("reverb.predelay", 85 ms) — session-30 HW-025 #1 (BK-033 fix)',
-    built: buildSetParam('reverb.predelay', 85),
+    label: 'buildSetParam("reverb.pre_delay", 85 ms) — session-30 HW-025 #1 (BK-033 fix)',
+    built: buildSetParam('reverb.pre_delay', 85),
     expected: 'f00001741501420013000100000004003d4515636823f7',
   },
   {
@@ -438,8 +438,8 @@ const cases: { label: string; built: number[]; expected: string }[] = [
     expected: 'f00001741501460000000100000004000000040c0852f7',
   },
   {
-    label: 'buildSetParam("delay.stack_hold", 1 = STACK) — session-30 HW-020 digital-mono',
-    built: buildSetParam('delay.stack_hold', 1),
+    label: 'buildSetParam("delay.repeat_stack_hold", 1 = STACK) — session-30 HW-020 digital-mono',
+    built: buildSetParam('delay.repeat_stack_hold', 1),
     expected: 'f0000174150146001f00010000000400000010037826f7',
   },
   {
@@ -550,8 +550,8 @@ const cases: { label: string; built: number[]; expected: string }[] = [
     expected: 'f0000174150112011500010000000400000000000012f7',
   },
   {
-    label: 'buildSetParam("gate.knee_type", 4 = "Soft") — session-46 HW-043 gate-knee-isolation',
-    built: buildSetParam('gate.knee_type', 4),
+    label: 'buildSetParam("gate.knee", 4 = "Soft") — session-46 HW-043 gate-knee-isolation',
+    built: buildSetParam('gate.knee', 4),
     expected: 'f0000174150112011600010000000400000010040005f7',
   },
   {
@@ -572,16 +572,16 @@ const cases: { label: string; built: number[]; expected: string }[] = [
     expected: 'f0000174150166000b00010000000400000014040069f7',
   },
   {
-    label: 'buildSetParam("volpan.pan_l", -22.22%) — session-44 HW-043 volpan-volume',
+    label: 'buildSetParam("volpan.pan_left", -22.22%) — session-44 HW-043 volpan-volume',
     // Captured wire stores float32 of -0.22219999 (not exact -0.2222);
     // use the precise round-trip value so the encoder reproduces the
     // captured byte sequence.
-    built: buildSetParam('volpan.pan_l', -22.219999),
+    built: buildSetParam('volpan.pan_left', -22.219999),
     expected: 'f0000174150166000c0001000000040032620c3b7069f7',
   },
   {
-    label: 'buildSetParam("volpan.pan_r", 33.33%) — session-44 HW-043 volpan-volume',
-    built: buildSetParam('volpan.pan_r', 33.330002),
+    label: 'buildSetParam("volpan.pan_right", 33.33%) — session-44 HW-043 volpan-volume',
+    built: buildSetParam('volpan.pan_right', 33.330002),
     expected: 'f0000174150166000d00010000000400266955237036f7',
   },
   {
@@ -837,8 +837,8 @@ const cases: { label: string; built: number[]; expected: string }[] = [
     expected: 'f000017415013200130001000000040000000204083bf7',
   },
   {
-    label: 'buildSetParam("wah.max_frequency", 3333 Hz) — session-40 HW-040 wah-expert',
-    built: buildSetParam('wah.max_frequency', 3333),
+    label: 'buildSetParam("wah.maximum_frequency", 3333 Hz) — session-40 HW-040 wah-expert',
+    built: buildSetParam('wah.maximum_frequency', 3333),
     expected: 'f000017415015e000c0001000000040000140a042874f7',
   },
   {
@@ -925,13 +925,13 @@ const cases: { label: string; built: number[]; expected: string }[] = [
     expected: 'f000017415012e000b0001000000040000001003785af7',
   },
   {
-    label: 'buildSetParam("compressor.attack", 0.8 ms) — session-30 HW-021 jfet-studio',
-    built: buildSetParam('compressor.attack', 0.800000037997961),
+    label: 'buildSetParam("compressor.attack_time", 0.8 ms) — session-30 HW-021 jfet-studio',
+    built: buildSetParam('compressor.attack_time', 0.800000037997961),
     expected: 'f000017415012e000c000100000004000c2d6a13503ef7',
   },
   {
-    label: 'buildSetParam("compressor.release", 100 ms) — session-30 HW-021 jfet-studio',
-    built: buildSetParam('compressor.release', 100.00000149011612),
+    label: 'buildSetParam("compressor.release_time", 100 ms) — session-30 HW-021 jfet-studio',
+    built: buildSetParam('compressor.release_time', 100.00000149011612),
     expected: 'f000017415012e000d00010000000400667319436810f7',
   },
   {
@@ -959,8 +959,8 @@ const cases: { label: string; built: number[]; expected: string }[] = [
     expected: 'f000017415014e0000000100000004000000000c0056f7',
   },
   {
-    label: 'buildSetParam("chorus.time", 12 ms) — session-30-chorus-basic',
-    built: buildSetParam('chorus.time', 12),
+    label: 'buildSetParam("chorus.delay_time", 12 ms) — session-30-chorus-basic',
+    built: buildSetParam('chorus.delay_time', 12),
     expected: 'f000017415014e001000010000000400532668436074f7',
   },
   {
@@ -1551,8 +1551,8 @@ import type { Param } from '@mcp-midi-control/am4/params.js';
 type DecodeCase = { key: string; internal: number; expect: number; tol: number };
 const decodeRuleCases: DecodeCase[] = [
   // Empirical from Sultans-of-Swing test (Session 43 cont):
-  { key: 'compressor.attack',    internal: 0.867, expect: 40,    tol: 1.0  },
-  { key: 'compressor.release',   internal: 0.566, expect: 100,   tol: 2.0  },
+  { key: 'compressor.attack_time',  internal: 0.867, expect: 40,    tol: 1.0  },
+  { key: 'compressor.release_time', internal: 0.566, expect: 100,   tol: 2.0  },
   { key: 'compressor.ratio',     internal: 0.306, expect: 2.5,   tol: 0.05 },
   { key: 'compressor.threshold', internal: 0.788, expect: 3,     tol: 0.1  },
   { key: 'reverb.time',          internal: 0.013, expect: 1.4,   tol: 0.05 },
