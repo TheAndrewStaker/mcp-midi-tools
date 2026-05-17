@@ -96,11 +96,32 @@ export const CACHE_PARAMS = {
     pidLow: 0x003a, pidHigh: 0x001e,
     unit: 'knob_0_10', displayMin: 0, displayMax: 10,
   },
+  'amp.low_reso': {
+    block: 'amp', name: 'low_reso',
+    pidLow: 0x003a, pidHigh: 0x0022,
+    unit: 'knob_0_10', displayMin: 0, displayMax: 10,
+  },
+  'amp.master_vol_cap': {
+    block: 'amp', name: 'master_vol_cap',
+    pidLow: 0x003a, pidHigh: 0x0026,
+    unit: 'pf', displayMin: 1, displayMax: 1000,
+    scaling: 'log10',
+  },
+  'amp.hi_reso': {
+    block: 'amp', name: 'hi_reso',
+    pidLow: 0x003a, pidHigh: 0x0033,
+    unit: 'knob_0_10', displayMin: 0, displayMax: 10,
+  },
   'amp.input_trim': {
     block: 'amp', name: 'input_trim',
     pidLow: 0x003a, pidHigh: 0x0036,
     unit: 'count', displayMin: 0.1, displayMax: 10,
     scaling: 'log10',
+  },
+  'amp.spkr_drive': {
+    block: 'amp', name: 'spkr_drive',
+    pidLow: 0x003a, pidHigh: 0x0039,
+    unit: 'knob_0_10', displayMin: 0, displayMax: 10,
   },
   'amp.geq_band_1': {
     block: 'amp', name: 'geq_band_1',
@@ -160,10 +181,10 @@ export const CACHE_PARAMS = {
     unit: 'knob_0_10', displayMin: 0, displayMax: 10,
     scaling: 'log10',
   },
-  'amp.frequency': {
-    block: 'amp', name: 'frequency',
+  'amp.input_eq_frequency': {
+    block: 'amp', name: 'input_eq_frequency',
     pidLow: 0x003a, pidHigh: 0x004f,
-    unit: 'db', displayMin: 100, displayMax: 10000,
+    unit: 'hz', displayMin: 100, displayMax: 10000,
   },
   'amp.overdrive': {
     block: 'amp', name: 'overdrive',
@@ -186,6 +207,11 @@ export const CACHE_PARAMS = {
     unit: 'count', displayMin: 0.1, displayMax: 10,
     scaling: 'log10',
   },
+  'amp.definition': {
+    block: 'amp', name: 'definition',
+    pidLow: 0x003a, pidHigh: 0x0056,
+    unit: 'count', displayMin: -10, displayMax: 10,
+  },
   'amp.compression': {
     block: 'amp', name: 'compression',
     pidLow: 0x003a, pidHigh: 0x0057,
@@ -199,7 +225,7 @@ export const CACHE_PARAMS = {
   'amp.high_cut': {
     block: 'amp', name: 'high_cut',
     pidLow: 0x003a, pidHigh: 0x005a,
-    unit: 'db', displayMin: 200, displayMax: 20000,
+    unit: 'hz', displayMin: 200, displayMax: 20000,
   },
   'amp.dynpres': {
     block: 'amp', name: 'dynpres',
@@ -273,15 +299,15 @@ export const CACHE_PARAMS = {
     pidLow: 0x003a, pidHigh: 0x007c,
     unit: 'db', displayMin: 0, displayMax: 1,
   },
-  'amp.vccmon': {
-    block: 'amp', name: 'vccmon',
+  'amp.b_plus_monitor': {
+    block: 'amp', name: 'b_plus_monitor',
     pidLow: 0x003a, pidHigh: 0x007d,
-    unit: 'db', displayMin: 0, displayMax: 1,
+    unit: 'count', displayMin: 0, displayMax: 1,
   },
-  'amp.gain_gainmon': {
-    block: 'amp', name: 'gain_gainmon',
+  'amp.gain_monitor': {
+    block: 'amp', name: 'gain_monitor',
     pidLow: 0x003a, pidHigh: 0x007e,
-    unit: 'db', displayMin: 0, displayMax: 1,
+    unit: 'count', displayMin: 0, displayMax: 1,
   },
   'amp.mdmon': {
     block: 'amp', name: 'mdmon',
@@ -293,18 +319,18 @@ export const CACHE_PARAMS = {
     pidLow: 0x003a, pidHigh: 0x0080,
     unit: 'db', displayMin: 0, displayMax: 1,
   },
-  'amp.headroom': {
-    block: 'amp', name: 'headroom',
+  'amp.headroom_monitor': {
+    block: 'amp', name: 'headroom_monitor',
     pidLow: 0x003a, pidHigh: 0x0089,
-    unit: 'db', displayMin: 0, displayMax: 1,
+    unit: 'count', displayMin: 0, displayMax: 1,
   },
   'amp.presence_prepresence': {
     block: 'amp', name: 'presence_prepresence',
     pidLow: 0x003a, pidHigh: 0x008a,
     unit: 'knob_0_10', displayMin: 0, displayMax: 10,
   },
-  'amp.high_cut_pahicut': {
-    block: 'amp', name: 'high_cut_pahicut',
+  'amp.pa_high_cut': {
+    block: 'amp', name: 'pa_high_cut',
     pidLow: 0x003a, pidHigh: 0x008c,
     unit: 'knob_0_10', displayMin: 0, displayMax: 10,
   },
