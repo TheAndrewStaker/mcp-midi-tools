@@ -1,0 +1,25 @@
+# Files gitignored but needed inside every Agent-View / sub-agent worktree.
+# Syntax is .gitignore-style. Only files that match a pattern AND are
+# gitignored are copied; tracked files are never duplicated.
+#
+# See docs/PARALLEL-WORK.md for the rationale per entry.
+
+# Session orientation: STATE.md, HARDWARE-TASKS-*.md, SESSIONS.md, BACKLOG.
+# CLAUDE.md tells every session to read docs/_private/STATE.md first, so a
+# worktree without this directory starts blind.
+docs/_private/
+
+# Cross-ref audit inputs. preflight runs scripts/_research/coverage-cross-
+# ref-audit.ts which reads the Ghidra paramnames JSON + the AxeEdit XML.
+# Without these, preflight goes red in fresh worktrees and an agent might
+# either skip the check or chase a phantom regression. (Lesson from Session
+# F, 2026-05-16: worktree spawned fresh, audit failed standalone, agent
+# correctly identified as environmental.)
+samples/captured/decoded/ghidra-am4-paramnames.json
+samples/captured/decoded/binarydata/extracted/__block_layout.xml
+samples/captured/decoded/binarydata/extracted/__block_layout_expert.xml
+
+# Future-proofing — no .env is checked in today, but if one ever lands here
+# (locally), background sessions should inherit it.
+.env
+.env.local
