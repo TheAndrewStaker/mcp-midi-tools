@@ -607,6 +607,16 @@ export const PARAM_NAMES: Readonly<Record<string, Readonly<Record<number, ParamN
     // clamped slightly short of ±1.0 per Fractal's flanger
     // implementation.
     14: { name: 'feedback', unit: 'bipolar_percent', displayMin: -99, displayMax: 99 },
+    // Session 90 cont (2026-05-17): FLANGER unit overrides to correct
+    // the cache pipeline's c=1 → 'db' default for entries the catalog
+    // says are Hz / count / ms / knob. Names defer to GENERATED_PARAM_NAMES
+    // for ids the resolver covered (19/23/25/30/35) — only unit fixes
+    // emitted here. Source: paramNamesGenerated.ts + cache-section3.json
+    // ranges.
+    19: { name: 'smooth_steps', unit: 'count', displayMin: 0.5, displayMax: 50 },
+    23: { name: 'high_cut', unit: 'hz', displayMin: 200, displayMax: 20000 },
+    25: { name: 'low_cut', unit: 'hz', displayMin: 20, displayMax: 2000 },
+    35: { name: 'vpo_exponent', unit: 'count', displayMin: 0.01, displayMax: 100 },
   },
   phaser: {
     1: 'mix',
@@ -623,6 +633,21 @@ export const PARAM_NAMES: Readonly<Record<string, Readonly<Record<number, ParamN
     // internal 0.5, AM4-Edit displays ~55.5%) but the wire behavior
     // is correct. Natural-language UX impact is negligible.
     16: { name: 'feedback', unit: 'bipolar_percent', displayMin: -90, displayMax: 90 },
+    // Session 90 cont (2026-05-17): PHASER unit overrides. Same
+    // cache-c=1 → 'db' default correction as flanger above. Names
+    // defer to GENERATED_PARAM_NAMES.
+    17: { name: 'min_frequency', unit: 'hz', displayMin: 5, displayMax: 500 },
+    18: { name: 'max_frequency', unit: 'hz', displayMin: 200, displayMax: 20000 },
+    20: { name: 'bias', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+    22: { name: 'feedback_point', unit: 'count', displayMin: 0, displayMax: 11 },
+    25: { name: 'q', unit: 'count', displayMin: 0.1, displayMax: 10 },
+    29: { name: 'shape_vcrk', unit: 'count', displayMin: 0.1, displayMax: 10 },
+    30: { name: 'shape', unit: 'count', displayMin: 0.01, displayMax: 0.99 },
+    // id=31 high_cut: cache stores in kHz (0.5..50). 'count' until
+    // confirmed via capture — Hz unit would mislabel the display value.
+    31: { name: 'high_cut', unit: 'count', displayMin: 0.5, displayMax: 50 },
+    35: { name: 'low_cut', unit: 'hz', displayMin: 20, displayMax: 200 },
+    36: { name: 'high_cut_lpf', unit: 'hz', displayMin: 2000, displayMax: 20000 },
   },
   wah: {
     1: 'mix',
@@ -761,6 +786,9 @@ export const PARAM_NAMES: Readonly<Record<string, Readonly<Record<number, ParamN
     29: { name: 'sidechain_q', unit: 'count', displayMin: 0.1, displayMax: 10 },
     39: { name: 'sidechain_emphasis_freq', unit: 'hz', displayMin: 100, displayMax: 10000 },
     41: 'drive',
+    // Session 90 cont (2026-05-17): COMP ratio_compansion at id=36 is a
+    // ratio (1..10:1), not dB. Cache-c=1 default to 'db' was wrong.
+    36: { name: 'ratio_compansion', unit: 'ratio', displayMin: 1, displayMax: 10 },
   },
   geq: {
     1: 'mix',
@@ -816,6 +844,14 @@ export const PARAM_NAMES: Readonly<Record<string, Readonly<Record<number, ParamN
     // filter.type is Envelope Filter / Auto-Wah / Touch-Wah (per
     // type-applicability).
     33: { name: 'sensitivity', unit: 'count', displayMin: 0.1, displayMax: 40 },
+    // Session 90 cont (2026-05-17): FILTER unit overrides. Same
+    // cache-c=1 → 'db' correction. id=33 sensitivity already overridden
+    // above per HW-053.
+    12: { name: 'q', unit: 'count', displayMin: 0.1, displayMax: 10 },
+    24: { name: 'rate', unit: 'hz', displayMin: 0.1, displayMax: 10 },
+    26: { name: 'mod_frequency', unit: 'hz', displayMin: 20, displayMax: 20000 },
+    31: { name: 'start_frequency', unit: 'hz', displayMin: 100, displayMax: 10000 },
+    32: { name: 'stop_frequency', unit: 'hz', displayMin: 100, displayMax: 10000 },
   },
   tremolo: {
     1: 'mix',
@@ -825,6 +861,9 @@ export const PARAM_NAMES: Readonly<Record<string, Readonly<Record<number, ParamN
     // at cache-c=1 raw). Depth is a percent knob.
     12: { name: 'rate', unit: 'hz', displayMin: 0.2 },
     13: 'depth',
+    // Session 90 cont (2026-05-17): TREMOLO unit override — crossover
+    // freq is Hz not dB (cache-c=1 default).
+    21: { name: 'crossover_freq', unit: 'hz', displayMin: 200, displayMax: 2000 },
   },
   enhancer: {
     1: 'mix',

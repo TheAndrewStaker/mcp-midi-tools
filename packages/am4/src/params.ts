@@ -4073,6 +4073,76 @@ export const KNOWN_PARAMS = {
   // but TODO marked range 1..3 not 0..2, so the labels here would be wrong;
   // ship as count and let hardware verification supply the labels):
   'delay.sweep_filter':      { block: 'delay',  name: 'sweep_filter',      displayLabel: 'Sweep Filter', pidLow: 0x0046, pidHigh: 0x0059, unit: 'count', displayMin: 1, displayMax: 3 },
+
+  // Session 90 cont (2026-05-17): CHORUS / FLANGER / PHASER / FILTER /
+  // TREMOLO / ENHANCER / COMPRESSOR mirror block. 53 entries from
+  // cacheParams.ts (auto-generated from the paramNames.ts +
+  // cache-section3.json pipeline) mirrored into params.ts so the
+  // coverage-audit sees them. Includes 21 unit overrides added to
+  // paramNames.ts this session to correct cache c=1 → 'db' fallbacks
+  // for entries that are Hz / count / ratio / bipolar_percent.
+  // Unblocks user prompts like "set the filter rate to 0.5 Hz", "set
+  // phaser min freq to 200 Hz", "compressor ratio 4:1", etc.
+  // CHORUS mirrors (3).
+  'chorus.left_depth':       { block: 'chorus', name: 'left_depth',        pidLow: 0x004e, pidHigh: 0x001c, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'chorus.center_depth':     { block: 'chorus', name: 'center_depth',      pidLow: 0x004e, pidHigh: 0x001d, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'chorus.right_depth':      { block: 'chorus', name: 'right_depth',       pidLow: 0x004e, pidHigh: 0x001e, unit: 'percent', displayMin: 0, displayMax: 100 },
+  // FLANGER mirrors (10).
+  'flanger.dry_delay':       { block: 'flanger', name: 'dry_delay',        pidLow: 0x0052, pidHigh: 0x0010, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'flanger.smooth_steps':    { block: 'flanger', name: 'smooth_steps',     pidLow: 0x0052, pidHigh: 0x0013, unit: 'count', displayMin: 0.5, displayMax: 50 },
+  'flanger.high_cut':        { block: 'flanger', name: 'high_cut',         pidLow: 0x0052, pidHigh: 0x0017, unit: 'hz', displayMin: 200, displayMax: 20000 },
+  'flanger.drive':           { block: 'flanger', name: 'drive',            pidLow: 0x0052, pidHigh: 0x0018, unit: 'knob_0_10', displayMin: 0, displayMax: 10, scaling: 'log10' },
+  'flanger.low_cut':         { block: 'flanger', name: 'low_cut',          pidLow: 0x0052, pidHigh: 0x0019, unit: 'hz', displayMin: 20, displayMax: 2000 },
+  'flanger.stereo_spread':   { block: 'flanger', name: 'stereo_spread',    pidLow: 0x0052, pidHigh: 0x001a, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'flanger.bass_focus':      { block: 'flanger', name: 'bass_focus',       pidLow: 0x0052, pidHigh: 0x001e, unit: 'knob_0_10', displayMin: 0, displayMax: 10, scaling: 'log10' },
+  'flanger.min_time':        { block: 'flanger', name: 'min_time',         pidLow: 0x0052, pidHigh: 0x0020, unit: 'ms', displayMin: 0, displayMax: 2 },
+  'flanger.max_time':        { block: 'flanger', name: 'max_time',         pidLow: 0x0052, pidHigh: 0x0021, unit: 'ms', displayMin: 0, displayMax: 20 },
+  'flanger.vpo_exponent':    { block: 'flanger', name: 'vpo_exponent',     pidLow: 0x0052, pidHigh: 0x0023, unit: 'count', displayMin: 0.01, displayMax: 100, scaling: 'log10' },
+  // PHASER mirrors (12).
+  'phaser.min_frequency':    { block: 'phaser', name: 'min_frequency',     pidLow: 0x005a, pidHigh: 0x0011, unit: 'hz', displayMin: 5, displayMax: 500 },
+  'phaser.max_frequency':    { block: 'phaser', name: 'max_frequency',     pidLow: 0x005a, pidHigh: 0x0012, unit: 'hz', displayMin: 200, displayMax: 20000 },
+  'phaser.bias':             { block: 'phaser', name: 'bias',              pidLow: 0x005a, pidHigh: 0x0014, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'phaser.feedback_point':   { block: 'phaser', name: 'feedback_point',    pidLow: 0x005a, pidHigh: 0x0016, unit: 'count', displayMin: 0, displayMax: 11 },
+  'phaser.q':                { block: 'phaser', name: 'q',                 pidLow: 0x005a, pidHigh: 0x0019, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  'phaser.shape_vcrk':       { block: 'phaser', name: 'shape_vcrk',        pidLow: 0x005a, pidHigh: 0x001d, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  'phaser.shape':            { block: 'phaser', name: 'shape',             pidLow: 0x005a, pidHigh: 0x001e, unit: 'count', displayMin: 0.01, displayMax: 0.99 },
+  'phaser.high_cut':         { block: 'phaser', name: 'high_cut',          pidLow: 0x005a, pidHigh: 0x001f, unit: 'count', displayMin: 0.5, displayMax: 50 },
+  'phaser.attack':           { block: 'phaser', name: 'attack',            pidLow: 0x005a, pidHigh: 0x0020, unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' },
+  'phaser.release':          { block: 'phaser', name: 'release',           pidLow: 0x005a, pidHigh: 0x0021, unit: 'ms', displayMin: 0, displayMax: 100, scaling: 'log10' },
+  'phaser.low_cut':          { block: 'phaser', name: 'low_cut',           pidLow: 0x005a, pidHigh: 0x0023, unit: 'hz', displayMin: 20, displayMax: 200 },
+  'phaser.high_cut_lpf':     { block: 'phaser', name: 'high_cut_lpf',      pidLow: 0x005a, pidHigh: 0x0024, unit: 'hz', displayMin: 2000, displayMax: 20000 },
+  // FILTER mirrors (15).
+  'filter.q':                { block: 'filter', name: 'q',                 pidLow: 0x0072, pidHigh: 0x000c, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  'filter.gain':             { block: 'filter', name: 'gain',              pidLow: 0x0072, pidHigh: 0x000d, unit: 'db', displayMin: -20, displayMax: 20 },
+  'filter.pan_left':         { block: 'filter', name: 'pan_left',          pidLow: 0x0072, pidHigh: 0x000f, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'filter.pan_right':        { block: 'filter', name: 'pan_right',         pidLow: 0x0072, pidHigh: 0x0010, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'filter.delay_time':       { block: 'filter', name: 'delay_time',        pidLow: 0x0072, pidHigh: 0x0014, unit: 'ms', displayMin: 0, displayMax: 40 },
+  'filter.rate':             { block: 'filter', name: 'rate',              pidLow: 0x0072, pidHigh: 0x0018, unit: 'hz', displayMin: 0.1, displayMax: 10 },
+  'filter.lfo_duty':         { block: 'filter', name: 'lfo_duty',          pidLow: 0x0072, pidHigh: 0x0019, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'filter.mod_frequency':    { block: 'filter', name: 'mod_frequency',     pidLow: 0x0072, pidHigh: 0x001a, unit: 'hz', displayMin: 20, displayMax: 20000 },
+  'filter.resonance':        { block: 'filter', name: 'resonance',         pidLow: 0x0072, pidHigh: 0x001e, unit: 'knob_0_10', displayMin: 0, displayMax: 10, scaling: 'log10' },
+  'filter.start_frequency':  { block: 'filter', name: 'start_frequency',   pidLow: 0x0072, pidHigh: 0x001f, unit: 'hz', displayMin: 100, displayMax: 10000 },
+  'filter.stop_frequency':   { block: 'filter', name: 'stop_frequency',    pidLow: 0x0072, pidHigh: 0x0020, unit: 'hz', displayMin: 100, displayMax: 10000 },
+  'filter.sensitivity':      { block: 'filter', name: 'sensitivity',       pidLow: 0x0072, pidHigh: 0x0021, unit: 'count', displayMin: 0.1, displayMax: 40, scaling: 'log10' },
+  'filter.attack_time':      { block: 'filter', name: 'attack_time',       pidLow: 0x0072, pidHigh: 0x0022, unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' },
+  'filter.release_time':     { block: 'filter', name: 'release_time',      pidLow: 0x0072, pidHigh: 0x0023, unit: 'ms', displayMin: 0, displayMax: 2000, scaling: 'log10' },
+  'filter.emphasis':         { block: 'filter', name: 'emphasis',          pidLow: 0x0072, pidHigh: 0x0027, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  // TREMOLO mirrors (4).
+  'tremolo.duty':            { block: 'tremolo', name: 'duty',             pidLow: 0x006a, pidHigh: 0x000e, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'tremolo.crossover_freq':  { block: 'tremolo', name: 'crossover_freq',   pidLow: 0x006a, pidHigh: 0x0015, unit: 'hz', displayMin: 200, displayMax: 2000 },
+  'tremolo.trigger_threshold': { block: 'tremolo', name: 'trigger_threshold', pidLow: 0x006a, pidHigh: 0x0016, unit: 'db', displayMin: -60, displayMax: 20 },
+  'tremolo.shape':           { block: 'tremolo', name: 'shape',            pidLow: 0x006a, pidHigh: 0x0017, unit: 'percent', displayMin: 0, displayMax: 100 },
+  // ENHANCER mirrors (2).
+  'enhancer.pan_left':       { block: 'enhancer', name: 'pan_left',        pidLow: 0x007a, pidHigh: 0x0010, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'enhancer.pan_right':      { block: 'enhancer', name: 'pan_right',       pidLow: 0x007a, pidHigh: 0x0011, unit: 'percent', displayMin: 0, displayMax: 100 },
+  // COMPRESSOR mirrors (7).
+  'compressor.compression':  { block: 'compressor', name: 'compression',        pidLow: 0x002e, pidHigh: 0x0014, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'compressor.dynamics':     { block: 'compressor', name: 'dynamics',           pidLow: 0x002e, pidHigh: 0x0018, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'compressor.threshold_thresh2': { block: 'compressor', name: 'threshold_thresh2', pidLow: 0x002e, pidHigh: 0x0021, unit: 'db', displayMin: -60, displayMax: 20 },
+  'compressor.ratio_compansion':  { block: 'compressor', name: 'ratio_compansion',  pidLow: 0x002e, pidHigh: 0x0024, unit: 'ratio', displayMin: 1, displayMax: 10, scaling: 'log10' },
+  'compressor.time':         { block: 'compressor', name: 'time',               pidLow: 0x002e, pidHigh: 0x0025, unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' },
+  'compressor.transients':   { block: 'compressor', name: 'transients',         pidLow: 0x002e, pidHigh: 0x0026, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'compressor.tone':         { block: 'compressor', name: 'tone',               pidLow: 0x002e, pidHigh: 0x0028, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
 } as const satisfies Record<string, Param>;
 
 export type ParamKey = keyof typeof KNOWN_PARAMS;
