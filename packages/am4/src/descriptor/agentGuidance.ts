@@ -13,6 +13,29 @@
  */
 
 export const AM4_AGENT_GUIDANCE: Readonly<Record<string, string>> = {
+  note_response: [
+    'play_note / play_chord on the AM4 are SILENT. AM4 is an audio',
+    'processor for guitar input; MIDI Note On/Off bytes are accepted by',
+    'the device but produce no sound. The unified play_note tool still',
+    'sends the bytes successfully — useful for testing MIDI connectivity',
+    'or as a no-op probe — but do not use it as a tone-audition workflow',
+    'on this device. The user plays an actual guitar through the AM4 to',
+    'hear tone changes.',
+  ].join(' '),
+
+  diagnostic_isolation: [
+    'When the user reports an unwanted artifact in a tone (boomy low end,',
+    'fizzy attack, wash on the tail), isolate via set_bypass — toggle one',
+    'block at a time (amp / drive / cab / fx_loop / reverb / delay) and',
+    'ask the user to play between toggles, before changing any param',
+    'values. The AM4 has no MIDI audition path (see note_response above),',
+    'so the human-in-the-loop is the test signal. Bulk edits across',
+    'multiple blocks during diagnosis hide which change mattered;',
+    'isolation surfaces the source one round-trip at a time. Batching is',
+    'correct for confident builds; isolation is the right tool for',
+    'chasing artifacts.',
+  ].join(' '),
+
   read_requires_navigation: [
     'IMPORTANT — AM4 cannot read the contents of an arbitrary stored',
     'preset without first navigating to it. scan_locations reads the',

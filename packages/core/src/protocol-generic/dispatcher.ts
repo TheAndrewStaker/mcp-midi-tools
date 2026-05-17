@@ -19,6 +19,9 @@
  *   - `navigation.ts`  — `executeSwitchPreset`, `executeSavePreset`,
  *                        `executeSwitchScene`, `executeRename`,
  *                        `executeScanLocations`.
+ *   - `audition.ts`    — `executePlayNote`, `executePlayChord`. Default
+ *                        impls (vendor-agnostic Note On/Off) live here;
+ *                        descriptors override only for special routing.
  *   - `preset.ts`      — `executeApplyPreset`, `executeApplySetlist`,
  *                        `executeRestoreDefaults`.
  *
@@ -58,6 +61,7 @@ export {
   executeSetParams,
 } from './dispatcher/params.js';
 export { executeSetBlock, executeSetBypass } from './dispatcher/layout.js';
+export { executePlayChord, executePlayNote } from './dispatcher/audition.js';
 export {
   executeRename,
   executeSavePreset,

@@ -84,6 +84,28 @@ export const HYDRASYNTH_AGENT_GUIDANCE: Readonly<Record<string, string>> = {
     'convention here, only working-buffer-vs-saved-slot.',
   ].join(' '),
 
+  note_response: [
+    'play_note / play_chord on the Hydrasynth are AUDIBLE — the unified',
+    'tool sends MIDI Note On/Off and the device sounds the current',
+    'working-buffer patch with its voice engine. This is the canonical',
+    'way to audition a freshly-applied patch without asking the user to',
+    'play a key. WavStack / supersaw-style patches need chord auditions',
+    '(play_chord) — single notes hide the stack-detuning interference',
+    'that those recipes are tuned for. Use minor-triad voicings (C-Eb-G,',
+    'F-Ab-C) for orchestral / brass stabs; root-fifth (C-G) for pads.',
+  ].join(' '),
+
+  diagnostic_isolation: [
+    'When the user reports an unwanted sound in a recently-built patch',
+    '(stray ringing, pitch creep, wash on the tail, weird tail artifact),',
+    'isolate via set_bypass — toggle one FX block at a time (prefx /',
+    'postfx / delay / reverb / mutator1..4) and re-audition with',
+    'play_note / play_chord before changing any param values. Bulk edits',
+    'across multiple FX during diagnosis make it impossible to tell',
+    'which change mattered. Batching is correct for confident builds;',
+    'isolation is the right tool for chasing artifacts.',
+  ].join(' '),
+
   envelope_time_units: [
     'Envelope time params (env1attacksyncoff / env1decaysyncoff /',
     'env1releasesyncoff and the env2..5 equivalents) are KNOB UNITS in',

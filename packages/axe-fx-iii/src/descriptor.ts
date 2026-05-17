@@ -974,6 +974,27 @@ const writer: DeviceWriter = {
 // ── Agent guidance ─────────────────────────────────────────────────
 
 const AXEFX3_AGENT_GUIDANCE: Record<string, string> = {
+  note_response: [
+    'play_note / play_chord on the Axe-Fx III are AUDIBLE only when the',
+    'Synth block is placed in the active preset (the III\'s Synth block',
+    'responds to incoming MIDI notes on channel 1). Without a Synth',
+    'block, the III is an audio processor for guitar input and MIDI',
+    'notes are silent. The unified tool always sends the bytes',
+    'successfully; whether sound emerges depends on the preset.',
+  ].join('\n'),
+
+  diagnostic_isolation: [
+    'When the user reports an unwanted artifact in a tone, isolate via',
+    'set_bypass — toggle one block at a time and ask the user to play',
+    'between toggles, before changing any param values. Without a Synth',
+    'block in the active preset, MIDI notes don\'t produce sound on the',
+    'III (see note_response above), so the human-in-the-loop is the test',
+    'signal. Bulk edits during diagnosis hide which change mattered;',
+    'isolation surfaces the source one round-trip at a time. Batching is',
+    'correct for confident builds; isolation is the right tool for',
+    'chasing artifacts.',
+  ].join('\n'),
+
   beta_status: [
     '🟡 BETA / HARDWARE VERIFICATION NEEDED.',
     '',

@@ -2,10 +2,10 @@
  * BK-051 unified MCP tool surface — index module.
  *
  * `registerUnifiedTools(server)` registers the full port-dispatched,
- * device-agnostic tool family on an `McpServer`. The 17 tools are split
- * across per-family files under `src/protocol/generic/tools/` so each file
+ * device-agnostic tool family on an `McpServer`. Tools are split across
+ * per-family files under `src/protocol/generic/tools/` so each file
  * stays focused on one concern (discovery, params, layout, navigation,
- * preset). This index just composes them.
+ * preset, audition). This index just composes them.
  *
  * Family layout (every file exports a `register{Family}Tools(server)` fn):
  *   - `discovery.ts` — describe_device, list_params, lookup_lineage
@@ -14,6 +14,7 @@
  *   - `navigation.ts` — switch_preset, save_preset, switch_scene, rename,
  *                       scan_locations
  *   - `preset.ts`    — apply_preset, apply_setlist, restore_defaults
+ *   - `audition.ts`  — play_note, play_chord
  *   - `shared.ts`    — PORT_DESC + asText/asError + presetShape zod schemas
  *
  * The long AM4-specific behavioral guidance (RELATIVE-CHANGE DISCIPLINE,
@@ -28,6 +29,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { requireDevice } from './dispatcher.js';
 
+import { registerAuditionTools } from './tools/audition.js';
 import { registerDiscoveryTools } from './tools/discovery.js';
 import { registerLayoutTools } from './tools/layout.js';
 import { registerNavigationTools } from './tools/navigation.js';
@@ -40,6 +42,7 @@ export function registerUnifiedTools(server: McpServer): void {
   registerLayoutTools(server);
   registerNavigationTools(server);
   registerPresetTools(server);
+  registerAuditionTools(server);
 }
 
 // Self-register `requireDevice` as an unused-but-exported symbol just to

@@ -1,15 +1,17 @@
 /**
- * Hydrasynth navigation + play tools.
+ * Hydrasynth navigation tools.
  *
- * 2 tools (v0.3):
- *   - hydra_play_note     — audition the active patch
+ * 1 tool:
  *   - hydra_navigate_to   — diagnostic primitive (bank/PC, no SysEx) with
  *                           inbound MIDI capture
  *
  * hydra_switch_patch removed v0.3 — use unified
  *   switch_preset({ port:'hydrasynth', location })
- * The unified switchPreset routes through descriptor.writer.switchPreset
- * which sends the same Bank Select MSB / LSB / PC sequence.
+ *
+ * hydra_play_note removed — use unified
+ *   play_note({ port:'hydrasynth', note, velocity?, duration_ms?, channel? })
+ * The unified primitive sends the same Note On/Off bytes and works for
+ * every registered device (default impl in dispatcher/audition.ts).
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -21,57 +23,12 @@ import {
   ccBytes,
   describeInboundMessage,
   ensureMidi,
-  noteOffBytes,
-  noteOnBytes,
-  parseBank,
-  parseNote,
   parseSlot,
   programChangeBytes,
   sleep,
 } from './shared.js';
 
 export function registerHydrasynthNavigationTools(server: McpServer): void {
-
-// hydra_switch_patch removed v0.3 — use unified
-// switch_preset({ port:'hydrasynth', location: 'A001' }).
-
-// hydra_play_note --------------------------------------------------------
-// TODO: hoist into protocol/generic/tools.ts as play_note(port, note,
-// velocity, duration_ms) during v0.3 cleanup. The implementation here
-// IS the primitive (no wrapped tool below it) and is identical across
-// MIDI devices — note-on/off bytes don't vary by vendor. AM4 and
-// Axe-Fx II don't expose play-note tools today; unification only
-// becomes valuable when one of them does. Leaving device-namespaced
-// keeps churn off this PR.
-
-server.registerTool('hydra_play_note', {
-  description: HYDRA_DEV_MODE_PREAMBLE + [
-    'Use this tool to audition the current Hydrasynth patch by playing a note for a',
-    'specified duration. Useful after editing parameters to hear the result without',
-    'asking the user to play a key. Sends Note On, waits, sends Note Off.',
-    '',
-    'Notes can be specified as MIDI numbers (0..127, where 60 = middle C) or as',
-    'scientific pitch names ("C4", "F#3", "Bb5"). C4 = 60 in the Yamaha convention',
-    'used by the Hydrasynth manual.',
-  ].join('\n'),
-  inputSchema: {
-    note: z.union([z.string(), z.number()]).describe('Note as MIDI number (0..127) or pitch name ("C4", "F#3", "Bb-1"). Middle C = C4 = 60.'),
-    velocity: z.number().int().min(1).max(127).default(96).describe('Note velocity 1..127. Default 96 (mezzo-forte).'),
-    duration_ms: z.number().int().min(50).max(5000).default(800).describe('How long to hold the note before releasing, in milliseconds. Capped at 5000 ms to prevent runaway.'),
-  },
-}, async ({ note, velocity, duration_ms }) => {
-  const noteNum = parseNote(note);
-  const conn = ensureMidi();
-  conn.send(noteOnBytes(DEFAULT_CHANNEL, noteNum, velocity));
-  await sleep(duration_ms);
-  conn.send(noteOffBytes(DEFAULT_CHANNEL, noteNum));
-  return {
-    content: [{
-      type: 'text',
-      text: `Played note ${noteNum} at velocity ${velocity} for ${duration_ms} ms. Note Off sent.`,
-    }],
-  };
-});
 
 // hydra_navigate_to (diagnostic) ----------------------------------------
 

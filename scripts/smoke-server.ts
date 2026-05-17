@@ -132,7 +132,7 @@ async function main(): Promise<void> {
     // removed v0.3 — use unified list_params / switch_preset with
     // port="hydrasynth".
     'hydra_navigate_to',
-    'hydra_play_note',
+    // hydra_play_note removed — use unified play_note({port:'hydrasynth',...}).
     'hydra_reconnect_midi',
     'hydra_set_engine_param',
     'hydra_set_engine_params',
@@ -179,6 +179,8 @@ async function main(): Promise<void> {
     'get_params',
     'list_params',
     'lookup_lineage',
+    'play_chord',
+    'play_note',
     'rename',
     'restore_defaults',
     'save_preset',

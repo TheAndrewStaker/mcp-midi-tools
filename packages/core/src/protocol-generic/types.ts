@@ -601,6 +601,42 @@ export interface DeviceWriter {
   savePreset?(ctx: DispatchCtx, location: LocationRef, name?: string): Promise<WriteResult>;
   switchScene?(ctx: DispatchCtx, scene: number): Promise<WriteResult>;
   rename?(ctx: DispatchCtx, target: RenameTarget, name: string): Promise<WriteResult>;
+  /**
+   * Audition the active patch/preset by playing a single note. Default
+   * implementation in the dispatcher sends MIDI Note On + Note Off via
+   * `ctx.conn.send`; descriptors override only when they need device-
+   * specific behavior (e.g. multiplexing to a synth block on a non-
+   * default MIDI channel, or capturing inbound MIDI during the note).
+   *
+   * Whether the note produces audible sound is per-device — synthesizers
+   * (Hydrasynth) respond; audio processors (AM4, Axe-Fx II) usually do
+   * not unless a synth block is placed in the active preset (Axe-Fx III).
+   * Surface that distinction via `agent_guidance.note_response` so the
+   * agent knows what to expect before calling.
+   */
+  playNote?(
+    ctx: DispatchCtx,
+    note: number,
+    velocity: number,
+    durationMs: number,
+    channel: number,
+  ): Promise<WriteResult>;
+  /**
+   * Audition the active patch by playing a chord (multiple simultaneous
+   * notes). Default implementation in the dispatcher sends Note On for
+   * each note, sleeps `durationMs`, then sends Note Off for each. When
+   * `strumMs` is non-zero the dispatcher staggers the Note Ons by that
+   * delay each, simulating a strum or arpeggio attack. Same per-device
+   * audibility caveats as `playNote`.
+   */
+  playChord?(
+    ctx: DispatchCtx,
+    notes: readonly number[],
+    velocity: number,
+    durationMs: number,
+    strumMs: number,
+    channel: number,
+  ): Promise<WriteResult>;
   /** Restore the device's defaults for a single location (or range). */
   restoreDefaults?(
     ctx: DispatchCtx,

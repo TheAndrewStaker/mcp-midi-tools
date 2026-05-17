@@ -34,9 +34,9 @@ export const reader: DeviceReader = {
       'capability_not_supported',
       DEVICE_LABEL,
       `get_param is not supported on ASM Hydrasynth Explorer. The device has no decoded single-param query/response primitive. ` +
-      `For the active-patch name + bank/program, call hydra_get_active_patch. To verify a written value, audition the patch (hydra_play_note) ` +
-      `or check the front-panel display directly.`,
-      { retry_action: `hydra_get_active_patch | hydra_play_note` },
+      `For the active-patch name + bank/program, call hydra_get_active_patch. To verify a written value, audition the patch ` +
+      `(play_note / play_chord with port="hydrasynth") or check the front-panel display directly.`,
+      { retry_action: `hydra_get_active_patch | play_note` },
     );
   },
 

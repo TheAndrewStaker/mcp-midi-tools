@@ -9,6 +9,27 @@
  */
 
 export const AXEFX2_AGENT_GUIDANCE: Readonly<Record<string, string>> = {
+  note_response: [
+    'play_note / play_chord on the Axe-Fx II are typically SILENT. The II',
+    'is an audio processor for guitar input; MIDI Note On/Off bytes are',
+    'accepted but produce no sound on normal patches. The Synth block,',
+    'when placed in the active preset, responds to incoming MIDI notes —',
+    'so play_note can be audible if and only if the working buffer holds',
+    'a Synth-block preset. The unified tool always sends the bytes',
+    'successfully; whether sound emerges depends on the preset.',
+  ].join(' '),
+
+  diagnostic_isolation: [
+    'When the user reports an unwanted artifact in a tone, isolate via',
+    'set_bypass — toggle one block at a time and ask the user to play',
+    'between toggles, before changing any param values. The Axe-Fx II',
+    'has no general MIDI audition path (see note_response above), so the',
+    'human-in-the-loop is the test signal. Bulk edits during diagnosis',
+    'hide which change mattered; isolation surfaces the source one',
+    'round-trip at a time. Batching is correct for confident builds;',
+    'isolation is the right tool for chasing artifacts.',
+  ].join(' '),
+
   channel_model: [
     'Axe-Fx II blocks expose two channels — X and Y — NOT the AM4 four',
     '(A/B/C/D). Scenes pick which channel each block uses (plus per-block',

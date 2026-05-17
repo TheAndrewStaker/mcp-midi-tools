@@ -20,8 +20,7 @@
  *                       hydra_set_engine_param, hydra_set_engine_params
  *   - `patch.ts`      — hydra_apply_init, hydra_apply_init_to,
  *                       hydra_apply_patch (the 3 SysEx whole-patch dumps)
- *   - `navigation.ts` — hydra_switch_patch, hydra_play_note,
- *                       hydra_navigate_to
+ *   - `navigation.ts` — hydra_navigate_to
  *   - `meta.ts`       — hydra_reconnect_midi, hydra_get_active_patch,
  *                       describeHydrasynthPortStatus
  *   - `discovery.ts`  — hydra_list_enum_values, hydra_param_catalog

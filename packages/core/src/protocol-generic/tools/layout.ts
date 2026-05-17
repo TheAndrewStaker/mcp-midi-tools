@@ -59,6 +59,12 @@ export function registerLayoutTools(server: McpServer): void {
       'SCENE SCOPE: the write lands on whichever scene is active right now.',
       'To configure bypass on a specific scene, switch_scene first and then',
       'set_bypass.',
+      'DIAGNOSTIC USE: when the user reports an unwanted artifact in a tone',
+      '(stray ringing, pitch creep, wash on the tail), bypass one suspect',
+      'block at a time and re-audition with play_note / play_chord before',
+      'changing any param values. Bulk edits across multiple FX during',
+      'diagnosis hide which change mattered; isolation surfaces the source',
+      'in one round-trip per suspect.',
     ].join(' '),
     inputSchema: {
       port: z.string().describe(PORT_DESC),

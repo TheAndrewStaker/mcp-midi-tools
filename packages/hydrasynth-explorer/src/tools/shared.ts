@@ -99,16 +99,6 @@ export function sendNrpn(conn: HydrasynthConnection, channel: number, entry: Hyd
   }
 }
 
-export function noteOnBytes(channel: number, note: number, velocity: number): number[] {
-  const status = 0x90 | ((channel - 1) & 0x0F);
-  return [status, note & 0x7F, velocity & 0x7F];
-}
-
-export function noteOffBytes(channel: number, note: number): number[] {
-  const status = 0x80 | ((channel - 1) & 0x0F);
-  return [status, note & 0x7F, 0x00];
-}
-
 export function programChangeBytes(channel: number, program: number): number[] {
   const status = 0xC0 | ((channel - 1) & 0x0F);
   return [status, program & 0x7F];
@@ -116,59 +106,6 @@ export function programChangeBytes(channel: number, program: number): number[] {
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
-}
-
-// -- Note-name parser -----------------------------------------------------
-
-const SEMITONE_BY_LETTER: Record<string, number> = {
-  C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11,
-};
-
-/**
- * Accept either a raw MIDI note number (60) or a scientific pitch
- * notation string ("C4", "F#3", "Bb-1"). Returns the 0..127 note.
- *
- * Octave numbering: middle C = C4 = 60 (the Yamaha convention used
- * by the Hydrasynth manual and most modern DAWs).
- */
-export function parseNote(input: string | number): number {
-  if (typeof input === 'number') {
-    if (!Number.isFinite(input) || input < 0 || input > 127) {
-      throw new Error(`Note number out of range 0..127: ${input}`);
-    }
-    return Math.round(input);
-  }
-  const m = input.trim().match(/^([A-G])([#b]?)(-?\d+)$/i);
-  if (!m) {
-    throw new Error(
-      `Cannot parse note "${input}". Expected a number 0..127 or a name like "C4", "F#3", "Bb-1".`,
-    );
-  }
-  const semitone = SEMITONE_BY_LETTER[m[1]!.toUpperCase()]!;
-  const accidental = m[2] === '#' ? 1 : m[2]?.toLowerCase() === 'b' ? -1 : 0;
-  const octave = Number.parseInt(m[3]!, 10);
-  const note = (octave + 1) * 12 + semitone + accidental;
-  if (note < 0 || note > 127) {
-    throw new Error(`Note "${input}" resolves to ${note}, outside MIDI range 0..127.`);
-  }
-  return note;
-}
-
-// -- Bank parser ----------------------------------------------------------
-
-/** Accept "A".."H" (case-insensitive) or 0..7. Returns 0..7. */
-export function parseBank(input: string | number): number {
-  if (typeof input === 'number') {
-    if (!Number.isInteger(input) || input < 0 || input > 7) {
-      throw new Error(`Bank index out of range 0..7: ${input}`);
-    }
-    return input;
-  }
-  const letter = input.trim().toUpperCase();
-  if (!/^[A-H]$/.test(letter)) {
-    throw new Error(`Bank "${input}" must be a letter A..H or a number 0..7.`);
-  }
-  return letter.charCodeAt(0) - 'A'.charCodeAt(0);
 }
 
 // -- Slot parser ----------------------------------------------------------
