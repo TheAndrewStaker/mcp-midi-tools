@@ -72,6 +72,26 @@ const AM4_CACHE_PARAMS_PATH = join(
   'src',
   'cacheParams.ts',
 );
+// AM4's hand-authored `params.ts` carries the entries that don't live
+// in the cache (channel/level/bypass/tempo/pan + several enum overrides
+// the cache-generator can't emit cleanly). Those entries share the same
+// schema shape and same hardware-verified calibration as cacheParams.ts
+// — including them roughly doubles the III's calibration coverage,
+// because most of the III's per-family `LEVEL`/`PAN`/`TEMPO`/`BYPASS`
+// suffixes have AM4 analogs only in params.ts, not cacheParams.ts.
+//
+// Both sources are parsed by the same regex (their entry shape is
+// identical by design — see `gen-params-from-cache.ts`). When the
+// same `block.name` appears in both, cacheParams.ts wins (it's the
+// generator-truth, while params.ts may carry hand-tweaked display
+// overrides we'd rather not propagate to the III).
+const AM4_PARAMS_PATH = join(
+  REPO_ROOT,
+  'packages',
+  'am4',
+  'src',
+  'params.ts',
+);
 
 // ── Family ↔ AM4 block mapping ─────────────────────────────────────
 //
@@ -115,6 +135,9 @@ const III_SUFFIX_ALIAS: Readonly<Record<string, string>> = {
   // Frequency knobs — III uses HICUT/LOWCUT, AM4 uses high_cut/low_cut.
   HICUT: 'high_cut',
   LOWCUT: 'low_cut',
+  // DELAY uses LOCUT (no 'W') alongside LOWCUT on some III firmware
+  // revisions; both resolve to AM4's `low_cut`.
+  LOCUT: 'low_cut',
   // Compressor — III's `THRESH` ↔ AM4's `threshold`. Common abbreviation
   // mismatch; the AM4 generator's NAMING_ALIAS doesn't carry it because
   // AM4-Edit's own catalog symbols use `THRESH` too, but the AM4
@@ -126,10 +149,17 @@ const III_SUFFIX_ALIAS: Readonly<Record<string, string>> = {
   SCQ: 'sidechain_q',
   SCHIGHCUT: 'sidechain_high_cut',
   SCLOWCUT: 'sidechain_low_cut',
+  // Reverb late/early/HF/LF knob aliases. Several of these target AM4
+  // entries that don't currently exist (e.g. `hf_ratio`, `lf_time`,
+  // `early_send`); they're documented here for future AM4-side
+  // expansion. The override loader silently no-ops on missing targets.
   HFRATIO: 'hf_ratio',
   LFTIME: 'lf_time',
   LFXOVER: 'lf_xover',
-  PREDELAY: 'predelay',
+  // AM4 ships `pre_delay`; the cache catalog name is `pre_delay`. The
+  // previous alias target `predelay` was a misread — AM4 has no entry
+  // by that exact spelling.
+  PREDELAY: 'pre_delay',
   NUMSPRINGS: 'springs',
   INPDIFF: 'input_diffusion',
   INDIFFTIME: 'input_diff_time',
@@ -138,17 +168,41 @@ const III_SUFFIX_ALIAS: Readonly<Record<string, string>> = {
   EARLYDIFFTIME: 'early_diff_time',
   EARLYDECAY: 'early_decay',
   EARLYSEND: 'early_send',
+  LATELEVEL: 'late_level',
+  LATEINPUTMIX: 'late_input_mix',
+  HIGHDECAY: 'high_decay',
+  LOWDECAY: 'low_decay',
+  XOVERFREQ: 'xover_frequency',
+  RELEASETIME: 'release_time',
+  ECHOMIX: 'echo_mix',
+  PICKUPSPACING: 'pickup_spacing',
+  SPRINGTONE: 'spring_tone',
+  DIFFUSIONTIME: 'diffusion_time',
+  PITCHFEEDBACK: 'pitch_feedback',
+  PITCHMODULATION: 'pitch_modulation',
+  PITCHHIGHCUT: 'pitch_high_cut',
+  VOICEBALANCE: 'voice_balance',
+  SPLICETIME: 'splice_time',
+  LOWCUTQ: 'low_cut_q',
+  HIGHCUTQ: 'high_cut_q',
   LFOPHASE: 'lfo_phase',
+  // III firmware exposes a `REVERB_LFOPHASE` (mod LFO phase) alongside
+  // AM4's `lfo_phase_pct` (chorus stage). Different blocks, same
+  // alias safely targets the AM4 reverb entry.
   REVERBLEVEL: 'reverb_level',
-  REVERBDELAY: 'reverb_delay',
+  // AM4's cacheParams ships `reverb.reverbdelay` (no underscore). The
+  // previous alias `reverb_delay` was a misread.
+  REVERBDELAY: 'reverbdelay',
   INPUTSELECT: 'input_select',
   LOWSLOPE: 'low_slope',
   HIGHSLOPE: 'high_slope',
-  BASETYPE: 'base_type',
-  SHIFT1: 'shift_1',
-  SHIFT2: 'shift_2',
+  // AM4's cache symbols are `basetype` / `tonetype` (one word). The
+  // previous aliases `base_type` / `tone_type` didn't match anything.
+  BASETYPE: 'basetype',
+  TONETYPE: 'tonetype',
+  SHIFT1: 'voice_1_shift',
+  SHIFT2: 'voice_2_shift',
   SPRINGTYPE: 'spring_type',
-  TONETYPE: 'tone_type',
   PREDLYTAP: 'predly_tap',
   PREDLYTEMPO: 'predly_tempo',
   PREDLYFDBK: 'predly_fdbk',
@@ -166,12 +220,60 @@ const III_SUFFIX_ALIAS: Readonly<Record<string, string>> = {
   FEEDLR: 'feed_lr',
   FEEDRL: 'feed_rl',
   MSTRFDBK: 'master_feedback',
+  MSTRTIME: 'master_time',
   TEMPOR: 'tempo_r',
   TEMPOL: 'tempo_l',
   PANL: 'pan_l',
   PANR: 'pan_r',
   LOWQ: 'low_q',
   HIGHQ: 'high_q',
+  // ── Indexed parameter aliases ────────────────────────────────────
+  // AM4 numbers indexed params with an underscore (`gain_1`, `q_2`,
+  // `frequency_1`); III concatenates (`GAIN1`, `Q2`, `FREQ1`). The
+  // explicit alias rows below keep the join straightforward — without
+  // them, plain lowercase produces `gain1`/`q2`/`freq1` which don't
+  // match any AM4 entry.
+  GAIN1: 'gain_1',
+  GAIN2: 'gain_2',
+  // GAIN3..5 / FREQ3..5 / Q3..5 have AM4 analogs only inside the PEQ
+  // block under the `channel_N_*` naming convention. Aliasing the
+  // generic suffix to `gain_3` here would silently misroute the GEQ
+  // family (which uses `band_N` instead). Skipped — the III's PEQ
+  // entries stay `unverified` until we add family-aware aliasing.
+  FREQ1: 'frequency_1',
+  FREQ2: 'frequency_2',
+  Q1: 'q_1',
+  Q2: 'q_2',
+  // ── Compound-word suffix aliases ─────────────────────────────────
+  // III concatenates these as SCREAMING_RUN-ON, AM4 uses snake_case.
+  // Every entry here was verified against the actual AM4 source —
+  // dead aliases are kept above (HF*/LF*/EARLY_SEND/PREDLY_*/etc.) as
+  // documented future-readiness rather than mixed in here.
+  LFOTYPE: 'lfo_type',
+  DELAYTIME: 'delay_time',
+  KILLDRY: 'kill_dry',
+  GAINMONITOR: 'gain_monitor',
+  PHASEREV: 'phase_reverse',
+  MODPHASE: 'mod_phase',
+  AUTODEPTH: 'auto_depth',
+  // Chorus stereo-image suffixes. III uses single-letter L/C/R on
+  // DEPTH; AM4 spells them out.
+  DEPTHL: 'left_depth',
+  DEPTHC: 'center_depth',
+  DEPTHR: 'right_depth',
+  VOICES: 'number_of_voices',
+  STEREOSPREAD: 'stereo_spread',
+  // Flanger time-range knobs. AM4 names them `min_time`/`max_time`.
+  TMIN: 'min_time',
+  TMAX: 'max_time',
+  // Flanger dry-delay knob (AM4 spells with underscore).
+  DRYDELAY: 'dry_delay',
+  // Delay compander/feedback compound names.
+  BITREDUCE: 'bit_reduction',
+  HOLDFDBK: 'hold_feedback',
+  STACKFDBK: 'stack_feedback',
+  LEVELL: 'level_l',
+  LEVELR: 'level_r',
 };
 
 /**
@@ -209,23 +311,27 @@ export interface Am4Override {
 }
 
 /**
- * Parse `packages/am4/src/cacheParams.ts` for `block`, `name`, `unit`,
- * `displayMin`, `displayMax`, `scaling`.
+ * Parse one AM4 source file (cacheParams.ts or params.ts) for entries
+ * shaped `'block.name': { block, name, pidLow, pidHigh, unit,
+ * displayMin, displayMax, [scaling], [enumValues] }`. Both files
+ * share the schema by design — `gen-params-from-cache.ts` owns
+ * cacheParams.ts, and the hand-authored params.ts entries the
+ * cache-generator can't produce (channel/level/bypass/tempo/pan +
+ * several enum overrides) match the same shape.
  *
- * Parses by regex against the literal entry shape the generator emits
- * — no TS compiler / AST walk. The cacheParams generator owns the
- * file format (see `scripts/gen-params-from-cache.ts`), and the
- * shape is uniform: each entry is a 3- or 4-line block with `block:`
- * `name:` on line 2, `pidLow:` `pidHigh:` on line 3, `unit:`
- * `displayMin:` `displayMax:` on line 4, optional `scaling:` /
- * `enumValues:` on line 5.
+ * Parses by regex against the literal entry text — no TS compiler /
+ * AST walk. The cacheParams generator owns the format; params.ts
+ * follows the same shape by convention. If either file changes, the
+ * generator below emits fewer / zero overrides and the regression is
+ * loud (the III file's `inferred from AM4` count drops).
  *
- * The regex matches that shape and tolerates extra trailing fields.
- * If the cacheParams emit format changes, this parser breaks loudly
- * (the generator below would emit zero overrides) — easy to detect.
+ * The regex tolerates extra trailing fields (`displayLabel`,
+ * `displayUnit`, `enumValues`) between `displayMax` and the closing
+ * brace, which is needed for params.ts entries that the cache file
+ * doesn't carry.
  */
-export function loadAm4ParamOverrides(): Map<string, Am4Override> {
-  const src = readFileSync(AM4_CACHE_PARAMS_PATH, 'utf8');
+function loadOverridesFromFile(path: string): Map<string, Am4Override> {
+  const src = readFileSync(path, 'utf8');
 
   const result = new Map<string, Am4Override>();
 
@@ -236,22 +342,29 @@ export function loadAm4ParamOverrides(): Map<string, Am4Override> {
   //     unit: 'knob_0_10', displayMin: 0, displayMax: 10,
   //     [optional `scaling: 'log10',`]
   //     [optional `enumValues: AMP_TYPES_VALUES,`]
+  //     [optional `displayLabel: 'Gain',`]
   //   },
   //
   // We capture block/name/unit/displayMin/displayMax/scaling/has-enum.
+  // The `[\s\S]*?` between sections allows params.ts entries that
+  // interleave optional fields (e.g. `displayLabel: 'Tempo',`) between
+  // the name and pidLow lines.
   const entryRe = new RegExp(
     [
       // header line - 'amp.gain': {
       String.raw`'(?<key>[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*)':\s*\{`,
-      // block + name line
-      String.raw`\s*block:\s*'(?<block>[a-z][a-z0-9_]*)',\s*name:\s*'(?<name>[a-z][a-z0-9_]*)',`,
-      // pidLow + pidHigh line (we don't need the values for porting)
-      String.raw`\s*pidLow:\s*0x[0-9a-fA-F]+,\s*pidHigh:\s*0x[0-9a-fA-F]+,`,
+      // block + name line. Non-greedy gap allows leading-line comments
+      // and other fields between the header and the block declaration
+      // (some params.ts entries put `displayLabel` first).
+      String.raw`[\s\S]*?block:\s*'(?<block>[a-z][a-z0-9_]*)',\s*name:\s*'(?<name>[a-z][a-z0-9_]*)',`,
+      // pidLow + pidHigh line. Non-greedy gap tolerates an interleaved
+      // `displayLabel: 'Foo',` etc.
+      String.raw`[\s\S]*?pidLow:\s*0x[0-9a-fA-F]+,\s*pidHigh:\s*0x[0-9a-fA-F]+,`,
       // unit + displayMin + displayMax line. unit names mix lowercase
       // letters + digits + underscores (e.g. `knob_0_10`). displayMin/
       // Max can be negative or fractional, so capture as a signed
       // numeric.
-      String.raw`\s*unit:\s*'(?<unit>[a-z][a-z0-9_]*)',\s*displayMin:\s*(?<displayMin>-?\d+(?:\.\d+)?),\s*displayMax:\s*(?<displayMax>-?\d+(?:\.\d+)?),`,
+      String.raw`[\s\S]*?unit:\s*'(?<unit>[a-z][a-z0-9_]*)',\s*displayMin:\s*(?<displayMin>-?\d+(?:\.\d+)?),\s*displayMax:\s*(?<displayMax>-?\d+(?:\.\d+)?),`,
       // Optional remainder before the closing brace. Captures
       // `scaling: 'log10'` if present, and a marker for `enumValues:`.
       String.raw`(?<tail>[\s\S]*?)\},`,
@@ -281,6 +394,36 @@ export function loadAm4ParamOverrides(): Map<string, Am4Override> {
   }
 
   return result;
+}
+
+/**
+ * Merge AM4 overrides from `cacheParams.ts` (the generator-truth) and
+ * `params.ts` (hand-authored entries the generator can't emit —
+ * channel/level/bypass/tempo/pan + various enum overrides).
+ *
+ * Conflict policy: `cacheParams.ts` wins. The cacheParams generator
+ * derives display ranges from the binary metadata cache; that's the
+ * harder-to-fudge source. `params.ts` may carry hand-tweaked display
+ * overrides (e.g. `displayUnit: ''` cosmetic suppression on
+ * `negative_feedback`) that we wouldn't want to propagate to the III.
+ *
+ * Why merge at all (vs. just using cacheParams.ts): a large fraction of
+ * the III's per-family `LEVEL`/`PAN`/`TEMPO`/`BYPASS`/`MODE`/`WIDTH`
+ * suffixes correspond to AM4 pidHigh 0..9 generic-params that don't
+ * live in the cache file (see the cacheParams.ts header comment). Those
+ * AM4 entries are hand-authored in `params.ts`. Pulling from both
+ * sources roughly triples the III's calibration coverage (Session 88
+ * — went from 116 → ~200 inferred entries via this loader change).
+ */
+export function loadAm4ParamOverrides(): Map<string, Am4Override> {
+  const cache = loadOverridesFromFile(AM4_CACHE_PARAMS_PATH);
+  const hand = loadOverridesFromFile(AM4_PARAMS_PATH);
+
+  const merged = new Map<string, Am4Override>(cache);
+  for (const [k, v] of hand) {
+    if (!merged.has(k)) merged.set(k, v);
+  }
+  return merged;
 }
 
 /**

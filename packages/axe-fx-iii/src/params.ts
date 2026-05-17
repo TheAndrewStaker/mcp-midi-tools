@@ -13,15 +13,15 @@
  *
  * Coverage:
  *   - 2216 parameters across 48 effect families.
- *   - 116 entries carry AM4-inferred display
+ *   - 186 entries carry AM4-inferred display
  *     calibration (`// inferred from AM4` trailing comment +
  *     non-`'unverified'` unit + displayMin/Max + optional scaling).
- *   - 2100 entries remain `unit: 'unverified'`
+ *   - 2030 entries remain `unit: 'unverified'`
  *     (III-specific blocks like CABINET/FUZZ/IRPLAYER, or AM4-mapped
  *     families where the III's symbol has no AM4 analog).
  *
  * Calibration sources (per-family inferred count):
- *   CHORUS=7, COMP=10, DELAY=7, DISTORT=27, ENHANCER=5, FILTER=9, FLANGER=6, GATE=5, GEQ=2, PHASER=8, REVERB=17, ROTARY=3, TREMOLO=5, VOLUME=2, WAH=3
+ *   CHORUS=17, COMP=9, DELAY=19, DISTORT=34, ENHANCER=6, FILTER=9, FLANGER=12, GATE=9, GEQ=3, PHASER=12, REVERB=31, ROTARY=4, TREMOLO=10, VOLUME=7, WAH=4
  *
  * Inferred-from-AM4 caveat:
  *   - AM4 is the closest hardware-verified analog Fractal device.
@@ -603,9 +603,9 @@ export const PARAMS: readonly Param[] = [
   { family: 'IRCAPTURE', paramId: 4, name: 'IRCAPTURE_CAB_NAME', unit: 'unverified' },
   { family: 'COMP', paramId: 0, name: 'COMP_THRESH', unit: 'db', displayMin: -60, displayMax: 20 }, // inferred from AM4
   { family: 'COMP', paramId: 1, name: 'COMP_RATIO', unit: 'ratio', displayMin: 1, displayMax: 20, scaling: 'log10' }, // inferred from AM4
-  { family: 'COMP', paramId: 2, name: 'COMP_ATTACK', unit: 'ms', displayMin: 0.1, displayMax: 100, scaling: 'log10' }, // inferred from AM4
-  { family: 'COMP', paramId: 3, name: 'COMP_RELEASE', unit: 'ms', displayMin: 2, displayMax: 2000, scaling: 'log10' }, // inferred from AM4
-  { family: 'COMP', paramId: 4, name: 'COMP_LEVEL', unit: 'unverified' },
+  { family: 'COMP', paramId: 2, name: 'COMP_ATTACK', unit: 'unverified' },
+  { family: 'COMP', paramId: 3, name: 'COMP_RELEASE', unit: 'unverified' },
+  { family: 'COMP', paramId: 4, name: 'COMP_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   { family: 'COMP', paramId: 5, name: 'COMP_KNEE', unit: 'unverified' },
   { family: 'COMP', paramId: 6, name: 'COMP_AUTO', unit: 'unverified' },
   { family: 'COMP', paramId: 7, name: 'COMP_PEAKRMS', unit: 'unverified' },
@@ -649,7 +649,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'GEQ', paramId: 8, name: 'GEQ_GAIN9', unit: 'unverified' },
   { family: 'GEQ', paramId: 9, name: 'GEQ_GAIN10', unit: 'unverified' },
   { family: 'GEQ', paramId: 10, name: 'GEQ_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  { family: 'GEQ', paramId: 11, name: 'GEQ_LEVEL', unit: 'unverified' },
+  { family: 'GEQ', paramId: 11, name: 'GEQ_LEVEL', unit: 'enum' }, // inferred from AM4
   { family: 'GEQ', paramId: 12, name: 'GEQ_PAN', unit: 'unverified' },
   { family: 'GEQ', paramId: 13, name: 'GEQ_BYPASSMODE', unit: 'unverified' },
   { family: 'GEQ', paramId: 14, name: 'GEQ_GLOBALMIX', unit: 'unverified' },
@@ -707,13 +707,13 @@ export const PARAMS: readonly Param[] = [
   { family: 'DISTORT', paramId: 12, name: 'DISTORT_XFHPF', unit: 'unverified' },
   { family: 'DISTORT', paramId: 13, name: 'DISTORT_XFLPF', unit: 'unverified' },
   { family: 'DISTORT', paramId: 14, name: 'DISTORT_TONELOC', unit: 'unverified' },
-  { family: 'DISTORT', paramId: 15, name: 'DISTORT_INPUTSELECT', unit: 'unverified' },
+  { family: 'DISTORT', paramId: 15, name: 'DISTORT_INPUTSELECT', unit: 'enum' }, // inferred from AM4
   { family: 'DISTORT', paramId: 16, name: 'DISTORT_DEPTH', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'DISTORT', paramId: 17, name: 'DISTORT_OFFSET1', unit: 'unverified' },
   { family: 'DISTORT', paramId: 18, name: 'DISTORT_CLIPTYPE2', unit: 'unverified' },
   { family: 'DISTORT', paramId: 19, name: 'DISTORT_SUPPLYSAG', unit: 'unverified' },
   { family: 'DISTORT', paramId: 20, name: 'DISTORT_PRESENCE', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
-  { family: 'DISTORT', paramId: 21, name: 'DISTORT_LEVEL', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
+  { family: 'DISTORT', paramId: 21, name: 'DISTORT_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   { family: 'DISTORT', paramId: 22, name: 'DISTORT_PAN', unit: 'unverified' },
   { family: 'DISTORT', paramId: 23, name: 'DISTORT_BYPASSMODE', unit: 'unverified' },
   { family: 'DISTORT', paramId: 24, name: 'DISTORT_BETA', unit: 'unverified' },
@@ -728,10 +728,10 @@ export const PARAMS: readonly Param[] = [
   { family: 'DISTORT', paramId: 33, name: 'DISTORT_CFCLIP', unit: 'unverified' },
   { family: 'DISTORT', paramId: 34, name: 'DISTORT_TONETYPE', unit: 'unverified' },
   { family: 'DISTORT', paramId: 35, name: 'DISTORT_TIMECONST', unit: 'unverified' },
-  { family: 'DISTORT', paramId: 36, name: 'DISTORT_BIAS', unit: 'unverified' },
+  { family: 'DISTORT', paramId: 36, name: 'DISTORT_BIAS', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'DISTORT', paramId: 37, name: 'DISTORT_FBTYPE', unit: 'unverified' },
   { family: 'DISTORT', paramId: 38, name: 'DISTORT_PI_RATIO', unit: 'unverified' },
-  { family: 'DISTORT', paramId: 39, name: 'DISTORT_BRIGHT', unit: 'unverified' },
+  { family: 'DISTORT', paramId: 39, name: 'DISTORT_BRIGHT', unit: 'enum' }, // inferred from AM4
   { family: 'DISTORT', paramId: 40, name: 'DISTORT_BOOST', unit: 'unverified' },
   { family: 'DISTORT', paramId: 41, name: 'DISTORT_SPKRLFQ', unit: 'unverified' },
   { family: 'DISTORT', paramId: 42, name: 'DISTORT_OFFSET2', unit: 'unverified' },
@@ -762,20 +762,20 @@ export const PARAMS: readonly Param[] = [
   { family: 'DISTORT', paramId: 67, name: 'DISTORT_FEEDFWDFREQ1', unit: 'unverified' },
   { family: 'DISTORT', paramId: 68, name: 'DISTORT_TUBETYPE', unit: 'unverified' },
   { family: 'DISTORT', paramId: 69, name: 'DISTORT_PRETUBETYPE', unit: 'unverified' },
-  { family: 'DISTORT', paramId: 70, name: 'DISTORT_CLARITY', unit: 'unverified' },
+  { family: 'DISTORT', paramId: 70, name: 'DISTORT_CLARITY', unit: 'knob_0_10', displayMin: 0, displayMax: 10, scaling: 'log10' }, // inferred from AM4
   { family: 'DISTORT', paramId: 71, name: 'DISTORT_INEQQ', unit: 'unverified' },
   { family: 'DISTORT', paramId: 72, name: 'DISTORT_INEQFREQ', unit: 'unverified' },
   { family: 'DISTORT', paramId: 73, name: 'DISTORT_INEQGAIN', unit: 'unverified' },
   { family: 'DISTORT', paramId: 74, name: 'DISTORT_DRIVE2', unit: 'unverified' },
   { family: 'DISTORT', paramId: 75, name: 'DISTORT_COMPRESSION', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  { family: 'DISTORT', paramId: 76, name: 'DISTORT_THRESHOLD', unit: 'unverified' },
+  { family: 'DISTORT', paramId: 76, name: 'DISTORT_THRESHOLD', unit: 'db', displayMin: -60, displayMax: 0 }, // inferred from AM4
   { family: 'DISTORT', paramId: 77, name: 'DISTORT_MVTRIM', unit: 'unverified' },
-  { family: 'DISTORT', paramId: 78, name: 'DISTORT_FAT', unit: 'unverified' },
-  { family: 'DISTORT', paramId: 79, name: 'DISTORT_DEFINITION', unit: 'unverified' },
+  { family: 'DISTORT', paramId: 78, name: 'DISTORT_FAT', unit: 'enum' }, // inferred from AM4
+  { family: 'DISTORT', paramId: 79, name: 'DISTORT_DEFINITION', unit: 'count', displayMin: -10, displayMax: 10 }, // inferred from AM4
   { family: 'DISTORT', paramId: 80, name: 'DISTORT_CFTHRESH', unit: 'unverified' },
   { family: 'DISTORT', paramId: 81, name: 'DISTORT_CFGRID', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'DISTORT', paramId: 82, name: 'DISTORT_VERSION', unit: 'unverified' },
-  { family: 'DISTORT', paramId: 83, name: 'DISTORT_HICUT', unit: 'db', displayMin: 200, displayMax: 20000 }, // inferred from AM4
+  { family: 'DISTORT', paramId: 83, name: 'DISTORT_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
   { family: 'DISTORT', paramId: 84, name: 'DISTORT_DYNPRES', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'DISTORT', paramId: 85, name: 'DISTORT_DYNDEPTH', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'DISTORT', paramId: 86, name: 'DISTORT_SUPPLYTYPE', unit: 'unverified' },
@@ -793,7 +793,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'DISTORT', paramId: 98, name: 'DISTORT_PAOFFSET', unit: 'unverified' },
   { family: 'DISTORT', paramId: 99, name: 'DISTORT_INDYNAMICS', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'DISTORT', paramId: 100, name: 'DISTORT_SPKRHFQ', unit: 'unverified' },
-  { family: 'DISTORT', paramId: 101, name: 'DISTORT_VARIAC', unit: 'unverified' },
+  { family: 'DISTORT', paramId: 101, name: 'DISTORT_VARIAC', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'DISTORT', paramId: 102, name: 'DISTORT_INEQTYPE', unit: 'unverified' },
   { family: 'DISTORT', paramId: 103, name: 'DISTORT_GRIDHARDNESS', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'DISTORT', paramId: 104, name: 'DISTORT_PRESSHIFT', unit: 'unverified' },
@@ -810,7 +810,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'DISTORT', paramId: 115, name: 'DISTORT_MOTORDRIVE', unit: 'unverified' },
   { family: 'DISTORT', paramId: 116, name: 'DISTORT_MDTIME', unit: 'unverified' },
   { family: 'DISTORT', paramId: 117, name: 'DISTORT_RESOLUTION', unit: 'db', displayMin: 0, displayMax: 1 }, // inferred from AM4
-  { family: 'DISTORT', paramId: 118, name: 'DISTORT_VCCMON', unit: 'db', displayMin: 0, displayMax: 1 }, // inferred from AM4
+  { family: 'DISTORT', paramId: 118, name: 'DISTORT_VCCMON', unit: 'unverified' },
   { family: 'DISTORT', paramId: 119, name: 'DISTORT_GAINMON', unit: 'unverified' },
   { family: 'DISTORT', paramId: 120, name: 'DISTORT_MDMON', unit: 'db', displayMin: 0, displayMax: 1 }, // inferred from AM4
   { family: 'DISTORT', paramId: 121, name: 'DISTORT_INDYNMON', unit: 'db', displayMin: 0, displayMax: 1 }, // inferred from AM4
@@ -963,15 +963,15 @@ export const PARAMS: readonly Param[] = [
   { family: 'CABINET', paramId: 65299, name: 'CABINET_BTN_SOLO4', unit: 'unverified' },
   { family: 'REVERB', paramId: 0, name: 'REVERB_TYPE', unit: 'enum' }, // inferred from AM4
   { family: 'REVERB', paramId: 1, name: 'REVERB_TIME', unit: 'seconds', displayMin: 0.1, displayMax: 100 }, // inferred from AM4
-  { family: 'REVERB', paramId: 2, name: 'REVERB_HICUT', unit: 'unverified' },
+  { family: 'REVERB', paramId: 2, name: 'REVERB_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
   { family: 'REVERB', paramId: 3, name: 'REVERB_HFRATIO', unit: 'unverified' },
   { family: 'REVERB', paramId: 4, name: 'REVERB_DIFFUSION', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'REVERB', paramId: 5, name: 'REVERB_SIZE', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  { family: 'REVERB', paramId: 6, name: 'REVERB_REVERBDELAY', unit: 'unverified' },
+  { family: 'REVERB', paramId: 6, name: 'REVERB_REVERBDELAY', unit: 'ms', displayMin: 0, displayMax: 250 }, // inferred from AM4
   { family: 'REVERB', paramId: 7, name: 'REVERB_EARLYLEVEL', unit: 'db', displayMin: -40, displayMax: 10 }, // inferred from AM4
   { family: 'REVERB', paramId: 8, name: 'REVERB_REVERBLEVEL', unit: 'unverified' },
-  { family: 'REVERB', paramId: 9, name: 'REVERB_PREDELAY', unit: 'unverified' },
-  { family: 'REVERB', paramId: 10, name: 'REVERB_LOWCUT', unit: 'unverified' },
+  { family: 'REVERB', paramId: 9, name: 'REVERB_PREDELAY', unit: 'ms', displayMin: 0, displayMax: 250 }, // inferred from AM4
+  { family: 'REVERB', paramId: 10, name: 'REVERB_LOWCUT', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
   { family: 'REVERB', paramId: 11, name: 'REVERB_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'REVERB', paramId: 12, name: 'REVERB_RATE', unit: 'hz', displayMin: 0.01, displayMax: 1 }, // inferred from AM4
   { family: 'REVERB', paramId: 13, name: 'REVERB_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
@@ -980,19 +980,19 @@ export const PARAMS: readonly Param[] = [
   { family: 'REVERB', paramId: 16, name: 'REVERB_BYPASSMODE', unit: 'unverified' },
   { family: 'REVERB', paramId: 17, name: 'REVERB_GLOBALMIX', unit: 'unverified' },
   { family: 'REVERB', paramId: 18, name: 'REVERB_GAIN', unit: 'unverified' },
-  { family: 'REVERB', paramId: 19, name: 'REVERB_DENSITY', unit: 'unverified' },
+  { family: 'REVERB', paramId: 19, name: 'REVERB_DENSITY', unit: 'count', displayMin: 4, displayMax: 8 }, // inferred from AM4
   { family: 'REVERB', paramId: 20, name: 'REVERB_INPDIFF', unit: 'unverified' },
   { family: 'REVERB', paramId: 21, name: 'REVERB_INDIFFTIME', unit: 'unverified' },
   { family: 'REVERB', paramId: 22, name: 'REVERB_BYPASS', unit: 'unverified' },
   { family: 'REVERB', paramId: 23, name: 'REVERB_NUMSPRINGS', unit: 'count', displayMin: 2, displayMax: 6 }, // inferred from AM4
   { family: 'REVERB', paramId: 24, name: 'REVERB_TONE', unit: 'unverified' },
   { family: 'REVERB', paramId: 25, name: 'REVERB_WIDTH', unit: 'unverified' },
-  { family: 'REVERB', paramId: 26, name: 'REVERB_FREQ1', unit: 'unverified' },
-  { family: 'REVERB', paramId: 27, name: 'REVERB_FREQ2', unit: 'unverified' },
-  { family: 'REVERB', paramId: 28, name: 'REVERB_Q1', unit: 'unverified' },
-  { family: 'REVERB', paramId: 29, name: 'REVERB_Q2', unit: 'unverified' },
-  { family: 'REVERB', paramId: 30, name: 'REVERB_GAIN1', unit: 'unverified' },
-  { family: 'REVERB', paramId: 31, name: 'REVERB_GAIN2', unit: 'unverified' },
+  { family: 'REVERB', paramId: 26, name: 'REVERB_FREQ1', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
+  { family: 'REVERB', paramId: 27, name: 'REVERB_FREQ2', unit: 'hz', displayMin: 100, displayMax: 10000 }, // inferred from AM4
+  { family: 'REVERB', paramId: 28, name: 'REVERB_Q1', unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' }, // inferred from AM4
+  { family: 'REVERB', paramId: 29, name: 'REVERB_Q2', unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' }, // inferred from AM4
+  { family: 'REVERB', paramId: 30, name: 'REVERB_GAIN1', unit: 'db', displayMin: -12, displayMax: 12 }, // inferred from AM4
+  { family: 'REVERB', paramId: 31, name: 'REVERB_GAIN2', unit: 'db', displayMin: -12, displayMax: 12 }, // inferred from AM4
   { family: 'REVERB', paramId: 32, name: 'REVERB_DRIVE', unit: 'unverified' },
   { family: 'REVERB', paramId: 33, name: 'REVERB_LFTIME', unit: 'unverified' },
   { family: 'REVERB', paramId: 34, name: 'REVERB_LFXOVER', unit: 'unverified' },
@@ -1004,9 +1004,9 @@ export const PARAMS: readonly Param[] = [
   { family: 'REVERB', paramId: 40, name: 'REVERB_EARLYDIFFTIME', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'REVERB', paramId: 41, name: 'REVERB_EARLYDECAY', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'REVERB', paramId: 42, name: 'REVERB_EARLYSEND', unit: 'unverified' },
-  { family: 'REVERB', paramId: 43, name: 'REVERB_QUALITY', unit: 'unverified' },
+  { family: 'REVERB', paramId: 43, name: 'REVERB_QUALITY', unit: 'enum' }, // inferred from AM4
   { family: 'REVERB', paramId: 44, name: 'REVERB_HOLD', unit: 'unverified' },
-  { family: 'REVERB', paramId: 45, name: 'REVERB_BASETYPE', unit: 'unverified' },
+  { family: 'REVERB', paramId: 45, name: 'REVERB_BASETYPE', unit: 'count', displayMin: 0, displayMax: 8 }, // inferred from AM4
   { family: 'REVERB', paramId: 46, name: 'REVERB_LFOPHASE', unit: 'degrees', displayMin: 0, displayMax: 180 }, // inferred from AM4
   { family: 'REVERB', paramId: 47, name: 'REVERB_INPUTSELECT', unit: 'unverified' },
   { family: 'REVERB', paramId: 48, name: 'REVERB_DISPERSION', unit: 'unverified' },
@@ -1027,7 +1027,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'REVERB', paramId: 63, name: 'REVERB_PREDLYMIX', unit: 'unverified' },
   { family: 'REVERB', paramId: 64, name: 'REVERB_PITCHLPF', unit: 'unverified' },
   { family: 'REVERB', paramId: 65, name: 'REVERB_SPRINGTYPE', unit: 'unverified' },
-  { family: 'REVERB', paramId: 66, name: 'REVERB_TONETYPE', unit: 'unverified' },
+  { family: 'REVERB', paramId: 66, name: 'REVERB_TONETYPE', unit: 'db', displayMin: 0, displayMax: 3 }, // inferred from AM4
   { family: 'REVERB', paramId: 67, name: 'REVERB_PREDLYTAP', unit: 'unverified' },
   { family: 'REVERB', paramId: 68, name: 'REVERB_KILLDRY', unit: 'unverified' },
   { family: 'REVERB', paramId: 69, name: 'REVERB_LOWQ', unit: 'unverified' },
@@ -1041,8 +1041,8 @@ export const PARAMS: readonly Param[] = [
   { family: 'DELAY', paramId: 6, name: 'DELAY_FEEDR', unit: 'unverified' },
   { family: 'DELAY', paramId: 7, name: 'DELAY_DELAYPAN', unit: 'unverified' },
   { family: 'DELAY', paramId: 8, name: 'DELAY_SPREAD', unit: 'unverified' },
-  { family: 'DELAY', paramId: 9, name: 'DELAY_TEMPO', unit: 'unverified' },
-  { family: 'DELAY', paramId: 10, name: 'DELAY_LOCUT', unit: 'unverified' },
+  { family: 'DELAY', paramId: 9, name: 'DELAY_TEMPO', unit: 'enum' }, // inferred from AM4
+  { family: 'DELAY', paramId: 10, name: 'DELAY_LOCUT', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
   { family: 'DELAY', paramId: 11, name: 'DELAY_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
   { family: 'DELAY', paramId: 12, name: 'DELAY_RATE1', unit: 'unverified' },
   { family: 'DELAY', paramId: 13, name: 'DELAY_RATE2', unit: 'unverified' },
@@ -1050,7 +1050,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'DELAY', paramId: 15, name: 'DELAY_DEPTH2', unit: 'unverified' },
   { family: 'DELAY', paramId: 16, name: 'DELAY_DRIVE', unit: 'unverified' },
   { family: 'DELAY', paramId: 17, name: 'DELAY_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  { family: 'DELAY', paramId: 18, name: 'DELAY_LEVEL', unit: 'unverified' },
+  { family: 'DELAY', paramId: 18, name: 'DELAY_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   { family: 'DELAY', paramId: 19, name: 'DELAY_PAN', unit: 'unverified' },
   { family: 'DELAY', paramId: 20, name: 'DELAY_BYPASSMODE', unit: 'unverified' },
   { family: 'DELAY', paramId: 21, name: 'DELAY_GLOBALMIX', unit: 'unverified' },
@@ -1064,8 +1064,8 @@ export const PARAMS: readonly Param[] = [
   { family: 'DELAY', paramId: 29, name: 'DELAY_TEMPOR', unit: 'unverified' },
   { family: 'DELAY', paramId: 30, name: 'DELAY_FEEDLR', unit: 'unverified' },
   { family: 'DELAY', paramId: 31, name: 'DELAY_FEEDRL', unit: 'unverified' },
-  { family: 'DELAY', paramId: 32, name: 'DELAY_LEVELL', unit: 'unverified' },
-  { family: 'DELAY', paramId: 33, name: 'DELAY_LEVELR', unit: 'unverified' },
+  { family: 'DELAY', paramId: 32, name: 'DELAY_LEVELL', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  { family: 'DELAY', paramId: 33, name: 'DELAY_LEVELR', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'DELAY', paramId: 34, name: 'DELAY_PANL', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 }, // inferred from AM4
   { family: 'DELAY', paramId: 35, name: 'DELAY_PANR', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 }, // inferred from AM4
   { family: 'DELAY', paramId: 36, name: 'DELAY_LFO1PHASE', unit: 'unverified' },
@@ -1079,7 +1079,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'DELAY', paramId: 44, name: 'DELAY_RELEASE', unit: 'unverified' },
   { family: 'DELAY', paramId: 45, name: 'DELAY_DIFFUSE', unit: 'unverified' },
   { family: 'DELAY', paramId: 46, name: 'DELAY_DIFFTIME', unit: 'unverified' },
-  { family: 'DELAY', paramId: 47, name: 'DELAY_PHASEREV', unit: 'unverified' },
+  { family: 'DELAY', paramId: 47, name: 'DELAY_PHASEREV', unit: 'enum' }, // inferred from AM4
   { family: 'DELAY', paramId: 48, name: 'DELAY_LFO1TARGET', unit: 'unverified' },
   { family: 'DELAY', paramId: 49, name: 'DELAY_LFO2TARGET', unit: 'unverified' },
   { family: 'DELAY', paramId: 50, name: 'DELAY_LFO1TEMPO', unit: 'unverified' },
@@ -1092,7 +1092,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'DELAY', paramId: 57, name: 'DELAY_FSTOP', unit: 'unverified' },
   { family: 'DELAY', paramId: 58, name: 'DELAY_Q', unit: 'unverified' },
   { family: 'DELAY', paramId: 59, name: 'DELAY_FILTERQ', unit: 'unverified' },
-  { family: 'DELAY', paramId: 60, name: 'DELAY_BITREDUCE', unit: 'unverified' },
+  { family: 'DELAY', paramId: 60, name: 'DELAY_BITREDUCE', unit: 'count', displayMin: 0, displayMax: 24 }, // inferred from AM4
   { family: 'DELAY', paramId: 61, name: 'DELAY_FREQ1', unit: 'unverified' },
   { family: 'DELAY', paramId: 62, name: 'DELAY_FREQ2', unit: 'unverified' },
   { family: 'DELAY', paramId: 63, name: 'DELAY_Q1', unit: 'unverified' },
@@ -1103,10 +1103,10 @@ export const PARAMS: readonly Param[] = [
   { family: 'DELAY', paramId: 68, name: 'DELAY_SPEED', unit: 'unverified' },
   { family: 'DELAY', paramId: 69, name: 'DELAY_OFFSET', unit: 'unverified' },
   { family: 'DELAY', paramId: 70, name: 'DELAY_HPF_ORDER', unit: 'unverified' },
-  { family: 'DELAY', paramId: 71, name: 'DELAY_COMPANDER', unit: 'unverified' },
+  { family: 'DELAY', paramId: 71, name: 'DELAY_COMPANDER', unit: 'enum' }, // inferred from AM4
   { family: 'DELAY', paramId: 72, name: 'DELAY_COMPTIME', unit: 'unverified' },
   { family: 'DELAY', paramId: 73, name: 'DELAY_COMPTHRESH', unit: 'unverified' },
-  { family: 'DELAY', paramId: 74, name: 'DELAY_MSTRTIME', unit: 'unverified' },
+  { family: 'DELAY', paramId: 74, name: 'DELAY_MSTRTIME', unit: 'percent', displayMin: 25, displayMax: 400 }, // inferred from AM4
   { family: 'DELAY', paramId: 75, name: 'DELAY_DIFFRATE', unit: 'unverified' },
   { family: 'DELAY', paramId: 76, name: 'DELAY_DIFFDEPTH', unit: 'unverified' },
   { family: 'DELAY', paramId: 77, name: 'DELAY_LFO4TYPE', unit: 'unverified' },
@@ -1116,9 +1116,9 @@ export const PARAMS: readonly Param[] = [
   { family: 'DELAY', paramId: 81, name: 'DELAY_LFO4PHASE', unit: 'unverified' },
   { family: 'DELAY', paramId: 82, name: 'DELAY_LFO4TARGET', unit: 'unverified' },
   { family: 'DELAY', paramId: 83, name: 'DELAY_SCENEIGNORE', unit: 'unverified' },
-  { family: 'DELAY', paramId: 84, name: 'DELAY_STACKFDBK', unit: 'unverified' },
-  { family: 'DELAY', paramId: 85, name: 'DELAY_HOLDFDBK', unit: 'unverified' },
-  { family: 'DELAY', paramId: 86, name: 'DELAY_KILLDRY', unit: 'unverified' },
+  { family: 'DELAY', paramId: 84, name: 'DELAY_STACKFDBK', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  { family: 'DELAY', paramId: 85, name: 'DELAY_HOLDFDBK', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  { family: 'DELAY', paramId: 86, name: 'DELAY_KILLDRY', unit: 'enum' }, // inferred from AM4
   { family: 'DELAY', paramId: 87, name: 'DELAY_SVFTYPE', unit: 'unverified' },
   { family: 'DELAY', paramId: 88, name: 'DELAY_DRYDIFFUSE', unit: 'unverified' },
   { family: 'MULTITAP', paramId: 0, name: 'MULTITAP_BASETYPE', unit: 'unverified' },
@@ -1339,32 +1339,32 @@ export const PARAMS: readonly Param[] = [
   { family: 'PLEX', paramId: 94, name: 'PLEX_SCENEIGNORE', unit: 'unverified' },
   { family: 'PLEX', paramId: 95, name: 'PLEX_KILLDRY', unit: 'unverified' },
   { family: 'CHORUS', paramId: 0, name: 'CHORUS_TYPE', unit: 'enum' }, // inferred from AM4
-  { family: 'CHORUS', paramId: 1, name: 'CHORUS_VOICES', unit: 'unverified' },
+  { family: 'CHORUS', paramId: 1, name: 'CHORUS_VOICES', unit: 'count', displayMin: 1, displayMax: 4 }, // inferred from AM4
   { family: 'CHORUS', paramId: 2, name: 'CHORUS_RATE', unit: 'hz', displayMin: 0.1, displayMax: 10 }, // inferred from AM4
-  { family: 'CHORUS', paramId: 3, name: 'CHORUS_TEMPO', unit: 'unverified' },
+  { family: 'CHORUS', paramId: 3, name: 'CHORUS_TEMPO', unit: 'enum' }, // inferred from AM4
   { family: 'CHORUS', paramId: 4, name: 'CHORUS_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'CHORUS', paramId: 5, name: 'CHORUS_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
-  { family: 'CHORUS', paramId: 6, name: 'CHORUS_DELAYTIME', unit: 'unverified' },
+  { family: 'CHORUS', paramId: 6, name: 'CHORUS_DELAYTIME', unit: 'ms', displayMin: 0.1, displayMax: 50 }, // inferred from AM4
   { family: 'CHORUS', paramId: 7, name: 'CHORUS_LFOPHASE', unit: 'unverified' },
-  { family: 'CHORUS', paramId: 8, name: 'CHORUS_LFOTYPE', unit: 'unverified' },
+  { family: 'CHORUS', paramId: 8, name: 'CHORUS_LFOTYPE', unit: 'enum' }, // inferred from AM4
   { family: 'CHORUS', paramId: 9, name: 'CHORUS_AUTO', unit: 'unverified' },
   { family: 'CHORUS', paramId: 10, name: 'CHORUS_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  { family: 'CHORUS', paramId: 11, name: 'CHORUS_LEVEL', unit: 'unverified' },
+  { family: 'CHORUS', paramId: 11, name: 'CHORUS_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   { family: 'CHORUS', paramId: 12, name: 'CHORUS_PAN', unit: 'unverified' },
   { family: 'CHORUS', paramId: 13, name: 'CHORUS_BYPASSMODE', unit: 'unverified' },
   { family: 'CHORUS', paramId: 14, name: 'CHORUS_GLOBALMIX', unit: 'unverified' },
   { family: 'CHORUS', paramId: 15, name: 'CHORUS_BYPASS', unit: 'unverified' },
-  { family: 'CHORUS', paramId: 16, name: 'CHORUS_PHASEREV', unit: 'unverified' },
-  { family: 'CHORUS', paramId: 17, name: 'CHORUS_WIDTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  { family: 'CHORUS', paramId: 16, name: 'CHORUS_PHASEREV', unit: 'enum' }, // inferred from AM4
+  { family: 'CHORUS', paramId: 17, name: 'CHORUS_WIDTH', unit: 'unverified' },
   { family: 'CHORUS', paramId: 18, name: 'CHORUS_RATE2', unit: 'unverified' },
   { family: 'CHORUS', paramId: 19, name: 'CHORUS_DEPTH2', unit: 'unverified' },
   { family: 'CHORUS', paramId: 20, name: 'CHORUS_DRIVE', unit: 'knob_0_10', displayMin: 0.5, displayMax: 500, scaling: 'log10' }, // inferred from AM4
-  { family: 'CHORUS', paramId: 21, name: 'CHORUS_LOWCUT', unit: 'unverified' },
+  { family: 'CHORUS', paramId: 21, name: 'CHORUS_LOWCUT', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
   { family: 'CHORUS', paramId: 22, name: 'CHORUS_SPREAD', unit: 'unverified' },
-  { family: 'CHORUS', paramId: 23, name: 'CHORUS_MODE', unit: 'unverified' },
-  { family: 'CHORUS', paramId: 24, name: 'CHORUS_DEPTHL', unit: 'unverified' },
-  { family: 'CHORUS', paramId: 25, name: 'CHORUS_DEPTHC', unit: 'unverified' },
-  { family: 'CHORUS', paramId: 26, name: 'CHORUS_DEPTHR', unit: 'unverified' },
+  { family: 'CHORUS', paramId: 23, name: 'CHORUS_MODE', unit: 'enum' }, // inferred from AM4
+  { family: 'CHORUS', paramId: 24, name: 'CHORUS_DEPTHL', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  { family: 'CHORUS', paramId: 25, name: 'CHORUS_DEPTHC', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  { family: 'CHORUS', paramId: 26, name: 'CHORUS_DEPTHR', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'CHORUS', paramId: 27, name: 'CHORUS_TEMPO2', unit: 'unverified' },
   { family: 'CHORUS', paramId: 28, name: 'CHORUS_SCENEIGNORE', unit: 'unverified' },
   { family: 'CHORUS', paramId: 29, name: 'CHORUS_DELAYRANGE', unit: 'unverified' },
@@ -1374,15 +1374,15 @@ export const PARAMS: readonly Param[] = [
   { family: 'FLANGER', paramId: 0, name: 'FLANGER_OLD_TYPE', unit: 'unverified' },
   { family: 'FLANGER', paramId: 1, name: 'FLANGER_RATE', unit: 'hz', displayMin: 0.05, displayMax: 10 }, // inferred from AM4
   { family: 'FLANGER', paramId: 1, name: 'FLANGER_OLD_RATE', unit: 'unverified' },
-  { family: 'FLANGER', paramId: 2, name: 'FLANGER_TEMPO', unit: 'unverified' },
+  { family: 'FLANGER', paramId: 2, name: 'FLANGER_TEMPO', unit: 'enum' }, // inferred from AM4
   { family: 'FLANGER', paramId: 2, name: 'FLANGER_OLD_TEMPO', unit: 'unverified' },
   { family: 'FLANGER', paramId: 3, name: 'FLANGER_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'FLANGER', paramId: 3, name: 'FLANGER_OLD_DEPTH', unit: 'unverified' },
   { family: 'FLANGER', paramId: 4, name: 'FLANGER_FEEDBACK', unit: 'bipolar_percent', displayMin: -99, displayMax: 99 }, // inferred from AM4
   { family: 'FLANGER', paramId: 4, name: 'FLANGER_OLD_FEEDBACK', unit: 'unverified' },
-  { family: 'FLANGER', paramId: 5, name: 'FLANGER_MANUAL', unit: 'unverified' },
+  { family: 'FLANGER', paramId: 5, name: 'FLANGER_MANUAL', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'FLANGER', paramId: 5, name: 'FLANGER_OLD_DELAYTIME', unit: 'unverified' },
-  { family: 'FLANGER', paramId: 6, name: 'FLANGER_DRYDELAY', unit: 'unverified' },
+  { family: 'FLANGER', paramId: 6, name: 'FLANGER_DRYDELAY', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'FLANGER', paramId: 6, name: 'FLANGER_OLD_MANUAL', unit: 'unverified' },
   { family: 'FLANGER', paramId: 7, name: 'FLANGER_LFOPHASE', unit: 'unverified' },
   { family: 'FLANGER', paramId: 7, name: 'FLANGER_OLD_LFOPHASE', unit: 'unverified' },
@@ -1394,7 +1394,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'FLANGER', paramId: 10, name: 'FLANGER_OLD_AUTO', unit: 'unverified' },
   { family: 'FLANGER', paramId: 11, name: 'FLANGER_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'FLANGER', paramId: 11, name: 'FLANGER_OLD_MIX', unit: 'unverified' },
-  { family: 'FLANGER', paramId: 12, name: 'FLANGER_LEVEL', unit: 'unverified' },
+  { family: 'FLANGER', paramId: 12, name: 'FLANGER_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   { family: 'FLANGER', paramId: 12, name: 'FLANGER_OLD_LEVEL', unit: 'unverified' },
   { family: 'FLANGER', paramId: 13, name: 'FLANGER_PAN', unit: 'unverified' },
   { family: 'FLANGER', paramId: 13, name: 'FLANGER_OLD_PAN', unit: 'unverified' },
@@ -1426,9 +1426,9 @@ export const PARAMS: readonly Param[] = [
   { family: 'FLANGER', paramId: 26, name: 'FLANGER_OLD_LPF_ORDER', unit: 'unverified' },
   { family: 'FLANGER', paramId: 27, name: 'FLANGER_VCO_CURVE', unit: 'unverified' },
   { family: 'FLANGER', paramId: 27, name: 'FLANGER_OLD_HPF_ORDER', unit: 'unverified' },
-  { family: 'FLANGER', paramId: 28, name: 'FLANGER_TMIN', unit: 'unverified' },
+  { family: 'FLANGER', paramId: 28, name: 'FLANGER_TMIN', unit: 'ms', displayMin: 0, displayMax: 2 }, // inferred from AM4
   { family: 'FLANGER', paramId: 28, name: 'FLANGER_OLD_DRY_LPF_ORDER', unit: 'unverified' },
-  { family: 'FLANGER', paramId: 29, name: 'FLANGER_TMAX', unit: 'unverified' },
+  { family: 'FLANGER', paramId: 29, name: 'FLANGER_TMAX', unit: 'ms', displayMin: 0, displayMax: 20 }, // inferred from AM4
   { family: 'FLANGER', paramId: 29, name: 'FLANGER_OLD_DRY_HPF_ORDER', unit: 'unverified' },
   { family: 'FLANGER', paramId: 30, name: 'FLANGER_LFOQUANTIZE', unit: 'unverified' },
   { family: 'FLANGER', paramId: 31, name: 'FLANGER_VCOK', unit: 'unverified' },
@@ -1452,21 +1452,21 @@ export const PARAMS: readonly Param[] = [
   { family: 'ROTARY', paramId: 16, name: 'ROTARY_SPREAD', unit: 'unverified' },
   { family: 'ROTARY', paramId: 17, name: 'ROTARY_DRIVE', unit: 'knob_0_10', displayMin: 0.5, displayMax: 500, scaling: 'log10' }, // inferred from AM4
   { family: 'ROTARY', paramId: 18, name: 'ROTARY_MICDIST', unit: 'unverified' },
-  { family: 'ROTARY', paramId: 19, name: 'ROTARY_INPUTSELECT', unit: 'unverified' },
+  { family: 'ROTARY', paramId: 19, name: 'ROTARY_INPUTSELECT', unit: 'enum' }, // inferred from AM4
   { family: 'ROTARY', paramId: 20, name: 'ROTARY_SCENEIGNORE', unit: 'unverified' },
   { family: 'PHASER', paramId: 0, name: 'PHASER_TYPE', unit: 'enum' }, // inferred from AM4
   { family: 'PHASER', paramId: 1, name: 'PHASER_ORDER', unit: 'unverified' },
   { family: 'PHASER', paramId: 2, name: 'PHASER_RATE', unit: 'hz', displayMin: 0.1, displayMax: 10 }, // inferred from AM4
   { family: 'PHASER', paramId: 3, name: 'PHASER_LFOTYPE', unit: 'unverified' },
-  { family: 'PHASER', paramId: 4, name: 'PHASER_TEMPO', unit: 'unverified' },
-  { family: 'PHASER', paramId: 5, name: 'PHASER_DEPTH', unit: 'unverified' },
+  { family: 'PHASER', paramId: 4, name: 'PHASER_TEMPO', unit: 'enum' }, // inferred from AM4
+  { family: 'PHASER', paramId: 5, name: 'PHASER_DEPTH', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'PHASER', paramId: 6, name: 'PHASER_FEEDBACK', unit: 'bipolar_percent', displayMin: -90, displayMax: 90 }, // inferred from AM4
   { family: 'PHASER', paramId: 7, name: 'PHASER_FMIN', unit: 'unverified' },
   { family: 'PHASER', paramId: 8, name: 'PHASER_FMAX', unit: 'unverified' },
   { family: 'PHASER', paramId: 9, name: 'PHASER_LFOPHASE', unit: 'unverified' },
   { family: 'PHASER', paramId: 10, name: 'PHASER_BIAS', unit: 'db', displayMin: -1, displayMax: 1 }, // inferred from AM4
   { family: 'PHASER', paramId: 11, name: 'PHASER_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  { family: 'PHASER', paramId: 12, name: 'PHASER_LEVEL', unit: 'unverified' },
+  { family: 'PHASER', paramId: 12, name: 'PHASER_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   { family: 'PHASER', paramId: 13, name: 'PHASER_PAN', unit: 'unverified' },
   { family: 'PHASER', paramId: 14, name: 'PHASER_BYPASSMODE', unit: 'unverified' },
   { family: 'PHASER', paramId: 15, name: 'PHASER_GLOBALMIX', unit: 'unverified' },
@@ -1484,7 +1484,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'PHASER', paramId: 27, name: 'PHASER_LFOLPF', unit: 'unverified' },
   { family: 'PHASER', paramId: 28, name: 'PHASER_ATTACK', unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' }, // inferred from AM4
   { family: 'PHASER', paramId: 29, name: 'PHASER_RELEASE', unit: 'ms', displayMin: 0, displayMax: 100, scaling: 'log10' }, // inferred from AM4
-  { family: 'PHASER', paramId: 30, name: 'PHASER_MANUAL', unit: 'unverified' },
+  { family: 'PHASER', paramId: 30, name: 'PHASER_MANUAL', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'PHASER', paramId: 31, name: 'PHASER_SCENEIGNORE', unit: 'unverified' },
   { family: 'PHASER', paramId: 32, name: 'PHASER_HPF', unit: 'unverified' },
   { family: 'PHASER', paramId: 33, name: 'PHASER_LPF', unit: 'unverified' },
@@ -1495,7 +1495,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'WAH', paramId: 3, name: 'WAH_Q', unit: 'unverified' },
   { family: 'WAH', paramId: 4, name: 'WAH_TRACK', unit: 'unverified' },
   { family: 'WAH', paramId: 5, name: 'WAH_CONTROL', unit: 'unverified' },
-  { family: 'WAH', paramId: 6, name: 'WAH_LEVEL', unit: 'unverified' },
+  { family: 'WAH', paramId: 6, name: 'WAH_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   { family: 'WAH', paramId: 7, name: 'WAH_PAN', unit: 'unverified' },
   { family: 'WAH', paramId: 8, name: 'WAH_BYPASSMODE', unit: 'unverified' },
   { family: 'WAH', paramId: 9, name: 'WAH_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
@@ -1531,15 +1531,15 @@ export const PARAMS: readonly Param[] = [
   { family: 'TREMOLO', paramId: 2, name: 'TREMOLO_RATE', unit: 'hz', displayMin: 0.2, displayMax: 20 }, // inferred from AM4
   { family: 'TREMOLO', paramId: 3, name: 'TREMOLO_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'TREMOLO', paramId: 4, name: 'TREMOLO_DUTY', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  { family: 'TREMOLO', paramId: 5, name: 'TREMOLO_TEMPO', unit: 'unverified' },
+  { family: 'TREMOLO', paramId: 5, name: 'TREMOLO_TEMPO', unit: 'enum' }, // inferred from AM4
   { family: 'TREMOLO', paramId: 6, name: 'TREMOLO_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'TREMOLO', paramId: 7, name: 'TREMOLO_LEVEL', unit: 'unverified' },
   { family: 'TREMOLO', paramId: 8, name: 'TREMOLO_PAN', unit: 'unverified' },
   { family: 'TREMOLO', paramId: 9, name: 'TREMOLO_BYPASSMODE', unit: 'unverified' },
   { family: 'TREMOLO', paramId: 10, name: 'TREMOLO_GLOBALMIX', unit: 'unverified' },
-  { family: 'TREMOLO', paramId: 11, name: 'TREMOLO_PHASE', unit: 'unverified' },
-  { family: 'TREMOLO', paramId: 12, name: 'TREMOLO_WIDTH', unit: 'unverified' },
-  { family: 'TREMOLO', paramId: 13, name: 'TREMOLO_CENTER', unit: 'unverified' },
+  { family: 'TREMOLO', paramId: 11, name: 'TREMOLO_PHASE', unit: 'degrees', displayMin: 0, displayMax: 180 }, // inferred from AM4
+  { family: 'TREMOLO', paramId: 12, name: 'TREMOLO_WIDTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  { family: 'TREMOLO', paramId: 13, name: 'TREMOLO_CENTER', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 }, // inferred from AM4
   { family: 'TREMOLO', paramId: 14, name: 'TREMOLO_BYPASS', unit: 'unverified' },
   { family: 'TREMOLO', paramId: 15, name: 'TREMOLO_STARTPHASE', unit: 'unverified' },
   { family: 'TREMOLO', paramId: 16, name: 'TREMOLO_ORDER', unit: 'unverified' },
@@ -1547,7 +1547,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'TREMOLO', paramId: 18, name: 'TREMOLO_THRESH', unit: 'unverified' },
   { family: 'TREMOLO', paramId: 19, name: 'TREMOLO_SCENEIGNORE', unit: 'unverified' },
   { family: 'TREMOLO', paramId: 20, name: 'TREMOLO_BETA', unit: 'unverified' },
-  { family: 'TREMOLO', paramId: 21, name: 'TREMOLO_DUCKING', unit: 'unverified' },
+  { family: 'TREMOLO', paramId: 21, name: 'TREMOLO_DUCKING', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'PITCH', paramId: 0, name: 'PITCH_TYPE', unit: 'unverified' },
   { family: 'PITCH', paramId: 1, name: 'PITCH_PITCHMODE', unit: 'unverified' },
   { family: 'PITCH', paramId: 2, name: 'PITCH_CTRL', unit: 'unverified' },
@@ -1663,10 +1663,10 @@ export const PARAMS: readonly Param[] = [
   { family: 'PITCH', paramId: 112, name: 'PITCH_KILLDRY', unit: 'unverified' },
   { family: 'PITCH', paramId: 113, name: 'PITCH_THRESH', unit: 'unverified' },
   { family: 'FILTER', paramId: 0, name: 'FILTER_TYPE', unit: 'enum' }, // inferred from AM4
-  { family: 'FILTER', paramId: 1, name: 'FILTER_FREQ', unit: 'hz', displayMin: 20, displayMax: 20000 }, // inferred from AM4
+  { family: 'FILTER', paramId: 1, name: 'FILTER_FREQ', unit: 'unverified' },
   { family: 'FILTER', paramId: 2, name: 'FILTER_Q', unit: 'db', displayMin: 0.10000000149011612, displayMax: 10, scaling: 'log10' }, // inferred from AM4
   { family: 'FILTER', paramId: 3, name: 'FILTER_GAIN', unit: 'db', displayMin: -20, displayMax: 20 }, // inferred from AM4
-  { family: 'FILTER', paramId: 4, name: 'FILTER_LEVEL', unit: 'unverified' },
+  { family: 'FILTER', paramId: 4, name: 'FILTER_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   { family: 'FILTER', paramId: 5, name: 'FILTER_BAL', unit: 'unverified' },
   { family: 'FILTER', paramId: 6, name: 'FILTER_BYPASSMODE', unit: 'unverified' },
   { family: 'FILTER', paramId: 7, name: 'FILTER_ORDER', unit: 'count', displayMin: 1, displayMax: 12 }, // inferred from AM4
@@ -1747,7 +1747,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'ENHANCER', paramId: 1, name: 'ENHANCER_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   { family: 'ENHANCER', paramId: 2, name: 'ENHANCER_LOWCUT', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
   { family: 'ENHANCER', paramId: 3, name: 'ENHANCER_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
-  { family: 'ENHANCER', paramId: 4, name: 'ENHANCER_LEVEL', unit: 'unverified' },
+  { family: 'ENHANCER', paramId: 4, name: 'ENHANCER_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   { family: 'ENHANCER', paramId: 5, name: 'ENHANCER_BYPASS', unit: 'unverified' },
   { family: 'ENHANCER', paramId: 6, name: 'ENHANCER_TYPE', unit: 'enum' }, // inferred from AM4
   { family: 'ENHANCER', paramId: 7, name: 'ENHANCER_PHASE', unit: 'unverified' },
@@ -1949,12 +1949,12 @@ export const PARAMS: readonly Param[] = [
   { family: 'GATE', paramId: 1, name: 'GATE_ATTACK', unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' }, // inferred from AM4
   { family: 'GATE', paramId: 2, name: 'GATE_HOLD', unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' }, // inferred from AM4
   { family: 'GATE', paramId: 3, name: 'GATE_RELEASE', unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' }, // inferred from AM4
-  { family: 'GATE', paramId: 4, name: 'GATE_RATIO', unit: 'unverified' },
+  { family: 'GATE', paramId: 4, name: 'GATE_RATIO', unit: 'ratio', displayMin: 1, displayMax: 20, scaling: 'log10' }, // inferred from AM4
   { family: 'GATE', paramId: 5, name: 'GATE_KEY', unit: 'unverified' },
   { family: 'GATE', paramId: 6, name: 'GATE_LOWCUT', unit: 'unverified' },
   { family: 'GATE', paramId: 7, name: 'GATE_HICUT', unit: 'unverified' },
-  { family: 'GATE', paramId: 8, name: 'GATE_MIX', unit: 'unverified' },
-  { family: 'GATE', paramId: 9, name: 'GATE_LEVEL', unit: 'unverified' },
+  { family: 'GATE', paramId: 8, name: 'GATE_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  { family: 'GATE', paramId: 9, name: 'GATE_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   { family: 'GATE', paramId: 10, name: 'GATE_PAN', unit: 'unverified' },
   { family: 'GATE', paramId: 11, name: 'GATE_BYPASSMODE', unit: 'unverified' },
   { family: 'GATE', paramId: 12, name: 'GATE_BYPASS', unit: 'unverified' },
@@ -1963,7 +1963,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'GATE', paramId: 15, name: 'GATE_RANGE', unit: 'unverified' },
   { family: 'GATE', paramId: 16, name: 'GATE_PEAKRMS', unit: 'unverified' },
   { family: 'GATE', paramId: 17, name: 'GATE_SCENEIGNORE', unit: 'unverified' },
-  { family: 'GATE', paramId: 18, name: 'GATE_KNEE', unit: 'unverified' },
+  { family: 'GATE', paramId: 18, name: 'GATE_KNEE', unit: 'enum' }, // inferred from AM4
   { family: 'RINGMOD', paramId: 0, name: 'RINGMOD_COARSE', unit: 'unverified' },
   { family: 'RINGMOD', paramId: 1, name: 'RINGMOD_FINE', unit: 'unverified' },
   { family: 'RINGMOD', paramId: 2, name: 'RINGMOD_TRACK', unit: 'unverified' },
@@ -2105,18 +2105,18 @@ export const PARAMS: readonly Param[] = [
   { family: 'RESONATOR', paramId: 39, name: 'RESONATOR_INPUTMODE', unit: 'unverified' },
   { family: 'VOLUME', paramId: 0, name: 'VOLUME_GAIN', unit: 'unverified' },
   { family: 'VOLUME', paramId: 1, name: 'VOLUME_BAL', unit: 'unverified' },
-  { family: 'VOLUME', paramId: 2, name: 'VOLUME_TAPER', unit: 'unverified' },
+  { family: 'VOLUME', paramId: 2, name: 'VOLUME_TAPER', unit: 'enum' }, // inferred from AM4
   { family: 'VOLUME', paramId: 3, name: 'VOLUME_BYPASS', unit: 'unverified' },
   { family: 'VOLUME', paramId: 4, name: 'VOLUME_PANL', unit: 'unverified' },
   { family: 'VOLUME', paramId: 5, name: 'VOLUME_PANR', unit: 'unverified' },
-  { family: 'VOLUME', paramId: 6, name: 'VOLUME_LEVEL', unit: 'unverified' },
+  { family: 'VOLUME', paramId: 6, name: 'VOLUME_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   { family: 'VOLUME', paramId: 7, name: 'VOLUME_BYPASSMODE', unit: 'unverified' },
-  { family: 'VOLUME', paramId: 8, name: 'VOLUME_INPUTSELECT', unit: 'unverified' },
+  { family: 'VOLUME', paramId: 8, name: 'VOLUME_INPUTSELECT', unit: 'enum' }, // inferred from AM4
   { family: 'VOLUME', paramId: 9, name: 'VOLUME_TYPE', unit: 'unverified' },
   { family: 'VOLUME', paramId: 10, name: 'VOLUME_THRESHOLD', unit: 'db', displayMin: -100, displayMax: 0 }, // inferred from AM4
   { family: 'VOLUME', paramId: 11, name: 'VOLUME_ATTACK', unit: 'ms', displayMin: 1, displayMax: 5000, scaling: 'log10' }, // inferred from AM4
-  { family: 'VOLUME', paramId: 12, name: 'VOLUME_RELEASE', unit: 'unverified' },
-  { family: 'VOLUME', paramId: 13, name: 'VOLUME_HYSTERESIS', unit: 'unverified' },
+  { family: 'VOLUME', paramId: 12, name: 'VOLUME_RELEASE', unit: 'ms', displayMin: 1, displayMax: 5000, scaling: 'log10' }, // inferred from AM4
+  { family: 'VOLUME', paramId: 13, name: 'VOLUME_HYSTERESIS', unit: 'db', displayMin: 0, displayMax: 12 }, // inferred from AM4
   { family: 'VOLUME', paramId: 14, name: 'VOLUME_METER', unit: 'unverified' },
   { family: 'INPUT', paramId: 0, name: 'INPUT_THRESH', unit: 'unverified' },
   { family: 'INPUT', paramId: 1, name: 'INPUT_RATIO', unit: 'unverified' },
@@ -2835,9 +2835,9 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
   COMP: [
     { family: 'COMP', paramId: 0, name: 'COMP_THRESH', unit: 'db', displayMin: -60, displayMax: 20 }, // inferred from AM4
     { family: 'COMP', paramId: 1, name: 'COMP_RATIO', unit: 'ratio', displayMin: 1, displayMax: 20, scaling: 'log10' }, // inferred from AM4
-    { family: 'COMP', paramId: 2, name: 'COMP_ATTACK', unit: 'ms', displayMin: 0.1, displayMax: 100, scaling: 'log10' }, // inferred from AM4
-    { family: 'COMP', paramId: 3, name: 'COMP_RELEASE', unit: 'ms', displayMin: 2, displayMax: 2000, scaling: 'log10' }, // inferred from AM4
-    { family: 'COMP', paramId: 4, name: 'COMP_LEVEL', unit: 'unverified' },
+    { family: 'COMP', paramId: 2, name: 'COMP_ATTACK', unit: 'unverified' },
+    { family: 'COMP', paramId: 3, name: 'COMP_RELEASE', unit: 'unverified' },
+    { family: 'COMP', paramId: 4, name: 'COMP_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
     { family: 'COMP', paramId: 5, name: 'COMP_KNEE', unit: 'unverified' },
     { family: 'COMP', paramId: 6, name: 'COMP_AUTO', unit: 'unverified' },
     { family: 'COMP', paramId: 7, name: 'COMP_PEAKRMS', unit: 'unverified' },
@@ -2883,7 +2883,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'GEQ', paramId: 8, name: 'GEQ_GAIN9', unit: 'unverified' },
     { family: 'GEQ', paramId: 9, name: 'GEQ_GAIN10', unit: 'unverified' },
     { family: 'GEQ', paramId: 10, name: 'GEQ_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-    { family: 'GEQ', paramId: 11, name: 'GEQ_LEVEL', unit: 'unverified' },
+    { family: 'GEQ', paramId: 11, name: 'GEQ_LEVEL', unit: 'enum' }, // inferred from AM4
     { family: 'GEQ', paramId: 12, name: 'GEQ_PAN', unit: 'unverified' },
     { family: 'GEQ', paramId: 13, name: 'GEQ_BYPASSMODE', unit: 'unverified' },
     { family: 'GEQ', paramId: 14, name: 'GEQ_GLOBALMIX', unit: 'unverified' },
@@ -2945,13 +2945,13 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'DISTORT', paramId: 12, name: 'DISTORT_XFHPF', unit: 'unverified' },
     { family: 'DISTORT', paramId: 13, name: 'DISTORT_XFLPF', unit: 'unverified' },
     { family: 'DISTORT', paramId: 14, name: 'DISTORT_TONELOC', unit: 'unverified' },
-    { family: 'DISTORT', paramId: 15, name: 'DISTORT_INPUTSELECT', unit: 'unverified' },
+    { family: 'DISTORT', paramId: 15, name: 'DISTORT_INPUTSELECT', unit: 'enum' }, // inferred from AM4
     { family: 'DISTORT', paramId: 16, name: 'DISTORT_DEPTH', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
     { family: 'DISTORT', paramId: 17, name: 'DISTORT_OFFSET1', unit: 'unverified' },
     { family: 'DISTORT', paramId: 18, name: 'DISTORT_CLIPTYPE2', unit: 'unverified' },
     { family: 'DISTORT', paramId: 19, name: 'DISTORT_SUPPLYSAG', unit: 'unverified' },
     { family: 'DISTORT', paramId: 20, name: 'DISTORT_PRESENCE', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
-    { family: 'DISTORT', paramId: 21, name: 'DISTORT_LEVEL', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
+    { family: 'DISTORT', paramId: 21, name: 'DISTORT_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
     { family: 'DISTORT', paramId: 22, name: 'DISTORT_PAN', unit: 'unverified' },
     { family: 'DISTORT', paramId: 23, name: 'DISTORT_BYPASSMODE', unit: 'unverified' },
     { family: 'DISTORT', paramId: 24, name: 'DISTORT_BETA', unit: 'unverified' },
@@ -2966,10 +2966,10 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'DISTORT', paramId: 33, name: 'DISTORT_CFCLIP', unit: 'unverified' },
     { family: 'DISTORT', paramId: 34, name: 'DISTORT_TONETYPE', unit: 'unverified' },
     { family: 'DISTORT', paramId: 35, name: 'DISTORT_TIMECONST', unit: 'unverified' },
-    { family: 'DISTORT', paramId: 36, name: 'DISTORT_BIAS', unit: 'unverified' },
+    { family: 'DISTORT', paramId: 36, name: 'DISTORT_BIAS', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
     { family: 'DISTORT', paramId: 37, name: 'DISTORT_FBTYPE', unit: 'unverified' },
     { family: 'DISTORT', paramId: 38, name: 'DISTORT_PI_RATIO', unit: 'unverified' },
-    { family: 'DISTORT', paramId: 39, name: 'DISTORT_BRIGHT', unit: 'unverified' },
+    { family: 'DISTORT', paramId: 39, name: 'DISTORT_BRIGHT', unit: 'enum' }, // inferred from AM4
     { family: 'DISTORT', paramId: 40, name: 'DISTORT_BOOST', unit: 'unverified' },
     { family: 'DISTORT', paramId: 41, name: 'DISTORT_SPKRLFQ', unit: 'unverified' },
     { family: 'DISTORT', paramId: 42, name: 'DISTORT_OFFSET2', unit: 'unverified' },
@@ -3000,20 +3000,20 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'DISTORT', paramId: 67, name: 'DISTORT_FEEDFWDFREQ1', unit: 'unverified' },
     { family: 'DISTORT', paramId: 68, name: 'DISTORT_TUBETYPE', unit: 'unverified' },
     { family: 'DISTORT', paramId: 69, name: 'DISTORT_PRETUBETYPE', unit: 'unverified' },
-    { family: 'DISTORT', paramId: 70, name: 'DISTORT_CLARITY', unit: 'unverified' },
+    { family: 'DISTORT', paramId: 70, name: 'DISTORT_CLARITY', unit: 'knob_0_10', displayMin: 0, displayMax: 10, scaling: 'log10' }, // inferred from AM4
     { family: 'DISTORT', paramId: 71, name: 'DISTORT_INEQQ', unit: 'unverified' },
     { family: 'DISTORT', paramId: 72, name: 'DISTORT_INEQFREQ', unit: 'unverified' },
     { family: 'DISTORT', paramId: 73, name: 'DISTORT_INEQGAIN', unit: 'unverified' },
     { family: 'DISTORT', paramId: 74, name: 'DISTORT_DRIVE2', unit: 'unverified' },
     { family: 'DISTORT', paramId: 75, name: 'DISTORT_COMPRESSION', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-    { family: 'DISTORT', paramId: 76, name: 'DISTORT_THRESHOLD', unit: 'unverified' },
+    { family: 'DISTORT', paramId: 76, name: 'DISTORT_THRESHOLD', unit: 'db', displayMin: -60, displayMax: 0 }, // inferred from AM4
     { family: 'DISTORT', paramId: 77, name: 'DISTORT_MVTRIM', unit: 'unverified' },
-    { family: 'DISTORT', paramId: 78, name: 'DISTORT_FAT', unit: 'unverified' },
-    { family: 'DISTORT', paramId: 79, name: 'DISTORT_DEFINITION', unit: 'unverified' },
+    { family: 'DISTORT', paramId: 78, name: 'DISTORT_FAT', unit: 'enum' }, // inferred from AM4
+    { family: 'DISTORT', paramId: 79, name: 'DISTORT_DEFINITION', unit: 'count', displayMin: -10, displayMax: 10 }, // inferred from AM4
     { family: 'DISTORT', paramId: 80, name: 'DISTORT_CFTHRESH', unit: 'unverified' },
     { family: 'DISTORT', paramId: 81, name: 'DISTORT_CFGRID', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'DISTORT', paramId: 82, name: 'DISTORT_VERSION', unit: 'unverified' },
-    { family: 'DISTORT', paramId: 83, name: 'DISTORT_HICUT', unit: 'db', displayMin: 200, displayMax: 20000 }, // inferred from AM4
+    { family: 'DISTORT', paramId: 83, name: 'DISTORT_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
     { family: 'DISTORT', paramId: 84, name: 'DISTORT_DYNPRES', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
     { family: 'DISTORT', paramId: 85, name: 'DISTORT_DYNDEPTH', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
     { family: 'DISTORT', paramId: 86, name: 'DISTORT_SUPPLYTYPE', unit: 'unverified' },
@@ -3031,7 +3031,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'DISTORT', paramId: 98, name: 'DISTORT_PAOFFSET', unit: 'unverified' },
     { family: 'DISTORT', paramId: 99, name: 'DISTORT_INDYNAMICS', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
     { family: 'DISTORT', paramId: 100, name: 'DISTORT_SPKRHFQ', unit: 'unverified' },
-    { family: 'DISTORT', paramId: 101, name: 'DISTORT_VARIAC', unit: 'unverified' },
+    { family: 'DISTORT', paramId: 101, name: 'DISTORT_VARIAC', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'DISTORT', paramId: 102, name: 'DISTORT_INEQTYPE', unit: 'unverified' },
     { family: 'DISTORT', paramId: 103, name: 'DISTORT_GRIDHARDNESS', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'DISTORT', paramId: 104, name: 'DISTORT_PRESSHIFT', unit: 'unverified' },
@@ -3048,7 +3048,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'DISTORT', paramId: 115, name: 'DISTORT_MOTORDRIVE', unit: 'unverified' },
     { family: 'DISTORT', paramId: 116, name: 'DISTORT_MDTIME', unit: 'unverified' },
     { family: 'DISTORT', paramId: 117, name: 'DISTORT_RESOLUTION', unit: 'db', displayMin: 0, displayMax: 1 }, // inferred from AM4
-    { family: 'DISTORT', paramId: 118, name: 'DISTORT_VCCMON', unit: 'db', displayMin: 0, displayMax: 1 }, // inferred from AM4
+    { family: 'DISTORT', paramId: 118, name: 'DISTORT_VCCMON', unit: 'unverified' },
     { family: 'DISTORT', paramId: 119, name: 'DISTORT_GAINMON', unit: 'unverified' },
     { family: 'DISTORT', paramId: 120, name: 'DISTORT_MDMON', unit: 'db', displayMin: 0, displayMax: 1 }, // inferred from AM4
     { family: 'DISTORT', paramId: 121, name: 'DISTORT_INDYNMON', unit: 'db', displayMin: 0, displayMax: 1 }, // inferred from AM4
@@ -3205,15 +3205,15 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
   REVERB: [
     { family: 'REVERB', paramId: 0, name: 'REVERB_TYPE', unit: 'enum' }, // inferred from AM4
     { family: 'REVERB', paramId: 1, name: 'REVERB_TIME', unit: 'seconds', displayMin: 0.1, displayMax: 100 }, // inferred from AM4
-    { family: 'REVERB', paramId: 2, name: 'REVERB_HICUT', unit: 'unverified' },
+    { family: 'REVERB', paramId: 2, name: 'REVERB_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
     { family: 'REVERB', paramId: 3, name: 'REVERB_HFRATIO', unit: 'unverified' },
     { family: 'REVERB', paramId: 4, name: 'REVERB_DIFFUSION', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'REVERB', paramId: 5, name: 'REVERB_SIZE', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-    { family: 'REVERB', paramId: 6, name: 'REVERB_REVERBDELAY', unit: 'unverified' },
+    { family: 'REVERB', paramId: 6, name: 'REVERB_REVERBDELAY', unit: 'ms', displayMin: 0, displayMax: 250 }, // inferred from AM4
     { family: 'REVERB', paramId: 7, name: 'REVERB_EARLYLEVEL', unit: 'db', displayMin: -40, displayMax: 10 }, // inferred from AM4
     { family: 'REVERB', paramId: 8, name: 'REVERB_REVERBLEVEL', unit: 'unverified' },
-    { family: 'REVERB', paramId: 9, name: 'REVERB_PREDELAY', unit: 'unverified' },
-    { family: 'REVERB', paramId: 10, name: 'REVERB_LOWCUT', unit: 'unverified' },
+    { family: 'REVERB', paramId: 9, name: 'REVERB_PREDELAY', unit: 'ms', displayMin: 0, displayMax: 250 }, // inferred from AM4
+    { family: 'REVERB', paramId: 10, name: 'REVERB_LOWCUT', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
     { family: 'REVERB', paramId: 11, name: 'REVERB_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'REVERB', paramId: 12, name: 'REVERB_RATE', unit: 'hz', displayMin: 0.01, displayMax: 1 }, // inferred from AM4
     { family: 'REVERB', paramId: 13, name: 'REVERB_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
@@ -3222,19 +3222,19 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'REVERB', paramId: 16, name: 'REVERB_BYPASSMODE', unit: 'unverified' },
     { family: 'REVERB', paramId: 17, name: 'REVERB_GLOBALMIX', unit: 'unverified' },
     { family: 'REVERB', paramId: 18, name: 'REVERB_GAIN', unit: 'unverified' },
-    { family: 'REVERB', paramId: 19, name: 'REVERB_DENSITY', unit: 'unverified' },
+    { family: 'REVERB', paramId: 19, name: 'REVERB_DENSITY', unit: 'count', displayMin: 4, displayMax: 8 }, // inferred from AM4
     { family: 'REVERB', paramId: 20, name: 'REVERB_INPDIFF', unit: 'unverified' },
     { family: 'REVERB', paramId: 21, name: 'REVERB_INDIFFTIME', unit: 'unverified' },
     { family: 'REVERB', paramId: 22, name: 'REVERB_BYPASS', unit: 'unverified' },
     { family: 'REVERB', paramId: 23, name: 'REVERB_NUMSPRINGS', unit: 'count', displayMin: 2, displayMax: 6 }, // inferred from AM4
     { family: 'REVERB', paramId: 24, name: 'REVERB_TONE', unit: 'unverified' },
     { family: 'REVERB', paramId: 25, name: 'REVERB_WIDTH', unit: 'unverified' },
-    { family: 'REVERB', paramId: 26, name: 'REVERB_FREQ1', unit: 'unverified' },
-    { family: 'REVERB', paramId: 27, name: 'REVERB_FREQ2', unit: 'unverified' },
-    { family: 'REVERB', paramId: 28, name: 'REVERB_Q1', unit: 'unverified' },
-    { family: 'REVERB', paramId: 29, name: 'REVERB_Q2', unit: 'unverified' },
-    { family: 'REVERB', paramId: 30, name: 'REVERB_GAIN1', unit: 'unverified' },
-    { family: 'REVERB', paramId: 31, name: 'REVERB_GAIN2', unit: 'unverified' },
+    { family: 'REVERB', paramId: 26, name: 'REVERB_FREQ1', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
+    { family: 'REVERB', paramId: 27, name: 'REVERB_FREQ2', unit: 'hz', displayMin: 100, displayMax: 10000 }, // inferred from AM4
+    { family: 'REVERB', paramId: 28, name: 'REVERB_Q1', unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' }, // inferred from AM4
+    { family: 'REVERB', paramId: 29, name: 'REVERB_Q2', unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' }, // inferred from AM4
+    { family: 'REVERB', paramId: 30, name: 'REVERB_GAIN1', unit: 'db', displayMin: -12, displayMax: 12 }, // inferred from AM4
+    { family: 'REVERB', paramId: 31, name: 'REVERB_GAIN2', unit: 'db', displayMin: -12, displayMax: 12 }, // inferred from AM4
     { family: 'REVERB', paramId: 32, name: 'REVERB_DRIVE', unit: 'unverified' },
     { family: 'REVERB', paramId: 33, name: 'REVERB_LFTIME', unit: 'unverified' },
     { family: 'REVERB', paramId: 34, name: 'REVERB_LFXOVER', unit: 'unverified' },
@@ -3246,9 +3246,9 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'REVERB', paramId: 40, name: 'REVERB_EARLYDIFFTIME', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'REVERB', paramId: 41, name: 'REVERB_EARLYDECAY', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'REVERB', paramId: 42, name: 'REVERB_EARLYSEND', unit: 'unverified' },
-    { family: 'REVERB', paramId: 43, name: 'REVERB_QUALITY', unit: 'unverified' },
+    { family: 'REVERB', paramId: 43, name: 'REVERB_QUALITY', unit: 'enum' }, // inferred from AM4
     { family: 'REVERB', paramId: 44, name: 'REVERB_HOLD', unit: 'unverified' },
-    { family: 'REVERB', paramId: 45, name: 'REVERB_BASETYPE', unit: 'unverified' },
+    { family: 'REVERB', paramId: 45, name: 'REVERB_BASETYPE', unit: 'count', displayMin: 0, displayMax: 8 }, // inferred from AM4
     { family: 'REVERB', paramId: 46, name: 'REVERB_LFOPHASE', unit: 'degrees', displayMin: 0, displayMax: 180 }, // inferred from AM4
     { family: 'REVERB', paramId: 47, name: 'REVERB_INPUTSELECT', unit: 'unverified' },
     { family: 'REVERB', paramId: 48, name: 'REVERB_DISPERSION', unit: 'unverified' },
@@ -3269,7 +3269,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'REVERB', paramId: 63, name: 'REVERB_PREDLYMIX', unit: 'unverified' },
     { family: 'REVERB', paramId: 64, name: 'REVERB_PITCHLPF', unit: 'unverified' },
     { family: 'REVERB', paramId: 65, name: 'REVERB_SPRINGTYPE', unit: 'unverified' },
-    { family: 'REVERB', paramId: 66, name: 'REVERB_TONETYPE', unit: 'unverified' },
+    { family: 'REVERB', paramId: 66, name: 'REVERB_TONETYPE', unit: 'db', displayMin: 0, displayMax: 3 }, // inferred from AM4
     { family: 'REVERB', paramId: 67, name: 'REVERB_PREDLYTAP', unit: 'unverified' },
     { family: 'REVERB', paramId: 68, name: 'REVERB_KILLDRY', unit: 'unverified' },
     { family: 'REVERB', paramId: 69, name: 'REVERB_LOWQ', unit: 'unverified' },
@@ -3285,8 +3285,8 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'DELAY', paramId: 6, name: 'DELAY_FEEDR', unit: 'unverified' },
     { family: 'DELAY', paramId: 7, name: 'DELAY_DELAYPAN', unit: 'unverified' },
     { family: 'DELAY', paramId: 8, name: 'DELAY_SPREAD', unit: 'unverified' },
-    { family: 'DELAY', paramId: 9, name: 'DELAY_TEMPO', unit: 'unverified' },
-    { family: 'DELAY', paramId: 10, name: 'DELAY_LOCUT', unit: 'unverified' },
+    { family: 'DELAY', paramId: 9, name: 'DELAY_TEMPO', unit: 'enum' }, // inferred from AM4
+    { family: 'DELAY', paramId: 10, name: 'DELAY_LOCUT', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
     { family: 'DELAY', paramId: 11, name: 'DELAY_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
     { family: 'DELAY', paramId: 12, name: 'DELAY_RATE1', unit: 'unverified' },
     { family: 'DELAY', paramId: 13, name: 'DELAY_RATE2', unit: 'unverified' },
@@ -3294,7 +3294,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'DELAY', paramId: 15, name: 'DELAY_DEPTH2', unit: 'unverified' },
     { family: 'DELAY', paramId: 16, name: 'DELAY_DRIVE', unit: 'unverified' },
     { family: 'DELAY', paramId: 17, name: 'DELAY_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-    { family: 'DELAY', paramId: 18, name: 'DELAY_LEVEL', unit: 'unverified' },
+    { family: 'DELAY', paramId: 18, name: 'DELAY_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
     { family: 'DELAY', paramId: 19, name: 'DELAY_PAN', unit: 'unverified' },
     { family: 'DELAY', paramId: 20, name: 'DELAY_BYPASSMODE', unit: 'unverified' },
     { family: 'DELAY', paramId: 21, name: 'DELAY_GLOBALMIX', unit: 'unverified' },
@@ -3308,8 +3308,8 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'DELAY', paramId: 29, name: 'DELAY_TEMPOR', unit: 'unverified' },
     { family: 'DELAY', paramId: 30, name: 'DELAY_FEEDLR', unit: 'unverified' },
     { family: 'DELAY', paramId: 31, name: 'DELAY_FEEDRL', unit: 'unverified' },
-    { family: 'DELAY', paramId: 32, name: 'DELAY_LEVELL', unit: 'unverified' },
-    { family: 'DELAY', paramId: 33, name: 'DELAY_LEVELR', unit: 'unverified' },
+    { family: 'DELAY', paramId: 32, name: 'DELAY_LEVELL', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+    { family: 'DELAY', paramId: 33, name: 'DELAY_LEVELR', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'DELAY', paramId: 34, name: 'DELAY_PANL', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 }, // inferred from AM4
     { family: 'DELAY', paramId: 35, name: 'DELAY_PANR', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 }, // inferred from AM4
     { family: 'DELAY', paramId: 36, name: 'DELAY_LFO1PHASE', unit: 'unverified' },
@@ -3323,7 +3323,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'DELAY', paramId: 44, name: 'DELAY_RELEASE', unit: 'unverified' },
     { family: 'DELAY', paramId: 45, name: 'DELAY_DIFFUSE', unit: 'unverified' },
     { family: 'DELAY', paramId: 46, name: 'DELAY_DIFFTIME', unit: 'unverified' },
-    { family: 'DELAY', paramId: 47, name: 'DELAY_PHASEREV', unit: 'unverified' },
+    { family: 'DELAY', paramId: 47, name: 'DELAY_PHASEREV', unit: 'enum' }, // inferred from AM4
     { family: 'DELAY', paramId: 48, name: 'DELAY_LFO1TARGET', unit: 'unverified' },
     { family: 'DELAY', paramId: 49, name: 'DELAY_LFO2TARGET', unit: 'unverified' },
     { family: 'DELAY', paramId: 50, name: 'DELAY_LFO1TEMPO', unit: 'unverified' },
@@ -3336,7 +3336,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'DELAY', paramId: 57, name: 'DELAY_FSTOP', unit: 'unverified' },
     { family: 'DELAY', paramId: 58, name: 'DELAY_Q', unit: 'unverified' },
     { family: 'DELAY', paramId: 59, name: 'DELAY_FILTERQ', unit: 'unverified' },
-    { family: 'DELAY', paramId: 60, name: 'DELAY_BITREDUCE', unit: 'unverified' },
+    { family: 'DELAY', paramId: 60, name: 'DELAY_BITREDUCE', unit: 'count', displayMin: 0, displayMax: 24 }, // inferred from AM4
     { family: 'DELAY', paramId: 61, name: 'DELAY_FREQ1', unit: 'unverified' },
     { family: 'DELAY', paramId: 62, name: 'DELAY_FREQ2', unit: 'unverified' },
     { family: 'DELAY', paramId: 63, name: 'DELAY_Q1', unit: 'unverified' },
@@ -3347,10 +3347,10 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'DELAY', paramId: 68, name: 'DELAY_SPEED', unit: 'unverified' },
     { family: 'DELAY', paramId: 69, name: 'DELAY_OFFSET', unit: 'unverified' },
     { family: 'DELAY', paramId: 70, name: 'DELAY_HPF_ORDER', unit: 'unverified' },
-    { family: 'DELAY', paramId: 71, name: 'DELAY_COMPANDER', unit: 'unverified' },
+    { family: 'DELAY', paramId: 71, name: 'DELAY_COMPANDER', unit: 'enum' }, // inferred from AM4
     { family: 'DELAY', paramId: 72, name: 'DELAY_COMPTIME', unit: 'unverified' },
     { family: 'DELAY', paramId: 73, name: 'DELAY_COMPTHRESH', unit: 'unverified' },
-    { family: 'DELAY', paramId: 74, name: 'DELAY_MSTRTIME', unit: 'unverified' },
+    { family: 'DELAY', paramId: 74, name: 'DELAY_MSTRTIME', unit: 'percent', displayMin: 25, displayMax: 400 }, // inferred from AM4
     { family: 'DELAY', paramId: 75, name: 'DELAY_DIFFRATE', unit: 'unverified' },
     { family: 'DELAY', paramId: 76, name: 'DELAY_DIFFDEPTH', unit: 'unverified' },
     { family: 'DELAY', paramId: 77, name: 'DELAY_LFO4TYPE', unit: 'unverified' },
@@ -3360,9 +3360,9 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'DELAY', paramId: 81, name: 'DELAY_LFO4PHASE', unit: 'unverified' },
     { family: 'DELAY', paramId: 82, name: 'DELAY_LFO4TARGET', unit: 'unverified' },
     { family: 'DELAY', paramId: 83, name: 'DELAY_SCENEIGNORE', unit: 'unverified' },
-    { family: 'DELAY', paramId: 84, name: 'DELAY_STACKFDBK', unit: 'unverified' },
-    { family: 'DELAY', paramId: 85, name: 'DELAY_HOLDFDBK', unit: 'unverified' },
-    { family: 'DELAY', paramId: 86, name: 'DELAY_KILLDRY', unit: 'unverified' },
+    { family: 'DELAY', paramId: 84, name: 'DELAY_STACKFDBK', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+    { family: 'DELAY', paramId: 85, name: 'DELAY_HOLDFDBK', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+    { family: 'DELAY', paramId: 86, name: 'DELAY_KILLDRY', unit: 'enum' }, // inferred from AM4
     { family: 'DELAY', paramId: 87, name: 'DELAY_SVFTYPE', unit: 'unverified' },
     { family: 'DELAY', paramId: 88, name: 'DELAY_DRYDIFFUSE', unit: 'unverified' },
   ],
@@ -3589,32 +3589,32 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
   ],
   CHORUS: [
     { family: 'CHORUS', paramId: 0, name: 'CHORUS_TYPE', unit: 'enum' }, // inferred from AM4
-    { family: 'CHORUS', paramId: 1, name: 'CHORUS_VOICES', unit: 'unverified' },
+    { family: 'CHORUS', paramId: 1, name: 'CHORUS_VOICES', unit: 'count', displayMin: 1, displayMax: 4 }, // inferred from AM4
     { family: 'CHORUS', paramId: 2, name: 'CHORUS_RATE', unit: 'hz', displayMin: 0.1, displayMax: 10 }, // inferred from AM4
-    { family: 'CHORUS', paramId: 3, name: 'CHORUS_TEMPO', unit: 'unverified' },
+    { family: 'CHORUS', paramId: 3, name: 'CHORUS_TEMPO', unit: 'enum' }, // inferred from AM4
     { family: 'CHORUS', paramId: 4, name: 'CHORUS_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'CHORUS', paramId: 5, name: 'CHORUS_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
-    { family: 'CHORUS', paramId: 6, name: 'CHORUS_DELAYTIME', unit: 'unverified' },
+    { family: 'CHORUS', paramId: 6, name: 'CHORUS_DELAYTIME', unit: 'ms', displayMin: 0.1, displayMax: 50 }, // inferred from AM4
     { family: 'CHORUS', paramId: 7, name: 'CHORUS_LFOPHASE', unit: 'unverified' },
-    { family: 'CHORUS', paramId: 8, name: 'CHORUS_LFOTYPE', unit: 'unverified' },
+    { family: 'CHORUS', paramId: 8, name: 'CHORUS_LFOTYPE', unit: 'enum' }, // inferred from AM4
     { family: 'CHORUS', paramId: 9, name: 'CHORUS_AUTO', unit: 'unverified' },
     { family: 'CHORUS', paramId: 10, name: 'CHORUS_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-    { family: 'CHORUS', paramId: 11, name: 'CHORUS_LEVEL', unit: 'unverified' },
+    { family: 'CHORUS', paramId: 11, name: 'CHORUS_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
     { family: 'CHORUS', paramId: 12, name: 'CHORUS_PAN', unit: 'unverified' },
     { family: 'CHORUS', paramId: 13, name: 'CHORUS_BYPASSMODE', unit: 'unverified' },
     { family: 'CHORUS', paramId: 14, name: 'CHORUS_GLOBALMIX', unit: 'unverified' },
     { family: 'CHORUS', paramId: 15, name: 'CHORUS_BYPASS', unit: 'unverified' },
-    { family: 'CHORUS', paramId: 16, name: 'CHORUS_PHASEREV', unit: 'unverified' },
-    { family: 'CHORUS', paramId: 17, name: 'CHORUS_WIDTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+    { family: 'CHORUS', paramId: 16, name: 'CHORUS_PHASEREV', unit: 'enum' }, // inferred from AM4
+    { family: 'CHORUS', paramId: 17, name: 'CHORUS_WIDTH', unit: 'unverified' },
     { family: 'CHORUS', paramId: 18, name: 'CHORUS_RATE2', unit: 'unverified' },
     { family: 'CHORUS', paramId: 19, name: 'CHORUS_DEPTH2', unit: 'unverified' },
     { family: 'CHORUS', paramId: 20, name: 'CHORUS_DRIVE', unit: 'knob_0_10', displayMin: 0.5, displayMax: 500, scaling: 'log10' }, // inferred from AM4
-    { family: 'CHORUS', paramId: 21, name: 'CHORUS_LOWCUT', unit: 'unverified' },
+    { family: 'CHORUS', paramId: 21, name: 'CHORUS_LOWCUT', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
     { family: 'CHORUS', paramId: 22, name: 'CHORUS_SPREAD', unit: 'unverified' },
-    { family: 'CHORUS', paramId: 23, name: 'CHORUS_MODE', unit: 'unverified' },
-    { family: 'CHORUS', paramId: 24, name: 'CHORUS_DEPTHL', unit: 'unverified' },
-    { family: 'CHORUS', paramId: 25, name: 'CHORUS_DEPTHC', unit: 'unverified' },
-    { family: 'CHORUS', paramId: 26, name: 'CHORUS_DEPTHR', unit: 'unverified' },
+    { family: 'CHORUS', paramId: 23, name: 'CHORUS_MODE', unit: 'enum' }, // inferred from AM4
+    { family: 'CHORUS', paramId: 24, name: 'CHORUS_DEPTHL', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+    { family: 'CHORUS', paramId: 25, name: 'CHORUS_DEPTHC', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+    { family: 'CHORUS', paramId: 26, name: 'CHORUS_DEPTHR', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'CHORUS', paramId: 27, name: 'CHORUS_TEMPO2', unit: 'unverified' },
     { family: 'CHORUS', paramId: 28, name: 'CHORUS_SCENEIGNORE', unit: 'unverified' },
     { family: 'CHORUS', paramId: 29, name: 'CHORUS_DELAYRANGE', unit: 'unverified' },
@@ -3626,15 +3626,15 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'FLANGER', paramId: 0, name: 'FLANGER_OLD_TYPE', unit: 'unverified' },
     { family: 'FLANGER', paramId: 1, name: 'FLANGER_RATE', unit: 'hz', displayMin: 0.05, displayMax: 10 }, // inferred from AM4
     { family: 'FLANGER', paramId: 1, name: 'FLANGER_OLD_RATE', unit: 'unverified' },
-    { family: 'FLANGER', paramId: 2, name: 'FLANGER_TEMPO', unit: 'unverified' },
+    { family: 'FLANGER', paramId: 2, name: 'FLANGER_TEMPO', unit: 'enum' }, // inferred from AM4
     { family: 'FLANGER', paramId: 2, name: 'FLANGER_OLD_TEMPO', unit: 'unverified' },
     { family: 'FLANGER', paramId: 3, name: 'FLANGER_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'FLANGER', paramId: 3, name: 'FLANGER_OLD_DEPTH', unit: 'unverified' },
     { family: 'FLANGER', paramId: 4, name: 'FLANGER_FEEDBACK', unit: 'bipolar_percent', displayMin: -99, displayMax: 99 }, // inferred from AM4
     { family: 'FLANGER', paramId: 4, name: 'FLANGER_OLD_FEEDBACK', unit: 'unverified' },
-    { family: 'FLANGER', paramId: 5, name: 'FLANGER_MANUAL', unit: 'unverified' },
+    { family: 'FLANGER', paramId: 5, name: 'FLANGER_MANUAL', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
     { family: 'FLANGER', paramId: 5, name: 'FLANGER_OLD_DELAYTIME', unit: 'unverified' },
-    { family: 'FLANGER', paramId: 6, name: 'FLANGER_DRYDELAY', unit: 'unverified' },
+    { family: 'FLANGER', paramId: 6, name: 'FLANGER_DRYDELAY', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'FLANGER', paramId: 6, name: 'FLANGER_OLD_MANUAL', unit: 'unverified' },
     { family: 'FLANGER', paramId: 7, name: 'FLANGER_LFOPHASE', unit: 'unverified' },
     { family: 'FLANGER', paramId: 7, name: 'FLANGER_OLD_LFOPHASE', unit: 'unverified' },
@@ -3646,7 +3646,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'FLANGER', paramId: 10, name: 'FLANGER_OLD_AUTO', unit: 'unverified' },
     { family: 'FLANGER', paramId: 11, name: 'FLANGER_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'FLANGER', paramId: 11, name: 'FLANGER_OLD_MIX', unit: 'unverified' },
-    { family: 'FLANGER', paramId: 12, name: 'FLANGER_LEVEL', unit: 'unverified' },
+    { family: 'FLANGER', paramId: 12, name: 'FLANGER_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
     { family: 'FLANGER', paramId: 12, name: 'FLANGER_OLD_LEVEL', unit: 'unverified' },
     { family: 'FLANGER', paramId: 13, name: 'FLANGER_PAN', unit: 'unverified' },
     { family: 'FLANGER', paramId: 13, name: 'FLANGER_OLD_PAN', unit: 'unverified' },
@@ -3678,9 +3678,9 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'FLANGER', paramId: 26, name: 'FLANGER_OLD_LPF_ORDER', unit: 'unverified' },
     { family: 'FLANGER', paramId: 27, name: 'FLANGER_VCO_CURVE', unit: 'unverified' },
     { family: 'FLANGER', paramId: 27, name: 'FLANGER_OLD_HPF_ORDER', unit: 'unverified' },
-    { family: 'FLANGER', paramId: 28, name: 'FLANGER_TMIN', unit: 'unverified' },
+    { family: 'FLANGER', paramId: 28, name: 'FLANGER_TMIN', unit: 'ms', displayMin: 0, displayMax: 2 }, // inferred from AM4
     { family: 'FLANGER', paramId: 28, name: 'FLANGER_OLD_DRY_LPF_ORDER', unit: 'unverified' },
-    { family: 'FLANGER', paramId: 29, name: 'FLANGER_TMAX', unit: 'unverified' },
+    { family: 'FLANGER', paramId: 29, name: 'FLANGER_TMAX', unit: 'ms', displayMin: 0, displayMax: 20 }, // inferred from AM4
     { family: 'FLANGER', paramId: 29, name: 'FLANGER_OLD_DRY_HPF_ORDER', unit: 'unverified' },
     { family: 'FLANGER', paramId: 30, name: 'FLANGER_LFOQUANTIZE', unit: 'unverified' },
     { family: 'FLANGER', paramId: 31, name: 'FLANGER_VCOK', unit: 'unverified' },
@@ -3706,7 +3706,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'ROTARY', paramId: 16, name: 'ROTARY_SPREAD', unit: 'unverified' },
     { family: 'ROTARY', paramId: 17, name: 'ROTARY_DRIVE', unit: 'knob_0_10', displayMin: 0.5, displayMax: 500, scaling: 'log10' }, // inferred from AM4
     { family: 'ROTARY', paramId: 18, name: 'ROTARY_MICDIST', unit: 'unverified' },
-    { family: 'ROTARY', paramId: 19, name: 'ROTARY_INPUTSELECT', unit: 'unverified' },
+    { family: 'ROTARY', paramId: 19, name: 'ROTARY_INPUTSELECT', unit: 'enum' }, // inferred from AM4
     { family: 'ROTARY', paramId: 20, name: 'ROTARY_SCENEIGNORE', unit: 'unverified' },
   ],
   PHASER: [
@@ -3714,15 +3714,15 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'PHASER', paramId: 1, name: 'PHASER_ORDER', unit: 'unverified' },
     { family: 'PHASER', paramId: 2, name: 'PHASER_RATE', unit: 'hz', displayMin: 0.1, displayMax: 10 }, // inferred from AM4
     { family: 'PHASER', paramId: 3, name: 'PHASER_LFOTYPE', unit: 'unverified' },
-    { family: 'PHASER', paramId: 4, name: 'PHASER_TEMPO', unit: 'unverified' },
-    { family: 'PHASER', paramId: 5, name: 'PHASER_DEPTH', unit: 'unverified' },
+    { family: 'PHASER', paramId: 4, name: 'PHASER_TEMPO', unit: 'enum' }, // inferred from AM4
+    { family: 'PHASER', paramId: 5, name: 'PHASER_DEPTH', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
     { family: 'PHASER', paramId: 6, name: 'PHASER_FEEDBACK', unit: 'bipolar_percent', displayMin: -90, displayMax: 90 }, // inferred from AM4
     { family: 'PHASER', paramId: 7, name: 'PHASER_FMIN', unit: 'unverified' },
     { family: 'PHASER', paramId: 8, name: 'PHASER_FMAX', unit: 'unverified' },
     { family: 'PHASER', paramId: 9, name: 'PHASER_LFOPHASE', unit: 'unverified' },
     { family: 'PHASER', paramId: 10, name: 'PHASER_BIAS', unit: 'db', displayMin: -1, displayMax: 1 }, // inferred from AM4
     { family: 'PHASER', paramId: 11, name: 'PHASER_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-    { family: 'PHASER', paramId: 12, name: 'PHASER_LEVEL', unit: 'unverified' },
+    { family: 'PHASER', paramId: 12, name: 'PHASER_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
     { family: 'PHASER', paramId: 13, name: 'PHASER_PAN', unit: 'unverified' },
     { family: 'PHASER', paramId: 14, name: 'PHASER_BYPASSMODE', unit: 'unverified' },
     { family: 'PHASER', paramId: 15, name: 'PHASER_GLOBALMIX', unit: 'unverified' },
@@ -3740,7 +3740,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'PHASER', paramId: 27, name: 'PHASER_LFOLPF', unit: 'unverified' },
     { family: 'PHASER', paramId: 28, name: 'PHASER_ATTACK', unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' }, // inferred from AM4
     { family: 'PHASER', paramId: 29, name: 'PHASER_RELEASE', unit: 'ms', displayMin: 0, displayMax: 100, scaling: 'log10' }, // inferred from AM4
-    { family: 'PHASER', paramId: 30, name: 'PHASER_MANUAL', unit: 'unverified' },
+    { family: 'PHASER', paramId: 30, name: 'PHASER_MANUAL', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
     { family: 'PHASER', paramId: 31, name: 'PHASER_SCENEIGNORE', unit: 'unverified' },
     { family: 'PHASER', paramId: 32, name: 'PHASER_HPF', unit: 'unverified' },
     { family: 'PHASER', paramId: 33, name: 'PHASER_LPF', unit: 'unverified' },
@@ -3753,7 +3753,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'WAH', paramId: 3, name: 'WAH_Q', unit: 'unverified' },
     { family: 'WAH', paramId: 4, name: 'WAH_TRACK', unit: 'unverified' },
     { family: 'WAH', paramId: 5, name: 'WAH_CONTROL', unit: 'unverified' },
-    { family: 'WAH', paramId: 6, name: 'WAH_LEVEL', unit: 'unverified' },
+    { family: 'WAH', paramId: 6, name: 'WAH_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
     { family: 'WAH', paramId: 7, name: 'WAH_PAN', unit: 'unverified' },
     { family: 'WAH', paramId: 8, name: 'WAH_BYPASSMODE', unit: 'unverified' },
     { family: 'WAH', paramId: 9, name: 'WAH_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
@@ -3793,15 +3793,15 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'TREMOLO', paramId: 2, name: 'TREMOLO_RATE', unit: 'hz', displayMin: 0.2, displayMax: 20 }, // inferred from AM4
     { family: 'TREMOLO', paramId: 3, name: 'TREMOLO_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'TREMOLO', paramId: 4, name: 'TREMOLO_DUTY', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-    { family: 'TREMOLO', paramId: 5, name: 'TREMOLO_TEMPO', unit: 'unverified' },
+    { family: 'TREMOLO', paramId: 5, name: 'TREMOLO_TEMPO', unit: 'enum' }, // inferred from AM4
     { family: 'TREMOLO', paramId: 6, name: 'TREMOLO_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'TREMOLO', paramId: 7, name: 'TREMOLO_LEVEL', unit: 'unverified' },
     { family: 'TREMOLO', paramId: 8, name: 'TREMOLO_PAN', unit: 'unverified' },
     { family: 'TREMOLO', paramId: 9, name: 'TREMOLO_BYPASSMODE', unit: 'unverified' },
     { family: 'TREMOLO', paramId: 10, name: 'TREMOLO_GLOBALMIX', unit: 'unverified' },
-    { family: 'TREMOLO', paramId: 11, name: 'TREMOLO_PHASE', unit: 'unverified' },
-    { family: 'TREMOLO', paramId: 12, name: 'TREMOLO_WIDTH', unit: 'unverified' },
-    { family: 'TREMOLO', paramId: 13, name: 'TREMOLO_CENTER', unit: 'unverified' },
+    { family: 'TREMOLO', paramId: 11, name: 'TREMOLO_PHASE', unit: 'degrees', displayMin: 0, displayMax: 180 }, // inferred from AM4
+    { family: 'TREMOLO', paramId: 12, name: 'TREMOLO_WIDTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+    { family: 'TREMOLO', paramId: 13, name: 'TREMOLO_CENTER', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 }, // inferred from AM4
     { family: 'TREMOLO', paramId: 14, name: 'TREMOLO_BYPASS', unit: 'unverified' },
     { family: 'TREMOLO', paramId: 15, name: 'TREMOLO_STARTPHASE', unit: 'unverified' },
     { family: 'TREMOLO', paramId: 16, name: 'TREMOLO_ORDER', unit: 'unverified' },
@@ -3809,7 +3809,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'TREMOLO', paramId: 18, name: 'TREMOLO_THRESH', unit: 'unverified' },
     { family: 'TREMOLO', paramId: 19, name: 'TREMOLO_SCENEIGNORE', unit: 'unverified' },
     { family: 'TREMOLO', paramId: 20, name: 'TREMOLO_BETA', unit: 'unverified' },
-    { family: 'TREMOLO', paramId: 21, name: 'TREMOLO_DUCKING', unit: 'unverified' },
+    { family: 'TREMOLO', paramId: 21, name: 'TREMOLO_DUCKING', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   ],
   PITCH: [
     { family: 'PITCH', paramId: 0, name: 'PITCH_TYPE', unit: 'unverified' },
@@ -3929,10 +3929,10 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
   ],
   FILTER: [
     { family: 'FILTER', paramId: 0, name: 'FILTER_TYPE', unit: 'enum' }, // inferred from AM4
-    { family: 'FILTER', paramId: 1, name: 'FILTER_FREQ', unit: 'hz', displayMin: 20, displayMax: 20000 }, // inferred from AM4
+    { family: 'FILTER', paramId: 1, name: 'FILTER_FREQ', unit: 'unverified' },
     { family: 'FILTER', paramId: 2, name: 'FILTER_Q', unit: 'db', displayMin: 0.10000000149011612, displayMax: 10, scaling: 'log10' }, // inferred from AM4
     { family: 'FILTER', paramId: 3, name: 'FILTER_GAIN', unit: 'db', displayMin: -20, displayMax: 20 }, // inferred from AM4
-    { family: 'FILTER', paramId: 4, name: 'FILTER_LEVEL', unit: 'unverified' },
+    { family: 'FILTER', paramId: 4, name: 'FILTER_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
     { family: 'FILTER', paramId: 5, name: 'FILTER_BAL', unit: 'unverified' },
     { family: 'FILTER', paramId: 6, name: 'FILTER_BYPASSMODE', unit: 'unverified' },
     { family: 'FILTER', paramId: 7, name: 'FILTER_ORDER', unit: 'count', displayMin: 1, displayMax: 12 }, // inferred from AM4
@@ -4017,7 +4017,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'ENHANCER', paramId: 1, name: 'ENHANCER_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
     { family: 'ENHANCER', paramId: 2, name: 'ENHANCER_LOWCUT', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
     { family: 'ENHANCER', paramId: 3, name: 'ENHANCER_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
-    { family: 'ENHANCER', paramId: 4, name: 'ENHANCER_LEVEL', unit: 'unverified' },
+    { family: 'ENHANCER', paramId: 4, name: 'ENHANCER_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
     { family: 'ENHANCER', paramId: 5, name: 'ENHANCER_BYPASS', unit: 'unverified' },
     { family: 'ENHANCER', paramId: 6, name: 'ENHANCER_TYPE', unit: 'enum' }, // inferred from AM4
     { family: 'ENHANCER', paramId: 7, name: 'ENHANCER_PHASE', unit: 'unverified' },
@@ -4235,12 +4235,12 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'GATE', paramId: 1, name: 'GATE_ATTACK', unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' }, // inferred from AM4
     { family: 'GATE', paramId: 2, name: 'GATE_HOLD', unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' }, // inferred from AM4
     { family: 'GATE', paramId: 3, name: 'GATE_RELEASE', unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' }, // inferred from AM4
-    { family: 'GATE', paramId: 4, name: 'GATE_RATIO', unit: 'unverified' },
+    { family: 'GATE', paramId: 4, name: 'GATE_RATIO', unit: 'ratio', displayMin: 1, displayMax: 20, scaling: 'log10' }, // inferred from AM4
     { family: 'GATE', paramId: 5, name: 'GATE_KEY', unit: 'unverified' },
     { family: 'GATE', paramId: 6, name: 'GATE_LOWCUT', unit: 'unverified' },
     { family: 'GATE', paramId: 7, name: 'GATE_HICUT', unit: 'unverified' },
-    { family: 'GATE', paramId: 8, name: 'GATE_MIX', unit: 'unverified' },
-    { family: 'GATE', paramId: 9, name: 'GATE_LEVEL', unit: 'unverified' },
+    { family: 'GATE', paramId: 8, name: 'GATE_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+    { family: 'GATE', paramId: 9, name: 'GATE_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
     { family: 'GATE', paramId: 10, name: 'GATE_PAN', unit: 'unverified' },
     { family: 'GATE', paramId: 11, name: 'GATE_BYPASSMODE', unit: 'unverified' },
     { family: 'GATE', paramId: 12, name: 'GATE_BYPASS', unit: 'unverified' },
@@ -4249,7 +4249,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'GATE', paramId: 15, name: 'GATE_RANGE', unit: 'unverified' },
     { family: 'GATE', paramId: 16, name: 'GATE_PEAKRMS', unit: 'unverified' },
     { family: 'GATE', paramId: 17, name: 'GATE_SCENEIGNORE', unit: 'unverified' },
-    { family: 'GATE', paramId: 18, name: 'GATE_KNEE', unit: 'unverified' },
+    { family: 'GATE', paramId: 18, name: 'GATE_KNEE', unit: 'enum' }, // inferred from AM4
   ],
   RINGMOD: [
     { family: 'RINGMOD', paramId: 0, name: 'RINGMOD_COARSE', unit: 'unverified' },
@@ -4401,18 +4401,18 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
   VOLUME: [
     { family: 'VOLUME', paramId: 0, name: 'VOLUME_GAIN', unit: 'unverified' },
     { family: 'VOLUME', paramId: 1, name: 'VOLUME_BAL', unit: 'unverified' },
-    { family: 'VOLUME', paramId: 2, name: 'VOLUME_TAPER', unit: 'unverified' },
+    { family: 'VOLUME', paramId: 2, name: 'VOLUME_TAPER', unit: 'enum' }, // inferred from AM4
     { family: 'VOLUME', paramId: 3, name: 'VOLUME_BYPASS', unit: 'unverified' },
     { family: 'VOLUME', paramId: 4, name: 'VOLUME_PANL', unit: 'unverified' },
     { family: 'VOLUME', paramId: 5, name: 'VOLUME_PANR', unit: 'unverified' },
-    { family: 'VOLUME', paramId: 6, name: 'VOLUME_LEVEL', unit: 'unverified' },
+    { family: 'VOLUME', paramId: 6, name: 'VOLUME_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
     { family: 'VOLUME', paramId: 7, name: 'VOLUME_BYPASSMODE', unit: 'unverified' },
-    { family: 'VOLUME', paramId: 8, name: 'VOLUME_INPUTSELECT', unit: 'unverified' },
+    { family: 'VOLUME', paramId: 8, name: 'VOLUME_INPUTSELECT', unit: 'enum' }, // inferred from AM4
     { family: 'VOLUME', paramId: 9, name: 'VOLUME_TYPE', unit: 'unverified' },
     { family: 'VOLUME', paramId: 10, name: 'VOLUME_THRESHOLD', unit: 'db', displayMin: -100, displayMax: 0 }, // inferred from AM4
     { family: 'VOLUME', paramId: 11, name: 'VOLUME_ATTACK', unit: 'ms', displayMin: 1, displayMax: 5000, scaling: 'log10' }, // inferred from AM4
-    { family: 'VOLUME', paramId: 12, name: 'VOLUME_RELEASE', unit: 'unverified' },
-    { family: 'VOLUME', paramId: 13, name: 'VOLUME_HYSTERESIS', unit: 'unverified' },
+    { family: 'VOLUME', paramId: 12, name: 'VOLUME_RELEASE', unit: 'ms', displayMin: 1, displayMax: 5000, scaling: 'log10' }, // inferred from AM4
+    { family: 'VOLUME', paramId: 13, name: 'VOLUME_HYSTERESIS', unit: 'db', displayMin: 0, displayMax: 12 }, // inferred from AM4
     { family: 'VOLUME', paramId: 14, name: 'VOLUME_METER', unit: 'unverified' },
   ],
   INPUT: [
@@ -5148,9 +5148,9 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'IRCAPTURE.IRCAPTURE_CAB_NAME': { family: 'IRCAPTURE', paramId: 4, name: 'IRCAPTURE_CAB_NAME', unit: 'unverified' },
   'COMP.COMP_THRESH': { family: 'COMP', paramId: 0, name: 'COMP_THRESH', unit: 'db', displayMin: -60, displayMax: 20 }, // inferred from AM4
   'COMP.COMP_RATIO': { family: 'COMP', paramId: 1, name: 'COMP_RATIO', unit: 'ratio', displayMin: 1, displayMax: 20, scaling: 'log10' }, // inferred from AM4
-  'COMP.COMP_ATTACK': { family: 'COMP', paramId: 2, name: 'COMP_ATTACK', unit: 'ms', displayMin: 0.1, displayMax: 100, scaling: 'log10' }, // inferred from AM4
-  'COMP.COMP_RELEASE': { family: 'COMP', paramId: 3, name: 'COMP_RELEASE', unit: 'ms', displayMin: 2, displayMax: 2000, scaling: 'log10' }, // inferred from AM4
-  'COMP.COMP_LEVEL': { family: 'COMP', paramId: 4, name: 'COMP_LEVEL', unit: 'unverified' },
+  'COMP.COMP_ATTACK': { family: 'COMP', paramId: 2, name: 'COMP_ATTACK', unit: 'unverified' },
+  'COMP.COMP_RELEASE': { family: 'COMP', paramId: 3, name: 'COMP_RELEASE', unit: 'unverified' },
+  'COMP.COMP_LEVEL': { family: 'COMP', paramId: 4, name: 'COMP_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   'COMP.COMP_KNEE': { family: 'COMP', paramId: 5, name: 'COMP_KNEE', unit: 'unverified' },
   'COMP.COMP_AUTO': { family: 'COMP', paramId: 6, name: 'COMP_AUTO', unit: 'unverified' },
   'COMP.COMP_PEAKRMS': { family: 'COMP', paramId: 7, name: 'COMP_PEAKRMS', unit: 'unverified' },
@@ -5194,7 +5194,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'GEQ.GEQ_GAIN9': { family: 'GEQ', paramId: 8, name: 'GEQ_GAIN9', unit: 'unverified' },
   'GEQ.GEQ_GAIN10': { family: 'GEQ', paramId: 9, name: 'GEQ_GAIN10', unit: 'unverified' },
   'GEQ.GEQ_MIX': { family: 'GEQ', paramId: 10, name: 'GEQ_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  'GEQ.GEQ_LEVEL': { family: 'GEQ', paramId: 11, name: 'GEQ_LEVEL', unit: 'unverified' },
+  'GEQ.GEQ_LEVEL': { family: 'GEQ', paramId: 11, name: 'GEQ_LEVEL', unit: 'enum' }, // inferred from AM4
   'GEQ.GEQ_PAN': { family: 'GEQ', paramId: 12, name: 'GEQ_PAN', unit: 'unverified' },
   'GEQ.GEQ_BYPASSMODE': { family: 'GEQ', paramId: 13, name: 'GEQ_BYPASSMODE', unit: 'unverified' },
   'GEQ.GEQ_GLOBALMIX': { family: 'GEQ', paramId: 14, name: 'GEQ_GLOBALMIX', unit: 'unverified' },
@@ -5252,13 +5252,13 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'DISTORT.DISTORT_XFHPF': { family: 'DISTORT', paramId: 12, name: 'DISTORT_XFHPF', unit: 'unverified' },
   'DISTORT.DISTORT_XFLPF': { family: 'DISTORT', paramId: 13, name: 'DISTORT_XFLPF', unit: 'unverified' },
   'DISTORT.DISTORT_TONELOC': { family: 'DISTORT', paramId: 14, name: 'DISTORT_TONELOC', unit: 'unverified' },
-  'DISTORT.DISTORT_INPUTSELECT': { family: 'DISTORT', paramId: 15, name: 'DISTORT_INPUTSELECT', unit: 'unverified' },
+  'DISTORT.DISTORT_INPUTSELECT': { family: 'DISTORT', paramId: 15, name: 'DISTORT_INPUTSELECT', unit: 'enum' }, // inferred from AM4
   'DISTORT.DISTORT_DEPTH': { family: 'DISTORT', paramId: 16, name: 'DISTORT_DEPTH', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'DISTORT.DISTORT_OFFSET1': { family: 'DISTORT', paramId: 17, name: 'DISTORT_OFFSET1', unit: 'unverified' },
   'DISTORT.DISTORT_CLIPTYPE2': { family: 'DISTORT', paramId: 18, name: 'DISTORT_CLIPTYPE2', unit: 'unverified' },
   'DISTORT.DISTORT_SUPPLYSAG': { family: 'DISTORT', paramId: 19, name: 'DISTORT_SUPPLYSAG', unit: 'unverified' },
   'DISTORT.DISTORT_PRESENCE': { family: 'DISTORT', paramId: 20, name: 'DISTORT_PRESENCE', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
-  'DISTORT.DISTORT_LEVEL': { family: 'DISTORT', paramId: 21, name: 'DISTORT_LEVEL', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
+  'DISTORT.DISTORT_LEVEL': { family: 'DISTORT', paramId: 21, name: 'DISTORT_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   'DISTORT.DISTORT_PAN': { family: 'DISTORT', paramId: 22, name: 'DISTORT_PAN', unit: 'unverified' },
   'DISTORT.DISTORT_BYPASSMODE': { family: 'DISTORT', paramId: 23, name: 'DISTORT_BYPASSMODE', unit: 'unverified' },
   'DISTORT.DISTORT_BETA': { family: 'DISTORT', paramId: 24, name: 'DISTORT_BETA', unit: 'unverified' },
@@ -5273,10 +5273,10 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'DISTORT.DISTORT_CFCLIP': { family: 'DISTORT', paramId: 33, name: 'DISTORT_CFCLIP', unit: 'unverified' },
   'DISTORT.DISTORT_TONETYPE': { family: 'DISTORT', paramId: 34, name: 'DISTORT_TONETYPE', unit: 'unverified' },
   'DISTORT.DISTORT_TIMECONST': { family: 'DISTORT', paramId: 35, name: 'DISTORT_TIMECONST', unit: 'unverified' },
-  'DISTORT.DISTORT_BIAS': { family: 'DISTORT', paramId: 36, name: 'DISTORT_BIAS', unit: 'unverified' },
+  'DISTORT.DISTORT_BIAS': { family: 'DISTORT', paramId: 36, name: 'DISTORT_BIAS', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'DISTORT.DISTORT_FBTYPE': { family: 'DISTORT', paramId: 37, name: 'DISTORT_FBTYPE', unit: 'unverified' },
   'DISTORT.DISTORT_PI_RATIO': { family: 'DISTORT', paramId: 38, name: 'DISTORT_PI_RATIO', unit: 'unverified' },
-  'DISTORT.DISTORT_BRIGHT': { family: 'DISTORT', paramId: 39, name: 'DISTORT_BRIGHT', unit: 'unverified' },
+  'DISTORT.DISTORT_BRIGHT': { family: 'DISTORT', paramId: 39, name: 'DISTORT_BRIGHT', unit: 'enum' }, // inferred from AM4
   'DISTORT.DISTORT_BOOST': { family: 'DISTORT', paramId: 40, name: 'DISTORT_BOOST', unit: 'unverified' },
   'DISTORT.DISTORT_SPKRLFQ': { family: 'DISTORT', paramId: 41, name: 'DISTORT_SPKRLFQ', unit: 'unverified' },
   'DISTORT.DISTORT_OFFSET2': { family: 'DISTORT', paramId: 42, name: 'DISTORT_OFFSET2', unit: 'unverified' },
@@ -5307,20 +5307,20 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'DISTORT.DISTORT_FEEDFWDFREQ1': { family: 'DISTORT', paramId: 67, name: 'DISTORT_FEEDFWDFREQ1', unit: 'unverified' },
   'DISTORT.DISTORT_TUBETYPE': { family: 'DISTORT', paramId: 68, name: 'DISTORT_TUBETYPE', unit: 'unverified' },
   'DISTORT.DISTORT_PRETUBETYPE': { family: 'DISTORT', paramId: 69, name: 'DISTORT_PRETUBETYPE', unit: 'unverified' },
-  'DISTORT.DISTORT_CLARITY': { family: 'DISTORT', paramId: 70, name: 'DISTORT_CLARITY', unit: 'unverified' },
+  'DISTORT.DISTORT_CLARITY': { family: 'DISTORT', paramId: 70, name: 'DISTORT_CLARITY', unit: 'knob_0_10', displayMin: 0, displayMax: 10, scaling: 'log10' }, // inferred from AM4
   'DISTORT.DISTORT_INEQQ': { family: 'DISTORT', paramId: 71, name: 'DISTORT_INEQQ', unit: 'unverified' },
   'DISTORT.DISTORT_INEQFREQ': { family: 'DISTORT', paramId: 72, name: 'DISTORT_INEQFREQ', unit: 'unverified' },
   'DISTORT.DISTORT_INEQGAIN': { family: 'DISTORT', paramId: 73, name: 'DISTORT_INEQGAIN', unit: 'unverified' },
   'DISTORT.DISTORT_DRIVE2': { family: 'DISTORT', paramId: 74, name: 'DISTORT_DRIVE2', unit: 'unverified' },
   'DISTORT.DISTORT_COMPRESSION': { family: 'DISTORT', paramId: 75, name: 'DISTORT_COMPRESSION', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  'DISTORT.DISTORT_THRESHOLD': { family: 'DISTORT', paramId: 76, name: 'DISTORT_THRESHOLD', unit: 'unverified' },
+  'DISTORT.DISTORT_THRESHOLD': { family: 'DISTORT', paramId: 76, name: 'DISTORT_THRESHOLD', unit: 'db', displayMin: -60, displayMax: 0 }, // inferred from AM4
   'DISTORT.DISTORT_MVTRIM': { family: 'DISTORT', paramId: 77, name: 'DISTORT_MVTRIM', unit: 'unverified' },
-  'DISTORT.DISTORT_FAT': { family: 'DISTORT', paramId: 78, name: 'DISTORT_FAT', unit: 'unverified' },
-  'DISTORT.DISTORT_DEFINITION': { family: 'DISTORT', paramId: 79, name: 'DISTORT_DEFINITION', unit: 'unverified' },
+  'DISTORT.DISTORT_FAT': { family: 'DISTORT', paramId: 78, name: 'DISTORT_FAT', unit: 'enum' }, // inferred from AM4
+  'DISTORT.DISTORT_DEFINITION': { family: 'DISTORT', paramId: 79, name: 'DISTORT_DEFINITION', unit: 'count', displayMin: -10, displayMax: 10 }, // inferred from AM4
   'DISTORT.DISTORT_CFTHRESH': { family: 'DISTORT', paramId: 80, name: 'DISTORT_CFTHRESH', unit: 'unverified' },
   'DISTORT.DISTORT_CFGRID': { family: 'DISTORT', paramId: 81, name: 'DISTORT_CFGRID', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'DISTORT.DISTORT_VERSION': { family: 'DISTORT', paramId: 82, name: 'DISTORT_VERSION', unit: 'unverified' },
-  'DISTORT.DISTORT_HICUT': { family: 'DISTORT', paramId: 83, name: 'DISTORT_HICUT', unit: 'db', displayMin: 200, displayMax: 20000 }, // inferred from AM4
+  'DISTORT.DISTORT_HICUT': { family: 'DISTORT', paramId: 83, name: 'DISTORT_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
   'DISTORT.DISTORT_DYNPRES': { family: 'DISTORT', paramId: 84, name: 'DISTORT_DYNPRES', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'DISTORT.DISTORT_DYNDEPTH': { family: 'DISTORT', paramId: 85, name: 'DISTORT_DYNDEPTH', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'DISTORT.DISTORT_SUPPLYTYPE': { family: 'DISTORT', paramId: 86, name: 'DISTORT_SUPPLYTYPE', unit: 'unverified' },
@@ -5338,7 +5338,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'DISTORT.DISTORT_PAOFFSET': { family: 'DISTORT', paramId: 98, name: 'DISTORT_PAOFFSET', unit: 'unverified' },
   'DISTORT.DISTORT_INDYNAMICS': { family: 'DISTORT', paramId: 99, name: 'DISTORT_INDYNAMICS', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'DISTORT.DISTORT_SPKRHFQ': { family: 'DISTORT', paramId: 100, name: 'DISTORT_SPKRHFQ', unit: 'unverified' },
-  'DISTORT.DISTORT_VARIAC': { family: 'DISTORT', paramId: 101, name: 'DISTORT_VARIAC', unit: 'unverified' },
+  'DISTORT.DISTORT_VARIAC': { family: 'DISTORT', paramId: 101, name: 'DISTORT_VARIAC', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'DISTORT.DISTORT_INEQTYPE': { family: 'DISTORT', paramId: 102, name: 'DISTORT_INEQTYPE', unit: 'unverified' },
   'DISTORT.DISTORT_GRIDHARDNESS': { family: 'DISTORT', paramId: 103, name: 'DISTORT_GRIDHARDNESS', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'DISTORT.DISTORT_PRESSHIFT': { family: 'DISTORT', paramId: 104, name: 'DISTORT_PRESSHIFT', unit: 'unverified' },
@@ -5355,7 +5355,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'DISTORT.DISTORT_MOTORDRIVE': { family: 'DISTORT', paramId: 115, name: 'DISTORT_MOTORDRIVE', unit: 'unverified' },
   'DISTORT.DISTORT_MDTIME': { family: 'DISTORT', paramId: 116, name: 'DISTORT_MDTIME', unit: 'unverified' },
   'DISTORT.DISTORT_RESOLUTION': { family: 'DISTORT', paramId: 117, name: 'DISTORT_RESOLUTION', unit: 'db', displayMin: 0, displayMax: 1 }, // inferred from AM4
-  'DISTORT.DISTORT_VCCMON': { family: 'DISTORT', paramId: 118, name: 'DISTORT_VCCMON', unit: 'db', displayMin: 0, displayMax: 1 }, // inferred from AM4
+  'DISTORT.DISTORT_VCCMON': { family: 'DISTORT', paramId: 118, name: 'DISTORT_VCCMON', unit: 'unverified' },
   'DISTORT.DISTORT_GAINMON': { family: 'DISTORT', paramId: 119, name: 'DISTORT_GAINMON', unit: 'unverified' },
   'DISTORT.DISTORT_MDMON': { family: 'DISTORT', paramId: 120, name: 'DISTORT_MDMON', unit: 'db', displayMin: 0, displayMax: 1 }, // inferred from AM4
   'DISTORT.DISTORT_INDYNMON': { family: 'DISTORT', paramId: 121, name: 'DISTORT_INDYNMON', unit: 'db', displayMin: 0, displayMax: 1 }, // inferred from AM4
@@ -5508,15 +5508,15 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'CABINET.CABINET_BTN_SOLO4': { family: 'CABINET', paramId: 65299, name: 'CABINET_BTN_SOLO4', unit: 'unverified' },
   'REVERB.REVERB_TYPE': { family: 'REVERB', paramId: 0, name: 'REVERB_TYPE', unit: 'enum' }, // inferred from AM4
   'REVERB.REVERB_TIME': { family: 'REVERB', paramId: 1, name: 'REVERB_TIME', unit: 'seconds', displayMin: 0.1, displayMax: 100 }, // inferred from AM4
-  'REVERB.REVERB_HICUT': { family: 'REVERB', paramId: 2, name: 'REVERB_HICUT', unit: 'unverified' },
+  'REVERB.REVERB_HICUT': { family: 'REVERB', paramId: 2, name: 'REVERB_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
   'REVERB.REVERB_HFRATIO': { family: 'REVERB', paramId: 3, name: 'REVERB_HFRATIO', unit: 'unverified' },
   'REVERB.REVERB_DIFFUSION': { family: 'REVERB', paramId: 4, name: 'REVERB_DIFFUSION', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'REVERB.REVERB_SIZE': { family: 'REVERB', paramId: 5, name: 'REVERB_SIZE', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  'REVERB.REVERB_REVERBDELAY': { family: 'REVERB', paramId: 6, name: 'REVERB_REVERBDELAY', unit: 'unverified' },
+  'REVERB.REVERB_REVERBDELAY': { family: 'REVERB', paramId: 6, name: 'REVERB_REVERBDELAY', unit: 'ms', displayMin: 0, displayMax: 250 }, // inferred from AM4
   'REVERB.REVERB_EARLYLEVEL': { family: 'REVERB', paramId: 7, name: 'REVERB_EARLYLEVEL', unit: 'db', displayMin: -40, displayMax: 10 }, // inferred from AM4
   'REVERB.REVERB_REVERBLEVEL': { family: 'REVERB', paramId: 8, name: 'REVERB_REVERBLEVEL', unit: 'unverified' },
-  'REVERB.REVERB_PREDELAY': { family: 'REVERB', paramId: 9, name: 'REVERB_PREDELAY', unit: 'unverified' },
-  'REVERB.REVERB_LOWCUT': { family: 'REVERB', paramId: 10, name: 'REVERB_LOWCUT', unit: 'unverified' },
+  'REVERB.REVERB_PREDELAY': { family: 'REVERB', paramId: 9, name: 'REVERB_PREDELAY', unit: 'ms', displayMin: 0, displayMax: 250 }, // inferred from AM4
+  'REVERB.REVERB_LOWCUT': { family: 'REVERB', paramId: 10, name: 'REVERB_LOWCUT', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
   'REVERB.REVERB_DEPTH': { family: 'REVERB', paramId: 11, name: 'REVERB_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'REVERB.REVERB_RATE': { family: 'REVERB', paramId: 12, name: 'REVERB_RATE', unit: 'hz', displayMin: 0.01, displayMax: 1 }, // inferred from AM4
   'REVERB.REVERB_MIX': { family: 'REVERB', paramId: 13, name: 'REVERB_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
@@ -5525,19 +5525,19 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'REVERB.REVERB_BYPASSMODE': { family: 'REVERB', paramId: 16, name: 'REVERB_BYPASSMODE', unit: 'unverified' },
   'REVERB.REVERB_GLOBALMIX': { family: 'REVERB', paramId: 17, name: 'REVERB_GLOBALMIX', unit: 'unverified' },
   'REVERB.REVERB_GAIN': { family: 'REVERB', paramId: 18, name: 'REVERB_GAIN', unit: 'unverified' },
-  'REVERB.REVERB_DENSITY': { family: 'REVERB', paramId: 19, name: 'REVERB_DENSITY', unit: 'unverified' },
+  'REVERB.REVERB_DENSITY': { family: 'REVERB', paramId: 19, name: 'REVERB_DENSITY', unit: 'count', displayMin: 4, displayMax: 8 }, // inferred from AM4
   'REVERB.REVERB_INPDIFF': { family: 'REVERB', paramId: 20, name: 'REVERB_INPDIFF', unit: 'unverified' },
   'REVERB.REVERB_INDIFFTIME': { family: 'REVERB', paramId: 21, name: 'REVERB_INDIFFTIME', unit: 'unverified' },
   'REVERB.REVERB_BYPASS': { family: 'REVERB', paramId: 22, name: 'REVERB_BYPASS', unit: 'unverified' },
   'REVERB.REVERB_NUMSPRINGS': { family: 'REVERB', paramId: 23, name: 'REVERB_NUMSPRINGS', unit: 'count', displayMin: 2, displayMax: 6 }, // inferred from AM4
   'REVERB.REVERB_TONE': { family: 'REVERB', paramId: 24, name: 'REVERB_TONE', unit: 'unverified' },
   'REVERB.REVERB_WIDTH': { family: 'REVERB', paramId: 25, name: 'REVERB_WIDTH', unit: 'unverified' },
-  'REVERB.REVERB_FREQ1': { family: 'REVERB', paramId: 26, name: 'REVERB_FREQ1', unit: 'unverified' },
-  'REVERB.REVERB_FREQ2': { family: 'REVERB', paramId: 27, name: 'REVERB_FREQ2', unit: 'unverified' },
-  'REVERB.REVERB_Q1': { family: 'REVERB', paramId: 28, name: 'REVERB_Q1', unit: 'unverified' },
-  'REVERB.REVERB_Q2': { family: 'REVERB', paramId: 29, name: 'REVERB_Q2', unit: 'unverified' },
-  'REVERB.REVERB_GAIN1': { family: 'REVERB', paramId: 30, name: 'REVERB_GAIN1', unit: 'unverified' },
-  'REVERB.REVERB_GAIN2': { family: 'REVERB', paramId: 31, name: 'REVERB_GAIN2', unit: 'unverified' },
+  'REVERB.REVERB_FREQ1': { family: 'REVERB', paramId: 26, name: 'REVERB_FREQ1', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
+  'REVERB.REVERB_FREQ2': { family: 'REVERB', paramId: 27, name: 'REVERB_FREQ2', unit: 'hz', displayMin: 100, displayMax: 10000 }, // inferred from AM4
+  'REVERB.REVERB_Q1': { family: 'REVERB', paramId: 28, name: 'REVERB_Q1', unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' }, // inferred from AM4
+  'REVERB.REVERB_Q2': { family: 'REVERB', paramId: 29, name: 'REVERB_Q2', unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' }, // inferred from AM4
+  'REVERB.REVERB_GAIN1': { family: 'REVERB', paramId: 30, name: 'REVERB_GAIN1', unit: 'db', displayMin: -12, displayMax: 12 }, // inferred from AM4
+  'REVERB.REVERB_GAIN2': { family: 'REVERB', paramId: 31, name: 'REVERB_GAIN2', unit: 'db', displayMin: -12, displayMax: 12 }, // inferred from AM4
   'REVERB.REVERB_DRIVE': { family: 'REVERB', paramId: 32, name: 'REVERB_DRIVE', unit: 'unverified' },
   'REVERB.REVERB_LFTIME': { family: 'REVERB', paramId: 33, name: 'REVERB_LFTIME', unit: 'unverified' },
   'REVERB.REVERB_LFXOVER': { family: 'REVERB', paramId: 34, name: 'REVERB_LFXOVER', unit: 'unverified' },
@@ -5549,9 +5549,9 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'REVERB.REVERB_EARLYDIFFTIME': { family: 'REVERB', paramId: 40, name: 'REVERB_EARLYDIFFTIME', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'REVERB.REVERB_EARLYDECAY': { family: 'REVERB', paramId: 41, name: 'REVERB_EARLYDECAY', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'REVERB.REVERB_EARLYSEND': { family: 'REVERB', paramId: 42, name: 'REVERB_EARLYSEND', unit: 'unverified' },
-  'REVERB.REVERB_QUALITY': { family: 'REVERB', paramId: 43, name: 'REVERB_QUALITY', unit: 'unverified' },
+  'REVERB.REVERB_QUALITY': { family: 'REVERB', paramId: 43, name: 'REVERB_QUALITY', unit: 'enum' }, // inferred from AM4
   'REVERB.REVERB_HOLD': { family: 'REVERB', paramId: 44, name: 'REVERB_HOLD', unit: 'unverified' },
-  'REVERB.REVERB_BASETYPE': { family: 'REVERB', paramId: 45, name: 'REVERB_BASETYPE', unit: 'unverified' },
+  'REVERB.REVERB_BASETYPE': { family: 'REVERB', paramId: 45, name: 'REVERB_BASETYPE', unit: 'count', displayMin: 0, displayMax: 8 }, // inferred from AM4
   'REVERB.REVERB_LFOPHASE': { family: 'REVERB', paramId: 46, name: 'REVERB_LFOPHASE', unit: 'degrees', displayMin: 0, displayMax: 180 }, // inferred from AM4
   'REVERB.REVERB_INPUTSELECT': { family: 'REVERB', paramId: 47, name: 'REVERB_INPUTSELECT', unit: 'unverified' },
   'REVERB.REVERB_DISPERSION': { family: 'REVERB', paramId: 48, name: 'REVERB_DISPERSION', unit: 'unverified' },
@@ -5572,7 +5572,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'REVERB.REVERB_PREDLYMIX': { family: 'REVERB', paramId: 63, name: 'REVERB_PREDLYMIX', unit: 'unverified' },
   'REVERB.REVERB_PITCHLPF': { family: 'REVERB', paramId: 64, name: 'REVERB_PITCHLPF', unit: 'unverified' },
   'REVERB.REVERB_SPRINGTYPE': { family: 'REVERB', paramId: 65, name: 'REVERB_SPRINGTYPE', unit: 'unverified' },
-  'REVERB.REVERB_TONETYPE': { family: 'REVERB', paramId: 66, name: 'REVERB_TONETYPE', unit: 'unverified' },
+  'REVERB.REVERB_TONETYPE': { family: 'REVERB', paramId: 66, name: 'REVERB_TONETYPE', unit: 'db', displayMin: 0, displayMax: 3 }, // inferred from AM4
   'REVERB.REVERB_PREDLYTAP': { family: 'REVERB', paramId: 67, name: 'REVERB_PREDLYTAP', unit: 'unverified' },
   'REVERB.REVERB_KILLDRY': { family: 'REVERB', paramId: 68, name: 'REVERB_KILLDRY', unit: 'unverified' },
   'REVERB.REVERB_LOWQ': { family: 'REVERB', paramId: 69, name: 'REVERB_LOWQ', unit: 'unverified' },
@@ -5586,8 +5586,8 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'DELAY.DELAY_FEEDR': { family: 'DELAY', paramId: 6, name: 'DELAY_FEEDR', unit: 'unverified' },
   'DELAY.DELAY_DELAYPAN': { family: 'DELAY', paramId: 7, name: 'DELAY_DELAYPAN', unit: 'unverified' },
   'DELAY.DELAY_SPREAD': { family: 'DELAY', paramId: 8, name: 'DELAY_SPREAD', unit: 'unverified' },
-  'DELAY.DELAY_TEMPO': { family: 'DELAY', paramId: 9, name: 'DELAY_TEMPO', unit: 'unverified' },
-  'DELAY.DELAY_LOCUT': { family: 'DELAY', paramId: 10, name: 'DELAY_LOCUT', unit: 'unverified' },
+  'DELAY.DELAY_TEMPO': { family: 'DELAY', paramId: 9, name: 'DELAY_TEMPO', unit: 'enum' }, // inferred from AM4
+  'DELAY.DELAY_LOCUT': { family: 'DELAY', paramId: 10, name: 'DELAY_LOCUT', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
   'DELAY.DELAY_HICUT': { family: 'DELAY', paramId: 11, name: 'DELAY_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
   'DELAY.DELAY_RATE1': { family: 'DELAY', paramId: 12, name: 'DELAY_RATE1', unit: 'unverified' },
   'DELAY.DELAY_RATE2': { family: 'DELAY', paramId: 13, name: 'DELAY_RATE2', unit: 'unverified' },
@@ -5595,7 +5595,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'DELAY.DELAY_DEPTH2': { family: 'DELAY', paramId: 15, name: 'DELAY_DEPTH2', unit: 'unverified' },
   'DELAY.DELAY_DRIVE': { family: 'DELAY', paramId: 16, name: 'DELAY_DRIVE', unit: 'unverified' },
   'DELAY.DELAY_MIX': { family: 'DELAY', paramId: 17, name: 'DELAY_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  'DELAY.DELAY_LEVEL': { family: 'DELAY', paramId: 18, name: 'DELAY_LEVEL', unit: 'unverified' },
+  'DELAY.DELAY_LEVEL': { family: 'DELAY', paramId: 18, name: 'DELAY_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   'DELAY.DELAY_PAN': { family: 'DELAY', paramId: 19, name: 'DELAY_PAN', unit: 'unverified' },
   'DELAY.DELAY_BYPASSMODE': { family: 'DELAY', paramId: 20, name: 'DELAY_BYPASSMODE', unit: 'unverified' },
   'DELAY.DELAY_GLOBALMIX': { family: 'DELAY', paramId: 21, name: 'DELAY_GLOBALMIX', unit: 'unverified' },
@@ -5609,8 +5609,8 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'DELAY.DELAY_TEMPOR': { family: 'DELAY', paramId: 29, name: 'DELAY_TEMPOR', unit: 'unverified' },
   'DELAY.DELAY_FEEDLR': { family: 'DELAY', paramId: 30, name: 'DELAY_FEEDLR', unit: 'unverified' },
   'DELAY.DELAY_FEEDRL': { family: 'DELAY', paramId: 31, name: 'DELAY_FEEDRL', unit: 'unverified' },
-  'DELAY.DELAY_LEVELL': { family: 'DELAY', paramId: 32, name: 'DELAY_LEVELL', unit: 'unverified' },
-  'DELAY.DELAY_LEVELR': { family: 'DELAY', paramId: 33, name: 'DELAY_LEVELR', unit: 'unverified' },
+  'DELAY.DELAY_LEVELL': { family: 'DELAY', paramId: 32, name: 'DELAY_LEVELL', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  'DELAY.DELAY_LEVELR': { family: 'DELAY', paramId: 33, name: 'DELAY_LEVELR', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'DELAY.DELAY_PANL': { family: 'DELAY', paramId: 34, name: 'DELAY_PANL', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 }, // inferred from AM4
   'DELAY.DELAY_PANR': { family: 'DELAY', paramId: 35, name: 'DELAY_PANR', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 }, // inferred from AM4
   'DELAY.DELAY_LFO1PHASE': { family: 'DELAY', paramId: 36, name: 'DELAY_LFO1PHASE', unit: 'unverified' },
@@ -5624,7 +5624,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'DELAY.DELAY_RELEASE': { family: 'DELAY', paramId: 44, name: 'DELAY_RELEASE', unit: 'unverified' },
   'DELAY.DELAY_DIFFUSE': { family: 'DELAY', paramId: 45, name: 'DELAY_DIFFUSE', unit: 'unverified' },
   'DELAY.DELAY_DIFFTIME': { family: 'DELAY', paramId: 46, name: 'DELAY_DIFFTIME', unit: 'unverified' },
-  'DELAY.DELAY_PHASEREV': { family: 'DELAY', paramId: 47, name: 'DELAY_PHASEREV', unit: 'unverified' },
+  'DELAY.DELAY_PHASEREV': { family: 'DELAY', paramId: 47, name: 'DELAY_PHASEREV', unit: 'enum' }, // inferred from AM4
   'DELAY.DELAY_LFO1TARGET': { family: 'DELAY', paramId: 48, name: 'DELAY_LFO1TARGET', unit: 'unverified' },
   'DELAY.DELAY_LFO2TARGET': { family: 'DELAY', paramId: 49, name: 'DELAY_LFO2TARGET', unit: 'unverified' },
   'DELAY.DELAY_LFO1TEMPO': { family: 'DELAY', paramId: 50, name: 'DELAY_LFO1TEMPO', unit: 'unverified' },
@@ -5637,7 +5637,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'DELAY.DELAY_FSTOP': { family: 'DELAY', paramId: 57, name: 'DELAY_FSTOP', unit: 'unverified' },
   'DELAY.DELAY_Q': { family: 'DELAY', paramId: 58, name: 'DELAY_Q', unit: 'unverified' },
   'DELAY.DELAY_FILTERQ': { family: 'DELAY', paramId: 59, name: 'DELAY_FILTERQ', unit: 'unverified' },
-  'DELAY.DELAY_BITREDUCE': { family: 'DELAY', paramId: 60, name: 'DELAY_BITREDUCE', unit: 'unverified' },
+  'DELAY.DELAY_BITREDUCE': { family: 'DELAY', paramId: 60, name: 'DELAY_BITREDUCE', unit: 'count', displayMin: 0, displayMax: 24 }, // inferred from AM4
   'DELAY.DELAY_FREQ1': { family: 'DELAY', paramId: 61, name: 'DELAY_FREQ1', unit: 'unverified' },
   'DELAY.DELAY_FREQ2': { family: 'DELAY', paramId: 62, name: 'DELAY_FREQ2', unit: 'unverified' },
   'DELAY.DELAY_Q1': { family: 'DELAY', paramId: 63, name: 'DELAY_Q1', unit: 'unverified' },
@@ -5648,10 +5648,10 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'DELAY.DELAY_SPEED': { family: 'DELAY', paramId: 68, name: 'DELAY_SPEED', unit: 'unverified' },
   'DELAY.DELAY_OFFSET': { family: 'DELAY', paramId: 69, name: 'DELAY_OFFSET', unit: 'unverified' },
   'DELAY.DELAY_HPF_ORDER': { family: 'DELAY', paramId: 70, name: 'DELAY_HPF_ORDER', unit: 'unverified' },
-  'DELAY.DELAY_COMPANDER': { family: 'DELAY', paramId: 71, name: 'DELAY_COMPANDER', unit: 'unverified' },
+  'DELAY.DELAY_COMPANDER': { family: 'DELAY', paramId: 71, name: 'DELAY_COMPANDER', unit: 'enum' }, // inferred from AM4
   'DELAY.DELAY_COMPTIME': { family: 'DELAY', paramId: 72, name: 'DELAY_COMPTIME', unit: 'unverified' },
   'DELAY.DELAY_COMPTHRESH': { family: 'DELAY', paramId: 73, name: 'DELAY_COMPTHRESH', unit: 'unverified' },
-  'DELAY.DELAY_MSTRTIME': { family: 'DELAY', paramId: 74, name: 'DELAY_MSTRTIME', unit: 'unverified' },
+  'DELAY.DELAY_MSTRTIME': { family: 'DELAY', paramId: 74, name: 'DELAY_MSTRTIME', unit: 'percent', displayMin: 25, displayMax: 400 }, // inferred from AM4
   'DELAY.DELAY_DIFFRATE': { family: 'DELAY', paramId: 75, name: 'DELAY_DIFFRATE', unit: 'unverified' },
   'DELAY.DELAY_DIFFDEPTH': { family: 'DELAY', paramId: 76, name: 'DELAY_DIFFDEPTH', unit: 'unverified' },
   'DELAY.DELAY_LFO4TYPE': { family: 'DELAY', paramId: 77, name: 'DELAY_LFO4TYPE', unit: 'unverified' },
@@ -5661,9 +5661,9 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'DELAY.DELAY_LFO4PHASE': { family: 'DELAY', paramId: 81, name: 'DELAY_LFO4PHASE', unit: 'unverified' },
   'DELAY.DELAY_LFO4TARGET': { family: 'DELAY', paramId: 82, name: 'DELAY_LFO4TARGET', unit: 'unverified' },
   'DELAY.DELAY_SCENEIGNORE': { family: 'DELAY', paramId: 83, name: 'DELAY_SCENEIGNORE', unit: 'unverified' },
-  'DELAY.DELAY_STACKFDBK': { family: 'DELAY', paramId: 84, name: 'DELAY_STACKFDBK', unit: 'unverified' },
-  'DELAY.DELAY_HOLDFDBK': { family: 'DELAY', paramId: 85, name: 'DELAY_HOLDFDBK', unit: 'unverified' },
-  'DELAY.DELAY_KILLDRY': { family: 'DELAY', paramId: 86, name: 'DELAY_KILLDRY', unit: 'unverified' },
+  'DELAY.DELAY_STACKFDBK': { family: 'DELAY', paramId: 84, name: 'DELAY_STACKFDBK', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  'DELAY.DELAY_HOLDFDBK': { family: 'DELAY', paramId: 85, name: 'DELAY_HOLDFDBK', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  'DELAY.DELAY_KILLDRY': { family: 'DELAY', paramId: 86, name: 'DELAY_KILLDRY', unit: 'enum' }, // inferred from AM4
   'DELAY.DELAY_SVFTYPE': { family: 'DELAY', paramId: 87, name: 'DELAY_SVFTYPE', unit: 'unverified' },
   'DELAY.DELAY_DRYDIFFUSE': { family: 'DELAY', paramId: 88, name: 'DELAY_DRYDIFFUSE', unit: 'unverified' },
   'MULTITAP.MULTITAP_BASETYPE': { family: 'MULTITAP', paramId: 0, name: 'MULTITAP_BASETYPE', unit: 'unverified' },
@@ -5884,32 +5884,32 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'PLEX.PLEX_SCENEIGNORE': { family: 'PLEX', paramId: 94, name: 'PLEX_SCENEIGNORE', unit: 'unverified' },
   'PLEX.PLEX_KILLDRY': { family: 'PLEX', paramId: 95, name: 'PLEX_KILLDRY', unit: 'unverified' },
   'CHORUS.CHORUS_TYPE': { family: 'CHORUS', paramId: 0, name: 'CHORUS_TYPE', unit: 'enum' }, // inferred from AM4
-  'CHORUS.CHORUS_VOICES': { family: 'CHORUS', paramId: 1, name: 'CHORUS_VOICES', unit: 'unverified' },
+  'CHORUS.CHORUS_VOICES': { family: 'CHORUS', paramId: 1, name: 'CHORUS_VOICES', unit: 'count', displayMin: 1, displayMax: 4 }, // inferred from AM4
   'CHORUS.CHORUS_RATE': { family: 'CHORUS', paramId: 2, name: 'CHORUS_RATE', unit: 'hz', displayMin: 0.1, displayMax: 10 }, // inferred from AM4
-  'CHORUS.CHORUS_TEMPO': { family: 'CHORUS', paramId: 3, name: 'CHORUS_TEMPO', unit: 'unverified' },
+  'CHORUS.CHORUS_TEMPO': { family: 'CHORUS', paramId: 3, name: 'CHORUS_TEMPO', unit: 'enum' }, // inferred from AM4
   'CHORUS.CHORUS_DEPTH': { family: 'CHORUS', paramId: 4, name: 'CHORUS_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'CHORUS.CHORUS_HICUT': { family: 'CHORUS', paramId: 5, name: 'CHORUS_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
-  'CHORUS.CHORUS_DELAYTIME': { family: 'CHORUS', paramId: 6, name: 'CHORUS_DELAYTIME', unit: 'unverified' },
+  'CHORUS.CHORUS_DELAYTIME': { family: 'CHORUS', paramId: 6, name: 'CHORUS_DELAYTIME', unit: 'ms', displayMin: 0.1, displayMax: 50 }, // inferred from AM4
   'CHORUS.CHORUS_LFOPHASE': { family: 'CHORUS', paramId: 7, name: 'CHORUS_LFOPHASE', unit: 'unverified' },
-  'CHORUS.CHORUS_LFOTYPE': { family: 'CHORUS', paramId: 8, name: 'CHORUS_LFOTYPE', unit: 'unverified' },
+  'CHORUS.CHORUS_LFOTYPE': { family: 'CHORUS', paramId: 8, name: 'CHORUS_LFOTYPE', unit: 'enum' }, // inferred from AM4
   'CHORUS.CHORUS_AUTO': { family: 'CHORUS', paramId: 9, name: 'CHORUS_AUTO', unit: 'unverified' },
   'CHORUS.CHORUS_MIX': { family: 'CHORUS', paramId: 10, name: 'CHORUS_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  'CHORUS.CHORUS_LEVEL': { family: 'CHORUS', paramId: 11, name: 'CHORUS_LEVEL', unit: 'unverified' },
+  'CHORUS.CHORUS_LEVEL': { family: 'CHORUS', paramId: 11, name: 'CHORUS_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   'CHORUS.CHORUS_PAN': { family: 'CHORUS', paramId: 12, name: 'CHORUS_PAN', unit: 'unverified' },
   'CHORUS.CHORUS_BYPASSMODE': { family: 'CHORUS', paramId: 13, name: 'CHORUS_BYPASSMODE', unit: 'unverified' },
   'CHORUS.CHORUS_GLOBALMIX': { family: 'CHORUS', paramId: 14, name: 'CHORUS_GLOBALMIX', unit: 'unverified' },
   'CHORUS.CHORUS_BYPASS': { family: 'CHORUS', paramId: 15, name: 'CHORUS_BYPASS', unit: 'unverified' },
-  'CHORUS.CHORUS_PHASEREV': { family: 'CHORUS', paramId: 16, name: 'CHORUS_PHASEREV', unit: 'unverified' },
-  'CHORUS.CHORUS_WIDTH': { family: 'CHORUS', paramId: 17, name: 'CHORUS_WIDTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  'CHORUS.CHORUS_PHASEREV': { family: 'CHORUS', paramId: 16, name: 'CHORUS_PHASEREV', unit: 'enum' }, // inferred from AM4
+  'CHORUS.CHORUS_WIDTH': { family: 'CHORUS', paramId: 17, name: 'CHORUS_WIDTH', unit: 'unverified' },
   'CHORUS.CHORUS_RATE2': { family: 'CHORUS', paramId: 18, name: 'CHORUS_RATE2', unit: 'unverified' },
   'CHORUS.CHORUS_DEPTH2': { family: 'CHORUS', paramId: 19, name: 'CHORUS_DEPTH2', unit: 'unverified' },
   'CHORUS.CHORUS_DRIVE': { family: 'CHORUS', paramId: 20, name: 'CHORUS_DRIVE', unit: 'knob_0_10', displayMin: 0.5, displayMax: 500, scaling: 'log10' }, // inferred from AM4
-  'CHORUS.CHORUS_LOWCUT': { family: 'CHORUS', paramId: 21, name: 'CHORUS_LOWCUT', unit: 'unverified' },
+  'CHORUS.CHORUS_LOWCUT': { family: 'CHORUS', paramId: 21, name: 'CHORUS_LOWCUT', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
   'CHORUS.CHORUS_SPREAD': { family: 'CHORUS', paramId: 22, name: 'CHORUS_SPREAD', unit: 'unverified' },
-  'CHORUS.CHORUS_MODE': { family: 'CHORUS', paramId: 23, name: 'CHORUS_MODE', unit: 'unverified' },
-  'CHORUS.CHORUS_DEPTHL': { family: 'CHORUS', paramId: 24, name: 'CHORUS_DEPTHL', unit: 'unverified' },
-  'CHORUS.CHORUS_DEPTHC': { family: 'CHORUS', paramId: 25, name: 'CHORUS_DEPTHC', unit: 'unverified' },
-  'CHORUS.CHORUS_DEPTHR': { family: 'CHORUS', paramId: 26, name: 'CHORUS_DEPTHR', unit: 'unverified' },
+  'CHORUS.CHORUS_MODE': { family: 'CHORUS', paramId: 23, name: 'CHORUS_MODE', unit: 'enum' }, // inferred from AM4
+  'CHORUS.CHORUS_DEPTHL': { family: 'CHORUS', paramId: 24, name: 'CHORUS_DEPTHL', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  'CHORUS.CHORUS_DEPTHC': { family: 'CHORUS', paramId: 25, name: 'CHORUS_DEPTHC', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  'CHORUS.CHORUS_DEPTHR': { family: 'CHORUS', paramId: 26, name: 'CHORUS_DEPTHR', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'CHORUS.CHORUS_TEMPO2': { family: 'CHORUS', paramId: 27, name: 'CHORUS_TEMPO2', unit: 'unverified' },
   'CHORUS.CHORUS_SCENEIGNORE': { family: 'CHORUS', paramId: 28, name: 'CHORUS_SCENEIGNORE', unit: 'unverified' },
   'CHORUS.CHORUS_DELAYRANGE': { family: 'CHORUS', paramId: 29, name: 'CHORUS_DELAYRANGE', unit: 'unverified' },
@@ -5919,15 +5919,15 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'FLANGER.FLANGER_OLD_TYPE': { family: 'FLANGER', paramId: 0, name: 'FLANGER_OLD_TYPE', unit: 'unverified' },
   'FLANGER.FLANGER_RATE': { family: 'FLANGER', paramId: 1, name: 'FLANGER_RATE', unit: 'hz', displayMin: 0.05, displayMax: 10 }, // inferred from AM4
   'FLANGER.FLANGER_OLD_RATE': { family: 'FLANGER', paramId: 1, name: 'FLANGER_OLD_RATE', unit: 'unverified' },
-  'FLANGER.FLANGER_TEMPO': { family: 'FLANGER', paramId: 2, name: 'FLANGER_TEMPO', unit: 'unverified' },
+  'FLANGER.FLANGER_TEMPO': { family: 'FLANGER', paramId: 2, name: 'FLANGER_TEMPO', unit: 'enum' }, // inferred from AM4
   'FLANGER.FLANGER_OLD_TEMPO': { family: 'FLANGER', paramId: 2, name: 'FLANGER_OLD_TEMPO', unit: 'unverified' },
   'FLANGER.FLANGER_DEPTH': { family: 'FLANGER', paramId: 3, name: 'FLANGER_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'FLANGER.FLANGER_OLD_DEPTH': { family: 'FLANGER', paramId: 3, name: 'FLANGER_OLD_DEPTH', unit: 'unverified' },
   'FLANGER.FLANGER_FEEDBACK': { family: 'FLANGER', paramId: 4, name: 'FLANGER_FEEDBACK', unit: 'bipolar_percent', displayMin: -99, displayMax: 99 }, // inferred from AM4
   'FLANGER.FLANGER_OLD_FEEDBACK': { family: 'FLANGER', paramId: 4, name: 'FLANGER_OLD_FEEDBACK', unit: 'unverified' },
-  'FLANGER.FLANGER_MANUAL': { family: 'FLANGER', paramId: 5, name: 'FLANGER_MANUAL', unit: 'unverified' },
+  'FLANGER.FLANGER_MANUAL': { family: 'FLANGER', paramId: 5, name: 'FLANGER_MANUAL', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'FLANGER.FLANGER_OLD_DELAYTIME': { family: 'FLANGER', paramId: 5, name: 'FLANGER_OLD_DELAYTIME', unit: 'unverified' },
-  'FLANGER.FLANGER_DRYDELAY': { family: 'FLANGER', paramId: 6, name: 'FLANGER_DRYDELAY', unit: 'unverified' },
+  'FLANGER.FLANGER_DRYDELAY': { family: 'FLANGER', paramId: 6, name: 'FLANGER_DRYDELAY', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'FLANGER.FLANGER_OLD_MANUAL': { family: 'FLANGER', paramId: 6, name: 'FLANGER_OLD_MANUAL', unit: 'unverified' },
   'FLANGER.FLANGER_LFOPHASE': { family: 'FLANGER', paramId: 7, name: 'FLANGER_LFOPHASE', unit: 'unverified' },
   'FLANGER.FLANGER_OLD_LFOPHASE': { family: 'FLANGER', paramId: 7, name: 'FLANGER_OLD_LFOPHASE', unit: 'unverified' },
@@ -5939,7 +5939,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'FLANGER.FLANGER_OLD_AUTO': { family: 'FLANGER', paramId: 10, name: 'FLANGER_OLD_AUTO', unit: 'unverified' },
   'FLANGER.FLANGER_MIX': { family: 'FLANGER', paramId: 11, name: 'FLANGER_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'FLANGER.FLANGER_OLD_MIX': { family: 'FLANGER', paramId: 11, name: 'FLANGER_OLD_MIX', unit: 'unverified' },
-  'FLANGER.FLANGER_LEVEL': { family: 'FLANGER', paramId: 12, name: 'FLANGER_LEVEL', unit: 'unverified' },
+  'FLANGER.FLANGER_LEVEL': { family: 'FLANGER', paramId: 12, name: 'FLANGER_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   'FLANGER.FLANGER_OLD_LEVEL': { family: 'FLANGER', paramId: 12, name: 'FLANGER_OLD_LEVEL', unit: 'unverified' },
   'FLANGER.FLANGER_PAN': { family: 'FLANGER', paramId: 13, name: 'FLANGER_PAN', unit: 'unverified' },
   'FLANGER.FLANGER_OLD_PAN': { family: 'FLANGER', paramId: 13, name: 'FLANGER_OLD_PAN', unit: 'unverified' },
@@ -5971,9 +5971,9 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'FLANGER.FLANGER_OLD_LPF_ORDER': { family: 'FLANGER', paramId: 26, name: 'FLANGER_OLD_LPF_ORDER', unit: 'unverified' },
   'FLANGER.FLANGER_VCO_CURVE': { family: 'FLANGER', paramId: 27, name: 'FLANGER_VCO_CURVE', unit: 'unverified' },
   'FLANGER.FLANGER_OLD_HPF_ORDER': { family: 'FLANGER', paramId: 27, name: 'FLANGER_OLD_HPF_ORDER', unit: 'unverified' },
-  'FLANGER.FLANGER_TMIN': { family: 'FLANGER', paramId: 28, name: 'FLANGER_TMIN', unit: 'unverified' },
+  'FLANGER.FLANGER_TMIN': { family: 'FLANGER', paramId: 28, name: 'FLANGER_TMIN', unit: 'ms', displayMin: 0, displayMax: 2 }, // inferred from AM4
   'FLANGER.FLANGER_OLD_DRY_LPF_ORDER': { family: 'FLANGER', paramId: 28, name: 'FLANGER_OLD_DRY_LPF_ORDER', unit: 'unverified' },
-  'FLANGER.FLANGER_TMAX': { family: 'FLANGER', paramId: 29, name: 'FLANGER_TMAX', unit: 'unverified' },
+  'FLANGER.FLANGER_TMAX': { family: 'FLANGER', paramId: 29, name: 'FLANGER_TMAX', unit: 'ms', displayMin: 0, displayMax: 20 }, // inferred from AM4
   'FLANGER.FLANGER_OLD_DRY_HPF_ORDER': { family: 'FLANGER', paramId: 29, name: 'FLANGER_OLD_DRY_HPF_ORDER', unit: 'unverified' },
   'FLANGER.FLANGER_LFOQUANTIZE': { family: 'FLANGER', paramId: 30, name: 'FLANGER_LFOQUANTIZE', unit: 'unverified' },
   'FLANGER.FLANGER_VCOK': { family: 'FLANGER', paramId: 31, name: 'FLANGER_VCOK', unit: 'unverified' },
@@ -5997,21 +5997,21 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'ROTARY.ROTARY_SPREAD': { family: 'ROTARY', paramId: 16, name: 'ROTARY_SPREAD', unit: 'unverified' },
   'ROTARY.ROTARY_DRIVE': { family: 'ROTARY', paramId: 17, name: 'ROTARY_DRIVE', unit: 'knob_0_10', displayMin: 0.5, displayMax: 500, scaling: 'log10' }, // inferred from AM4
   'ROTARY.ROTARY_MICDIST': { family: 'ROTARY', paramId: 18, name: 'ROTARY_MICDIST', unit: 'unverified' },
-  'ROTARY.ROTARY_INPUTSELECT': { family: 'ROTARY', paramId: 19, name: 'ROTARY_INPUTSELECT', unit: 'unverified' },
+  'ROTARY.ROTARY_INPUTSELECT': { family: 'ROTARY', paramId: 19, name: 'ROTARY_INPUTSELECT', unit: 'enum' }, // inferred from AM4
   'ROTARY.ROTARY_SCENEIGNORE': { family: 'ROTARY', paramId: 20, name: 'ROTARY_SCENEIGNORE', unit: 'unverified' },
   'PHASER.PHASER_TYPE': { family: 'PHASER', paramId: 0, name: 'PHASER_TYPE', unit: 'enum' }, // inferred from AM4
   'PHASER.PHASER_ORDER': { family: 'PHASER', paramId: 1, name: 'PHASER_ORDER', unit: 'unverified' },
   'PHASER.PHASER_RATE': { family: 'PHASER', paramId: 2, name: 'PHASER_RATE', unit: 'hz', displayMin: 0.1, displayMax: 10 }, // inferred from AM4
   'PHASER.PHASER_LFOTYPE': { family: 'PHASER', paramId: 3, name: 'PHASER_LFOTYPE', unit: 'unverified' },
-  'PHASER.PHASER_TEMPO': { family: 'PHASER', paramId: 4, name: 'PHASER_TEMPO', unit: 'unverified' },
-  'PHASER.PHASER_DEPTH': { family: 'PHASER', paramId: 5, name: 'PHASER_DEPTH', unit: 'unverified' },
+  'PHASER.PHASER_TEMPO': { family: 'PHASER', paramId: 4, name: 'PHASER_TEMPO', unit: 'enum' }, // inferred from AM4
+  'PHASER.PHASER_DEPTH': { family: 'PHASER', paramId: 5, name: 'PHASER_DEPTH', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'PHASER.PHASER_FEEDBACK': { family: 'PHASER', paramId: 6, name: 'PHASER_FEEDBACK', unit: 'bipolar_percent', displayMin: -90, displayMax: 90 }, // inferred from AM4
   'PHASER.PHASER_FMIN': { family: 'PHASER', paramId: 7, name: 'PHASER_FMIN', unit: 'unverified' },
   'PHASER.PHASER_FMAX': { family: 'PHASER', paramId: 8, name: 'PHASER_FMAX', unit: 'unverified' },
   'PHASER.PHASER_LFOPHASE': { family: 'PHASER', paramId: 9, name: 'PHASER_LFOPHASE', unit: 'unverified' },
   'PHASER.PHASER_BIAS': { family: 'PHASER', paramId: 10, name: 'PHASER_BIAS', unit: 'db', displayMin: -1, displayMax: 1 }, // inferred from AM4
   'PHASER.PHASER_MIX': { family: 'PHASER', paramId: 11, name: 'PHASER_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  'PHASER.PHASER_LEVEL': { family: 'PHASER', paramId: 12, name: 'PHASER_LEVEL', unit: 'unverified' },
+  'PHASER.PHASER_LEVEL': { family: 'PHASER', paramId: 12, name: 'PHASER_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   'PHASER.PHASER_PAN': { family: 'PHASER', paramId: 13, name: 'PHASER_PAN', unit: 'unverified' },
   'PHASER.PHASER_BYPASSMODE': { family: 'PHASER', paramId: 14, name: 'PHASER_BYPASSMODE', unit: 'unverified' },
   'PHASER.PHASER_GLOBALMIX': { family: 'PHASER', paramId: 15, name: 'PHASER_GLOBALMIX', unit: 'unverified' },
@@ -6029,7 +6029,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'PHASER.PHASER_LFOLPF': { family: 'PHASER', paramId: 27, name: 'PHASER_LFOLPF', unit: 'unverified' },
   'PHASER.PHASER_ATTACK': { family: 'PHASER', paramId: 28, name: 'PHASER_ATTACK', unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' }, // inferred from AM4
   'PHASER.PHASER_RELEASE': { family: 'PHASER', paramId: 29, name: 'PHASER_RELEASE', unit: 'ms', displayMin: 0, displayMax: 100, scaling: 'log10' }, // inferred from AM4
-  'PHASER.PHASER_MANUAL': { family: 'PHASER', paramId: 30, name: 'PHASER_MANUAL', unit: 'unverified' },
+  'PHASER.PHASER_MANUAL': { family: 'PHASER', paramId: 30, name: 'PHASER_MANUAL', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'PHASER.PHASER_SCENEIGNORE': { family: 'PHASER', paramId: 31, name: 'PHASER_SCENEIGNORE', unit: 'unverified' },
   'PHASER.PHASER_HPF': { family: 'PHASER', paramId: 32, name: 'PHASER_HPF', unit: 'unverified' },
   'PHASER.PHASER_LPF': { family: 'PHASER', paramId: 33, name: 'PHASER_LPF', unit: 'unverified' },
@@ -6040,7 +6040,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'WAH.WAH_Q': { family: 'WAH', paramId: 3, name: 'WAH_Q', unit: 'unverified' },
   'WAH.WAH_TRACK': { family: 'WAH', paramId: 4, name: 'WAH_TRACK', unit: 'unverified' },
   'WAH.WAH_CONTROL': { family: 'WAH', paramId: 5, name: 'WAH_CONTROL', unit: 'unverified' },
-  'WAH.WAH_LEVEL': { family: 'WAH', paramId: 6, name: 'WAH_LEVEL', unit: 'unverified' },
+  'WAH.WAH_LEVEL': { family: 'WAH', paramId: 6, name: 'WAH_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   'WAH.WAH_PAN': { family: 'WAH', paramId: 7, name: 'WAH_PAN', unit: 'unverified' },
   'WAH.WAH_BYPASSMODE': { family: 'WAH', paramId: 8, name: 'WAH_BYPASSMODE', unit: 'unverified' },
   'WAH.WAH_MIX': { family: 'WAH', paramId: 9, name: 'WAH_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
@@ -6076,15 +6076,15 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'TREMOLO.TREMOLO_RATE': { family: 'TREMOLO', paramId: 2, name: 'TREMOLO_RATE', unit: 'hz', displayMin: 0.2, displayMax: 20 }, // inferred from AM4
   'TREMOLO.TREMOLO_DEPTH': { family: 'TREMOLO', paramId: 3, name: 'TREMOLO_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'TREMOLO.TREMOLO_DUTY': { family: 'TREMOLO', paramId: 4, name: 'TREMOLO_DUTY', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
-  'TREMOLO.TREMOLO_TEMPO': { family: 'TREMOLO', paramId: 5, name: 'TREMOLO_TEMPO', unit: 'unverified' },
+  'TREMOLO.TREMOLO_TEMPO': { family: 'TREMOLO', paramId: 5, name: 'TREMOLO_TEMPO', unit: 'enum' }, // inferred from AM4
   'TREMOLO.TREMOLO_MIX': { family: 'TREMOLO', paramId: 6, name: 'TREMOLO_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'TREMOLO.TREMOLO_LEVEL': { family: 'TREMOLO', paramId: 7, name: 'TREMOLO_LEVEL', unit: 'unverified' },
   'TREMOLO.TREMOLO_PAN': { family: 'TREMOLO', paramId: 8, name: 'TREMOLO_PAN', unit: 'unverified' },
   'TREMOLO.TREMOLO_BYPASSMODE': { family: 'TREMOLO', paramId: 9, name: 'TREMOLO_BYPASSMODE', unit: 'unverified' },
   'TREMOLO.TREMOLO_GLOBALMIX': { family: 'TREMOLO', paramId: 10, name: 'TREMOLO_GLOBALMIX', unit: 'unverified' },
-  'TREMOLO.TREMOLO_PHASE': { family: 'TREMOLO', paramId: 11, name: 'TREMOLO_PHASE', unit: 'unverified' },
-  'TREMOLO.TREMOLO_WIDTH': { family: 'TREMOLO', paramId: 12, name: 'TREMOLO_WIDTH', unit: 'unverified' },
-  'TREMOLO.TREMOLO_CENTER': { family: 'TREMOLO', paramId: 13, name: 'TREMOLO_CENTER', unit: 'unverified' },
+  'TREMOLO.TREMOLO_PHASE': { family: 'TREMOLO', paramId: 11, name: 'TREMOLO_PHASE', unit: 'degrees', displayMin: 0, displayMax: 180 }, // inferred from AM4
+  'TREMOLO.TREMOLO_WIDTH': { family: 'TREMOLO', paramId: 12, name: 'TREMOLO_WIDTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  'TREMOLO.TREMOLO_CENTER': { family: 'TREMOLO', paramId: 13, name: 'TREMOLO_CENTER', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 }, // inferred from AM4
   'TREMOLO.TREMOLO_BYPASS': { family: 'TREMOLO', paramId: 14, name: 'TREMOLO_BYPASS', unit: 'unverified' },
   'TREMOLO.TREMOLO_STARTPHASE': { family: 'TREMOLO', paramId: 15, name: 'TREMOLO_STARTPHASE', unit: 'unverified' },
   'TREMOLO.TREMOLO_ORDER': { family: 'TREMOLO', paramId: 16, name: 'TREMOLO_ORDER', unit: 'unverified' },
@@ -6092,7 +6092,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'TREMOLO.TREMOLO_THRESH': { family: 'TREMOLO', paramId: 18, name: 'TREMOLO_THRESH', unit: 'unverified' },
   'TREMOLO.TREMOLO_SCENEIGNORE': { family: 'TREMOLO', paramId: 19, name: 'TREMOLO_SCENEIGNORE', unit: 'unverified' },
   'TREMOLO.TREMOLO_BETA': { family: 'TREMOLO', paramId: 20, name: 'TREMOLO_BETA', unit: 'unverified' },
-  'TREMOLO.TREMOLO_DUCKING': { family: 'TREMOLO', paramId: 21, name: 'TREMOLO_DUCKING', unit: 'unverified' },
+  'TREMOLO.TREMOLO_DUCKING': { family: 'TREMOLO', paramId: 21, name: 'TREMOLO_DUCKING', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'PITCH.PITCH_TYPE': { family: 'PITCH', paramId: 0, name: 'PITCH_TYPE', unit: 'unverified' },
   'PITCH.PITCH_PITCHMODE': { family: 'PITCH', paramId: 1, name: 'PITCH_PITCHMODE', unit: 'unverified' },
   'PITCH.PITCH_CTRL': { family: 'PITCH', paramId: 2, name: 'PITCH_CTRL', unit: 'unverified' },
@@ -6208,10 +6208,10 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'PITCH.PITCH_KILLDRY': { family: 'PITCH', paramId: 112, name: 'PITCH_KILLDRY', unit: 'unverified' },
   'PITCH.PITCH_THRESH': { family: 'PITCH', paramId: 113, name: 'PITCH_THRESH', unit: 'unverified' },
   'FILTER.FILTER_TYPE': { family: 'FILTER', paramId: 0, name: 'FILTER_TYPE', unit: 'enum' }, // inferred from AM4
-  'FILTER.FILTER_FREQ': { family: 'FILTER', paramId: 1, name: 'FILTER_FREQ', unit: 'hz', displayMin: 20, displayMax: 20000 }, // inferred from AM4
+  'FILTER.FILTER_FREQ': { family: 'FILTER', paramId: 1, name: 'FILTER_FREQ', unit: 'unverified' },
   'FILTER.FILTER_Q': { family: 'FILTER', paramId: 2, name: 'FILTER_Q', unit: 'db', displayMin: 0.10000000149011612, displayMax: 10, scaling: 'log10' }, // inferred from AM4
   'FILTER.FILTER_GAIN': { family: 'FILTER', paramId: 3, name: 'FILTER_GAIN', unit: 'db', displayMin: -20, displayMax: 20 }, // inferred from AM4
-  'FILTER.FILTER_LEVEL': { family: 'FILTER', paramId: 4, name: 'FILTER_LEVEL', unit: 'unverified' },
+  'FILTER.FILTER_LEVEL': { family: 'FILTER', paramId: 4, name: 'FILTER_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   'FILTER.FILTER_BAL': { family: 'FILTER', paramId: 5, name: 'FILTER_BAL', unit: 'unverified' },
   'FILTER.FILTER_BYPASSMODE': { family: 'FILTER', paramId: 6, name: 'FILTER_BYPASSMODE', unit: 'unverified' },
   'FILTER.FILTER_ORDER': { family: 'FILTER', paramId: 7, name: 'FILTER_ORDER', unit: 'count', displayMin: 1, displayMax: 12 }, // inferred from AM4
@@ -6292,7 +6292,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'ENHANCER.ENHANCER_DEPTH': { family: 'ENHANCER', paramId: 1, name: 'ENHANCER_DEPTH', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
   'ENHANCER.ENHANCER_LOWCUT': { family: 'ENHANCER', paramId: 2, name: 'ENHANCER_LOWCUT', unit: 'hz', displayMin: 20, displayMax: 2000 }, // inferred from AM4
   'ENHANCER.ENHANCER_HICUT': { family: 'ENHANCER', paramId: 3, name: 'ENHANCER_HICUT', unit: 'hz', displayMin: 200, displayMax: 20000 }, // inferred from AM4
-  'ENHANCER.ENHANCER_LEVEL': { family: 'ENHANCER', paramId: 4, name: 'ENHANCER_LEVEL', unit: 'unverified' },
+  'ENHANCER.ENHANCER_LEVEL': { family: 'ENHANCER', paramId: 4, name: 'ENHANCER_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   'ENHANCER.ENHANCER_BYPASS': { family: 'ENHANCER', paramId: 5, name: 'ENHANCER_BYPASS', unit: 'unverified' },
   'ENHANCER.ENHANCER_TYPE': { family: 'ENHANCER', paramId: 6, name: 'ENHANCER_TYPE', unit: 'enum' }, // inferred from AM4
   'ENHANCER.ENHANCER_PHASE': { family: 'ENHANCER', paramId: 7, name: 'ENHANCER_PHASE', unit: 'unverified' },
@@ -6494,12 +6494,12 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'GATE.GATE_ATTACK': { family: 'GATE', paramId: 1, name: 'GATE_ATTACK', unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' }, // inferred from AM4
   'GATE.GATE_HOLD': { family: 'GATE', paramId: 2, name: 'GATE_HOLD', unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' }, // inferred from AM4
   'GATE.GATE_RELEASE': { family: 'GATE', paramId: 3, name: 'GATE_RELEASE', unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' }, // inferred from AM4
-  'GATE.GATE_RATIO': { family: 'GATE', paramId: 4, name: 'GATE_RATIO', unit: 'unverified' },
+  'GATE.GATE_RATIO': { family: 'GATE', paramId: 4, name: 'GATE_RATIO', unit: 'ratio', displayMin: 1, displayMax: 20, scaling: 'log10' }, // inferred from AM4
   'GATE.GATE_KEY': { family: 'GATE', paramId: 5, name: 'GATE_KEY', unit: 'unverified' },
   'GATE.GATE_LOWCUT': { family: 'GATE', paramId: 6, name: 'GATE_LOWCUT', unit: 'unverified' },
   'GATE.GATE_HICUT': { family: 'GATE', paramId: 7, name: 'GATE_HICUT', unit: 'unverified' },
-  'GATE.GATE_MIX': { family: 'GATE', paramId: 8, name: 'GATE_MIX', unit: 'unverified' },
-  'GATE.GATE_LEVEL': { family: 'GATE', paramId: 9, name: 'GATE_LEVEL', unit: 'unverified' },
+  'GATE.GATE_MIX': { family: 'GATE', paramId: 8, name: 'GATE_MIX', unit: 'percent', displayMin: 0, displayMax: 100 }, // inferred from AM4
+  'GATE.GATE_LEVEL': { family: 'GATE', paramId: 9, name: 'GATE_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   'GATE.GATE_PAN': { family: 'GATE', paramId: 10, name: 'GATE_PAN', unit: 'unverified' },
   'GATE.GATE_BYPASSMODE': { family: 'GATE', paramId: 11, name: 'GATE_BYPASSMODE', unit: 'unverified' },
   'GATE.GATE_BYPASS': { family: 'GATE', paramId: 12, name: 'GATE_BYPASS', unit: 'unverified' },
@@ -6508,7 +6508,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'GATE.GATE_RANGE': { family: 'GATE', paramId: 15, name: 'GATE_RANGE', unit: 'unverified' },
   'GATE.GATE_PEAKRMS': { family: 'GATE', paramId: 16, name: 'GATE_PEAKRMS', unit: 'unverified' },
   'GATE.GATE_SCENEIGNORE': { family: 'GATE', paramId: 17, name: 'GATE_SCENEIGNORE', unit: 'unverified' },
-  'GATE.GATE_KNEE': { family: 'GATE', paramId: 18, name: 'GATE_KNEE', unit: 'unverified' },
+  'GATE.GATE_KNEE': { family: 'GATE', paramId: 18, name: 'GATE_KNEE', unit: 'enum' }, // inferred from AM4
   'RINGMOD.RINGMOD_COARSE': { family: 'RINGMOD', paramId: 0, name: 'RINGMOD_COARSE', unit: 'unverified' },
   'RINGMOD.RINGMOD_FINE': { family: 'RINGMOD', paramId: 1, name: 'RINGMOD_FINE', unit: 'unverified' },
   'RINGMOD.RINGMOD_TRACK': { family: 'RINGMOD', paramId: 2, name: 'RINGMOD_TRACK', unit: 'unverified' },
@@ -6650,18 +6650,18 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'RESONATOR.RESONATOR_INPUTMODE': { family: 'RESONATOR', paramId: 39, name: 'RESONATOR_INPUTMODE', unit: 'unverified' },
   'VOLUME.VOLUME_GAIN': { family: 'VOLUME', paramId: 0, name: 'VOLUME_GAIN', unit: 'unverified' },
   'VOLUME.VOLUME_BAL': { family: 'VOLUME', paramId: 1, name: 'VOLUME_BAL', unit: 'unverified' },
-  'VOLUME.VOLUME_TAPER': { family: 'VOLUME', paramId: 2, name: 'VOLUME_TAPER', unit: 'unverified' },
+  'VOLUME.VOLUME_TAPER': { family: 'VOLUME', paramId: 2, name: 'VOLUME_TAPER', unit: 'enum' }, // inferred from AM4
   'VOLUME.VOLUME_BYPASS': { family: 'VOLUME', paramId: 3, name: 'VOLUME_BYPASS', unit: 'unverified' },
   'VOLUME.VOLUME_PANL': { family: 'VOLUME', paramId: 4, name: 'VOLUME_PANL', unit: 'unverified' },
   'VOLUME.VOLUME_PANR': { family: 'VOLUME', paramId: 5, name: 'VOLUME_PANR', unit: 'unverified' },
-  'VOLUME.VOLUME_LEVEL': { family: 'VOLUME', paramId: 6, name: 'VOLUME_LEVEL', unit: 'unverified' },
+  'VOLUME.VOLUME_LEVEL': { family: 'VOLUME', paramId: 6, name: 'VOLUME_LEVEL', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
   'VOLUME.VOLUME_BYPASSMODE': { family: 'VOLUME', paramId: 7, name: 'VOLUME_BYPASSMODE', unit: 'unverified' },
-  'VOLUME.VOLUME_INPUTSELECT': { family: 'VOLUME', paramId: 8, name: 'VOLUME_INPUTSELECT', unit: 'unverified' },
+  'VOLUME.VOLUME_INPUTSELECT': { family: 'VOLUME', paramId: 8, name: 'VOLUME_INPUTSELECT', unit: 'enum' }, // inferred from AM4
   'VOLUME.VOLUME_TYPE': { family: 'VOLUME', paramId: 9, name: 'VOLUME_TYPE', unit: 'unverified' },
   'VOLUME.VOLUME_THRESHOLD': { family: 'VOLUME', paramId: 10, name: 'VOLUME_THRESHOLD', unit: 'db', displayMin: -100, displayMax: 0 }, // inferred from AM4
   'VOLUME.VOLUME_ATTACK': { family: 'VOLUME', paramId: 11, name: 'VOLUME_ATTACK', unit: 'ms', displayMin: 1, displayMax: 5000, scaling: 'log10' }, // inferred from AM4
-  'VOLUME.VOLUME_RELEASE': { family: 'VOLUME', paramId: 12, name: 'VOLUME_RELEASE', unit: 'unverified' },
-  'VOLUME.VOLUME_HYSTERESIS': { family: 'VOLUME', paramId: 13, name: 'VOLUME_HYSTERESIS', unit: 'unverified' },
+  'VOLUME.VOLUME_RELEASE': { family: 'VOLUME', paramId: 12, name: 'VOLUME_RELEASE', unit: 'ms', displayMin: 1, displayMax: 5000, scaling: 'log10' }, // inferred from AM4
+  'VOLUME.VOLUME_HYSTERESIS': { family: 'VOLUME', paramId: 13, name: 'VOLUME_HYSTERESIS', unit: 'db', displayMin: 0, displayMax: 12 }, // inferred from AM4
   'VOLUME.VOLUME_METER': { family: 'VOLUME', paramId: 14, name: 'VOLUME_METER', unit: 'unverified' },
   'INPUT.INPUT_THRESH': { family: 'INPUT', paramId: 0, name: 'INPUT_THRESH', unit: 'unverified' },
   'INPUT.INPUT_RATIO': { family: 'INPUT', paramId: 1, name: 'INPUT_RATIO', unit: 'unverified' },
