@@ -54,13 +54,21 @@ export function registerDiscoveryTools(server: McpServer): void {
       'names; reverb.type with all the "Room, Small" / "Plate, Medium"',
       'entries). Use this before calling set_param when you\'re unsure of',
       'the exact spelling of an enum value.',
+      'BATCH FORM (preferred for tone-building): both `block` and `name`',
+      'accept arrays. Pass `block: ["amp", "drive", "pitch", "reverb"]`',
+      'to survey four blocks in one call, or `block: "pitch", name:',
+      '["effect_type", "key", "scale", "voice_1_harmony"]` to pull every',
+      'enum table you need for the pitch block in one call. Beats the',
+      'one-call-per-enum loop that costs ~50 ms per round-trip.',
       'Pure introspection — no MIDI I/O.',
     ].join(' '),
     inputSchema: {
       port: z.string().describe(PORT_DESC),
-      block: z.string().optional().describe('Optional block-name filter (e.g. "amp", "reverb").'),
-      name: z.string().optional().describe(
-        'Optional param-name filter (requires `block`). For enum params, returns the full enum table.',
+      block: z.union([z.string(), z.array(z.string()).min(1)]).optional().describe(
+        'Optional block-name filter. Single string ("amp") OR array of names (["amp", "drive", "pitch"]) — the array form returns params across every listed block in one call.',
+      ),
+      name: z.union([z.string(), z.array(z.string()).min(1)]).optional().describe(
+        'Optional param-name filter (requires `block`). Single string OR array. For enum params, returns the full enum table for each matching name — pass an array to fetch every enum dropdown in one call instead of N sequential calls.',
       ),
     },
   }, async ({ port, block, name }) => {

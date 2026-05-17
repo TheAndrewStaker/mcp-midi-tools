@@ -58,6 +58,16 @@ export function describeDevice(port: string): {
  * is supplied AND the param is an enum, the response carries the full
  * enum table — collapses the legacy `*_list_enum_values` tools into the
  * same surface per BK-051 audit (Session 63).
+ *
+ * Both `block` and `name` accept either a single string or an array.
+ * Passing an array of blocks lets one call cover the multi-block survey
+ * an agent does at the start of a tone-build (amp + drive + pitch +
+ * reverb in one round-trip instead of four). Passing an array of names
+ * returns enum tables for all of them in one call — replaces the
+ * per-enum sequential `list_params(block, enumName)` loop the agent
+ * was forced into pre-Session 88 (founder's 20-minute harmonized-lead
+ * preset session, where 7 of ~40 tool calls were `list_params` for
+ * one enum each).
  */
 export interface ListParamsEntry {
   block: string;
@@ -82,28 +92,69 @@ export interface ListParamsEntry {
   applies_only_when?: string;
 }
 
-export function listParams(args: { port: string; block?: string; name?: string }): {
+export function listParams(args: {
+  port: string;
+  block?: string | readonly string[];
+  name?: string | readonly string[];
+}): {
   device: string;
   blocks: readonly string[];
   params: readonly ListParamsEntry[];
 } {
   const desc = requireDevice(args.port);
   const entries: ListParamsEntry[] = [];
-  const wantBlock = args.block !== undefined
-    ? resolveBlockName(desc, args.block)
-    : undefined;
+
+  // Resolve the block filter to a canonical-name Set, or undefined for
+  // "all blocks". Each input goes through resolveBlockName so callers
+  // can pass either canonical slugs or fuzzy display names per device.
+  let wantBlocks: Set<string> | undefined;
+  if (args.block !== undefined) {
+    const inputs = Array.isArray(args.block) ? args.block : [args.block];
+    if (inputs.length === 0) {
+      throw new DispatchError(
+        'value_out_of_range',
+        desc.display_name,
+        'list_params: `block` array must not be empty. Omit the field to list every block, or pass at least one block name.',
+      );
+    }
+    wantBlocks = new Set(inputs.map((b) => resolveBlockName(desc, b)));
+  }
+
+  // Resolve the name filter similarly. When set, the response includes
+  // enum tables for every matching name (per the BK-051 convention that
+  // an explicit name request returns the full enum payload).
+  let wantNames: Set<string> | undefined;
+  if (args.name !== undefined) {
+    const inputs = Array.isArray(args.name) ? args.name : [args.name];
+    if (inputs.length === 0) {
+      throw new DispatchError(
+        'value_out_of_range',
+        desc.display_name,
+        'list_params: `name` array must not be empty. Omit the field to list every param in the matched block(s), or pass at least one name.',
+      );
+    }
+    if (wantBlocks === undefined) {
+      throw new DispatchError(
+        'value_out_of_range',
+        desc.display_name,
+        'list_params: `name` requires `block` (single or array) so the dispatcher knows where to look up the param. Pass both, or omit `name`.',
+      );
+    }
+    wantNames = new Set(inputs);
+  }
+
   for (const [block, schema] of Object.entries(desc.blocks)) {
-    if (wantBlock !== undefined && block !== wantBlock) continue;
+    if (wantBlocks !== undefined && !wantBlocks.has(block)) continue;
     const aliasReverse: Record<string, string[]> = {};
     for (const [alias, canonical] of Object.entries(schema.aliases ?? {})) {
       aliasReverse[canonical] ??= [];
       aliasReverse[canonical].push(alias);
     }
     for (const [name, param] of Object.entries(schema.params)) {
-      if (args.name !== undefined && name !== args.name) continue;
+      if (wantNames !== undefined && !wantNames.has(name)) continue;
       const aliasList = aliasReverse[name];
       const includeEnum =
-        args.name !== undefined && param.enum_values !== undefined;
+        wantNames !== undefined && param.enum_values !== undefined;
       entries.push({
         block,
         name,
