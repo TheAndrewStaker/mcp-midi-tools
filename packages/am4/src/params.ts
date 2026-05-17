@@ -3940,6 +3940,139 @@ export const KNOWN_PARAMS = {
     pidLow: 0x00ce, pidHigh: 0x005f, unit: 'count', displayMin: 1, displayMax: 16 },
   'preset.scene_4_midi_4_value': { block: 'preset', name: 'scene_4_midi_4_value',
     pidLow: 0x00ce, pidHigh: 0x006f, unit: 'count', displayMin: 0, displayMax: 127 },
+  // Session 90 (2026-05-17): REVERB + DELAY mirrors from CACHE_PARAMS.
+  // Already shipping live via the `...CACHE_PARAMS` spread at line 427;
+  // these mirrors exist so `scripts/coverage-audit.ts` (which greps
+  // params.ts directly, not the merged registry) sees them. Unblocks
+  // user prompts like "tighten up the delay ducker," "back off the
+  // reverb modulation," "set delay echo pan left," etc. — all addresses
+  // were already wire-shipping; only the audit was under-reporting.
+  // Source: packages/am4/src/cacheParams.ts (auto-generated from
+  // paramNames.ts + cache-section3.json by gen-params-from-cache.ts).
+  'reverb.high_decay':       { block: 'reverb', name: 'high_decay',       pidLow: 0x0042, pidHigh: 0x000d, unit: 'count', displayMin: 0.01, displayMax: 1, scaling: 'log10' },
+  'reverb.scattering':       { block: 'reverb', name: 'scattering',       pidLow: 0x0042, pidHigh: 0x000e, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.reverbdelay':      { block: 'reverb', name: 'reverbdelay',      pidLow: 0x0042, pidHigh: 0x0010, unit: 'ms', displayMin: 0, displayMax: 250 },
+  'reverb.early_level':      { block: 'reverb', name: 'early_level',      pidLow: 0x0042, pidHigh: 0x0011, unit: 'db', displayMin: -40, displayMax: 10 },
+  'reverb.late_level':       { block: 'reverb', name: 'late_level',       pidLow: 0x0042, pidHigh: 0x0012, unit: 'db', displayMin: -40, displayMax: 10 },
+  'reverb.depth':            { block: 'reverb', name: 'depth',            pidLow: 0x0042, pidHigh: 0x0015, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.rate':             { block: 'reverb', name: 'rate',             pidLow: 0x0042, pidHigh: 0x0016, unit: 'hz', displayMin: 0.01, displayMax: 1 },
+  'reverb.diffusion':        { block: 'reverb', name: 'diffusion',        pidLow: 0x0042, pidHigh: 0x0019, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.diffusion_time':   { block: 'reverb', name: 'diffusion_time',   pidLow: 0x0042, pidHigh: 0x001a, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.pickup_spacing':   { block: 'reverb', name: 'pickup_spacing',   pidLow: 0x0042, pidHigh: 0x001d, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.frequency_1':      { block: 'reverb', name: 'frequency_1',      pidLow: 0x0042, pidHigh: 0x001e, unit: 'hz', displayMin: 20, displayMax: 2000 },
+  'reverb.frequency_2':      { block: 'reverb', name: 'frequency_2',      pidLow: 0x0042, pidHigh: 0x001f, unit: 'hz', displayMin: 100, displayMax: 10000 },
+  'reverb.q_1':              { block: 'reverb', name: 'q_1',              pidLow: 0x0042, pidHigh: 0x0020, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  'reverb.q_2':              { block: 'reverb', name: 'q_2',              pidLow: 0x0042, pidHigh: 0x0021, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  'reverb.gain_1':           { block: 'reverb', name: 'gain_1',           pidLow: 0x0042, pidHigh: 0x0022, unit: 'db', displayMin: -12, displayMax: 12 },
+  'reverb.gain_2':           { block: 'reverb', name: 'gain_2',           pidLow: 0x0042, pidHigh: 0x0023, unit: 'db', displayMin: -12, displayMax: 12 },
+  'reverb.low_decay':        { block: 'reverb', name: 'low_decay',        pidLow: 0x0042, pidHigh: 0x0025, unit: 'seconds', displayMin: 0.02, displayMax: 2, scaling: 'log10' },
+  'reverb.xover_frequency':  { block: 'reverb', name: 'xover_frequency',  pidLow: 0x0042, pidHigh: 0x0026, unit: 'hz', displayMin: 100, displayMax: 10000 },
+  'reverb.threshold':        { block: 'reverb', name: 'threshold',        pidLow: 0x0042, pidHigh: 0x0029, unit: 'db', displayMin: -80, displayMax: 20 },
+  'reverb.release_time':     { block: 'reverb', name: 'release_time',     pidLow: 0x0042, pidHigh: 0x002a, unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' },
+  'reverb.early_diffusion':  { block: 'reverb', name: 'early_diffusion',  pidLow: 0x0042, pidHigh: 0x002b, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.early_diff_time':  { block: 'reverb', name: 'early_diff_time',  pidLow: 0x0042, pidHigh: 0x002c, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.early_decay':      { block: 'reverb', name: 'early_decay',      pidLow: 0x0042, pidHigh: 0x002d, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.late_input_mix':   { block: 'reverb', name: 'late_input_mix',   pidLow: 0x0042, pidHigh: 0x002e, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.basetype':         { block: 'reverb', name: 'basetype',         pidLow: 0x0042, pidHigh: 0x0031, unit: 'count', displayMin: 0, displayMax: 8 },
+  'reverb.lfo_phase':        { block: 'reverb', name: 'lfo_phase',        pidLow: 0x0042, pidHigh: 0x0032, unit: 'degrees', displayMin: 0, displayMax: 180 },
+  'reverb.pitch_mix':        { block: 'reverb', name: 'pitch_mix',        pidLow: 0x0042, pidHigh: 0x0037, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.pitch_feedback':   { block: 'reverb', name: 'pitch_feedback',   pidLow: 0x0042, pidHigh: 0x003a, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.splice_time':      { block: 'reverb', name: 'splice_time',      pidLow: 0x0042, pidHigh: 0x003c, unit: 'ms', displayMin: 10, displayMax: 2000 },
+  'reverb.pitch_modulation': { block: 'reverb', name: 'pitch_modulation', pidLow: 0x0042, pidHigh: 0x003e, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.voice_balance':    { block: 'reverb', name: 'voice_balance',    pidLow: 0x0042, pidHigh: 0x003f, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'reverb.feedback':         { block: 'reverb', name: 'feedback',         pidLow: 0x0042, pidHigh: 0x0041, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.echo_mix':         { block: 'reverb', name: 'echo_mix',         pidLow: 0x0042, pidHigh: 0x0042, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.pitch_high_cut':   { block: 'reverb', name: 'pitch_high_cut',   pidLow: 0x0042, pidHigh: 0x0043, unit: 'hz', displayMin: 200, displayMax: 20000 },
+  'reverb.tonetype':         { block: 'reverb', name: 'tonetype',         pidLow: 0x0042, pidHigh: 0x0045, unit: 'db', displayMin: 0, displayMax: 3 },
+  'reverb.low_cut_q':        { block: 'reverb', name: 'low_cut_q',        pidLow: 0x0042, pidHigh: 0x0047, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  'reverb.high_cut_q':       { block: 'reverb', name: 'high_cut_q',       pidLow: 0x0042, pidHigh: 0x0048, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  // DELAY mirrors.
+  'delay.tempo_1':           { block: 'delay',  name: 'tempo_1',           pidLow: 0x0046, pidHigh: 0x000f, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'delay.echo_pan':          { block: 'delay',  name: 'echo_pan',          pidLow: 0x0046, pidHigh: 0x0011, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'delay.mod_rate':          { block: 'delay',  name: 'mod_rate',          pidLow: 0x0046, pidHigh: 0x0016, unit: 'hz', displayMin: 0.1, displayMax: 10 },
+  'delay.rate':              { block: 'delay',  name: 'rate',              pidLow: 0x0046, pidHigh: 0x0017, unit: 'hz', displayMin: 0.2, displayMax: 20 },
+  'delay.mod_depth':         { block: 'delay',  name: 'mod_depth',         pidLow: 0x0046, pidHigh: 0x0018, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'delay.mod_depth_depth2':  { block: 'delay',  name: 'mod_depth_depth2',  pidLow: 0x0046, pidHigh: 0x0019, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'delay.time_r':            { block: 'delay',  name: 'time_r',            pidLow: 0x0046, pidHigh: 0x001e, unit: 'ms', displayMin: 0, displayMax: 8000 },
+  'delay.rotation':          { block: 'delay',  name: 'rotation',          pidLow: 0x0046, pidHigh: 0x0022, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'delay.lfo_phase':         { block: 'delay',  name: 'lfo_phase',         pidLow: 0x0046, pidHigh: 0x0023, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'delay.level_l':           { block: 'delay',  name: 'level_l',           pidLow: 0x0046, pidHigh: 0x0024, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'delay.level_r':           { block: 'delay',  name: 'level_r',           pidLow: 0x0046, pidHigh: 0x0025, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'delay.pan_l':             { block: 'delay',  name: 'pan_l',             pidLow: 0x0046, pidHigh: 0x0026, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'delay.pan_r':             { block: 'delay',  name: 'pan_r',             pidLow: 0x0046, pidHigh: 0x0027, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'delay.modulation_phase':  { block: 'delay',  name: 'modulation_phase',  pidLow: 0x0046, pidHigh: 0x0028, unit: 'degrees', displayMin: 0, displayMax: 180 },
+  'delay.lfo_phase_2':       { block: 'delay',  name: 'lfo_phase_2',       pidLow: 0x0046, pidHigh: 0x0029, unit: 'degrees', displayMin: 0, displayMax: 180 },
+  'delay.crossfade_time':    { block: 'delay',  name: 'crossfade_time',    pidLow: 0x0046, pidHigh: 0x002a, unit: 'ms', displayMin: 1, displayMax: 255 },
+  'delay.sweep_rate':        { block: 'delay',  name: 'sweep_rate',        pidLow: 0x0046, pidHigh: 0x0038, unit: 'hz', displayMin: 0.1, displayMax: 10 },
+  'delay.sweep_phase':       { block: 'delay',  name: 'sweep_phase',       pidLow: 0x0046, pidHigh: 0x003a, unit: 'degrees', displayMin: 0, displayMax: 180 },
+  'delay.sweep_start_freq':  { block: 'delay',  name: 'sweep_start_freq',  pidLow: 0x0046, pidHigh: 0x003c, unit: 'hz', displayMin: 100, displayMax: 1000 },
+  'delay.sweep_stop_freq':   { block: 'delay',  name: 'sweep_stop_freq',   pidLow: 0x0046, pidHigh: 0x003d, unit: 'hz', displayMin: 500, displayMax: 5000 },
+  'delay.sweep_resonance':   { block: 'delay',  name: 'sweep_resonance',   pidLow: 0x0046, pidHigh: 0x003e, unit: 'count', displayMin: 0.2, displayMax: 20, scaling: 'log10' },
+  'delay.motor_speed':       { block: 'delay',  name: 'motor_speed',       pidLow: 0x0046, pidHigh: 0x0048, unit: 'count', displayMin: 0.5, displayMax: 2, scaling: 'log10' },
+  'delay.right_post_delay':  { block: 'delay',  name: 'right_post_delay',  pidLow: 0x0046, pidHigh: 0x0049, unit: 'ms', displayMin: 0, displayMax: 100 },
+  'delay.pan_rate':          { block: 'delay',  name: 'pan_rate',          pidLow: 0x0046, pidHigh: 0x0052, unit: 'hz', displayMin: 0.1, displayMax: 10 },
+  'delay.pan_depth':         { block: 'delay',  name: 'pan_depth',         pidLow: 0x0046, pidHigh: 0x0054, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'delay.lfo_phase_4':       { block: 'delay',  name: 'lfo_phase_4',       pidLow: 0x0046, pidHigh: 0x0055, unit: 'degrees', displayMin: 0, displayMax: 180 },
+  // Session 90 (2026-05-17): Phase 3 — REVERB + DELAY enums + tempo-
+  // sync registers from the Ghidra catalog. These have no cache record
+  // (so the cacheParams generator can't emit them) but the paramNames.ts
+  // TODOs document the expected range from prior structural analysis.
+  // Confidence tier per entry:
+  //   • HIGH: shared dictionaries (TEMPO_DIVISIONS_VALUES, LFO_WAVEFORMS_VALUES)
+  //     — these are firmware-extracted cache enums, byte-identical to the
+  //     values the device understands. Wire-safe.
+  //   • MEDIUM: 2-value toggles with conventional OFF/ON or paired labels —
+  //     the wire range is documented but the display labels are educated
+  //     guesses. Wire writes are still safe (values 0 / 1 are in range).
+  //   • LOWER: multi-value enums without a known label table — shipped as
+  //     `unit: 'count'` so the agent can address the param but doesn't
+  //     claim to know what each numeric value means. Future hardware
+  //     verification can upgrade these to enum + labels.
+  //
+  // REVERB tempo-sync (HIGH — shared TEMPO_DIVISIONS dictionary):
+  'reverb.predly_tempo':     { block: 'reverb', name: 'predly_tempo',      displayLabel: 'Pre-Delay Tempo', pidLow: 0x0042, pidHigh: 0x0040, unit: 'enum', displayMin: 0, displayMax: 78, enumValues: TEMPO_DIVISIONS_VALUES },
+  // REVERB slope/toggle (MEDIUM — 2-value toggles, labels are conventional
+  // guesses based on Blocks Guide §Reverb Common Page; wire writes safe):
+  'reverb.low_slope':        { block: 'reverb', name: 'low_slope',         displayLabel: 'Low Slope',    pidLow: 0x0042, pidHigh: 0x0035, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'Normal', 1: 'Steep' } },
+  'reverb.high_slope':       { block: 'reverb', name: 'high_slope',        displayLabel: 'High Slope',   pidLow: 0x0042, pidHigh: 0x0036, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'Normal', 1: 'Steep' } },
+  'reverb.spring_type':      { block: 'reverb', name: 'spring_type',       displayLabel: 'Spring Type',  pidLow: 0x0042, pidHigh: 0x0044, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'A', 1: 'B' } },
+  'reverb.predly_tap':       { block: 'reverb', name: 'predly_tap',        displayLabel: 'Pre-Delay Tap', pidLow: 0x0042, pidHigh: 0x0046, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  // REVERB input-select (MEDIUM — matches the standard Fractal input-select
+  // 3-value pattern documented at paramNames.ts line 425 + used in rotary):
+  'reverb.input_select':     { block: 'reverb', name: 'input_select',      displayLabel: 'Input Select', pidLow: 0x0042, pidHigh: 0x0033, unit: 'enum', displayMin: 0, displayMax: 2, enumValues: { 0: 'L+R', 1: 'LEFT', 2: 'RIGHT' } },
+  // REVERB pitch direction / position (LOWER — multi-value with no cache
+  // labels). Shipped as 'count' so the agent can write any in-range
+  // value without claiming to know the labels.
+  'reverb.pitch_dir':        { block: 'reverb', name: 'pitch_dir',         displayLabel: 'Pitch Direction', pidLow: 0x0042, pidHigh: 0x003b, unit: 'count', displayMin: 0, displayMax: 3 },
+  'reverb.pitch_pos':        { block: 'reverb', name: 'pitch_pos',         displayLabel: 'Pitch Position',  pidLow: 0x0042, pidHigh: 0x003d, unit: 'count', displayMin: 0, displayMax: 2 },
+  // DELAY tempo-sync (HIGH — shared TEMPO_DIVISIONS dictionary on right
+  // channel + LFO1/2/3/4 tempo):
+  'delay.tempo_r':           { block: 'delay',  name: 'tempo_r',           displayLabel: 'Tempo R',      pidLow: 0x0046, pidHigh: 0x0021, unit: 'enum', displayMin: 0, displayMax: 78, enumValues: TEMPO_DIVISIONS_VALUES },
+  'delay.lfo_1_tempo':       { block: 'delay',  name: 'lfo_1_tempo',       displayLabel: 'LFO 1 Tempo',  pidLow: 0x0046, pidHigh: 0x0036, unit: 'enum', displayMin: 0, displayMax: 78, enumValues: TEMPO_DIVISIONS_VALUES },
+  'delay.lfo_2_tempo':       { block: 'delay',  name: 'lfo_2_tempo',       displayLabel: 'LFO 2 Tempo',  pidLow: 0x0046, pidHigh: 0x0037, unit: 'enum', displayMin: 0, displayMax: 78, enumValues: TEMPO_DIVISIONS_VALUES },
+  'delay.lfo_3_tempo':       { block: 'delay',  name: 'lfo_3_tempo',       displayLabel: 'LFO 3 Tempo',  pidLow: 0x0046, pidHigh: 0x003b, unit: 'enum', displayMin: 0, displayMax: 78, enumValues: TEMPO_DIVISIONS_VALUES },
+  'delay.lfo_4_tempo':       { block: 'delay',  name: 'lfo_4_tempo',       displayLabel: 'LFO 4 Tempo',  pidLow: 0x0046, pidHigh: 0x0053, unit: 'enum', displayMin: 0, displayMax: 78, enumValues: TEMPO_DIVISIONS_VALUES },
+  // DELAY LFO waveform type (HIGH — shared LFO_WAVEFORMS dictionary,
+  // 10 entries 0..9, matches chorus.lfo_type at line 2480):
+  'delay.lfo_1_type':        { block: 'delay',  name: 'lfo_1_type',        displayLabel: 'LFO 1 Type',   pidLow: 0x0046, pidHigh: 0x001c, unit: 'enum', displayMin: 0, displayMax: 9, enumValues: LFO_WAVEFORMS_VALUES },
+  'delay.lfo_2_type':        { block: 'delay',  name: 'lfo_2_type',        displayLabel: 'LFO 2 Type',   pidLow: 0x0046, pidHigh: 0x001d, unit: 'enum', displayMin: 0, displayMax: 9, enumValues: LFO_WAVEFORMS_VALUES },
+  'delay.lfo_3_type':        { block: 'delay',  name: 'lfo_3_type',        displayLabel: 'LFO 3 Type',   pidLow: 0x0046, pidHigh: 0x0039, unit: 'enum', displayMin: 0, displayMax: 9, enumValues: LFO_WAVEFORMS_VALUES },
+  'delay.lfo_4_type':        { block: 'delay',  name: 'lfo_4_type',        displayLabel: 'LFO 4 Type',   pidLow: 0x0046, pidHigh: 0x0051, unit: 'enum', displayMin: 0, displayMax: 9, enumValues: LFO_WAVEFORMS_VALUES },
+  // DELAY 2-value toggles (MEDIUM — wire range documented; labels are
+  // conventional OFF/ON or A/B guesses):
+  'delay.run':               { block: 'delay',  name: 'run',               displayLabel: 'Run',          pidLow: 0x0046, pidHigh: 0x002b, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  // Renamed to match AM4-Edit display ("Trigger Restart") — confirmed
+  // via cross-ref audit. Wire range still 0..1.
+  'delay.trigger_restart':   { block: 'delay',  name: 'trigger_restart',   displayLabel: 'Trigger Restart', pidLow: 0x0046, pidHigh: 0x002c, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'delay.depth_range':       { block: 'delay',  name: 'depth_range',       displayLabel: 'Depth Range',  pidLow: 0x0046, pidHigh: 0x0047, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  // DELAY LFO target selectors (LOWER — multi-value with no cache labels):
+  'delay.lfo_1_target':      { block: 'delay',  name: 'lfo_1_target',      displayLabel: 'LFO 1 Target', pidLow: 0x0046, pidHigh: 0x0034, unit: 'count', displayMin: 0, displayMax: 2 },
+  'delay.lfo_2_target':      { block: 'delay',  name: 'lfo_2_target',      displayLabel: 'LFO 2 Target', pidLow: 0x0046, pidHigh: 0x0035, unit: 'count', displayMin: 0, displayMax: 2 },
+  'delay.lfo_4_target':      { block: 'delay',  name: 'lfo_4_target',      displayLabel: 'LFO 4 Target', pidLow: 0x0046, pidHigh: 0x0056, unit: 'count', displayMin: 0, displayMax: 3 },
+  // DELAY state-variable filter type (LOWER — typical SVF is Low/Band/High
+  // but TODO marked range 1..3 not 0..2, so the labels here would be wrong;
+  // ship as count and let hardware verification supply the labels):
+  'delay.sweep_filter':      { block: 'delay',  name: 'sweep_filter',      displayLabel: 'Sweep Filter', pidLow: 0x0046, pidHigh: 0x0059, unit: 'count', displayMin: 1, displayMax: 3 },
 } as const satisfies Record<string, Param>;
 
 export type ParamKey = keyof typeof KNOWN_PARAMS;

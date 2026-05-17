@@ -438,7 +438,17 @@ console.log(`Inferred pidLow for ${pidlowMap.size} families.`);
 // Session 90 (2026-05-16): tightened 143 → 112 after Session A's
 // WIRED-MISLABEL review pass (renames moved 23 entries from MISLABEL
 // to MATCHED). Drift guard remains tight against future regressions.
-const WIRED_MISLABEL_CEILING = 112;
+// Session 90 cont (2026-05-17): bumped 112 → 137 for the REVERB+DELAY
+// UI-MISSING closeout (63 mirror entries + 22 hand-authored enums took
+// AM4 TOTAL 57% → 75%+). Most new mismatches are intentional
+// disambiguation where multiple distinct registers share an AM4-Edit
+// display label (e.g. four `delay.lfo_{1,2,3,4}_type` entries all
+// display as "LFO Type"; four `delay.lfo_{1,2,3,4}_tempo` all display
+// as "Tempo"). Cannot collapse to a single key without losing
+// addressability. Pure mismatches were renamed inline (delay.mode →
+// delay.trigger_restart; delay.max_depth → delay.depth_range;
+// delay.svf_type → delay.sweep_filter).
+const WIRED_MISLABEL_CEILING = 137;
 if (totals['WIRED-MISLABEL'] > WIRED_MISLABEL_CEILING) {
   console.error('');
   console.error(`FAIL: WIRED-MISLABEL count is ${totals['WIRED-MISLABEL']}, ceiling is ${WIRED_MISLABEL_CEILING}.`);
