@@ -301,6 +301,209 @@ possible outcomes:
 
 Whichever outcome lands, edit this section to lock the state.
 
+## §0x02 SET_PARAMETER — III byte-shape hypothesis
+
+The shipping encoder (Hypothesis 1 below) is one of several plausible
+candidate wire shapes for III SET_PARAMETER. Each candidate is built
+byte-exact by
+`scripts/_research/probe-axefx3-setparam-hypothesis.ts` so the first
+III contributor can run the full sweep and lock the decode in a single
+session.
+
+**How to identify the winner.** The probe sends each frame in turn
+and listens 250 ms for inbound. A frame that earns an ECHO of its own
+`fn` byte (e.g. `F0 00 01 74 10 02 …`) is the winner — the device
+parsed it as a real SET_PARAMETER request. A `0x64
+MULTIPURPOSE_RESPONSE` carrying the same echoed `fn` is a definitive
+NEGATIVE for that envelope (parsed but rejected — the `result_code`
+tells us why). Silence is ambiguous; pair with a follow-up `get`
+read to disambiguate.
+
+Ranked highest → lowest confidence:
+
+### Hypothesis 1 — `fn=0x02`, II byte-shape, LS-first 14-bit fields, SET action
+
+**Confidence: HIGHEST.** This is the currently shipping wire shape
+(`packages/axe-fx-iii/src/setParam.ts:buildSetParameter` — Session 85
+port from II).
+
+**Wire shape** (16 bytes for `axefx3_set_parameter(block='Reverb 1',
+param_id=0, value=0)`):
+
+```
+F0 00 01 74 10 02
+   42 00          ← effectId 66 (Reverb 1) LS-first septet pair
+   00 00          ← paramId 0 (REVERB_TYPE per Ghidra) LS-first septet pair
+   00 00 00       ← value 0 packed across three 7-bit septets
+   01             ← action 0x01 = SET commit
+   54 F7          ← XOR-7bit checksum + SysEx end
+```
+
+**Evidence chain:**
+- Axe-Fx II hardware-verified on Q8.02 XL+ (HW-075 + HW-077, 2026-05-10).
+- AxeEdit III binary contains code paths reachable via opcode `0x02`
+  (Ghidra Session 82 mining of `FUN_1403437d0` caller list).
+- prs22, forum thread #49417 (2012) — published the literal II wire
+  shape used as the port template.
+- Chris Hurley, forum thread #140602 (2018) — used the opcode on an
+  Axe-Fx II XL+ for amp drive / master control.
+
+**Probe id:** `H1_II_PORT_0x02_LE`.
+
+### Hypothesis 2 — `fn=0x02`, II byte-shape, QUERY action (read-only)
+
+**Confidence: HIGH.** Identical envelope to H1 but with action byte
+`0x00` (QUERY) instead of `0x01` (SET). The II's GET responds with
+an echoed envelope + value (+ optional label string).
+
+**Why probe this separately:** if the III silently ignores SETs but
+honors GETs, H2 lights up where H1 doesn't — confirming the wire
+shape without committing any state change. This is the recommended
+**first** probe a III contributor runs: it's idempotent and lets us
+confirm the envelope decode without touching the device's preset
+buffer.
+
+**Wire shape** (16 bytes):
+```
+F0 00 01 74 10 02 42 00 00 00 00 00 00 00 55 F7
+```
+
+**Evidence chain:** H1's chain plus the II's documented GET-vs-SET
+asymmetry on certain blocks per Fractal wiki §"obtaining parameter
+values".
+
+**Probe id:** `H2_II_PORT_0x02_QUERY`.
+
+### Hypothesis 3 — `fn=0x02`, MS-first 14-bit fields, LS-first value, SET
+
+**Confidence: MEDIUM.** Swaps the byte ordering of the effectId and
+paramId septet pairs from LS-first to MS-first; keeps the value
+field LS-first (the 3-septet 16-bit pack doesn't have an "endian"
+choice).
+
+**Why this might be right:** Two other Axe-Fx II 14-bit fields turned
+out to be MS-first despite wiki claims of LS-first — HW-100 / HW-102
+hardware-verified `buildStorePreset` (0x1D) and
+`parseGetPresetNumberResponse` (0x14) both as MS-first. If III's
+SET_PARAMETER inherits the same firmware quirk, swapping the two id
+pairs to MS-first lands the frame on the right effectId / paramId
+instead of silently aliasing to a different (effectId, paramId).
+
+**Wire shape** (16 bytes):
+```
+F0 00 01 74 10 02 00 42 00 00 00 00 00 01 54 F7
+```
+
+**Evidence chain:** II HW-100 (`buildSwitchPreset` MS-first verified)
++ II HW-102 (`parseGetPresetNumberResponse` MS-first verified). No
+direct III evidence — pure cross-family quirk extension.
+
+**Probe id:** `H3_0x02_MS_FIRST_IDS`.
+
+### Hypothesis 4 — `fn=0x01`, 16-byte payload (AxeEdit III capture shape)
+
+**Confidence: MEDIUM-LOW.** Public captures of AxeEdit III / FC-12
+traffic show real `fn=0x01` SysEx frames with ~16-byte payloads — far
+longer than anything in v1.4. The captured Amp 1 Boost on/off pair
+(documented above in §"Function 0x01") differs only in the value
+region (`7C 03 → 00 00`), so this IS some form of per-block param
+write — just under a different fn byte than the II's `0x02`.
+
+**Wire shape** (24 bytes total, value=0 / "off" shape):
+```
+F0 00 01 74 10 01 42 00 00 00 28 00 00 00 00 00 00 00 00 00 00 00 7E F7
+
+structure:
+   F0 00 01 74 10                ← envelope + III model byte
+   01                            ← fn byte
+   42 00                         ← effectId 66 (Reverb 1) LS-first
+   00 00                         ← paramId 0 LS-first
+   28 00 00 00 00                ← 5-byte ? (copied verbatim from observed capture)
+   00 00 00 00 00 00             ← 6-byte value field zeroed
+   00                            ← 1-byte trailing ? (zero in observed capture)
+   7E F7                         ← XOR-7bit checksum + SysEx end
+```
+
+**Why probe this:** the III may have a fundamentally different
+SET_PARAMETER opcode than the II, and `fn=0x01` is the only other
+function byte we've seen long-payload traffic on in the wild. If H1
+silently ignores and H4 acks, that's a positive III-specific
+SET_PARAMETER and the entire `setParam.ts` builder needs to migrate.
+
+**Evidence chain:** USB capture documented in SYSEX-MAP-AXE-FX-III.md
+§"Function 0x01" (Amp 1 Boost on/off). Field semantics within the
+payload are tentative (the on/off differ only in the value region,
+but the leading 5-byte `28 00 00 00 00` and trailing `00` could be
+context bytes, address fragments, etc.). Probe is binary — accepts
+or rejects — so semantics don't need to be decoded to evaluate the
+hypothesis.
+
+**Probe id:** `H4_fn0x01_LONG_PAYLOAD`.
+
+### Hypothesis 5 — `fn=0x12`, II byte-shape payload (Ghidra-mined undocumented opcode)
+
+**Confidence: LOW.** Ghidra Session 82 mined AxeEdit III's caller
+list of the generic SysEx message-builder (`FUN_1403437d0`) and
+identified `fn=0x12` as undocumented (not in v1.4, 2 caller sites)
+with a payload that includes the model byte loaded from a device-
+handle struct.
+
+**Why probe this:** the model-from-struct payload pattern matches
+how SET_PARAMETER varies across the modern Fractal family. If the
+II's `fn=0x02` is reserved for legacy II compatibility and the III
+moved per-knob writes to `fn=0x12`, that would explain why opcode
+`0x02` could be a no-op on III despite being reachable in the
+binary (the AxeEdit III code may call `0x02` only for diagnostic
+reasons, with `0x12` doing the actual UI work).
+
+**Wire shape** (16 bytes — same II shape, just under `fn=0x12`):
+```
+F0 00 01 74 10 12 42 00 00 00 00 00 00 01 44 F7
+```
+
+**Evidence chain:** Ghidra Session 82 fn-byte inventory in this doc's
+"Function bytes confirmed in the AxeEdit III binary" table. No
+capture, no community mention — speculative but cheap to probe.
+
+**Probe id:** `H5_fn0x12_II_SHAPE`.
+
+### How to run the probe (hardware-ready)
+
+`scripts/_research/probe-axefx3-setparam-hypothesis.ts` ships with
+the five hypothesis envelopes byte-exact. The script defaults to
+**dry-run** mode (prints all candidate frames but opens no MIDI
+port) so any developer can review the hypothesis set without owning
+an Axe-Fx III.
+
+To execute against real III hardware:
+
+```bash
+# 1. Close AxeEdit III + Claude Desktop (Windows MIDI is single-writer).
+# 2. Switch the III to a scratch preset that contains a Reverb 1 block.
+# 3. Run the live probe:
+npx tsx scripts/_research/probe-axefx3-setparam-hypothesis.ts --live
+```
+
+The script sends each candidate frame in sequence, listens 250 ms
+for inbound after each, and classifies the response inline:
+
+- **`✓ ECHO of fn=0xNN`** — the device parsed this fn and echoed
+  back. The hypothesis with the matching `fn` is the winner.
+- **`❌ MULTIPURPOSE_RESPONSE (0x64): echoed_fn=0xNN result_code=0xMM`**
+  — definitive negative for that fn. The result code names exactly
+  what was wrong (e.g. `MSG_NOT_RECOGNIZED` = fn unsupported;
+  `INVALID_PARAMID` = effect ID or paramId out of range;
+  `BAD_ARGUMENT` = payload field wrong).
+- **`⏵ no response (silent)`** — ambiguous. Could be a real SET
+  that left no ack, or could be a malformed envelope dropped before
+  fn parsing.
+
+Once the winner is identified, update this section with the
+hardware-verified envelope and lock it via byte-exact goldens in
+`scripts/verify-axe-fx-iii-encoding.ts`. The 🟡 untested marker on
+the `axefx3_set_parameter` MCP tool flips to 🟢, and 2216 III
+paramIds become writable from the MCP surface.
+
 ---
 
 ## Community-captured wire confirmations

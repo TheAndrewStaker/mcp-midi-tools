@@ -259,7 +259,13 @@ content-hash field.
    param control — those are separate wire paths. The III's
    per-block param-ID sysex (function unknown, probably `0x02`
    family-inferred) needs to be decoded from AxeEdit III network
-   traffic.
+   traffic. **A ranked five-hypothesis probe lives at
+   `scripts/_research/probe-axefx3-setparam-hypothesis.ts`** with
+   the candidate envelopes documented byte-exact in
+   `docs/SYSEX-MAP-AXE-FX-III.md` §"0x02 SET_PARAMETER hypothesis".
+   Each hypothesis is built and ready to send — the first III
+   contributor can run the probe with `--live` and lock the decode
+   in a single 250 ms × 5 sweep.
 3. **Block-level operations (bypass / channel / scene) are unaffected**
    — those use the documented v1.4 spec functions 0x0A / 0x0B / 0x0C
    with Appendix 1 effect IDs, which work TODAY.
