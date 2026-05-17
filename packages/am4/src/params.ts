@@ -4143,6 +4143,77 @@ export const KNOWN_PARAMS = {
   'compressor.time':         { block: 'compressor', name: 'time',               pidLow: 0x002e, pidHigh: 0x0025, unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' },
   'compressor.transients':   { block: 'compressor', name: 'transients',         pidLow: 0x002e, pidHigh: 0x0026, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
   'compressor.tone':         { block: 'compressor', name: 'tone',               pidLow: 0x002e, pidHigh: 0x0028, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+
+  // Session 91 (2026-05-17): FLANGER / PHASER / FILTER UI-MISSING
+  // closeout. 28 catalog symbols from the Ghidra paramId table that
+  // have AM4-Edit XML labels but no params.ts entry. Confidence tiers
+  // per the Session 90 convention:
+  //   • HIGH: shared LFO_WAVEFORMS_VALUES / TEMPO_DIVISIONS_VALUES
+  //     dictionaries, wire-byte identical to existing entries that use
+  //     them. Wire-safe.
+  //   • MEDIUM: 2-value toggles with the conventional { 0:'OFF', 1:'ON' }
+  //     labels. Wire range documented; labels are conventional guesses.
+  //     Wire writes still safe (values 0 / 1 in range).
+  //   • LOWER: multi-value enums without a known label table — shipped
+  //     as `unit: 'count'` so the agent can address the param without
+  //     claiming the labels. Hardware verification can upgrade later.
+  // Resolver-name dedup suffixes follow the existing pattern
+  // (`shape_vcrk`, `high_cut_lpf`, `ratio_compansion`): when the
+  // AM4-Edit label collides with an existing entry's name, add a
+  // disambiguating suffix and accept the WIRED-MISLABEL on the audit
+  // (intentional disambiguation, ceiling bump).
+
+  // FLANGER hand-author (9). All 9 names match the AM4-Edit XML
+  // display labels → WIRED-MATCHED.
+  'flanger.lfo_type':         { block: 'flanger', name: 'lfo_type',          displayLabel: 'LFO Type',       pidLow: 0x0052, pidHigh: 0x0012, unit: 'enum', displayMin: 0, displayMax: 9, enumValues: LFO_WAVEFORMS_VALUES },
+  'flanger.auto_depth':       { block: 'flanger', name: 'auto_depth',        displayLabel: 'Auto Depth',     pidLow: 0x0052, pidHigh: 0x0014, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'flanger.phase_reverse':    { block: 'flanger', name: 'phase_reverse',     displayLabel: 'Phase Reverse',  pidLow: 0x0052, pidHigh: 0x0015, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'flanger.thru_zero':        { block: 'flanger', name: 'thru_zero',         displayLabel: 'Thru Zero',      pidLow: 0x0052, pidHigh: 0x0016, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'flanger.bypass_reset':     { block: 'flanger', name: 'bypass_reset',      displayLabel: 'Bypass Reset',   pidLow: 0x0052, pidHigh: 0x001b, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  // High/Low Cut Slope: filter-stage IIR order (typical Fractal range
+  // 1..12). Shipped as count until hardware verification supplies the
+  // discrete slope labels (typical: 6/12/18/24 dB/oct).
+  'flanger.high_cut_slope':   { block: 'flanger', name: 'high_cut_slope',    displayLabel: 'High Cut Slope', pidLow: 0x0052, pidHigh: 0x001c, unit: 'count', displayMin: 1, displayMax: 12 },
+  'flanger.low_cut_slope':    { block: 'flanger', name: 'low_cut_slope',     displayLabel: 'Low Cut Slope',  pidLow: 0x0052, pidHigh: 0x001d, unit: 'count', displayMin: 1, displayMax: 12 },
+  'flanger.vco_response':     { block: 'flanger', name: 'vco_response',      displayLabel: 'VCO Response',   pidLow: 0x0052, pidHigh: 0x001f, unit: 'count', displayMin: 0, displayMax: 10 },
+  'flanger.steps':            { block: 'flanger', name: 'steps',             displayLabel: 'Steps',          pidLow: 0x0052, pidHigh: 0x0022, unit: 'count', displayMin: 0, displayMax: 32 },
+
+  // PHASER hand-author (9). 6 MATCH the AM4-Edit display label;
+  // 3 are intentional disambiguations (lfo_type, vcr_curve, lfo_mode
+  // — AM4-Edit displays "Type" / "Type" / "Mode" but `phaser.type` and
+  // `phaser.mode` are already used) → WIRED-MISLABEL with ceiling bump.
+  'phaser.order':             { block: 'phaser', name: 'order',              displayLabel: 'Order',          pidLow: 0x005a, pidHigh: 0x000b, unit: 'count', displayMin: 1, displayMax: 12 },
+  'phaser.lfo_type':          { block: 'phaser', name: 'lfo_type',           displayLabel: 'LFO Type',       pidLow: 0x005a, pidHigh: 0x000d, unit: 'enum', displayMin: 0, displayMax: 9, enumValues: LFO_WAVEFORMS_VALUES },
+  'phaser.mode':              { block: 'phaser', name: 'mode',               displayLabel: 'Mode',           pidLow: 0x005a, pidHigh: 0x0015, unit: 'count', displayMin: 0, displayMax: 3 },
+  'phaser.tone':              { block: 'phaser', name: 'tone',               displayLabel: 'Tone',           pidLow: 0x005a, pidHigh: 0x0017, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'phaser.direction':         { block: 'phaser', name: 'direction',          displayLabel: 'Direction',      pidLow: 0x005a, pidHigh: 0x0018, unit: 'count', displayMin: 0, displayMax: 2 },
+  'phaser.reset_on_bypass':   { block: 'phaser', name: 'reset_on_bypass',    displayLabel: 'Reset on Bypass', pidLow: 0x005a, pidHigh: 0x001a, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'phaser.quantize':          { block: 'phaser', name: 'quantize',           displayLabel: 'Quantize',       pidLow: 0x005a, pidHigh: 0x001b, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  // vcr_curve: AM4-Edit label is "Type" (alpha curve for the VCR
+  // simulation on the Config page). Disambiguating suffix since
+  // `phaser.type` is the family Type enum.
+  'phaser.vcr_curve':         { block: 'phaser', name: 'vcr_curve',          displayLabel: 'Type',           pidLow: 0x005a, pidHigh: 0x001c, unit: 'count', displayMin: 0, displayMax: 3 },
+  // lfo_mode: AM4-Edit label is "Mode" (LFO mode selector). Disambig
+  // suffix since `phaser.mode` is already taken above (PHASER_MODE,
+  // no XML label).
+  'phaser.lfo_mode':          { block: 'phaser', name: 'lfo_mode',           displayLabel: 'Mode',           pidLow: 0x005a, pidHigh: 0x0025, unit: 'count', displayMin: 0, displayMax: 3 },
+
+  // FILTER hand-author (10). 9 MATCH the AM4-Edit display label;
+  // 1 is intentional disambiguation (order_2 — AM4-Edit displays
+  // "Order" but `filter.order` is already at pidHigh=0x1c from the
+  // cache pipeline) → WIRED-MISLABEL with ceiling bump.
+  'filter.order_2':           { block: 'filter', name: 'order_2',            displayLabel: 'Order',          pidLow: 0x0072, pidHigh: 0x000e, unit: 'count', displayMin: 1, displayMax: 12 },
+  'filter.phase_invert':      { block: 'filter', name: 'phase_invert',       displayLabel: 'Phase Invert',   pidLow: 0x0072, pidHigh: 0x0011, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  // enable: AM4-Edit displays "Enable" (LFO Enable on the LFO page).
+  // Naming as `enable` matches the AM4-Edit label.
+  'filter.enable':            { block: 'filter', name: 'enable',             displayLabel: 'Enable',         pidLow: 0x0072, pidHigh: 0x0016, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'filter.lfo_type':          { block: 'filter', name: 'lfo_type',           displayLabel: 'LFO Type',       pidLow: 0x0072, pidHigh: 0x0017, unit: 'enum', displayMin: 0, displayMax: 9, enumValues: LFO_WAVEFORMS_VALUES },
+  'filter.quantize':          { block: 'filter', name: 'quantize',           displayLabel: 'Quantize',       pidLow: 0x0072, pidHigh: 0x001b, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'filter.mode':              { block: 'filter', name: 'mode',               displayLabel: 'Mode',           pidLow: 0x0072, pidHigh: 0x001d, unit: 'count', displayMin: 0, displayMax: 3 },
+  'filter.sweep_shape':       { block: 'filter', name: 'sweep_shape',        displayLabel: 'Sweep Shape',    pidLow: 0x0072, pidHigh: 0x0024, unit: 'count', displayMin: 0, displayMax: 10 },
+  'filter.detector_source':   { block: 'filter', name: 'detector_source',    displayLabel: 'Detector Source', pidLow: 0x0072, pidHigh: 0x0025, unit: 'count', displayMin: 0, displayMax: 3 },
+  'filter.detect':            { block: 'filter', name: 'detect',             displayLabel: 'Detect',         pidLow: 0x0072, pidHigh: 0x0026, unit: 'count', displayMin: 0, displayMax: 3 },
+  'filter.tempo':             { block: 'filter', name: 'tempo',              displayLabel: 'Tempo',          pidLow: 0x0072, pidHigh: 0x0028, unit: 'enum', displayMin: 0, displayMax: 78, enumValues: TEMPO_DIVISIONS_VALUES },
 } as const satisfies Record<string, Param>;
 
 export type ParamKey = keyof typeof KNOWN_PARAMS;

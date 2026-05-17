@@ -456,7 +456,15 @@ console.log(`Inferred pidLow for ${pidlowMap.size} families.`);
 // `high_cut_lpf`, `ratio_compansion`, `threshold_thresh2`) — these
 // don't match the AM4-Edit display verbatim, but they preserve
 // addressability where two registers share the same UI label.
-const WIRED_MISLABEL_CEILING = 140;
+// Session 91 (2026-05-17): bumped 140 → 144 for the FLANGER / PHASER /
+// FILTER UI-MISSING closeout (28 hand-authored entries). Four are
+// intentional disambiguations of AM4-Edit labels that collide with
+// existing keys:
+//   • phaser.lfo_type    (XML "Type"  vs existing phaser.type at 0x0a)
+//   • phaser.vcr_curve   (XML "Type"  — alpha-curve "Type" on Config page)
+//   • phaser.lfo_mode    (XML "Mode"  vs phaser.mode at 0x15 unlabeled)
+//   • filter.order_2     (XML "Order" vs cache-pipeline filter.order at 0x1c)
+const WIRED_MISLABEL_CEILING = 144;
 if (totals['WIRED-MISLABEL'] > WIRED_MISLABEL_CEILING) {
   console.error('');
   console.error(`FAIL: WIRED-MISLABEL count is ${totals['WIRED-MISLABEL']}, ceiling is ${WIRED_MISLABEL_CEILING}.`);
