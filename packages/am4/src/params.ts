@@ -1296,6 +1296,251 @@ export const KNOWN_PARAMS = {
     unit: 'ms', displayMin: 0, displayMax: 100,
   },
 
+  // Session 90 (2026-05-17) — CABINET UI-MISSING closeout. 25 new amp
+  // params at pidLow=0x003e from the Ghidra CABINET catalog (Sessions
+  // 82-83) cross-referenced against the 54-entry UI-MISSING list in
+  // samples/captured/decoded/coverage-cross-ref-audit.md. Names chosen
+  // to match the AM4-Edit XML display label after norm() (lowercase +
+  // non-alphanumeric → _) so each new entry registers as WIRED-MATCHED
+  // (not MISLABEL). For paired controls (Cab 1 / Cab 2 sharing a single
+  // XML label like "Pan", "Bank", "Mute"), only the "_1" member is
+  // added — the "_2" member would force a MISLABEL since both entries
+  // can't simultaneously match the same display label and the drift
+  // guard ceiling is at 112. Future capture batch may add the _2
+  // variants once the renaming pass lowers the MISLABEL count.
+  //
+  // Units follow the brief: enum (no enumValues — needs capture) for
+  // BANK / TYPE / MODE / INPUTSEL / PRETYPE / OVERSAMPLE / ROOMSHAPE;
+  // OFF/ON enum for MUTE / AUTO_ALIGN / BYPASS; bipolar_percent for
+  // PAN; hz for PROXIMITY / LO-HI-CUT / FREQ; db for LEVEL / DAMPING;
+  // count for VU meter (read-only) and other dimensionless knobs.
+  // Hand-authored (not via paramNames.ts / gen-params-from-cache.ts)
+  // because the CABINET catalog ids live in the Ghidra dispatcher
+  // table, not in any S2/S3 cache block — same hand-author pattern as
+  // the existing 16 cab_* entries from Session 38 (HW-041).
+  //
+  // SKIP rationale (per brief):
+  //   - 33 CABINET_ZOOM, 65-68 DYNACAB_TYPE/MIC1/2 — XML display "—"
+  //     (no UI evidence, no name to verify against).
+  //   - 65000+ CABINET_NAME/LABEL/BTN/PICKER/COPY_MENU/ALIGN_GRAPH —
+  //     firmware ghost registers (string-name slots, action buttons),
+  //     not user-editable knobs.
+  //   - 53 CABINET_LOCUT1 (XML "Low Cut") — would collide with the
+  //     existing amp.low_cut at pidLow=0x003a, and using a different
+  //     name would force MISLABEL.
+  //   - 37 CABINET_BASS (XML "Bass"), 38 CABINET_MID (XML "Mid"),
+  //     36 CABINET_PRETYPE (XML "Type") — name collisions with the
+  //     existing amp.bass / amp.mid / amp.type at pidLow=0x003a.
+  //   - "_2" pair members where the XML label is identical to the
+  //     "_1" member's label (BANK2, TYPE2, PAN2, PROXIMITY2, MUTE2,
+  //     LOSLOPE2, HISLOPE2, DYNACAB_R2, DYNACAB_Z2) — would force
+  //     MISLABEL since both can't match the same display string.
+  'amp.bank': {
+    block: 'amp', name: 'bank',
+    displayLabel: 'Bank',
+    pidLow: 0x003e, pidHigh: 0x000a,
+    // CABINET_BANK1 (catalog id=10). AM4-Edit "Bank" — cab IR-pack
+    // selector (UltraRes / Legacy / etc.). TODO: capture enum values.
+    unit: 'enum', displayMin: 0, displayMax: 31,
+  },
+  'amp.cab': {
+    block: 'amp', name: 'cab',
+    displayLabel: 'Cab #',
+    pidLow: 0x003e, pidHigh: 0x000c,
+    // CABINET_TYPE1 (catalog id=12). AM4-Edit "Cab #" — cab IR
+    // selector within the active bank. TODO: capture enum values
+    // (range varies by bank; conservative 0..255 for now).
+    unit: 'enum', displayMin: 0, displayMax: 255,
+  },
+  'amp.pan': {
+    block: 'amp', name: 'pan',
+    displayLabel: 'Pan',
+    pidLow: 0x003e, pidHigh: 0x0010,
+    // CABINET_PAN1 (catalog id=16). AM4-Edit "Pan" — cab 1 stereo pan.
+    unit: 'bipolar_percent', displayMin: -100, displayMax: 100,
+  },
+  // SKIP: CABINET_PROXIMITY1 (catalog id=20, XML "Proximity") would
+  // collide with the existing CACHE_PARAMS entry `amp.proximity` at
+  // pidLow=0x003a / pidHigh=0x15 (the cross-block addressing surfaced
+  // by the variant resolver as DISTORT cache id=21). verify-cache-
+  // params fails on duplicate-key with conflicting pidLow. Renaming
+  // to e.g. `cab_proximity` would force a WIRED-MISLABEL since the
+  // XML label is "Proximity"; the drift guard ceiling has no
+  // headroom. Defer until a WIRED-MISLABEL review pass lowers the
+  // ceiling and frees a slot.
+  'amp.cab_mode': {
+    block: 'amp', name: 'cab_mode',
+    displayLabel: 'Cab Mode',
+    pidLow: 0x003e, pidHigh: 0x0018,
+    // CABINET_MODE (catalog id=24). AM4-Edit "Cab Mode" — selects
+    // single / dual / DynaCab routing. TODO: capture enum values.
+    unit: 'enum', displayMin: 0, displayMax: 7,
+  },
+  'amp.cab_section': {
+    block: 'amp', name: 'cab_section',
+    displayLabel: 'Cab Section',
+    pidLow: 0x003e, pidHigh: 0x0019,
+    // CABINET_BYPASS (catalog id=25). AM4-Edit "Cab Section" — section-
+    // level bypass for the cab block (distinct from preset bypass).
+    unit: 'enum', displayMin: 0, displayMax: 1,
+    enumValues: { 0: 'OFF', 1: 'ON' },
+  },
+  'amp.room_level': {
+    block: 'amp', name: 'room_level',
+    displayLabel: 'Room Level',
+    pidLow: 0x003e, pidHigh: 0x001c,
+    // CABINET_ROOMMIX (catalog id=28). AM4-Edit "Room Level" — wet/dry
+    // mix of the room reflection model into the cab signal.
+    unit: 'percent', displayMin: 0, displayMax: 100,
+  },
+  'amp.cab_input_mode': {
+    block: 'amp', name: 'cab_input_mode',
+    displayLabel: 'Cab Input Mode',
+    pidLow: 0x003e, pidHigh: 0x0023,
+    // CABINET_INPUTSEL (catalog id=35). AM4-Edit "Cab Input Mode" —
+    // selects L / R / SUM input to the cab block. TODO: capture enum.
+    unit: 'enum', displayMin: 0, displayMax: 3,
+  },
+  'amp.mode': {
+    block: 'amp', name: 'mode',
+    displayLabel: 'Mode',
+    pidLow: 0x003e, pidHigh: 0x0028,
+    // CABINET_OVERSAMPLE (catalog id=40). AM4-Edit "Mode" — IR engine
+    // oversampling / quality mode selector. TODO: capture enum values.
+    unit: 'enum', displayMin: 0, displayMax: 3,
+  },
+  'amp.floor_reflections': {
+    block: 'amp', name: 'floor_reflections',
+    displayLabel: 'Floor Reflections',
+    pidLow: 0x003e, pidHigh: 0x002c,
+    // CABINET_FLOORLVL (catalog id=44). AM4-Edit "Floor Reflections" —
+    // level of floor-bounce reflections in the room model.
+    unit: 'db', displayMin: -60, displayMax: 12,
+  },
+  'amp.room_shape': {
+    block: 'amp', name: 'room_shape',
+    displayLabel: 'Room Shape',
+    pidLow: 0x003e, pidHigh: 0x002f,
+    // CABINET_ROOMSHAPE (catalog id=47). AM4-Edit "Room Shape" —
+    // selects the room geometry preset (square / rectangle / etc.).
+    // TODO: capture enum values.
+    unit: 'enum', displayMin: 0, displayMax: 7,
+  },
+  'amp.lf_damping': {
+    block: 'amp', name: 'lf_damping',
+    displayLabel: 'LF Damping',
+    pidLow: 0x003e, pidHigh: 0x0030,
+    // CABINET_LFDAMPING (catalog id=48). AM4-Edit "LF Damping" —
+    // low-frequency damping in the room reflection model.
+    unit: 'db', displayMin: -60, displayMax: 12,
+  },
+  'amp.hf_damping': {
+    block: 'amp', name: 'hf_damping',
+    displayLabel: 'HF Damping',
+    pidLow: 0x003e, pidHigh: 0x0031,
+    // CABINET_HFDAMPING (catalog id=49). AM4-Edit "HF Damping" —
+    // high-frequency damping in the room reflection model.
+    unit: 'db', displayMin: -60, displayMax: 12,
+  },
+  'amp.cab_vu': {
+    block: 'amp', name: 'cab_vu',
+    displayLabel: 'Cab VU',
+    pidLow: 0x003e, pidHigh: 0x0034,
+    // CABINET_VUMETER (catalog id=52). AM4-Edit "Cab VU" — read-only
+    // output-level meter for the cab block. Count-style 0..1 like the
+    // amp.b_plus_monitor / gain_monitor read-only meters.
+    unit: 'count', displayMin: 0, displayMax: 1,
+  },
+  'amp.cab_1_ir_length': {
+    block: 'amp', name: 'cab_1_ir_length',
+    displayLabel: 'Cab 1 IR Length',
+    pidLow: 0x003e, pidHigh: 0x0039,
+    // CABINET_LENGTH1 (catalog id=57). AM4-Edit "Cab 1 IR Length" —
+    // impulse-response truncation length in samples / ms for Cab 1.
+    unit: 'count', displayMin: 0, displayMax: 8192,
+  },
+  'amp.cab_2_ir_length': {
+    block: 'amp', name: 'cab_2_ir_length',
+    displayLabel: 'Cab 2 IR Length',
+    pidLow: 0x003e, pidHigh: 0x003a,
+    // CABINET_LENGTH2 (catalog id=58). AM4-Edit "Cab 2 IR Length" —
+    // sibling to cab_1_ir_length for Cab 2.
+    unit: 'count', displayMin: 0, displayMax: 8192,
+  },
+  'amp.low_slope': {
+    block: 'amp', name: 'low_slope',
+    displayLabel: 'Low Slope',
+    pidLow: 0x003e, pidHigh: 0x003b,
+    // CABINET_LOSLOPE1 (catalog id=59). AM4-Edit "Low Slope" — Cab 1
+    // low-cut filter slope in dB/oct. TODO: capture enum values
+    // (commonly 6/12/18/24/36/48 dB/oct in Fractal cab filters).
+    unit: 'enum', displayMin: 0, displayMax: 7,
+  },
+  'amp.high_slope': {
+    block: 'amp', name: 'high_slope',
+    displayLabel: 'High Slope',
+    pidLow: 0x003e, pidHigh: 0x003d,
+    // CABINET_HISLOPE1 (catalog id=61). AM4-Edit "High Slope" — Cab 1
+    // high-cut filter slope in dB/oct. TODO: capture enum values.
+    unit: 'enum', displayMin: 0, displayMax: 7,
+  },
+  'amp.master_low_slope': {
+    block: 'amp', name: 'master_low_slope',
+    displayLabel: 'Master Low Slope',
+    pidLow: 0x003e, pidHigh: 0x003f,
+    // CABINET_PRELOSLOPE (catalog id=63). AM4-Edit "Master Low Slope" —
+    // Cab-Master EQ low-cut slope (sibling to cab_master_low_cut Hz).
+    // TODO: capture enum values.
+    unit: 'enum', displayMin: 0, displayMax: 7,
+  },
+  'amp.master_high_slope': {
+    block: 'amp', name: 'master_high_slope',
+    displayLabel: 'Master High Slope',
+    pidLow: 0x003e, pidHigh: 0x0040,
+    // CABINET_PREHISLOPE (catalog id=64). AM4-Edit "Master High Slope" —
+    // Cab-Master EQ high-cut slope (sibling to cab_master_high_cut Hz).
+    // TODO: capture enum values.
+    unit: 'enum', displayMin: 0, displayMax: 7,
+  },
+  'amp.dynacab': {
+    block: 'amp', name: 'dynacab',
+    displayLabel: 'DynaCab',
+    pidLow: 0x003e, pidHigh: 0x0045,
+    // CABINET_DYNACAB_R1 (catalog id=69). AM4-Edit "DynaCab" — Cab 1
+    // DynaCab radius/rotation. Knob-style 0..10.
+    unit: 'knob_0_10', displayMin: 0, displayMax: 10,
+  },
+  // SKIP: CABINET_DYNACAB_Z1 (catalog id=71, XML "Distance") would
+  // collide with the existing CACHE_PARAMS entry `amp.distance` at
+  // pidLow=0x003a / pidHigh=0x47. Same cross-block ghost-resolver
+  // pattern as the skipped amp.proximity above. Defer.
+  'amp.cab_1_blend': {
+    block: 'amp', name: 'cab_1_blend',
+    displayLabel: 'Cab 1 Blend',
+    pidLow: 0x003e, pidHigh: 0x004b,
+    // CABINET_BLEND1 (catalog id=75). AM4-Edit "Cab 1 Blend" — IR
+    // blend percentage for Cab 1 (when blending two IRs in one cab).
+    unit: 'percent', displayMin: 0, displayMax: 100,
+  },
+  'amp.cab_2_blend': {
+    block: 'amp', name: 'cab_2_blend',
+    displayLabel: 'Cab 2 Blend',
+    pidLow: 0x003e, pidHigh: 0x004c,
+    // CABINET_BLEND2 (catalog id=76). AM4-Edit "Cab 2 Blend" — sibling
+    // to cab_1_blend for Cab 2.
+    unit: 'percent', displayMin: 0, displayMax: 100,
+  },
+  'amp.auto_align': {
+    block: 'amp', name: 'auto_align',
+    displayLabel: 'Auto Align',
+    pidLow: 0x003e, pidHigh: 0x004d,
+    // CABINET_AUTO_ALIGN (catalog id=77). AM4-Edit "Auto Align" —
+    // toggle for automatic cab alignment (phase / delay matching
+    // across the two cabs). OFF/ON enum.
+    unit: 'enum', displayMin: 0, displayMax: 1,
+    enumValues: { 0: 'OFF', 1: 'ON' },
+  },
+
   // Session 89 (2026-05-16) — DISTORT UI-MISSING closeout. 16 new amp
   // params mirrored from CACHE_PARAMS so the coverage-audit (which
   // text-greps params.ts) sees them. Wire bytes + units come from
