@@ -547,7 +547,24 @@ console.log(`Inferred pidLow for ${pidlowMap.size} families.`);
 // rename is purely about the lookup key being discoverable from the
 // natural-language prompt ("turn on the input EQ" → amp.eq_onoff is more
 // findable than amp.off_on which is what XML-direct would produce).
-const WIRED_MISLABEL_CEILING = 161;
+// Session 97 (2026-05-18): bumped 161 → 167 for the PEQ/COMP/GATE/INPUT/
+// CHORUS/TREMOLO/ENHANCER UI-MISSING residual closeout (15 hand-authored
+// entries; AM4 TOTAL 91% → 93%). All 6 new MISLABELs are intentional
+// context-disambig names where the AM4-Edit XML label alone would be too
+// generic for LLM key lookup (three "Gain" meters that collide with the
+// block's main gain knob, "Auto Att/Rel" → readable auto_attack_release,
+// two "Slope N" entries that follow the existing channel_N_* pattern):
+//   • compressor.gain_monitor      (XML "Gain" — _monitor suffix mirrors
+//                                    amp.gain_monitor / b_plus_monitor
+//                                    convention from Session 89)
+//   • gate.gain_monitor            (XML "Gain")
+//   • ingate.gain_monitor          (XML "Gain")
+//   • compressor.auto_attack_release (XML "Auto Att/Rel" — readable form)
+//   • peq.channel_1_slope          (XML "Slope 1" — slots into the existing
+//                                    channel_N_{frequency,q,gain,type,solo}
+//                                    family-prefix pattern)
+//   • peq.channel_5_slope          (XML "Slope 5")
+const WIRED_MISLABEL_CEILING = 167;
 if (totals['WIRED-MISLABEL'] > WIRED_MISLABEL_CEILING) {
   console.error('');
   console.error(`FAIL: WIRED-MISLABEL count is ${totals['WIRED-MISLABEL']}, ceiling is ${WIRED_MISLABEL_CEILING}.`);

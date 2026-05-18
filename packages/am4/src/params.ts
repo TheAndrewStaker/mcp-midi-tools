@@ -4602,6 +4602,78 @@ export const KNOWN_PARAMS = {
   'preset.scene_3_menu':       { block: 'preset', name: 'scene_3_menu',       displayLabel: 'SCENE 3 menu', pidLow: 0x00ce, pidHigh: 0x008c, unit: 'count', displayMin: 0, displayMax: 127 },
   'preset.scene_4_menu':       { block: 'preset', name: 'scene_4_menu',       displayLabel: 'SCENE 4 menu', pidLow: 0x00ce, pidHigh: 0x008d, unit: 'count', displayMin: 0, displayMax: 127 },
   'preset.clear_all':          { block: 'preset', name: 'clear_all',          displayLabel: 'Clear All',    pidLow: 0x00ce, pidHigh: 0x008e, unit: 'count', displayMin: 0, displayMax: 127 },
+
+  // ============================================================
+  // Session 97 (2026-05-18) UI-MISSING residual closeout — wires the
+  // 15 remaining placeable-family entries the AM4-Edit XML exposes
+  // but params.ts didn't carry. Catalog symbols sourced from
+  // `samples/captured/decoded/ghidra-am4-paramnames.json`,
+  // display labels from `__block_layout.xml` /
+  // `__block_layout_expert.xml` (mined by
+  // `scripts/_research/list-ui-missing.ts`).
+  //
+  // UI widgets (paramId >= 65000 or empty XML label — meter/name/
+  // label/button/graph/menu sentinels) intentionally skipped: those
+  // addresses back UI chrome in AM4-Edit, not writable preset data.
+  // Catalog symbols dropped this pass: CABINET_NAME{1,2},
+  // CABINET_LABEL{1,2}, CABINET_ALIGN_*, CABINET_COPY_MENU{1,2},
+  // GEQ_ZEROEQ, INPUT_METERS, VOLUME_METER, DISTORT_ZEROEQ.
+  //
+  // Unit/range conventions mirror commit b67e23f (Session 96):
+  // toggle-style switches → enum 0..1 OFF/ON; type/menu enums
+  // without captured tables → count 0..127; read-only meters
+  // → knob_0_10. Slope params follow the FLANGER convention
+  // (count 1..12) since no capture pins enum vs count yet.
+
+  // ---- PEQ (pidLow=0x0036) — 2 entries ----
+  // PEQ_LOWSLOPE / PEQ_HIGHSLOPE address the shelf-channel slope on
+  // channel 1 (low shelf) and channel 5 (high shelf). XML labels
+  // "Slope 1" / "Slope 5"; name follows the existing channel_N_*
+  // family-prefix pattern (channel_1_frequency, channel_5_q, etc.).
+  'peq.channel_1_slope':       { block: 'peq', name: 'channel_1_slope',       displayLabel: 'Slope 1',           pidLow: 0x0036, pidHigh: 0x0023, unit: 'count', displayMin: 1, displayMax: 12 },
+  'peq.channel_5_slope':       { block: 'peq', name: 'channel_5_slope',       displayLabel: 'Slope 5',           pidLow: 0x0036, pidHigh: 0x0024, unit: 'count', displayMin: 1, displayMax: 12 },
+
+  // ---- COMP (pidLow=0x002e) — 4 entries ----
+  // gain_monitor is a read-only meter — `gain` collides with the
+  // existing compressor knob; the _monitor suffix matches the AMP
+  // family's b_plus_monitor / gain_monitor / headroom_monitor
+  // convention from Session 89.
+  'compressor.knee_type':            { block: 'compressor', name: 'knee_type',            displayLabel: 'Knee Type',         pidLow: 0x002e, pidHigh: 0x000e, unit: 'count', displayMin: 0, displayMax: 127 },
+  'compressor.detector_type':        { block: 'compressor', name: 'detector_type',        displayLabel: 'Detector Type',     pidLow: 0x002e, pidHigh: 0x0010, unit: 'count', displayMin: 0, displayMax: 127 },
+  'compressor.auto_attack_release':  { block: 'compressor', name: 'auto_attack_release',  displayLabel: 'Auto Att/Rel',      pidLow: 0x002e, pidHigh: 0x0016, unit: 'enum',  displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'compressor.gain_monitor':         { block: 'compressor', name: 'gain_monitor',         displayLabel: 'Gain',              pidLow: 0x002e, pidHigh: 0x001f, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+
+  // ---- GATE (pidLow=0x0092) — 1 entry ----
+  'gate.gain_monitor':         { block: 'gate', name: 'gain_monitor',         displayLabel: 'Gain',              pidLow: 0x0092, pidHigh: 0x0012, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+
+  // ---- INPUT / ingate (pidLow=0x0025) — 4 entries ----
+  // The input-noise-gate block carries hidden compressor-style
+  // controls (Ratio / Attack / Z / GainMonitor) the AM4-Edit Setup
+  // page exposes but params.ts hadn't registered. INPUT_METERS
+  // (paramId 65520) skipped as a UI widget.
+  'ingate.ratio':              { block: 'ingate', name: 'ratio',              displayLabel: 'Ratio',             pidLow: 0x0025, pidHigh: 0x000b, unit: 'ratio', displayMin: 1, displayMax: 10, scaling: 'log10' },
+  'ingate.attack':             { block: 'ingate', name: 'attack',             displayLabel: 'Attack',            pidLow: 0x0025, pidHigh: 0x000d, unit: 'ms',    displayMin: 0, displayMax: 1000 },
+  'ingate.input_impedance':    { block: 'ingate', name: 'input_impedance',    displayLabel: 'Input Impedance',   pidLow: 0x0025, pidHigh: 0x000e, unit: 'count', displayMin: 0, displayMax: 127 },
+  'ingate.gain_monitor':       { block: 'ingate', name: 'gain_monitor',       displayLabel: 'Gain',              pidLow: 0x0025, pidHigh: 0x0010, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+
+  // ---- CHORUS (pidLow=0x004e) — 1 entry ----
+  // Stereo "Tempo Right" companion to chorus.tempo (CHORUS_TEMPO).
+  // Same TEMPO_DIVISIONS_VALUES enum since the right-channel tempo
+  // ladder mirrors the master one.
+  'chorus.tempo_right':        { block: 'chorus', name: 'tempo_right',        displayLabel: 'Tempo Right',       pidLow: 0x004e, pidHigh: 0x001f, unit: 'enum',  displayMin: 0, displayMax: 78, enumValues: TEMPO_DIVISIONS_VALUES },
+
+  // ---- TREMOLO (pidLow=0x006a) — 2 entries ----
+  // trigger_phase is the LFO start-phase on retrigger; degrees
+  // convention matches tremolo.phase (Session 35, capture-verified
+  // 0..180 deg). crossover_slope follows the FLANGER count 1..12
+  // pattern pending range capture.
+  'tremolo.trigger_phase':     { block: 'tremolo', name: 'trigger_phase',     displayLabel: 'Trigger Phase',     pidLow: 0x006a, pidHigh: 0x0013, unit: 'degrees', displayMin: 0, displayMax: 180 },
+  'tremolo.crossover_slope':   { block: 'tremolo', name: 'crossover_slope',   displayLabel: 'Crossover Slope',   pidLow: 0x006a, pidHigh: 0x0014, unit: 'count',   displayMin: 1, displayMax: 12 },
+
+  // ---- ENHANCER (pidLow=0x007a) — 1 entry ----
+  // OFF/ON enum mirrors filter.phase_invert (same XML "Phase Invert"
+  // label, same shape).
+  'enhancer.phase_invert':     { block: 'enhancer', name: 'phase_invert',     displayLabel: 'Phase Invert',      pidLow: 0x007a, pidHigh: 0x000f, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
 } as const satisfies Record<string, Param>;
 
 export type ParamKey = keyof typeof KNOWN_PARAMS;
