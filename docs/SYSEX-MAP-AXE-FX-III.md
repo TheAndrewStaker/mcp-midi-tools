@@ -193,122 +193,160 @@ The list below is preserved as a historical record:
 | 9 | `FN_FRONT_PANEL_CHANGE = 0x21` is referenced in design notes as the III dirty signal. Not in v1.4 PDF. Source unidentified. | `setParam.ts:59`, `docs/axefx3-design-notes.md` | Treat as unverified. The PDF documents only `0x10` (tempo down-beat) and `0x11` (tuner) as push frames. |
 | 10 | Block roster (`blockTypes.ts`) ships every block with `id: null` claiming "effectId pending capture." Effect IDs ARE in the spec Appendix 1 — only AMP and post-firmware-1.13 blocks are unspecified. | `blockTypes.ts` | Populate `id:` from Appendix 1. Leave AMP, NAM, Dynamic Distortion as `null`. |
 
-## 0x02 SET_PARAMETER — community-verified on II, ported to III 🟡
+## 0x01 PARAMETER_SETGET — byte-verified from public captures 🟢 SET / 🟡 GET
 
-**Status:** wire shape ported from the Axe-Fx II's hardware-verified
-encoder (`packages/axe-fx-ii/src/setParam.ts`). 🟡 III hardware-
-untested as of Session 84 — no III in the founder's inventory. Built,
-documented, and shipped via `axefx3_set_parameter` /
-`axefx3_get_parameter` MCP tools so the first III contributor to run
-one of them against a scratch preset can convert this from 🟡 to 🟢
-in one MIDI send.
+**Status (Session 97, 2026-05-18 — PIVOT).** The III's parameter-write
+opcode is **`fn=0x01`** with a 2-byte sub-action discriminator, NOT
+`fn=0x02` as Sessions 85+86 had ported from the Axe-Fx II. The pivot
+was triggered by an open-web research sweep that surfaced 6 byte-exact
+public captures (Mountain Utilities forum, user "gabbernutter",
+2019-03-13) of AxeEdit III writing Delay 1 TIME. Combined with the 4
+FC-12 captures previously archived in [`axefx3-fn01-decode.md`](
+axefx3-fn01-decode.md), the corpus is now **10 captures from 2
+independent community sources spanning 2 effect blocks and 2 sub-action
+codes** — all on `fn=0x01`, **zero on `fn=0x02`**. The Session 84-era
+"port from II" was a reasonable hypothesis but contradicted every
+captured III parameter-write on the open web.
 
-### The opcode is not in v1.4, but community has documented it
+**SET** wire shape is byte-verified; the encoder + parser in
+`packages/axe-fx-iii/src/setParam.ts` ship with 4 byte-exact encoder
+goldens + 4 capture-parse goldens in
+`scripts/verify-axe-fx-iii-encoding.ts`. Full capture corpus +
+field-layout table: [`docs/axefx3-set-parameter-captures.md`](
+axefx3-set-parameter-captures.md).
 
-Fractal removed `0x02` from the published v1.4 PDF on purpose. But
-forum evidence (Session 84 batch search,
-`docs/_private/forum-search-batch-2026-05-16T15-43-33-316Z.json`)
-confirms it still exists in the firmware:
+**GET** wire shape is still hypothesis-only — no captured III SET
+response frames exist on the open web; the III's actual state-feedback
+channel appears to be the unsolicited `04 01` STATE_BROADCAST
+sub-action. The MCP tool `axefx3_get_parameter` ships the SET shape
+with the value field zeroed; callers should treat a 250 ms timeout as
+"GET not supported on this firmware" rather than a tool error.
 
-1. **prs22, forum thread #49417 (2012)** — posts the literal wire
-   shape `F0 00 01 74 03 02 6A 00 01 00 zz yy xx 01 ?? F7` for setting
-   AMP 1's INPUT_DRIVE on an Axe-Fx II Mark I/II. This is the canonical
-   wire shape we ported.
-2. **fret, thread #99763 (2015)** — names the opcode explicitly:
-   *"querying the state of instant access switches using the
-   **MIDI_GET/SET_PARAMETER(0x02)** sysex command and the bypass
-   parameter."*
-3. **Chris Hurley, thread #140602 (2018)** — used the opcode on an
-   Axe-Fx II XL+: *"controlled the amp drive, master, etc... through
-   sysex messages. I preferred setting the knob position via sysex."*
-4. **simonp54 reply, same thread:** *"No longer officially possible...
-   the only 'supported' features are in the third party spec at the top
-   of this thread."* Confirms Fractal removed the opcode from public
-   docs but doesn't say firmware stopped honoring it.
-5. **Session 82 Ghidra mining of `Axe-Edit III.exe`** found `0x02`
-   in the generic message-builder caller list — so III firmware still
-   has code paths reachable via this opcode (the AxeEdit III binary
-   itself sends them).
+### Evidence chain (10 captures, 2 sources)
 
-### Wire shape (16 bytes)
+**Source A — FC-12 footswitch (4 captures, Session 79 era).** Drive 1/2
+boost ON/OFF, sub-action `52 00` (mouse-drag form, emitted by the FC-12
+for binary toggles). Effect IDs 58/59 = `ID_DISTORT1` / `ID_DISTORT2`
+per v1.4 Appendix 1. Originally decoded into the field-layout table in
+[`axefx3-fn01-decode.md`](axefx3-fn01-decode.md).
+
+**Source B — Mountain Utilities forum (6 captures, gabbernutter
+2019-03-13).** AxeEdit III writing Delay 1 TIME. Effect ID 70 =
+`ID_DELAY1`, paramId 2. Four frames sub-action `52 00` (mouse-drag,
+intermediate values mid-drag) + two frames sub-action `09 00`
+(typed-input, final value). Discovered Session 97 via open-web
+research; bytes archived in [`axefx3-set-parameter-captures.md`](
+axefx3-set-parameter-captures.md).
+
+Each capture validates against the standard Fractal XOR-7bit checksum
+algorithm. Field positions are consistent across both sources and both
+sub-actions.
+
+### Wire shape (23 bytes, sub-action 09 00 typed-input — what we ship)
 
 ```
-F0 00 01 74 10 02
+F0 00 01 74 10 01
+  [sub_lo sub_hi]    sub-action: 09 00 = typed-input SET (clean envelope)
+                                  52 00 = mouse-drag SET (drag context at pos 12-14)
+                                  04 01 = STATE_BROADCAST (device→host, unsolicited)
   [id_lo id_hi]      14-bit effect ID per v1.4 Appendix 1 (LS-first)
   [pid_lo pid_hi]    14-bit paramId (LS-first) — see Ghidra catalog
+  [00 00 00]         drag-context bytes (zero for typed input)
   [v0 v1 v2]         16-bit value packed into 3 septets:
                        v0 = bits 6..0
                        v1 = bits 13..7
                        v2 = bits 15..14
-  [action]           0x01 = SET commit, 0x00 = QUERY
+                     (All observed III params use 14-bit values; v2 = 0.)
+  [00 00 00]         reserved zeros
   [cs] F7            checksum + SysEx end
 ```
 
-Value range is 0..65534 (16-bit minus one — wiki notes firmware
-clamps 65535 → 65534). Display ↔ wire conversion is the caller's
-responsibility on the III: no public per-param display calibration
-exists. For paramId → symbolic-name lookup, use the Ghidra catalog at
+Total length 23 bytes. Value range carried forward as 0..65534
+(16-bit) for II compatibility, though no observed III param exceeds
+14-bit. Display ↔ wire conversion is the caller's responsibility — the
+III publishes no per-param display calibration. For paramId → symbolic
+name lookup, use the Ghidra catalog at
 `samples/captured/decoded/ghidra-axeedit3-paramnames.json` (49 effect
 families, 2216 paramIds, mined Session 82).
 
-### What you can do with this right now
+### Builder + parser surface
 
-Even before HW verification, the encoder is shipping with byte-exact
-goldens (`scripts/verify-axe-fx-iii-encoding.ts`). Tools and helpers:
+`packages/axe-fx-iii/src/setParam.ts` ships:
 
-- `buildSetParameter(effectId, paramId, value)` — builds the 16-byte
-  SET wire form.
-- `buildGetParameter(effectId, paramId)` — builds the QUERY form.
-- `buildSetParameterBypass(effectId, bypassed)` — convenience that
-  writes paramId 255 (the II's bypass register). The III v1.4 also
-  exposes `0x0A SET_BYPASS` — prefer that one unless testing whether
-  the III also honors 0x02 path.
-- `parseSetGetParameterResponse(bytes)` — reads back `(effectId,
-  paramId, value)` from inbound 0x02 frames.
+- `buildSetParameter(effectId, paramId, value)` — emits the 23-byte
+  typed-input SET (sub-action `09 00`). 🟢 verified.
+- `buildGetParameter(effectId, paramId)` — same envelope with value
+  zeroed, hypothesis-only.
+- `buildSetParameterBypass(effectId, bypassed)` — paramId 255
+  convenience; the v1.4 PDF's `0x0A SET_BYPASS` is preferred for
+  production bypass writes.
+- `parseSetGetParameterResponse(bytes)` — accepts inbound fn=0x01
+  frames; disambiguates by sub-action. STATE_BROADCAST `04 01`
+  returns `paramId=0` (the broadcast doesn't carry paramId; caller
+  tracks last-SET to attribute the value).
 
 MCP tools `axefx3_set_parameter` + `axefx3_get_parameter` wrap these
-and bracket every SET with a 250 ms 0x64 MULTIPURPOSE_RESPONSE listener
-(via `sendAndWatchForError`). If the III firmware rejects the opcode
-(unlikely given the Ghidra finding, but possible), the rejection
-arrives as a `0x64` error frame and is surfaced verbatim in the tool's
-reply — not a silent failure.
+and bracket every SET with a 250 ms `0x64 MULTIPURPOSE_RESPONSE`
+listener. Rejections (e.g. `MIDI_ERROR_INVALID_FXID`,
+`MIDI_ERROR_INVALID_PARAMID`) are surfaced inline in the tool reply —
+not silent failure.
 
-### What a III contributor confirms in one MIDI send
+### Why the previous fn=0x02 port was wrong
 
-Open a scratch preset that contains Reverb 1, set up MCP, run:
+Sessions 85+86 shipped `FN_SET_PARAMETER = 0x02` as a II→III model-byte
+swap based on:
 
-```
-axefx3_get_parameter(block="Reverb 1", param_id=0)
-```
+1. **AxeEdit III binary** (Ghidra Session 82) — opcode `0x02` appears
+   in the message-builder caller list, so III firmware has code paths
+   reachable via that opcode.
+2. **Axe-Fx II community evidence** — prs22 (forum thread #49417),
+   fret (#99763), Chris Hurley (#140602) all documented `fn=0x02`
+   working on II Mark I/II/XL+.
+3. **simonp54 (#140602)** — "No longer officially possible... the
+   only 'supported' features are in the third party spec." Read as
+   "fn=0x02 was removed from public docs but firmware still honors
+   it on II."
 
-paramId 0 of REVERB is `REVERB_TYPE` per Ghidra catalog. Three
-possible outcomes:
+The reasoning was internally consistent but didn't survive Session 97's
+broader open-web sweep. **Every captured III parameter-write uses
+`fn=0x01`**, not `fn=0x02`. The Ghidra binding `0x02 ∈ message-builder
+caller list` is still consistent with the pivot — `fn=0x02` may exist
+in III firmware for some other purpose (legacy II compatibility?
+internal diagnostics?), but it is NOT the parameter-write opcode that
+AxeEdit III invokes during normal use.
 
-1. **Tool returns a numeric value** (likely the active reverb-type
-   index, 0..N). → 🟢 wire shape confirmed. III honors the same 0x02
-   shape as II. 2216 paramIds become writable.
-2. **Tool returns a `0x64 MULTIPURPOSE_RESPONSE`** with code
-   `MIDI_ERROR_MSG_NOT_RECOGNIZED` (0x04) or
-   `MIDI_ERROR_BAD_ARGUMENT` (0x03). → III firmware actively rejects.
-   Look at the echoed_fn — if it's 0x02 we have a definitive negative;
-   if it's something else, the wire envelope was malformed before fn
-   parsing.
-3. **Tool times out with no response.** → III silently ignores. Most
-   likely meaning: the opcode reaches the parameter dispatcher but no
-   reply is generated (II's GET also lacks ack on certain blocks per
-   wiki). For SET, this is acceptable; for GET, it indicates we need a
-   different query path (possibly fn=0x1F per Session 82 Ghidra).
+## §0x02 SET_PARAMETER — III byte-shape hypothesis (CLOSED Session 97)
 
-Whichever outcome lands, edit this section to lock the state.
+**Status:** ❌ CLOSED. The Session 86-era hypothesis tree (H1..H5
+candidate envelopes for III SET_PARAMETER) is **resolved.** The winner
+was a variant of H4 (`fn=0x01`, 23-byte payload) — see the new "§0x01
+PARAMETER_SETGET" section above for the byte-verified envelope.
 
-## §0x02 SET_PARAMETER — III byte-shape hypothesis
+The hypothesis tree below is preserved for historical context (showing
+how Session 85+86 reasoned about the candidates before the open-web
+sweep surfaced the 6 gabbernutter captures that disambiguated). H4
+was correctly flagged as a candidate with the right `fn=0x01` and the
+right Drive 1/2 captures, but ranked MEDIUM-LOW because of incomplete
+field-layout decoding. Session 97's 6 additional captures (different
+block, different paramId, different sub-action `09 00`) locked the
+field layout.
 
-The shipping encoder (Hypothesis 1 below) is one of several plausible
-candidate wire shapes for III SET_PARAMETER. Each candidate is built
+**Probe script** `scripts/_research/probe-axefx3-setparam-hypothesis.ts`
+is now obsolete for SET_PARAMETER. It remains useful as a reference for
+the probe-pattern when investigating other undocumented III opcodes
+(e.g. SET_GRID_CELL, STORE_PRESET) where the wire shape is still
+hypothesis-only.
+
+---
+
+(Pre-pivot hypothesis tree retained below for archival reasons.)
+
+The shipping encoder (Hypothesis 1 below) was one of several plausible
+candidate wire shapes for III SET_PARAMETER. Each candidate was built
 byte-exact by
 `scripts/_research/probe-axefx3-setparam-hypothesis.ts` so the first
-III contributor can run the full sweep and lock the decode in a single
-session.
+III contributor could run the full sweep and lock the decode in a
+single session.
 
 **How to identify the winner.** The probe sends each frame in turn
 and listens 250 ms for inbound. A frame that earns an ECHO of its own

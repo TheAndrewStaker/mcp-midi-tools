@@ -1,18 +1,22 @@
 /**
- * Axe-Fx III SET / GET PARAMETER tools (function 0x02).
+ * Axe-Fx III SET / GET PARAMETER tools (function 0x01).
  *
- * 🟡 III hardware-untested as of Session 84. Wire shape ported from
- * the Axe-Fx II's hardware-verified encoder (II uses model byte 0x03;
- * III uses 0x10). Community evidence chain documented in
- * `../setParam.ts` on `FN_SET_PARAMETER`. The III may reject these
- * writes — when it does, the device emits a
- * `0x64 MULTIPURPOSE_RESPONSE` which we catch via `sendAndWatchForError`
- * and surface inline in the tool reply.
+ * 🟢 SET wire shape byte-verified against 10 public captures spanning
+ * two effect blocks (Drive 1/2, Delay 1) and two sub-action codes
+ * (`09 00` typed-input + `52 00` mouse-drag). See
+ * `docs/axefx3-set-parameter-captures.md` for the captured frames and
+ * `../setParam.ts` on `FN_PARAMETER_SETGET` for the evidence chain.
+ *
+ * 🟡 GET wire shape is hypothesis-only — no public captures of a
+ * device-emitted SET response (only outbound SET frames). The III's
+ * actual state-feedback channel appears to be the unsolicited `04 01`
+ * STATE_BROADCAST sub-action; callers should treat a GET timeout as
+ * "device doesn't honor sync GET on this firmware," not a tool error.
  *
  * Tools registered:
  *   - axefx3_set_parameter(block, param_id, value) — write a raw 16-bit
  *     wire value into one paramId on one block instance.
- *   - axefx3_get_parameter(block, param_id) — query the same.
+ *   - axefx3_get_parameter(block, param_id) — query the same (hypothesis).
  *
  * Why "raw wire value" not "display value": the III has no public
  * per-param display calibration (the v1.4 PDF documents zero
@@ -21,6 +25,11 @@
  * `samples/captured/decoded/ghidra-axeedit3-paramnames.json` lists
  * every paramId by symbolic name (e.g. paramId 0 of REVERB =
  * `REVERB_TYPE`); use that to figure out which paramId to target.
+ *
+ * Session 97 (2026-05-18): pivoted from the Session 84-era II→III
+ * fn=0x02 port to the byte-verified fn=0x01 envelope. The pre-pivot
+ * envelope was a reasonable hypothesis but contradicted every captured
+ * III parameter-write on the open web.
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -55,14 +64,23 @@ const BLOCK_INPUT_DESCRIPTION = [
   'Call axefx3_list_blocks for the full catalog.',
 ].join('\n');
 
-const UNTESTED_BANNER = [
-  '⚠ 0x02 SET_PARAMETER is NOT in the v1.4 spec — it is Fractal\'s',
-  'historical (Axe-Fx II era) opcode that community evidence shows',
-  'still exists in the Axe-Fx III firmware code path. This tool builds',
-  'the II wire shape with the III\'s model byte. Untested on real III',
-  'hardware as of Session 84 (founder owns II XL+, not III). If the',
-  'device rejects the write, you\'ll see a 0x64 MULTIPURPOSE_RESPONSE',
-  'in the reply — that\'s diagnostic, not silent failure.',
+const SET_VERIFIED_BANNER = [
+  '0x01 PARAMETER_SETGET is NOT in the v1.4 spec — Fractal deliberately',
+  'omits parameter writes from the third-party MIDI document. Wire shape',
+  'is byte-verified against 10 public AxeEdit III captures spanning two',
+  'effect blocks (Drive 1/2 boost, Delay 1 TIME) and two sub-actions',
+  '(typed-input + mouse-drag). See docs/axefx3-set-parameter-captures.md',
+  'for the captured frames. If the device rejects the write you\'ll see',
+  'a 0x64 MULTIPURPOSE_RESPONSE in the reply.',
+].join('\n');
+
+const GET_HYPOTHESIS_BANNER = [
+  '⚠ GET is hypothesis-only — no captured III device-emitted SET response',
+  'exists on the open web. The wire shape mirrors SET with the value field',
+  'zeroed; the III\'s actual state-feedback channel appears to be the',
+  'unsolicited STATE_BROADCAST (04 01 sub-action). If this tool times out,',
+  'treat that as "GET not supported on this firmware" and fall back to',
+  '0x13 STATUS_DUMP (bypass+channel only) or STATE_BROADCAST listening.',
 ].join('\n');
 
 export function registerAxeFxIIIParamTools(server: McpServer): void {
@@ -72,16 +90,20 @@ export function registerAxeFxIIIParamTools(server: McpServer): void {
       'Set the wire-level value of one parameter on one block on the',
       'Axe-Fx III. Targets the ACTIVE scene only.',
       '',
-      UNTESTED_BANNER,
+      SET_VERIFIED_BANNER,
       '',
-      'Wire: SET_PARAMETER (function 0x02, action 0x01). Payload:',
+      'Wire: PARAMETER_SETGET (function 0x01, sub-action 09 00 typed-input).',
+      'Envelope (23 bytes):',
+      '  09 00     = sub-action: typed-input SET (clean, drag-context zero)',
       '  id id     = 14-bit effect ID per v1.4 Appendix 1 (LS-first)',
       '  pid pid   = 14-bit paramId (LS-first) — see Ghidra catalog at',
       '              samples/captured/decoded/ghidra-axeedit3-paramnames.json',
       '              for the paramId→symbolic-name table per effect family.',
+      '  00 00 00  = drag-context bytes (zero for typed input)',
       '  v0 v1 v2  = 16-bit value (0..65534) packed into 3 septets:',
       '              v0 = bits 6..0, v1 = bits 13..7, v2 = bits 15..14',
-      '  action    = 0x01 (SET commit)',
+      '              (All observed III params use 14-bit values; v2 zero.)',
+      '  00 00 00  = reserved zeros',
       '',
       'Value range: raw wire 0..65534 (16-bit). Caller computes',
       'display↔wire — the III publishes no per-param display calibration.',
@@ -127,18 +149,17 @@ export function registerAxeFxIIIParamTools(server: McpServer): void {
       'Query the wire-level value of one parameter on one block on the',
       'Axe-Fx III. Targets the ACTIVE scene only.',
       '',
-      UNTESTED_BANNER,
+      GET_HYPOTHESIS_BANNER,
       '',
-      'Wire: GET_PARAMETER (function 0x02, action 0x00). Payload:',
-      '  id id     = 14-bit effect ID (LS-first)',
-      '  pid pid   = 14-bit paramId (LS-first)',
-      '  00 00 00  = value-field placeholder (must be present, zero on query)',
-      '  action    = 0x00 (QUERY)',
+      'Wire: PARAMETER_SETGET (function 0x01, sub-action 09 00, value=0).',
+      'Same 23-byte envelope as SET with the value field zeroed.',
       '',
-      'Response (II wiki shape; III response shape unverified): same',
-      'envelope echoing effectId + paramId + the actual 16-bit wire value',
-      'in the value field, plus possibly a trailing label string. We read',
-      'the deterministic 7-byte payload and ignore trailing bytes.',
+      'Response (hypothesis, unverified): either a fn=0x01 frame echoing',
+      'effectId + paramId + the actual 16-bit wire value, OR the III emits',
+      'an unsolicited STATE_BROADCAST (sub-action 04 01) with the current',
+      'value when a parameter changes. parseSetGetParameterResponse handles',
+      'both shapes; on STATE_BROADCAST the paramId field is zero (caller',
+      'tracks last-SET to attribute the broadcast).',
       '',
       BETA_NOTE,
     ].join('\n'),

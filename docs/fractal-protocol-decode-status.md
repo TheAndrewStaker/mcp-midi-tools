@@ -5,18 +5,35 @@ work. If you're a new session (human or agent) trying to figure
 out "what do we know about the Fractal protocol family, and where
 is everything documented?", start here.
 
-Last meaningful update: Session 96 (2026-05-17 / 18 — HW-112 closed
+Last meaningful update: Session 97 (2026-05-18 — III SET_PARAMETER
+pivot: open-web research surfaced 6 byte-exact public captures
+(Mountain Utilities forum, gabbernutter 2019) that contradicted the
+shipping `fn=0x02` II-port envelope and corroborated the project's
+own pre-existing `fn=0x01` decode. Combined with the 4 FC-12 captures
+in `docs/axefx3-fn01-decode.md`, the corpus is now **10 captures from
+2 community sources** on `fn=0x01`. `packages/axe-fx-iii/src/setParam.ts`
+pivoted to `fn=0x01` + sub-action `09 00` (typed-input SET); 4 encoder
+goldens + 4 capture-parse goldens added in
+`scripts/verify-axe-fx-iii-encoding.ts`. Capture provenance archived
+in `docs/axefx3-set-parameter-captures.md`. SET 🟡 → 🟢; GET still 🟡
+(no captured response frames). HW-AXEFX3-002 reframed from "verify the
+shipping envelope" to "verify the device responds to the captured
+envelope shape" — still contributor-gated, but the SET wire shape no
+longer needs hardware validation. Also Session 97 closed 15 more AM4
+UI-MISSING entries (PEQ/COMP/GATE/INPUT/CHORUS/TREMOLO/ENHANCER),
+lifting AM4 placeable coverage **91% → 93%**; drift guard
+`WIRED_MISLABEL_CEILING=161 → 167`.
+
+Prior meaningful update: Session 96 (2026-05-17 / 18 — HW-112 closed
 (AM4 GLOBAL family `pidLow=0x0001` cracked + 98 entries wired);
 HW-109 closed (Hydrasynth envelope time wire→ms tables verified
 across 27 sample points); HW-105 closed (Axe-Fx II `apply_setlist`
 3-preset round-trip on Q8.02 XL+); UI-MISSING closeout across PATCH /
-CABINET / DISTORT lifted AM4 placeable coverage 84% → **91%**;
+CABINET / DISTORT lifted AM4 placeable coverage 84% → 91%;
 `displayLabel` resolver landed in `list_params` `display_name` +
 116-entry XML splice pass on shipped entries; cross-ref audit drift
-guard at `WIRED_MISLABEL_CEILING=161` (bumped from 154 for the
-7 intentional context-disambig MISLABELs in the UI-MISSING closeout);
-III `0x02 SET_PARAMETER` still 🟡 untested — only true hardware-gated
-unlock left).
+guard at `WIRED_MISLABEL_CEILING=161` bumped from 154 for the
+7 intentional context-disambig MISLABELs in the UI-MISSING closeout).
 
 > **Run `npm run coverage-audit` before trusting any state claim in
 > this doc.** The audit reads `packages/*/src/params.ts` +
@@ -45,7 +62,7 @@ unlock left).
 | Device | Model byte | Protocol family | Editor binary | Ghidra project | Decode state |
 |---|---|---|---|---|---|
 | AM4 | `0x15` | Axe-Fx III (subset + extensions) | `AM4-Edit.exe` | `C:\Users\Steph\ghidra-am4-edit.gpr` | **Most complete.** 791 entries in `packages/am4/src/params.ts` (741 placeable + 98 GLOBAL system-settings + cross-block bonus); placeable coverage **91%** of AM4-placeable catalog. PATCH family closed Sessions 84–87 (routing — §6n-patch; scene-MIDI 48 params — §6n-scene-midi; scene-MIDI test-send partial — §6n-scene-midi-test, HW-111 open). **GLOBAL family closed Session 96** (`pidLow=0x0001` cracked from `samples/captured/session-95-am4-global-pidlow.pcapng`; 98 entries wired; see `docs/SYSEX-MAP.md` §6bb). **UI-MISSING closeout Session 96** added 50 PATCH / CABINET / DISTORT entries from the AM4-Edit XML → Ghidra catalog join (`scripts/_research/list-ui-missing.ts`). 1732 paramId/name pairs across 47 families mined Session 82 (catalog). Optional `displayLabel` field generated from AM4-Edit XML, now surfaced through `list_params` `display_name` resolver (Session 96); 116-entry XML splice pass made every MISLABEL entry resolver-friendly. Cross-ref audit: WIRED-MATCHED=585 / WIRED-MISLABEL=161 / UI-MISSING=28 / GHOST=49. |
-| Axe-Fx III | `0x10` | Axe-Fx III (full spec + community RE) | `Axe-Edit III.exe` (v1.14.31) | `C:\Users\Steph\ghidra-axe-edit-3.gpr` | **Partial.** v1.4 PDF opcodes shipping (bypass/channel/scene/tempo/looper/status). Ghidra Session 82 mined **2,216 paramIds across 49 families** + **21 fn bytes confirmed in binary** (vs 10 in v1.4 PDF). `0x02 SET_PARAMETER` ported from II model byte `0x03`→`0x10` and shipped 🟡 untested Sessions 85+86 — see SYSEX-MAP-AXE-FX-III §0x02 SET_PARAMETER. MCP tools `axefx3_set_parameter` / `axefx3_get_parameter` exist with explicit `⚠ UNTESTED` banners; **one III contributor running `axefx3_get_parameter(block="Reverb 1", param_id=0)` against a scratch preset converts 🟡→🟢 and unlocks all 2,216 paramIds**. HW-AXEFX3-002 is the only remaining true hardware-gated unlock in the project. Preset-save 0x77/0x78/0x79 community-known (forum thread #159885 archived). |
+| Axe-Fx III | `0x10` | Axe-Fx III (full spec + community RE) | `Axe-Edit III.exe` (v1.14.31) | `C:\Users\Steph\ghidra-axe-edit-3.gpr` | **Most of decode shipped via open-web captures, no III hardware needed.** v1.4 PDF opcodes shipping (bypass/channel/scene/tempo/looper/status). Ghidra Session 82 mined **2,216 paramIds across 49 families** + **21 fn bytes confirmed in binary** (vs 10 in v1.4 PDF). **Session 97 PIVOT**: SET_PARAMETER is `fn=0x01` + sub-action `09 00` (typed-input), 23-byte envelope — NOT `fn=0x02` as Sessions 85+86 had ported from II. Byte-verified against 10 public captures spanning two effect blocks (Drive 1/2 boost, Delay 1 TIME) and two sub-action codes (`09 00` typed-input + `52 00` mouse-drag) from FC-12 forum scrape (Session 79) + Mountain Utilities forum scrape (Session 97, gabbernutter 2019). Capture provenance: `docs/axefx3-set-parameter-captures.md`. 4 encoder + 4 capture-parse goldens in `scripts/verify-axe-fx-iii-encoding.ts`. **SET wire 🟢; GET wire 🟡** (no captured response frames — the III's actual state-feedback channel appears to be the unsolicited `04 01` STATE_BROADCAST sub-action). HW-AXEFX3-002 reframed from "verify the shipping envelope" to "verify the device responds to the captured envelope shape" — still contributor-gated, but the SET wire no longer needs hardware validation. Preset-save 0x77/0x78/0x79 community-known (forum thread #159885 archived). |
 | Axe-Fx II XL+ | `0x07` | Axe-Fx II (separate family) | `Axe-Edit.exe` | `C:\Users\Steph\ghidra-axe-edit.gpr` | **1,126 params shipping** via wiki + capture decode + Session 94 Ghidra direct-pattern-scan addendum (221 net-new entries). `0x02 SET_PARAMETER` hardware-verified (HW-075 / HW-077). `apply_setlist` 3-preset round-trip hardware-verified on Q8.02 XL+ (HW-105, Session 96 cont). Earlier "skip Ghidra for II" recommendation overturned Session 94 — the 32-bit binary's param tables are recoverable via byte-pattern scan even when dispatcher xrefs fail; see `scripts/ghidra/SeekParamTablesII.java`. |
 | Hydrasynth Explorer | (vendor: ASM, not Fractal) | NRPN-based | n/a | n/a | Functional but separate workstream — included here for cross-reference. HW-109 closed Session 95 — envelope time wire→ms mapping verified across 27 sample points; `packages/hydrasynth-explorer/src/nrpnDisplay.ts` `timeTable` confirmed zero-correction against device. Verify script: `scripts/hydrasynth/verify-nrpn-display.ts`. |
 | FM3 / FM9 / VP4 | `0x11` / `0x12` / `0x14` | Axe-Fx III family | (TBD if we add) | (TBD) | Not yet pursued. The Ghidra workflow recipe applies if/when we add them. |
@@ -193,7 +210,7 @@ III SET_PARAM status: **🟡 shipped untested** as `fn=0x02` ported from II by m
 
 In rough order of impact:
 
-1. **Verify `axefx3_set_parameter` on real III hardware** (Sessions 85+86) — wire shape ported from II by swapping model byte `0x03`→`0x10` and shipped 🟡 untested. **This is now the only true hardware-gated unlock left in the project** (HW-AXEFX3-002). Founder doesn't own a III. First III contributor running `axefx3_get_parameter(block="Reverb 1", param_id=0)` against a scratch preset converts the envelope 🟡→🟢 and unlocks **2,216 paramIds across 49 families** for III SET_PARAM. Three outcomes documented in `docs/SYSEX-MAP-AXE-FX-III.md §0x02 SET_PARAMETER`. Outreach lane: AxeEdit III community / forum thread #219503 (AlGrenadine MCP collaboration).
+1. **Verify the III responds to the byte-verified `fn=0x01` SET_PARAMETER envelope on real hardware** (Session 97 pivot) — wire shape now byte-verified against 10 public captures (`docs/axefx3-set-parameter-captures.md`); what remains is confirming the device actually honors AxeEdit III's captured wire when re-sent by our MCP tool, AND decoding the response shape (sync echo? STATE_BROADCAST? silent?). Founder doesn't own a III. A III contributor running `axefx3_set_parameter(block="Reverb 1", param_id=0, value=N)` against a scratch preset and reporting the audible effect + any inbound bytes closes the remaining 🟡 GET shape and confirms SET 🟢 end-to-end. Outreach lane: AxeEdit III community / forum thread #219503 (AlGrenadine MCP collaboration). HW-AXEFX3-002 description in `docs/_private/HARDWARE-TASKS-AXEFX3.md` needs updating to the post-pivot framing.
 
 2. **Close the 79 UI-MISSING AM4 params** — wired gaps where the catalog has the symbol AND XML exposes the control AND `params.ts` has no entry. Current top families per cross-ref audit: PATCH (29), DISTORT (19), CABINET (13), COMP (4), PEQ (2), GEQ (1), TREMOLO (2), GATE (1), CHORUS (1), ENHANCER (1), VOLUME (1), INPUT (5). Each needs a capture or AM4-Edit screenshot for range/unit (the catalog doesn't carry those). Route through `paramNames.ts` overrides not direct `params.ts` edits — blunt blind-merge corrupts unit metadata (Session 84 bug pattern).
 

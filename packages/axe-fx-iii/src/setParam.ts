@@ -73,39 +73,52 @@ export const FN_SET_GET_TEMPO = 0x14;
 export const FN_MULTIPURPOSE_RESPONSE = 0x64;
 
 /**
- * 0x02 SET_PARAMETER_VALUE — Axe-Fx family opcode for per-block
- * parameter writes. **Not in the v1.4 III spec** (Fractal deliberately
- * omits parameter writes), but the same wire shape is community-
- * documented for the Axe-Fx II.
+ * 0x01 PARAMETER_SETGET — III parameter-write opcode (NOT the II's
+ * 0x02 opcode). **Not in the v1.4 III spec** (Fractal deliberately
+ * omits parameter writes), but the wire shape is byte-verified
+ * against 10 community-captured frames spanning two effect blocks
+ * and two sub-action codes — see `docs/axefx3-set-parameter-captures.md`.
  *
- * Evidence chain:
- *   • prs22, Fractal Forum thread #49417 (2012): publishes the literal
- *     wire shape `F0 00 01 74 03 02 6A 00 01 00 zz yy xx 01 ?? F7` for
- *     setting AMP 1's INPUT_DRIVE on Axe-Fx II Mark I/II.
- *   • fret, thread #99763 (2015): names the opcode
- *     `MIDI_GET/SET_PARAMETER(0x02)` for II bypass-state queries.
- *   • Chris Hurley, thread #140602 (2018): used the opcode on II XL+ to
- *     "control the amp drive, master, etc... through sysex messages."
- *   • simonp54, same thread: "No longer officially possible... the only
- *     'supported' features are in the third party spec" — confirms
- *     Fractal removed it from the v1.4 PDF but doesn't say firmware
- *     stopped honouring it.
- *   • Session 82 Ghidra mining of `Axe-Edit III.exe`: opcode 0x02 appears
- *     in the message-builder caller list, so III firmware still has
- *     code paths reachable via this opcode.
+ * Evidence chain (Session 97 pivot, 2026-05-18):
+ *   • FC-12 footswitch captures (4 frames, Session 79 era): Drive 1/2
+ *     boost ON/OFF. Effect IDs 58/59 (`ID_DISTORT1` / `ID_DISTORT2`),
+ *     paramId 40, sub-action `52 00` (mouse-drag). Already decoded
+ *     into the field-layout table in `docs/axefx3-fn01-decode.md`.
+ *   • Mountain Utilities forum captures (6 frames, gabbernutter
+ *     2019-03-13): AxeEdit III writing Delay 1 TIME. Effect ID 70
+ *     (`ID_DELAY1`), paramId 2. Four frames sub-action `52 00`
+ *     (mouse-drag, intermediate values mid-drag) + two frames
+ *     sub-action `09 00` (typed-input, final value). All 10 frames
+ *     are 23 bytes, checksums validate, fields decode cleanly.
+ *   • Session 82 Ghidra mining: opcode 0x01 appears in the III
+ *     message-builder caller list — firmware code path is present.
  *
- * Status: 🟡 wire shape ported from II's hardware-verified encoder
- * (II uses model byte 0x03; III uses 0x10). Untested on actual III
- * hardware as of Session 84 — no III in the founder's inventory. First
- * III contributor running `axefx3_set_parameter` against a scratch
- * preset confirms (or refutes) the shape; rejection arrives as a
- * `0x64 MULTIPURPOSE_RESPONSE` and is surfaced in the tool's reply.
+ * Earlier sessions (85+86) shipped `FN_SET_PARAMETER = 0x02` as a
+ * II→III model-byte-swap port. That was WRONG — the III uses fn=0x01
+ * with a 2-byte sub-action discriminator, NOT fn=0x02. Session 97
+ * reverted to the byte-verified envelope.
+ *
+ * Sub-actions seen on the wire:
+ *   • `09 00` — typed-input SET (clean envelope, drag-context bytes
+ *     zero). This is what we ship for `buildSetParameter`.
+ *   • `52 00` — mouse-drag SET (drag-context bytes at pos 12-14
+ *     carry cursor delta). Identical semantically; we don't emit
+ *     this shape — the device accepts either.
+ *   • `04 01` — STATE_BROADCAST (device→host, unsolicited state
+ *     stream emitted on parameter change). NOT a sync SET response
+ *     — the III appears to have no documented synchronous response
+ *     to fn=0x01 SET.
+ *
+ * Status: 🟢 SET verified against 10 public captures, ready to ship.
+ * GET shape still 🟡 — no captured GET frames exist on the open web
+ * as of Session 97; the implementation uses `09 00` with value=0 as
+ * a hypothesis, matching the SET shape with an empty value field.
  */
-export const FN_SET_PARAMETER = 0x02;
+export const FN_PARAMETER_SETGET = 0x01;
 
-/** Wire action byte: 0x01 = SET, 0x00 = QUERY. Per Axe-Fx II wiki. */
-const PARAM_ACTION_SET = 0x01;
-const PARAM_ACTION_QUERY = 0x00;
+/** III parameter SETGET sub-action codes (pos 6-7 of the envelope). */
+const SUB_ACTION_SET_TYPED: readonly [number, number] = [0x09, 0x00];
+const SUB_ACTION_STATE_BROADCAST: readonly [number, number] = [0x04, 0x01];
 
 /** Query sentinel — when this is the value byte, the device responds with current state. */
 export const QUERY_SENTINEL = 0x7f;
@@ -140,12 +153,25 @@ function buildEnvelope(fn: number, payload: readonly number[]): number[] {
   return [...body, checksum, SYSEX_END];
 }
 
-// ── 0x02 SET/GET PARAMETER ────────────────────────────────────────
+// ── 0x01 PARAMETER_SETGET ─────────────────────────────────────────
 //
-// Ported from the Axe-Fx II's hardware-verified encoder
-// (packages/axe-fx-ii/src/setParam.ts). 🟡 III hardware-untested as of
-// Session 84 — see FN_SET_PARAMETER doc-comment above for the
-// community evidence chain that motivates the port.
+// 23-byte envelope, byte-verified against 10 community captures
+// (4 FC-12 + 6 Mountain Utilities forum). See FN_PARAMETER_SETGET
+// doc-comment above for the evidence chain and
+// `docs/axefx3-set-parameter-captures.md` for the captured frames.
+//
+// Wire layout (verified):
+//   pos 0-5:   F0 00 01 74 10 01            (envelope + fn=0x01)
+//   pos 6-7:   sub-action (09 00 typed, 52 00 mouse-drag)
+//   pos 8-9:   effect ID  (LS-first septet pair, 14-bit)
+//   pos 10-11: paramId    (LS-first septet pair, 14-bit)
+//   pos 12-14: drag-context bytes (zero for typed-input SET)
+//   pos 15-17: value      (packValue16 — 3 septets, supports 16-bit
+//                          values; observed III params use ≤14-bit
+//                          so pos 17 is zero in every public capture)
+//   pos 18-20: reserved zeros
+//   pos 21:    checksum
+//   pos 22:    F7
 
 /**
  * Pack a 16-bit unsigned value into the wire's three 7-bit septets.
@@ -154,9 +180,11 @@ function buildEnvelope(fn: number, payload: readonly number[]): number[] {
  *   septet 1 = bits 13..7  (next seven bits)
  *   septet 2 = bits 15..14 (top two bits, zero-padded into a 7-bit byte)
  *
- * Valid input range 0..65534 (16-bit minus one — wiki says firmware
- * clamps 65535 to 65534 internally). We accept the full 16-bit range
- * so callers pass through without an extra clamp.
+ * Valid input range 0..65534 (16-bit minus one — II wiki convention,
+ * carried forward to the III on the assumption param-value ranges
+ * scaled with firmware). All observed III captures use 14-bit values
+ * (pos 17 always zero); the 16-bit slot exists in the envelope shape
+ * but isn't exercised by any public capture yet.
  */
 export function packValue16(value: number): [number, number, number] {
   if (!Number.isInteger(value) || value < 0 || value > 0xffff) {
@@ -175,93 +203,130 @@ export function unpackValue16(b0: number, b1: number, b2: number): number {
 }
 
 /**
- * SET PARAMETER (function 0x02, action 0x01).
+ * SET PARAMETER (function 0x01, sub-action 0x09 0x00 — typed input).
  *
- *   `F0 00 01 74 10 02 [id_lo id_hi] [pid_lo pid_hi] [v0 v1 v2] 01 [cs] F7`
+ *   `F0 00 01 74 10 01 09 00 [id_lo id_hi] [pid_lo pid_hi]
+ *    00 00 00 [v0 v1 v2] 00 00 00 [cs] F7`
  *
- * Per Axe-Fx II wiki + community RE (see FN_SET_PARAMETER doc-comment):
- *   - 14-bit effectId (LS-first septet pair)
- *   - 14-bit paramId  (LS-first septet pair)
- *   - 16-bit value packed into 3 septets via packValue16
- *   - trailing action byte: 0x01 = SET commit
+ * 23 bytes. Byte-verified against the typed-input gabbernutter
+ * captures (Mountain Utilities forum, 2019). The mouse-drag form
+ * (sub-action `52 00`) carries non-zero context at pos 12-14 — the
+ * device accepts either, but typed-input is the clean shape
+ * appropriate for programmatic writes.
  *
- * Value is the raw 16-bit wire integer (0..65534). Display ↔ wire
- * conversion is the caller's responsibility (the III has no published
- * per-param display ranges yet — the Ghidra catalog gives paramId
- * names but not display calibration).
- *
- * 🟡 Untested on Axe-Fx III hardware. Rejection arrives via
- * `0x64 MULTIPURPOSE_RESPONSE` and is surfaced in tool replies.
+ * 🟢 Outbound wire shape verified across 10 public captures spanning
+ * two effect blocks (Drive 1/2, Delay 1) and two paramIds (40 boost,
+ * 2 TIME). The device's RESPONSE shape (sync echo or async
+ * STATE_BROADCAST `04 01`) is not in any public capture — wrap with
+ * `sendAndWatchForError` to surface 0x64 rejects, but don't expect a
+ * synchronous SET echo.
  */
 export function buildSetParameter(
   effectId: number,
   paramId: number,
   value: number,
 ): number[] {
-  return buildEnvelope(FN_SET_PARAMETER, [
-    ...encode14(effectId),
-    ...encode14(paramId),
-    ...packValue16(value),
-    PARAM_ACTION_SET,
-  ]);
-}
-
-/**
- * GET PARAMETER (function 0x02, action 0x00). Value field is sent as
- * three zero septets per wiki: "When you are getting a parameter value
- * you still have to include a parameter value with your message but
- * this value can be 0."
- */
-export function buildGetParameter(effectId: number, paramId: number): number[] {
-  return buildEnvelope(FN_SET_PARAMETER, [
+  return buildEnvelope(FN_PARAMETER_SETGET, [
+    ...SUB_ACTION_SET_TYPED,
     ...encode14(effectId),
     ...encode14(paramId),
     0x00, 0x00, 0x00,
-    PARAM_ACTION_QUERY,
+    ...packValue16(value),
+    0x00, 0x00, 0x00,
   ]);
 }
 
 /**
- * Block-bypass via SET_PARAMETER (paramId 255 is the bypass register
- * per Axe-Fx II wiki). The III v1.4 spec exposes a separate 0x0A
- * SET_BYPASS opcode — prefer that one when targeting just bypass.
- * This builder exists for completeness + as a fallback in case the
- * 0x02 path turns out to be the only one III firmware honors.
+ * GET PARAMETER (function 0x01, sub-action 0x09 0x00 with value=0).
  *
- * 🟡 III-untested.
+ * 🟡 Hypothesis only — no public GET capture exists. The send shape
+ * mirrors SET with the value field zeroed, on the theory that the III
+ * either echoes the param's current value or emits a `04 01`
+ * STATE_BROADCAST asynchronously. Callers should treat a missing
+ * response within ~250 ms as "GET not supported on this firmware,"
+ * not as a tool error, and fall back to 0x13 STATUS_DUMP or
+ * STATE_BROADCAST listening.
+ */
+export function buildGetParameter(effectId: number, paramId: number): number[] {
+  return buildEnvelope(FN_PARAMETER_SETGET, [
+    ...SUB_ACTION_SET_TYPED,
+    ...encode14(effectId),
+    ...encode14(paramId),
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+  ]);
+}
+
+/**
+ * Block-bypass via PARAMETER_SETGET (paramId 255 is the bypass
+ * register per Axe-Fx II wiki — III binding unverified). The III
+ * v1.4 spec exposes a separate 0x0A SET_BYPASS opcode — prefer that
+ * one for production bypass writes. This builder exists as a
+ * fallback for the 0x02-port era and is kept compatible with the
+ * pivoted fn=0x01 envelope.
+ *
+ * 🟡 III-untested specifically for paramId=255 binding.
  */
 export function buildSetParameterBypass(effectId: number, bypassed: boolean): number[] {
   return buildSetParameter(effectId, 255, bypassed ? 1 : 0);
 }
 
-/** Predicate: is this an inbound 0x02 PARAMETER response frame? */
+/**
+ * Predicate: is this an inbound fn=0x01 PARAMETER frame? Accepts any
+ * sub-action — `52 00` (echo of host SET, observed in passive sniffs),
+ * `04 01` (STATE_BROADCAST), or `09 00` (theoretically a host
+ * typed-input echo). The parser disambiguates by sub-action.
+ */
 export function isSetGetParameterResponse(bytes: readonly number[]): boolean {
-  return isAxeFxIIIFrame(bytes, FN_SET_PARAMETER);
+  return isAxeFxIIIFrame(bytes, FN_PARAMETER_SETGET);
 }
 
 /**
- * Parse the inbound 0x02 PARAMETER response. Returns
- * `{ effectId, paramId, value }`. The II wiki documents a label suffix
- * after the value; the III's reply shape is unverified — we read just
- * the wire-deterministic fields (effectId + paramId + 16-bit value)
- * and skip any trailing bytes.
+ * Parse an inbound fn=0x01 PARAMETER frame. Returns
+ * `{ effectId, paramId, value, subAction }`.
+ *
+ * Two response shapes seen in captures:
+ *   • Sub-action `52 00` (23 bytes): host-SET echo. effId at pos 2-3
+ *     of payload, paramId at 4-5, value at 9-11 (packValue16).
+ *   • Sub-action `04 01` (23 bytes): STATE_BROADCAST. effId at
+ *     pos 2-3, paramId field is zero (the broadcast doesn't carry
+ *     it), value at 6-7 as a 2-septet LS-first pair.
+ *
+ * For `04 01` STATE_BROADCAST frames we return `paramId: 0` to
+ * signal the caller that paramId is unknown — they should track
+ * which param was last SET to attribute the broadcast value.
  */
 export function parseSetGetParameterResponse(bytes: readonly number[]): {
   effectId: number;
   paramId: number;
   value: number;
+  subAction?: number;
 } {
   if (!isSetGetParameterResponse(bytes)) {
-    throw new Error(`parseSetGetParameterResponse: not a 0x02 frame (len=${bytes.length})`);
+    throw new Error(`parseSetGetParameterResponse: not a fn=0x01 frame (len=${bytes.length})`);
   }
   const payload = bytes.slice(6, -2);
-  if (payload.length < 7) {
-    throw new Error(`parseSetGetParameterResponse: payload too short (${payload.length}B)`);
+  if (payload.length < 15) {
+    throw new Error(`parseSetGetParameterResponse: payload too short (${payload.length}B; expected ≥15)`);
   }
+  const subAction = (payload[0] & 0x7f) | ((payload[1] & 0x7f) << 7);
+  if (payload[0] === 0x04 && payload[1] === 0x01) {
+    // STATE_BROADCAST — different field layout (no paramId slot, value
+    // at pos 6-7 as a 2-septet pair, optional flag at pos 8).
+    return {
+      effectId: decode14(payload[2], payload[3]),
+      paramId: 0,
+      value: decode14(payload[6], payload[7]),
+      subAction,
+    };
+  }
+  // SET / SET-echo layout (sub-action `09 00` or `52 00`).
   return {
-    effectId: decode14(payload[0], payload[1]),
-    paramId: decode14(payload[2], payload[3]),
-    value: unpackValue16(payload[4], payload[5], payload[6]),
+    effectId: decode14(payload[2], payload[3]),
+    paramId: decode14(payload[4], payload[5]),
+    value: unpackValue16(payload[9], payload[10], payload[11]),
+    subAction,
   };
 }
 

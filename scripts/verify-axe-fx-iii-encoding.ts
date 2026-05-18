@@ -54,6 +54,7 @@ import {
   parseTempoResponse,
   parseStatusDumpResponse,
   parseMultipurposeResponse,
+  parseSetGetParameterResponse,
   describeMultipurposeResultCode,
 } from '@mcp-midi-control/axe-fx-iii/setParam.js';
 import { resolveEffectId, AXE_FX_III_BLOCKS } from '@mcp-midi-control/axe-fx-iii/blockTypes.js';
@@ -188,48 +189,109 @@ check('buildSetTempo(120)', buildSetTempo(120),
 check('buildGetTempo()', buildGetTempo(),
   'f000017410' + '14' + '7f7f' + '01' + 'f7');
 
-// ── 0x02 SET/GET PARAMETER (🟡 III hardware-untested) ──────────────
-// Wire shape ported from the Axe-Fx II's hardware-verified encoder.
-// Goldens here lock the encoder shape; they don't certify the III
-// firmware honors the writes. A III contributor verifies via the
-// axefx3_set_parameter MCP tool against a scratch preset.
-console.log('\nset_parameter / get_parameter (function 0x02, 🟡 III-untested):');
+// ── 0x01 PARAMETER_SETGET (🟢 SET verified, 🟡 GET hypothesis) ─────
+// Wire shape byte-verified against 10 public captures spanning two
+// effect blocks and two sub-action codes. See:
+//   - `packages/axe-fx-iii/src/setParam.ts` FN_PARAMETER_SETGET doc-
+//     comment for the evidence chain.
+//   - `docs/axefx3-set-parameter-captures.md` for the captured frames.
+//   - `docs/axefx3-fn01-decode.md` for the field-layout table.
+//
+// Session 97 (2026-05-18) pivot: replaced the wrong fn=0x02 II-port
+// envelope with the byte-verified fn=0x01 + sub-action 09 00 (typed-
+// input SET) shape. All 10 public captures and the encoder goldens
+// below use checksums that re-derive against `fractalChecksum`.
+console.log('\nset_parameter / get_parameter (function 0x01, 🟢 SET / 🟡 GET):');
 
 // Reverb 1 = effect ID 66 = 0x42. paramId 0 = REVERB_TYPE per Ghidra
-// catalog. Three septets for 16-bit value, then action byte.
+// catalog. fn=0x01 envelope is 23 bytes:
+//   F0 00 01 74 10 01 [09 00] [eff_lo eff_hi] [pid_lo pid_hi]
+//   00 00 00 [v0 v1 v2] 00 00 00 [cs] F7
 //
-// buildSetParameter(66, 0, 0):
-//   F0 00 01 74 10 02 [42 00] [00 00] [00 00 00] [01] [cs] F7
-//   XOR: F0^0^1^74^10^02^42^00^00^00^00^00^00^01 = 0xD4 → cs = 0x54
+// buildSetParameter(66, 0, 0) — min value:
+//   F0 00 01 74 10 01 09 00 42 00 00 00 00 00 00 00 00 00 00 00 00 [cs] F7
+//   XOR (non-zero bytes): F0^01^74^10^01^09^42 = 0xDF → cs = 0x5F
 check('buildSetParameter(66, 0, 0) — Reverb 1, paramId 0, min',
   buildSetParameter(66, 0, 0),
-  'f000017410' + '02' + '4200' + '0000' + '000000' + '01' + '54' + 'f7');
+  'f000017410' + '01' + '0900' + '4200' + '0000' + '000000' + '000000' + '000000' + '5f' + 'f7');
 
-// buildSetParameter(66, 0, 65534):
-//   F0 00 01 74 10 02 [42 00] [00 00] [7E 7F 03] [01] [cs] F7
-//   XOR: F0^0^1^74^10^02^42^0^0^0^7E^7F^03^01 = ...
+// buildSetParameter(66, 0, 65534) — max value (packValue16 = [7e 7f 03]):
+//   XOR adds 7e^7f^03 = 0x02 → 0x5F ^ 0x02 = 0x5D
 check('buildSetParameter(66, 0, 65534) — Reverb 1, paramId 0, max',
   buildSetParameter(66, 0, 65534),
-  'f000017410' + '02' + '4200' + '0000' + '7e7f03' + '01' + '56' + 'f7');
+  'f000017410' + '01' + '0900' + '4200' + '0000' + '000000' + '7e7f03' + '000000' + '5d' + 'f7');
 
-// buildSetParameter(66, 11, 32767) — Reverb 1, paramId 11, mid-range
-// packValue16(32767 = 0x7FFF) = [0x7F, 0x7F, 0x01]
+// buildSetParameter(66, 11, 32767) — packValue16 = [7f 7f 01]
+// XOR (non-zero): F0^01^74^10^01^09^42^0b^7f^7f^01 = 0x55
 check('buildSetParameter(66, 11, 32767) — Reverb 1, paramId 11, mid',
   buildSetParameter(66, 11, 32767),
-  'f000017410' + '02' + '4200' + '0b00' + '7f7f01' + '01' + '5e' + 'f7');
+  'f000017410' + '01' + '0900' + '4200' + '0b00' + '000000' + '7f7f01' + '000000' + '55' + 'f7');
 
-// buildGetParameter(66, 0):
-//   F0 00 01 74 10 02 [42 00] [00 00] [00 00 00] [00] [cs] F7
-//   XOR: F0^0^1^74^10^02^42^0^0^0^0^0^0^0 = 0xD5 → cs = 0x55
+// buildGetParameter(66, 0) — same shape as SET-min (value field zeroed):
 check('buildGetParameter(66, 0) — Reverb 1 query paramId 0',
   buildGetParameter(66, 0),
-  'f000017410' + '02' + '4200' + '0000' + '000000' + '00' + '55' + 'f7');
+  'f000017410' + '01' + '0900' + '4200' + '0000' + '000000' + '000000' + '000000' + '5f' + 'f7');
 
 // buildSetParameterBypass(66, true) = buildSetParameter(66, 255, 1)
-// paramId 255 = 0xFF = encode14 [0x7F, 0x01]. value 1 → packValue16 [0x01, 0x00, 0x00].
-check('buildSetParameterBypass(66, true) — Reverb 1 bypass via 0x02 path',
+// paramId 255 → encode14 [0x7F, 0x01]. value 1 → packValue16 [0x01, 0x00, 0x00].
+// XOR (non-zero): F0^01^74^10^01^09^42^7f^01^01 = 0x20
+check('buildSetParameterBypass(66, true) — Reverb 1 bypass via fn=0x01 path',
   buildSetParameterBypass(66, true),
-  'f000017410' + '02' + '4200' + '7f01' + '010000' + '01' + '2b' + 'f7');
+  'f000017410' + '01' + '0900' + '4200' + '7f01' + '000000' + '010000' + '000000' + '20' + 'f7');
+
+// ── Public-capture goldens (byte-exact, from docs/axefx3-set-parameter-captures.md) ─────
+// These lock isSetGetParameterResponse + parseSetGetParameterResponse
+// against the real wire frames AxeEdit III emits to a real Axe-Fx III.
+
+// FC-12 footswitch: Drive 1 boost ON (effectId=58, paramId=40, value=508)
+const fc12_d1on = [
+  0xf0, 0x00, 0x01, 0x74, 0x10, 0x01, 0x52, 0x00, 0x3a, 0x00, 0x28, 0x00,
+  0x00, 0x00, 0x00, 0x7c, 0x03, 0x00, 0x00, 0x00, 0x00, 0x2b, 0xf7,
+];
+checkEqual('isSetGetParameterResponse(FC-12 Drive 1 boost ON)',
+  isSetGetParameterResponse(fc12_d1on), true);
+const parsed_d1on = parseSetGetParameterResponse(fc12_d1on);
+checkEqual('parse FC-12 D1on effectId', parsed_d1on.effectId, 58);
+checkEqual('parse FC-12 D1on paramId',  parsed_d1on.paramId, 40);
+checkEqual('parse FC-12 D1on value',    parsed_d1on.value, 508);
+
+// gabbernutter typed-input: Delay 1 TIME = 520
+const gab_typed_520 = [
+  0xf0, 0x00, 0x01, 0x74, 0x10, 0x01, 0x09, 0x00, 0x46, 0x00, 0x02, 0x00,
+  0x00, 0x00, 0x00, 0x08, 0x04, 0x00, 0x00, 0x00, 0x00, 0x55, 0xf7,
+];
+checkEqual('isSetGetParameterResponse(gabbernutter Delay TIME=520)',
+  isSetGetParameterResponse(gab_typed_520), true);
+const parsed_gab520 = parseSetGetParameterResponse(gab_typed_520);
+checkEqual('parse gabbernutter typed effectId', parsed_gab520.effectId, 70);
+checkEqual('parse gabbernutter typed paramId',  parsed_gab520.paramId, 2);
+checkEqual('parse gabbernutter typed value',    parsed_gab520.value, 520);
+
+// gabbernutter mouse-drag: Delay 1 TIME = 503 (drag context at pos 12-14)
+const gab_drag_503 = [
+  0xf0, 0x00, 0x01, 0x74, 0x10, 0x01, 0x52, 0x00, 0x46, 0x00, 0x02, 0x00,
+  0x49, 0x27, 0x23, 0x77, 0x03, 0x00, 0x00, 0x00, 0x00, 0x3b, 0xf7,
+];
+checkEqual('isSetGetParameterResponse(gabbernutter drag TIME=503)',
+  isSetGetParameterResponse(gab_drag_503), true);
+const parsed_drag503 = parseSetGetParameterResponse(gab_drag_503);
+checkEqual('parse gabbernutter drag effectId', parsed_drag503.effectId, 70);
+checkEqual('parse gabbernutter drag paramId',  parsed_drag503.paramId, 2);
+checkEqual('parse gabbernutter drag value',    parsed_drag503.value, 503);
+
+// STATE_BROADCAST (04 01) frame from passive sniff — paramId field is
+// zero by convention (the broadcast doesn't carry paramId; caller
+// tracks last-SET param).
+const state_broadcast = [
+  0xf0, 0x00, 0x01, 0x74, 0x10, 0x01, 0x04, 0x01, 0x3a, 0x00, 0x00, 0x00,
+  0x46, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x6c, 0xf7,
+];
+checkEqual('isSetGetParameterResponse(STATE_BROADCAST 04 01)',
+  isSetGetParameterResponse(state_broadcast), true);
+const parsed_bc = parseSetGetParameterResponse(state_broadcast);
+checkEqual('parse STATE_BROADCAST effectId',  parsed_bc.effectId, 58);
+checkEqual('parse STATE_BROADCAST paramId=0', parsed_bc.paramId, 0);
+checkEqual('parse STATE_BROADCAST value',     parsed_bc.value, 198); // 0x46 + (0x01<<7) = 198
 
 // packValue16 round-trips
 checkEqual('packValue16(0)',     packValue16(0),     [0x00, 0x00, 0x00] as [number, number, number]);
@@ -239,10 +301,10 @@ checkEqual('unpackValue16(0,0,0)',     unpackValue16(0, 0, 0),       0);
 checkEqual('unpackValue16(0x7e,0x7f,0x03)', unpackValue16(0x7e, 0x7f, 0x03), 65534);
 checkEqual('unpackValue16(0x7f,0x7f,0x01)', unpackValue16(0x7f, 0x7f, 0x01), 32767);
 
-// isSetGetParameterResponse predicate — matches any 0x02 frame
-const fakeParamResponse = [0xf0, 0x00, 0x01, 0x74, 0x10, 0x02, 0x42, 0x00, 0x0b, 0x00, 0x7f, 0x7f, 0x01, 0x00, 0x5f, 0xf7];
-checkEqual('isSetGetParameterResponse(fake 0x02 frame)', isSetGetParameterResponse(fakeParamResponse), true);
-checkEqual('isSetGetParameterResponse(SET_BYPASS frame)', isSetGetParameterResponse([0xf0, 0x00, 0x01, 0x74, 0x10, 0x0a, 0x42, 0x00, 0x00, 0x5d, 0xf7]), false);
+// Negative case — a fn=0x0A SET_BYPASS frame is NOT a fn=0x01 frame
+checkEqual('isSetGetParameterResponse(SET_BYPASS frame)',
+  isSetGetParameterResponse([0xf0, 0x00, 0x01, 0x74, 0x10, 0x0a, 0x42, 0x00, 0x00, 0x5d, 0xf7]),
+  false);
 
 // ── Range-check refusals ────────────────────────────────────────────
 console.log('\nrange-check refusals:');
