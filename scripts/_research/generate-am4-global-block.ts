@@ -13,8 +13,25 @@
 import { readFileSync } from 'node:fs';
 
 const PATH = 'samples/captured/decoded/ghidra-am4-paramnames.json';
+const XML_REG = 'samples/captured/decoded/binarydata/extracted/__block_layout.xml';
+const XML_EXPERT = 'samples/captured/decoded/binarydata/extracted/__block_layout_expert.xml';
+
 const data = JSON.parse(readFileSync(PATH, 'utf8'));
 const params: Array<{ paramId: number; name: string }> = data.effect_types.case_0x1.params;
+
+// Symbol → XML display label (first hit wins; same loader the cross-ref
+// audit uses).
+const xmlLabel = new Map<string, string>();
+for (const x of [readFileSync(XML_REG, 'utf-8'), readFileSync(XML_EXPERT, 'utf-8')]) {
+  for (const m of x.matchAll(/<EditorControl\b([^>]*?)\/?>/g)) {
+    const attrs = m[1];
+    const sym = attrs.match(/parameterName="([A-Z][A-Z0-9_]*)"/)?.[1];
+    const name = attrs.match(/\bname="([^"]+)"/)?.[1]
+      ?.replace(/&#10;/g, ' ')
+      .replace(/&amp;/g, '&');
+    if (sym && name && !xmlLabel.has(sym)) xmlLabel.set(sym, name);
+  }
+}
 
 // Dedupe by paramId — catalog has GLOBAL_FC_HOLD_TIMEOUT listed twice at id 57.
 const byId = new Map<number, string>();
@@ -138,7 +155,7 @@ for (const [paramId, symbol] of [...byId.entries()].sort((a, b) => a[0] - b[0]))
   entries.push({
     key: `global.${tail}`,
     name: tail,
-    displayLabel: undefined, // GLOBAL params don't appear in the per-block XML layout
+    displayLabel: xmlLabel.get(symbol),
     paramId,
     ...shape,
   });
@@ -173,8 +190,11 @@ for (const e of entries) {
   const enumPart = e.enumValues
     ? `, enumValues: ${JSON.stringify(e.enumValues)}`
     : '';
+  const labelPart = e.displayLabel
+    ? `, displayLabel: ${JSON.stringify(e.displayLabel)}`
+    : '';
   out += comment;
-  out += `  '${e.key}': { block: 'global', name: '${e.name}', pidLow: 0x0001, pidHigh: 0x${e.paramId.toString(16).padStart(4, '0')}, unit: '${e.unit}', displayMin: ${e.displayMin}, displayMax: ${e.displayMax}${enumPart} },\n`;
+  out += `  '${e.key}': { block: 'global', name: '${e.name}'${labelPart}, pidLow: 0x0001, pidHigh: 0x${e.paramId.toString(16).padStart(4, '0')}, unit: '${e.unit}', displayMin: ${e.displayMin}, displayMax: ${e.displayMax}${enumPart} },\n`;
 }
 
 process.stdout.write(out);

@@ -3949,70 +3949,70 @@ export const KNOWN_PARAMS = {
   // were already wire-shipping; only the audit was under-reporting.
   // Source: packages/am4/src/cacheParams.ts (auto-generated from
   // paramNames.ts + cache-section3.json by gen-params-from-cache.ts).
-  'reverb.high_decay':       { block: 'reverb', name: 'high_decay',       pidLow: 0x0042, pidHigh: 0x000d, unit: 'count', displayMin: 0.01, displayMax: 1, scaling: 'log10' },
-  'reverb.scattering':       { block: 'reverb', name: 'scattering',       pidLow: 0x0042, pidHigh: 0x000e, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.high_decay':       { block: 'reverb', name: 'high_decay', displayLabel: "High Decay",       pidLow: 0x0042, pidHigh: 0x000d, unit: 'count', displayMin: 0.01, displayMax: 1, scaling: 'log10' },
+  'reverb.scattering':       { block: 'reverb', name: 'scattering', displayLabel: "Scattering",       pidLow: 0x0042, pidHigh: 0x000e, unit: 'percent', displayMin: 0, displayMax: 100 },
   'reverb.reverbdelay':      { block: 'reverb', name: 'reverbdelay',      pidLow: 0x0042, pidHigh: 0x0010, unit: 'ms', displayMin: 0, displayMax: 250 },
-  'reverb.early_level':      { block: 'reverb', name: 'early_level',      pidLow: 0x0042, pidHigh: 0x0011, unit: 'db', displayMin: -40, displayMax: 10 },
-  'reverb.late_level':       { block: 'reverb', name: 'late_level',       pidLow: 0x0042, pidHigh: 0x0012, unit: 'db', displayMin: -40, displayMax: 10 },
-  'reverb.depth':            { block: 'reverb', name: 'depth',            pidLow: 0x0042, pidHigh: 0x0015, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'reverb.rate':             { block: 'reverb', name: 'rate',             pidLow: 0x0042, pidHigh: 0x0016, unit: 'hz', displayMin: 0.01, displayMax: 1 },
-  'reverb.diffusion':        { block: 'reverb', name: 'diffusion',        pidLow: 0x0042, pidHigh: 0x0019, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'reverb.diffusion_time':   { block: 'reverb', name: 'diffusion_time',   pidLow: 0x0042, pidHigh: 0x001a, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'reverb.pickup_spacing':   { block: 'reverb', name: 'pickup_spacing',   pidLow: 0x0042, pidHigh: 0x001d, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'reverb.frequency_1':      { block: 'reverb', name: 'frequency_1',      pidLow: 0x0042, pidHigh: 0x001e, unit: 'hz', displayMin: 20, displayMax: 2000 },
-  'reverb.frequency_2':      { block: 'reverb', name: 'frequency_2',      pidLow: 0x0042, pidHigh: 0x001f, unit: 'hz', displayMin: 100, displayMax: 10000 },
-  'reverb.q_1':              { block: 'reverb', name: 'q_1',              pidLow: 0x0042, pidHigh: 0x0020, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
-  'reverb.q_2':              { block: 'reverb', name: 'q_2',              pidLow: 0x0042, pidHigh: 0x0021, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
-  'reverb.gain_1':           { block: 'reverb', name: 'gain_1',           pidLow: 0x0042, pidHigh: 0x0022, unit: 'db', displayMin: -12, displayMax: 12 },
-  'reverb.gain_2':           { block: 'reverb', name: 'gain_2',           pidLow: 0x0042, pidHigh: 0x0023, unit: 'db', displayMin: -12, displayMax: 12 },
-  'reverb.low_decay':        { block: 'reverb', name: 'low_decay',        pidLow: 0x0042, pidHigh: 0x0025, unit: 'seconds', displayMin: 0.02, displayMax: 2, scaling: 'log10' },
-  'reverb.xover_frequency':  { block: 'reverb', name: 'xover_frequency',  pidLow: 0x0042, pidHigh: 0x0026, unit: 'hz', displayMin: 100, displayMax: 10000 },
-  'reverb.threshold':        { block: 'reverb', name: 'threshold',        pidLow: 0x0042, pidHigh: 0x0029, unit: 'db', displayMin: -80, displayMax: 20 },
-  'reverb.release_time':     { block: 'reverb', name: 'release_time',     pidLow: 0x0042, pidHigh: 0x002a, unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' },
-  'reverb.early_diffusion':  { block: 'reverb', name: 'early_diffusion',  pidLow: 0x0042, pidHigh: 0x002b, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'reverb.early_diff_time':  { block: 'reverb', name: 'early_diff_time',  pidLow: 0x0042, pidHigh: 0x002c, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'reverb.early_decay':      { block: 'reverb', name: 'early_decay',      pidLow: 0x0042, pidHigh: 0x002d, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'reverb.late_input_mix':   { block: 'reverb', name: 'late_input_mix',   pidLow: 0x0042, pidHigh: 0x002e, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.early_level':      { block: 'reverb', name: 'early_level', displayLabel: "Early Level",      pidLow: 0x0042, pidHigh: 0x0011, unit: 'db', displayMin: -40, displayMax: 10 },
+  'reverb.late_level':       { block: 'reverb', name: 'late_level', displayLabel: "Late Level ",       pidLow: 0x0042, pidHigh: 0x0012, unit: 'db', displayMin: -40, displayMax: 10 },
+  'reverb.depth':            { block: 'reverb', name: 'depth', displayLabel: "Depth",            pidLow: 0x0042, pidHigh: 0x0015, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.rate':             { block: 'reverb', name: 'rate', displayLabel: "Rate",             pidLow: 0x0042, pidHigh: 0x0016, unit: 'hz', displayMin: 0.01, displayMax: 1 },
+  'reverb.diffusion':        { block: 'reverb', name: 'diffusion', displayLabel: "Diffusion",        pidLow: 0x0042, pidHigh: 0x0019, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.diffusion_time':   { block: 'reverb', name: 'diffusion_time', displayLabel: "Diffusion Time",   pidLow: 0x0042, pidHigh: 0x001a, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.pickup_spacing':   { block: 'reverb', name: 'pickup_spacing', displayLabel: "Pickup Spacing",   pidLow: 0x0042, pidHigh: 0x001d, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.frequency_1':      { block: 'reverb', name: 'frequency_1', displayLabel: "Frequency 1",      pidLow: 0x0042, pidHigh: 0x001e, unit: 'hz', displayMin: 20, displayMax: 2000 },
+  'reverb.frequency_2':      { block: 'reverb', name: 'frequency_2', displayLabel: "Frequency 2",      pidLow: 0x0042, pidHigh: 0x001f, unit: 'hz', displayMin: 100, displayMax: 10000 },
+  'reverb.q_1':              { block: 'reverb', name: 'q_1', displayLabel: "Q 1",              pidLow: 0x0042, pidHigh: 0x0020, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  'reverb.q_2':              { block: 'reverb', name: 'q_2', displayLabel: "Q 2",              pidLow: 0x0042, pidHigh: 0x0021, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  'reverb.gain_1':           { block: 'reverb', name: 'gain_1', displayLabel: "Gain 1",           pidLow: 0x0042, pidHigh: 0x0022, unit: 'db', displayMin: -12, displayMax: 12 },
+  'reverb.gain_2':           { block: 'reverb', name: 'gain_2', displayLabel: "Gain 2",           pidLow: 0x0042, pidHigh: 0x0023, unit: 'db', displayMin: -12, displayMax: 12 },
+  'reverb.low_decay':        { block: 'reverb', name: 'low_decay', displayLabel: "Low Decay",        pidLow: 0x0042, pidHigh: 0x0025, unit: 'seconds', displayMin: 0.02, displayMax: 2, scaling: 'log10' },
+  'reverb.xover_frequency':  { block: 'reverb', name: 'xover_frequency', displayLabel: "Xover Frequency",  pidLow: 0x0042, pidHigh: 0x0026, unit: 'hz', displayMin: 100, displayMax: 10000 },
+  'reverb.threshold':        { block: 'reverb', name: 'threshold', displayLabel: "Threshold",        pidLow: 0x0042, pidHigh: 0x0029, unit: 'db', displayMin: -80, displayMax: 20 },
+  'reverb.release_time':     { block: 'reverb', name: 'release_time', displayLabel: "Release Time",     pidLow: 0x0042, pidHigh: 0x002a, unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' },
+  'reverb.early_diffusion':  { block: 'reverb', name: 'early_diffusion', displayLabel: "Early Diffusion",  pidLow: 0x0042, pidHigh: 0x002b, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.early_diff_time':  { block: 'reverb', name: 'early_diff_time', displayLabel: "Early Diff Time",  pidLow: 0x0042, pidHigh: 0x002c, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.early_decay':      { block: 'reverb', name: 'early_decay', displayLabel: "Early Decay",      pidLow: 0x0042, pidHigh: 0x002d, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.late_input_mix':   { block: 'reverb', name: 'late_input_mix', displayLabel: "Late Input Mix",   pidLow: 0x0042, pidHigh: 0x002e, unit: 'percent', displayMin: 0, displayMax: 100 },
   'reverb.basetype':         { block: 'reverb', name: 'basetype',         pidLow: 0x0042, pidHigh: 0x0031, unit: 'count', displayMin: 0, displayMax: 8 },
-  'reverb.lfo_phase':        { block: 'reverb', name: 'lfo_phase',        pidLow: 0x0042, pidHigh: 0x0032, unit: 'degrees', displayMin: 0, displayMax: 180 },
-  'reverb.pitch_mix':        { block: 'reverb', name: 'pitch_mix',        pidLow: 0x0042, pidHigh: 0x0037, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'reverb.pitch_feedback':   { block: 'reverb', name: 'pitch_feedback',   pidLow: 0x0042, pidHigh: 0x003a, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'reverb.splice_time':      { block: 'reverb', name: 'splice_time',      pidLow: 0x0042, pidHigh: 0x003c, unit: 'ms', displayMin: 10, displayMax: 2000 },
-  'reverb.pitch_modulation': { block: 'reverb', name: 'pitch_modulation', pidLow: 0x0042, pidHigh: 0x003e, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'reverb.voice_balance':    { block: 'reverb', name: 'voice_balance',    pidLow: 0x0042, pidHigh: 0x003f, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
-  'reverb.feedback':         { block: 'reverb', name: 'feedback',         pidLow: 0x0042, pidHigh: 0x0041, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'reverb.echo_mix':         { block: 'reverb', name: 'echo_mix',         pidLow: 0x0042, pidHigh: 0x0042, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'reverb.pitch_high_cut':   { block: 'reverb', name: 'pitch_high_cut',   pidLow: 0x0042, pidHigh: 0x0043, unit: 'hz', displayMin: 200, displayMax: 20000 },
+  'reverb.lfo_phase':        { block: 'reverb', name: 'lfo_phase', displayLabel: "LFO Phase",        pidLow: 0x0042, pidHigh: 0x0032, unit: 'degrees', displayMin: 0, displayMax: 180 },
+  'reverb.pitch_mix':        { block: 'reverb', name: 'pitch_mix', displayLabel: "Pitch Mix",        pidLow: 0x0042, pidHigh: 0x0037, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.pitch_feedback':   { block: 'reverb', name: 'pitch_feedback', displayLabel: "Pitch Feedback",   pidLow: 0x0042, pidHigh: 0x003a, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.splice_time':      { block: 'reverb', name: 'splice_time', displayLabel: "Splice Time",      pidLow: 0x0042, pidHigh: 0x003c, unit: 'ms', displayMin: 10, displayMax: 2000 },
+  'reverb.pitch_modulation': { block: 'reverb', name: 'pitch_modulation', displayLabel: "Pitch Modulation", pidLow: 0x0042, pidHigh: 0x003e, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.voice_balance':    { block: 'reverb', name: 'voice_balance', displayLabel: "Voice Balance",    pidLow: 0x0042, pidHigh: 0x003f, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'reverb.feedback':         { block: 'reverb', name: 'feedback', displayLabel: "Feedback",         pidLow: 0x0042, pidHigh: 0x0041, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.echo_mix':         { block: 'reverb', name: 'echo_mix', displayLabel: "Echo Mix",         pidLow: 0x0042, pidHigh: 0x0042, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'reverb.pitch_high_cut':   { block: 'reverb', name: 'pitch_high_cut', displayLabel: "Shimmer Tone",   pidLow: 0x0042, pidHigh: 0x0043, unit: 'hz', displayMin: 200, displayMax: 20000 },
   'reverb.tonetype':         { block: 'reverb', name: 'tonetype',         pidLow: 0x0042, pidHigh: 0x0045, unit: 'db', displayMin: 0, displayMax: 3 },
-  'reverb.low_cut_q':        { block: 'reverb', name: 'low_cut_q',        pidLow: 0x0042, pidHigh: 0x0047, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
-  'reverb.high_cut_q':       { block: 'reverb', name: 'high_cut_q',       pidLow: 0x0042, pidHigh: 0x0048, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  'reverb.low_cut_q':        { block: 'reverb', name: 'low_cut_q', displayLabel: "Low Cut Q",        pidLow: 0x0042, pidHigh: 0x0047, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  'reverb.high_cut_q':       { block: 'reverb', name: 'high_cut_q', displayLabel: "High Cut Q",       pidLow: 0x0042, pidHigh: 0x0048, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
   // DELAY mirrors.
   'delay.tempo_1':           { block: 'delay',  name: 'tempo_1',           pidLow: 0x0046, pidHigh: 0x000f, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'delay.echo_pan':          { block: 'delay',  name: 'echo_pan',          pidLow: 0x0046, pidHigh: 0x0011, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
-  'delay.mod_rate':          { block: 'delay',  name: 'mod_rate',          pidLow: 0x0046, pidHigh: 0x0016, unit: 'hz', displayMin: 0.1, displayMax: 10 },
-  'delay.rate':              { block: 'delay',  name: 'rate',              pidLow: 0x0046, pidHigh: 0x0017, unit: 'hz', displayMin: 0.2, displayMax: 20 },
-  'delay.mod_depth':         { block: 'delay',  name: 'mod_depth',         pidLow: 0x0046, pidHigh: 0x0018, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'delay.mod_depth_depth2':  { block: 'delay',  name: 'mod_depth_depth2',  pidLow: 0x0046, pidHigh: 0x0019, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'delay.time_r':            { block: 'delay',  name: 'time_r',            pidLow: 0x0046, pidHigh: 0x001e, unit: 'ms', displayMin: 0, displayMax: 8000 },
-  'delay.rotation':          { block: 'delay',  name: 'rotation',          pidLow: 0x0046, pidHigh: 0x0022, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'delay.echo_pan':          { block: 'delay',  name: 'echo_pan', displayLabel: "Echo Pan",          pidLow: 0x0046, pidHigh: 0x0011, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'delay.mod_rate':          { block: 'delay',  name: 'mod_rate', displayLabel: "Mod Rate",          pidLow: 0x0046, pidHigh: 0x0016, unit: 'hz', displayMin: 0.1, displayMax: 10 },
+  'delay.rate':              { block: 'delay',  name: 'rate', displayLabel: "Rate",              pidLow: 0x0046, pidHigh: 0x0017, unit: 'hz', displayMin: 0.2, displayMax: 20 },
+  'delay.mod_depth':         { block: 'delay',  name: 'mod_depth', displayLabel: "Mod Depth",         pidLow: 0x0046, pidHigh: 0x0018, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'delay.mod_depth_depth2':  { block: 'delay',  name: 'mod_depth_depth2', displayLabel: "Mod Depth",  pidLow: 0x0046, pidHigh: 0x0019, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'delay.time_r':            { block: 'delay',  name: 'time_r', displayLabel: "Time R",            pidLow: 0x0046, pidHigh: 0x001e, unit: 'ms', displayMin: 0, displayMax: 8000 },
+  'delay.rotation':          { block: 'delay',  name: 'rotation', displayLabel: "Rotation",          pidLow: 0x0046, pidHigh: 0x0022, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
   'delay.lfo_phase':         { block: 'delay',  name: 'lfo_phase',         pidLow: 0x0046, pidHigh: 0x0023, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
-  'delay.level_l':           { block: 'delay',  name: 'level_l',           pidLow: 0x0046, pidHigh: 0x0024, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'delay.level_r':           { block: 'delay',  name: 'level_r',           pidLow: 0x0046, pidHigh: 0x0025, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'delay.pan_l':             { block: 'delay',  name: 'pan_l',             pidLow: 0x0046, pidHigh: 0x0026, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
-  'delay.pan_r':             { block: 'delay',  name: 'pan_r',             pidLow: 0x0046, pidHigh: 0x0027, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
-  'delay.modulation_phase':  { block: 'delay',  name: 'modulation_phase',  pidLow: 0x0046, pidHigh: 0x0028, unit: 'degrees', displayMin: 0, displayMax: 180 },
-  'delay.lfo_phase_2':       { block: 'delay',  name: 'lfo_phase_2',       pidLow: 0x0046, pidHigh: 0x0029, unit: 'degrees', displayMin: 0, displayMax: 180 },
-  'delay.crossfade_time':    { block: 'delay',  name: 'crossfade_time',    pidLow: 0x0046, pidHigh: 0x002a, unit: 'ms', displayMin: 1, displayMax: 255 },
-  'delay.sweep_rate':        { block: 'delay',  name: 'sweep_rate',        pidLow: 0x0046, pidHigh: 0x0038, unit: 'hz', displayMin: 0.1, displayMax: 10 },
-  'delay.sweep_phase':       { block: 'delay',  name: 'sweep_phase',       pidLow: 0x0046, pidHigh: 0x003a, unit: 'degrees', displayMin: 0, displayMax: 180 },
-  'delay.sweep_start_freq':  { block: 'delay',  name: 'sweep_start_freq',  pidLow: 0x0046, pidHigh: 0x003c, unit: 'hz', displayMin: 100, displayMax: 1000 },
-  'delay.sweep_stop_freq':   { block: 'delay',  name: 'sweep_stop_freq',   pidLow: 0x0046, pidHigh: 0x003d, unit: 'hz', displayMin: 500, displayMax: 5000 },
-  'delay.sweep_resonance':   { block: 'delay',  name: 'sweep_resonance',   pidLow: 0x0046, pidHigh: 0x003e, unit: 'count', displayMin: 0.2, displayMax: 20, scaling: 'log10' },
-  'delay.motor_speed':       { block: 'delay',  name: 'motor_speed',       pidLow: 0x0046, pidHigh: 0x0048, unit: 'count', displayMin: 0.5, displayMax: 2, scaling: 'log10' },
-  'delay.right_post_delay':  { block: 'delay',  name: 'right_post_delay',  pidLow: 0x0046, pidHigh: 0x0049, unit: 'ms', displayMin: 0, displayMax: 100 },
-  'delay.pan_rate':          { block: 'delay',  name: 'pan_rate',          pidLow: 0x0046, pidHigh: 0x0052, unit: 'hz', displayMin: 0.1, displayMax: 10 },
-  'delay.pan_depth':         { block: 'delay',  name: 'pan_depth',         pidLow: 0x0046, pidHigh: 0x0054, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'delay.lfo_phase_4':       { block: 'delay',  name: 'lfo_phase_4',       pidLow: 0x0046, pidHigh: 0x0055, unit: 'degrees', displayMin: 0, displayMax: 180 },
+  'delay.level_l':           { block: 'delay',  name: 'level_l', displayLabel: "Level L",           pidLow: 0x0046, pidHigh: 0x0024, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'delay.level_r':           { block: 'delay',  name: 'level_r', displayLabel: "Level R",           pidLow: 0x0046, pidHigh: 0x0025, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'delay.pan_l':             { block: 'delay',  name: 'pan_l', displayLabel: "Pan L",             pidLow: 0x0046, pidHigh: 0x0026, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'delay.pan_r':             { block: 'delay',  name: 'pan_r', displayLabel: "Pan R",             pidLow: 0x0046, pidHigh: 0x0027, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'delay.modulation_phase':  { block: 'delay',  name: 'modulation_phase', displayLabel: "Modulation Phase",  pidLow: 0x0046, pidHigh: 0x0028, unit: 'degrees', displayMin: 0, displayMax: 180 },
+  'delay.lfo_phase_2':       { block: 'delay',  name: 'lfo_phase_2', displayLabel: "LFO Phase",       pidLow: 0x0046, pidHigh: 0x0029, unit: 'degrees', displayMin: 0, displayMax: 180 },
+  'delay.crossfade_time':    { block: 'delay',  name: 'crossfade_time', displayLabel: "Crossfade Time",    pidLow: 0x0046, pidHigh: 0x002a, unit: 'ms', displayMin: 1, displayMax: 255 },
+  'delay.sweep_rate':        { block: 'delay',  name: 'sweep_rate', displayLabel: "Sweep Rate",        pidLow: 0x0046, pidHigh: 0x0038, unit: 'hz', displayMin: 0.1, displayMax: 10 },
+  'delay.sweep_phase':       { block: 'delay',  name: 'sweep_phase', displayLabel: "Sweep Phase",       pidLow: 0x0046, pidHigh: 0x003a, unit: 'degrees', displayMin: 0, displayMax: 180 },
+  'delay.sweep_start_freq':  { block: 'delay',  name: 'sweep_start_freq', displayLabel: "Sweep Start Freq",  pidLow: 0x0046, pidHigh: 0x003c, unit: 'hz', displayMin: 100, displayMax: 1000 },
+  'delay.sweep_stop_freq':   { block: 'delay',  name: 'sweep_stop_freq', displayLabel: "Sweep Stop Freq",   pidLow: 0x0046, pidHigh: 0x003d, unit: 'hz', displayMin: 500, displayMax: 5000 },
+  'delay.sweep_resonance':   { block: 'delay',  name: 'sweep_resonance', displayLabel: "Sweep Resonance",   pidLow: 0x0046, pidHigh: 0x003e, unit: 'count', displayMin: 0.2, displayMax: 20, scaling: 'log10' },
+  'delay.motor_speed':       { block: 'delay',  name: 'motor_speed', displayLabel: "Motor Speed",       pidLow: 0x0046, pidHigh: 0x0048, unit: 'count', displayMin: 0.5, displayMax: 2, scaling: 'log10' },
+  'delay.right_post_delay':  { block: 'delay',  name: 'right_post_delay', displayLabel: "Right Post Delay",  pidLow: 0x0046, pidHigh: 0x0049, unit: 'ms', displayMin: 0, displayMax: 100 },
+  'delay.pan_rate':          { block: 'delay',  name: 'pan_rate', displayLabel: "Pan Rate",          pidLow: 0x0046, pidHigh: 0x0052, unit: 'hz', displayMin: 0.1, displayMax: 10 },
+  'delay.pan_depth':         { block: 'delay',  name: 'pan_depth', displayLabel: "Pan Depth",         pidLow: 0x0046, pidHigh: 0x0054, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'delay.lfo_phase_4':       { block: 'delay',  name: 'lfo_phase_4', displayLabel: "LFO Phase",       pidLow: 0x0046, pidHigh: 0x0055, unit: 'degrees', displayMin: 0, displayMax: 180 },
   // Session 90 (2026-05-17): Phase 3 — REVERB + DELAY enums + tempo-
   // sync registers from the Ghidra catalog. These have no cache record
   // (so the cacheParams generator can't emit them) but the paramNames.ts
@@ -4099,65 +4099,65 @@ export const KNOWN_PARAMS = {
   // Unblocks user prompts like "set the filter rate to 0.5 Hz", "set
   // phaser min freq to 200 Hz", "compressor ratio 4:1", etc.
   // CHORUS mirrors (3).
-  'chorus.left_depth':       { block: 'chorus', name: 'left_depth',        pidLow: 0x004e, pidHigh: 0x001c, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'chorus.center_depth':     { block: 'chorus', name: 'center_depth',      pidLow: 0x004e, pidHigh: 0x001d, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'chorus.right_depth':      { block: 'chorus', name: 'right_depth',       pidLow: 0x004e, pidHigh: 0x001e, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'chorus.left_depth':       { block: 'chorus', name: 'left_depth', displayLabel: "Left Depth",        pidLow: 0x004e, pidHigh: 0x001c, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'chorus.center_depth':     { block: 'chorus', name: 'center_depth', displayLabel: "Center Depth",      pidLow: 0x004e, pidHigh: 0x001d, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'chorus.right_depth':      { block: 'chorus', name: 'right_depth', displayLabel: "Right Depth",       pidLow: 0x004e, pidHigh: 0x001e, unit: 'percent', displayMin: 0, displayMax: 100 },
   // FLANGER mirrors (10).
-  'flanger.dry_delay':       { block: 'flanger', name: 'dry_delay',        pidLow: 0x0052, pidHigh: 0x0010, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'flanger.smooth_steps':    { block: 'flanger', name: 'smooth_steps',     pidLow: 0x0052, pidHigh: 0x0013, unit: 'count', displayMin: 0.5, displayMax: 50 },
-  'flanger.high_cut':        { block: 'flanger', name: 'high_cut',         pidLow: 0x0052, pidHigh: 0x0017, unit: 'hz', displayMin: 200, displayMax: 20000 },
-  'flanger.drive':           { block: 'flanger', name: 'drive',            pidLow: 0x0052, pidHigh: 0x0018, unit: 'knob_0_10', displayMin: 0, displayMax: 10, scaling: 'log10' },
-  'flanger.low_cut':         { block: 'flanger', name: 'low_cut',          pidLow: 0x0052, pidHigh: 0x0019, unit: 'hz', displayMin: 20, displayMax: 2000 },
-  'flanger.stereo_spread':   { block: 'flanger', name: 'stereo_spread',    pidLow: 0x0052, pidHigh: 0x001a, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'flanger.bass_focus':      { block: 'flanger', name: 'bass_focus',       pidLow: 0x0052, pidHigh: 0x001e, unit: 'knob_0_10', displayMin: 0, displayMax: 10, scaling: 'log10' },
-  'flanger.min_time':        { block: 'flanger', name: 'min_time',         pidLow: 0x0052, pidHigh: 0x0020, unit: 'ms', displayMin: 0, displayMax: 2 },
-  'flanger.max_time':        { block: 'flanger', name: 'max_time',         pidLow: 0x0052, pidHigh: 0x0021, unit: 'ms', displayMin: 0, displayMax: 20 },
-  'flanger.vpo_exponent':    { block: 'flanger', name: 'vpo_exponent',     pidLow: 0x0052, pidHigh: 0x0023, unit: 'count', displayMin: 0.01, displayMax: 100, scaling: 'log10' },
+  'flanger.dry_delay':       { block: 'flanger', name: 'dry_delay', displayLabel: "Dry Delay",        pidLow: 0x0052, pidHigh: 0x0010, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'flanger.smooth_steps':    { block: 'flanger', name: 'smooth_steps', displayLabel: "Smooth Steps",     pidLow: 0x0052, pidHigh: 0x0013, unit: 'count', displayMin: 0.5, displayMax: 50 },
+  'flanger.high_cut':        { block: 'flanger', name: 'high_cut', displayLabel: "High Cut",         pidLow: 0x0052, pidHigh: 0x0017, unit: 'hz', displayMin: 200, displayMax: 20000 },
+  'flanger.drive':           { block: 'flanger', name: 'drive', displayLabel: "Drive",            pidLow: 0x0052, pidHigh: 0x0018, unit: 'knob_0_10', displayMin: 0, displayMax: 10, scaling: 'log10' },
+  'flanger.low_cut':         { block: 'flanger', name: 'low_cut', displayLabel: "Low Cut",          pidLow: 0x0052, pidHigh: 0x0019, unit: 'hz', displayMin: 20, displayMax: 2000 },
+  'flanger.stereo_spread':   { block: 'flanger', name: 'stereo_spread', displayLabel: "Stereo Spread",    pidLow: 0x0052, pidHigh: 0x001a, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'flanger.bass_focus':      { block: 'flanger', name: 'bass_focus', displayLabel: "Bass Focus",       pidLow: 0x0052, pidHigh: 0x001e, unit: 'knob_0_10', displayMin: 0, displayMax: 10, scaling: 'log10' },
+  'flanger.min_time':        { block: 'flanger', name: 'min_time', displayLabel: "Min Time",         pidLow: 0x0052, pidHigh: 0x0020, unit: 'ms', displayMin: 0, displayMax: 2 },
+  'flanger.max_time':        { block: 'flanger', name: 'max_time', displayLabel: "Max Time",         pidLow: 0x0052, pidHigh: 0x0021, unit: 'ms', displayMin: 0, displayMax: 20 },
+  'flanger.vpo_exponent':    { block: 'flanger', name: 'vpo_exponent', displayLabel: "VPO Exponent",     pidLow: 0x0052, pidHigh: 0x0023, unit: 'count', displayMin: 0.01, displayMax: 100, scaling: 'log10' },
   // PHASER mirrors (12).
-  'phaser.min_frequency':    { block: 'phaser', name: 'min_frequency',     pidLow: 0x005a, pidHigh: 0x0011, unit: 'hz', displayMin: 5, displayMax: 500 },
-  'phaser.max_frequency':    { block: 'phaser', name: 'max_frequency',     pidLow: 0x005a, pidHigh: 0x0012, unit: 'hz', displayMin: 200, displayMax: 20000 },
-  'phaser.bias':             { block: 'phaser', name: 'bias',              pidLow: 0x005a, pidHigh: 0x0014, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
-  'phaser.feedback_point':   { block: 'phaser', name: 'feedback_point',    pidLow: 0x005a, pidHigh: 0x0016, unit: 'count', displayMin: 0, displayMax: 11 },
-  'phaser.q':                { block: 'phaser', name: 'q',                 pidLow: 0x005a, pidHigh: 0x0019, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
-  'phaser.shape_vcrk':       { block: 'phaser', name: 'shape_vcrk',        pidLow: 0x005a, pidHigh: 0x001d, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
-  'phaser.shape':            { block: 'phaser', name: 'shape',             pidLow: 0x005a, pidHigh: 0x001e, unit: 'count', displayMin: 0.01, displayMax: 0.99 },
-  'phaser.high_cut':         { block: 'phaser', name: 'high_cut',          pidLow: 0x005a, pidHigh: 0x001f, unit: 'count', displayMin: 0.5, displayMax: 50 },
-  'phaser.attack':           { block: 'phaser', name: 'attack',            pidLow: 0x005a, pidHigh: 0x0020, unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' },
-  'phaser.release':          { block: 'phaser', name: 'release',           pidLow: 0x005a, pidHigh: 0x0021, unit: 'ms', displayMin: 0, displayMax: 100, scaling: 'log10' },
-  'phaser.low_cut':          { block: 'phaser', name: 'low_cut',           pidLow: 0x005a, pidHigh: 0x0023, unit: 'hz', displayMin: 20, displayMax: 200 },
-  'phaser.high_cut_lpf':     { block: 'phaser', name: 'high_cut_lpf',      pidLow: 0x005a, pidHigh: 0x0024, unit: 'hz', displayMin: 2000, displayMax: 20000 },
+  'phaser.min_frequency':    { block: 'phaser', name: 'min_frequency', displayLabel: "Min Frequency",     pidLow: 0x005a, pidHigh: 0x0011, unit: 'hz', displayMin: 5, displayMax: 500 },
+  'phaser.max_frequency':    { block: 'phaser', name: 'max_frequency', displayLabel: "Max Frequency",     pidLow: 0x005a, pidHigh: 0x0012, unit: 'hz', displayMin: 200, displayMax: 20000 },
+  'phaser.bias':             { block: 'phaser', name: 'bias', displayLabel: "Bias",              pidLow: 0x005a, pidHigh: 0x0014, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'phaser.feedback_point':   { block: 'phaser', name: 'feedback_point', displayLabel: "Feedback Point",    pidLow: 0x005a, pidHigh: 0x0016, unit: 'count', displayMin: 0, displayMax: 11 },
+  'phaser.q':                { block: 'phaser', name: 'q', displayLabel: "Q",                 pidLow: 0x005a, pidHigh: 0x0019, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  'phaser.shape_vcrk':       { block: 'phaser', name: 'shape_vcrk', displayLabel: "Shape",        pidLow: 0x005a, pidHigh: 0x001d, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  'phaser.shape':            { block: 'phaser', name: 'shape', displayLabel: "Shape",             pidLow: 0x005a, pidHigh: 0x001e, unit: 'count', displayMin: 0.01, displayMax: 0.99 },
+  'phaser.high_cut':         { block: 'phaser', name: 'high_cut', displayLabel: "High Cut",          pidLow: 0x005a, pidHigh: 0x001f, unit: 'count', displayMin: 0.5, displayMax: 50 },
+  'phaser.attack':           { block: 'phaser', name: 'attack', displayLabel: "Attack",            pidLow: 0x005a, pidHigh: 0x0020, unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' },
+  'phaser.release':          { block: 'phaser', name: 'release', displayLabel: "Release",           pidLow: 0x005a, pidHigh: 0x0021, unit: 'ms', displayMin: 0, displayMax: 100, scaling: 'log10' },
+  'phaser.low_cut':          { block: 'phaser', name: 'low_cut', displayLabel: "Low Cut",           pidLow: 0x005a, pidHigh: 0x0023, unit: 'hz', displayMin: 20, displayMax: 200 },
+  'phaser.high_cut_lpf':     { block: 'phaser', name: 'high_cut_lpf', displayLabel: "High Cut",      pidLow: 0x005a, pidHigh: 0x0024, unit: 'hz', displayMin: 2000, displayMax: 20000 },
   // FILTER mirrors (15).
-  'filter.q':                { block: 'filter', name: 'q',                 pidLow: 0x0072, pidHigh: 0x000c, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
-  'filter.gain':             { block: 'filter', name: 'gain',              pidLow: 0x0072, pidHigh: 0x000d, unit: 'db', displayMin: -20, displayMax: 20 },
-  'filter.pan_left':         { block: 'filter', name: 'pan_left',          pidLow: 0x0072, pidHigh: 0x000f, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'filter.pan_right':        { block: 'filter', name: 'pan_right',         pidLow: 0x0072, pidHigh: 0x0010, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'filter.delay_time':       { block: 'filter', name: 'delay_time',        pidLow: 0x0072, pidHigh: 0x0014, unit: 'ms', displayMin: 0, displayMax: 40 },
-  'filter.rate':             { block: 'filter', name: 'rate',              pidLow: 0x0072, pidHigh: 0x0018, unit: 'hz', displayMin: 0.1, displayMax: 10 },
-  'filter.lfo_duty':         { block: 'filter', name: 'lfo_duty',          pidLow: 0x0072, pidHigh: 0x0019, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'filter.mod_frequency':    { block: 'filter', name: 'mod_frequency',     pidLow: 0x0072, pidHigh: 0x001a, unit: 'hz', displayMin: 20, displayMax: 20000 },
-  'filter.resonance':        { block: 'filter', name: 'resonance',         pidLow: 0x0072, pidHigh: 0x001e, unit: 'knob_0_10', displayMin: 0, displayMax: 10, scaling: 'log10' },
-  'filter.start_frequency':  { block: 'filter', name: 'start_frequency',   pidLow: 0x0072, pidHigh: 0x001f, unit: 'hz', displayMin: 100, displayMax: 10000 },
-  'filter.stop_frequency':   { block: 'filter', name: 'stop_frequency',    pidLow: 0x0072, pidHigh: 0x0020, unit: 'hz', displayMin: 100, displayMax: 10000 },
-  'filter.sensitivity':      { block: 'filter', name: 'sensitivity',       pidLow: 0x0072, pidHigh: 0x0021, unit: 'count', displayMin: 0.1, displayMax: 40, scaling: 'log10' },
-  'filter.attack_time':      { block: 'filter', name: 'attack_time',       pidLow: 0x0072, pidHigh: 0x0022, unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' },
-  'filter.release_time':     { block: 'filter', name: 'release_time',      pidLow: 0x0072, pidHigh: 0x0023, unit: 'ms', displayMin: 0, displayMax: 2000, scaling: 'log10' },
-  'filter.emphasis':         { block: 'filter', name: 'emphasis',          pidLow: 0x0072, pidHigh: 0x0027, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'filter.q':                { block: 'filter', name: 'q', displayLabel: "Q",                 pidLow: 0x0072, pidHigh: 0x000c, unit: 'count', displayMin: 0.1, displayMax: 10, scaling: 'log10' },
+  'filter.gain':             { block: 'filter', name: 'gain', displayLabel: "Gain",              pidLow: 0x0072, pidHigh: 0x000d, unit: 'db', displayMin: -20, displayMax: 20 },
+  'filter.pan_left':         { block: 'filter', name: 'pan_left', displayLabel: "Pan Left",          pidLow: 0x0072, pidHigh: 0x000f, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'filter.pan_right':        { block: 'filter', name: 'pan_right', displayLabel: "Pan Right",         pidLow: 0x0072, pidHigh: 0x0010, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'filter.delay_time':       { block: 'filter', name: 'delay_time', displayLabel: "Delay Time",        pidLow: 0x0072, pidHigh: 0x0014, unit: 'ms', displayMin: 0, displayMax: 40 },
+  'filter.rate':             { block: 'filter', name: 'rate', displayLabel: "Rate",              pidLow: 0x0072, pidHigh: 0x0018, unit: 'hz', displayMin: 0.1, displayMax: 10 },
+  'filter.lfo_duty':         { block: 'filter', name: 'lfo_duty', displayLabel: "Duty Cycle",          pidLow: 0x0072, pidHigh: 0x0019, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'filter.mod_frequency':    { block: 'filter', name: 'mod_frequency', displayLabel: "Mod Freq",     pidLow: 0x0072, pidHigh: 0x001a, unit: 'hz', displayMin: 20, displayMax: 20000 },
+  'filter.resonance':        { block: 'filter', name: 'resonance', displayLabel: "Resonance",         pidLow: 0x0072, pidHigh: 0x001e, unit: 'knob_0_10', displayMin: 0, displayMax: 10, scaling: 'log10' },
+  'filter.start_frequency':  { block: 'filter', name: 'start_frequency', displayLabel: "Start Frequency",   pidLow: 0x0072, pidHigh: 0x001f, unit: 'hz', displayMin: 100, displayMax: 10000 },
+  'filter.stop_frequency':   { block: 'filter', name: 'stop_frequency', displayLabel: "Stop Frequency",    pidLow: 0x0072, pidHigh: 0x0020, unit: 'hz', displayMin: 100, displayMax: 10000 },
+  'filter.sensitivity':      { block: 'filter', name: 'sensitivity', displayLabel: "Sensitivity",       pidLow: 0x0072, pidHigh: 0x0021, unit: 'count', displayMin: 0.1, displayMax: 40, scaling: 'log10' },
+  'filter.attack_time':      { block: 'filter', name: 'attack_time', displayLabel: "Attack Time",       pidLow: 0x0072, pidHigh: 0x0022, unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' },
+  'filter.release_time':     { block: 'filter', name: 'release_time', displayLabel: "Release Time",      pidLow: 0x0072, pidHigh: 0x0023, unit: 'ms', displayMin: 0, displayMax: 2000, scaling: 'log10' },
+  'filter.emphasis':         { block: 'filter', name: 'emphasis', displayLabel: "Emphasis",          pidLow: 0x0072, pidHigh: 0x0027, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
   // TREMOLO mirrors (4).
-  'tremolo.duty':            { block: 'tremolo', name: 'duty',             pidLow: 0x006a, pidHigh: 0x000e, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'tremolo.crossover_freq':  { block: 'tremolo', name: 'crossover_freq',   pidLow: 0x006a, pidHigh: 0x0015, unit: 'hz', displayMin: 200, displayMax: 2000 },
-  'tremolo.trigger_threshold': { block: 'tremolo', name: 'trigger_threshold', pidLow: 0x006a, pidHigh: 0x0016, unit: 'db', displayMin: -60, displayMax: 20 },
-  'tremolo.shape':           { block: 'tremolo', name: 'shape',            pidLow: 0x006a, pidHigh: 0x0017, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'tremolo.duty':            { block: 'tremolo', name: 'duty', displayLabel: "Duty",             pidLow: 0x006a, pidHigh: 0x000e, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'tremolo.crossover_freq':  { block: 'tremolo', name: 'crossover_freq', displayLabel: "Crossover Freq",   pidLow: 0x006a, pidHigh: 0x0015, unit: 'hz', displayMin: 200, displayMax: 2000 },
+  'tremolo.trigger_threshold': { block: 'tremolo', name: 'trigger_threshold', displayLabel: "Trigger Threshold", pidLow: 0x006a, pidHigh: 0x0016, unit: 'db', displayMin: -60, displayMax: 20 },
+  'tremolo.shape':           { block: 'tremolo', name: 'shape', displayLabel: "Shape",            pidLow: 0x006a, pidHigh: 0x0017, unit: 'percent', displayMin: 0, displayMax: 100 },
   // ENHANCER mirrors (2).
-  'enhancer.pan_left':       { block: 'enhancer', name: 'pan_left',        pidLow: 0x007a, pidHigh: 0x0010, unit: 'percent', displayMin: 0, displayMax: 100 },
-  'enhancer.pan_right':      { block: 'enhancer', name: 'pan_right',       pidLow: 0x007a, pidHigh: 0x0011, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'enhancer.pan_left':       { block: 'enhancer', name: 'pan_left', displayLabel: "Pan Left",        pidLow: 0x007a, pidHigh: 0x0010, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'enhancer.pan_right':      { block: 'enhancer', name: 'pan_right', displayLabel: "Pan Right",       pidLow: 0x007a, pidHigh: 0x0011, unit: 'percent', displayMin: 0, displayMax: 100 },
   // COMPRESSOR mirrors (7).
-  'compressor.compression':  { block: 'compressor', name: 'compression',        pidLow: 0x002e, pidHigh: 0x0014, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
-  'compressor.dynamics':     { block: 'compressor', name: 'dynamics',           pidLow: 0x002e, pidHigh: 0x0018, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
-  'compressor.threshold_thresh2': { block: 'compressor', name: 'threshold_thresh2', pidLow: 0x002e, pidHigh: 0x0021, unit: 'db', displayMin: -60, displayMax: 20 },
-  'compressor.ratio_compansion':  { block: 'compressor', name: 'ratio_compansion',  pidLow: 0x002e, pidHigh: 0x0024, unit: 'ratio', displayMin: 1, displayMax: 10, scaling: 'log10' },
-  'compressor.time':         { block: 'compressor', name: 'time',               pidLow: 0x002e, pidHigh: 0x0025, unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' },
-  'compressor.transients':   { block: 'compressor', name: 'transients',         pidLow: 0x002e, pidHigh: 0x0026, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
-  'compressor.tone':         { block: 'compressor', name: 'tone',               pidLow: 0x002e, pidHigh: 0x0028, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'compressor.compression':  { block: 'compressor', name: 'compression', displayLabel: "Compression",        pidLow: 0x002e, pidHigh: 0x0014, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'compressor.dynamics':     { block: 'compressor', name: 'dynamics', displayLabel: "Dynamics",           pidLow: 0x002e, pidHigh: 0x0018, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'compressor.threshold_thresh2': { block: 'compressor', name: 'threshold_thresh2', displayLabel: "Threshold", pidLow: 0x002e, pidHigh: 0x0021, unit: 'db', displayMin: -60, displayMax: 20 },
+  'compressor.ratio_compansion':  { block: 'compressor', name: 'ratio_compansion', displayLabel: "Ratio",  pidLow: 0x002e, pidHigh: 0x0024, unit: 'ratio', displayMin: 1, displayMax: 10, scaling: 'log10' },
+  'compressor.time':         { block: 'compressor', name: 'time', displayLabel: "Time",               pidLow: 0x002e, pidHigh: 0x0025, unit: 'ms', displayMin: 0, displayMax: 1000, scaling: 'log10' },
+  'compressor.transients':   { block: 'compressor', name: 'transients', displayLabel: "Transients",         pidLow: 0x002e, pidHigh: 0x0026, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'compressor.tone':         { block: 'compressor', name: 'tone', displayLabel: "Tone",               pidLow: 0x002e, pidHigh: 0x0028, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
 
   // Session 91 (2026-05-17): FLANGER / PHASER / FILTER UI-MISSING
   // closeout. 28 catalog symbols from the Ghidra paramId table that
@@ -4308,10 +4308,10 @@ export const KNOWN_PARAMS = {
   // DynaCab quad (TYPE1/2/MIC1/2). XML has empty `name=""` in regular
   // layout and "Cab"/"Mic" in expert layout — the audit picks the
   // first XML hit, so these will MATCH (empty display).
-  'amp.dynacab_type_1':   { block: 'amp', name: 'dynacab_type_1',   pidLow: 0x003e, pidHigh: 0x0041, unit: 'count', displayMin: 0, displayMax: 31 },
-  'amp.dynacab_type_2':   { block: 'amp', name: 'dynacab_type_2',   pidLow: 0x003e, pidHigh: 0x0042, unit: 'count', displayMin: 0, displayMax: 31 },
-  'amp.dynacab_mic_1':    { block: 'amp', name: 'dynacab_mic_1',    pidLow: 0x003e, pidHigh: 0x0043, unit: 'count', displayMin: 0, displayMax: 31 },
-  'amp.dynacab_mic_2':    { block: 'amp', name: 'dynacab_mic_2',    pidLow: 0x003e, pidHigh: 0x0044, unit: 'count', displayMin: 0, displayMax: 31 },
+  'amp.dynacab_type_1':   { block: 'amp', name: 'dynacab_type_1', displayLabel: "Cab",   pidLow: 0x003e, pidHigh: 0x0041, unit: 'count', displayMin: 0, displayMax: 31 },
+  'amp.dynacab_type_2':   { block: 'amp', name: 'dynacab_type_2', displayLabel: "Cab",   pidLow: 0x003e, pidHigh: 0x0042, unit: 'count', displayMin: 0, displayMax: 31 },
+  'amp.dynacab_mic_1':    { block: 'amp', name: 'dynacab_mic_1', displayLabel: "Mic",    pidLow: 0x003e, pidHigh: 0x0043, unit: 'count', displayMin: 0, displayMax: 31 },
+  'amp.dynacab_mic_2':    { block: 'amp', name: 'dynacab_mic_2', displayLabel: "Mic",    pidLow: 0x003e, pidHigh: 0x0044, unit: 'count', displayMin: 0, displayMax: 31 },
 
   // ============================================================
   // GLOBAL family (pidLow = 0x0001) — 98 entries.
@@ -4337,25 +4337,25 @@ export const KNOWN_PARAMS = {
   // Regenerate: `npx tsx scripts/_research/generate-am4-global-block.ts`
 
   // tuning reference Hz convention — HW unverified
-  'global.tuningref': { block: 'global', name: 'tuningref', pidLow: 0x0001, pidHigh: 0x000d, unit: 'hz', displayMin: 430, displayMax: 450 },
+  'global.tuningref': { block: 'global', name: 'tuningref', displayLabel: "Calibration", pidLow: 0x0001, pidHigh: 0x000d, unit: 'hz', displayMin: 430, displayMax: 450 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.tunermute': { block: 'global', name: 'tunermute', pidLow: 0x0001, pidHigh: 0x000e, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.tunermute': { block: 'global', name: 'tunermute', displayLabel: "Mute Type", pidLow: 0x0001, pidHigh: 0x000e, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.delayspill': { block: 'global', name: 'delayspill', pidLow: 0x0001, pidHigh: 0x000f, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.delayspill': { block: 'global', name: 'delayspill', displayLabel: "Spillover", pidLow: 0x0001, pidHigh: 0x000f, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.usetuneoffsets': { block: 'global', name: 'usetuneoffsets', pidLow: 0x0001, pidHigh: 0x0010, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.usetuneoffsets': { block: 'global', name: 'usetuneoffsets', displayLabel: "Use Offsets", pidLow: 0x0001, pidHigh: 0x0010, unit: 'count', displayMin: 0, displayMax: 127 },
   // per-string tuning offset — HW unverified
-  'global.offset1': { block: 'global', name: 'offset1', pidLow: 0x0001, pidHigh: 0x0011, unit: 'semitones', displayMin: -1, displayMax: 1 },
+  'global.offset1': { block: 'global', name: 'offset1', displayLabel: "E 1", pidLow: 0x0001, pidHigh: 0x0011, unit: 'semitones', displayMin: -1, displayMax: 1 },
   // per-string tuning offset — HW unverified
-  'global.offset2': { block: 'global', name: 'offset2', pidLow: 0x0001, pidHigh: 0x0012, unit: 'semitones', displayMin: -1, displayMax: 1 },
+  'global.offset2': { block: 'global', name: 'offset2', displayLabel: "B 2", pidLow: 0x0001, pidHigh: 0x0012, unit: 'semitones', displayMin: -1, displayMax: 1 },
   // per-string tuning offset — HW unverified
-  'global.offset3': { block: 'global', name: 'offset3', pidLow: 0x0001, pidHigh: 0x0013, unit: 'semitones', displayMin: -1, displayMax: 1 },
+  'global.offset3': { block: 'global', name: 'offset3', displayLabel: "G 3", pidLow: 0x0001, pidHigh: 0x0013, unit: 'semitones', displayMin: -1, displayMax: 1 },
   // per-string tuning offset — HW unverified
-  'global.offset4': { block: 'global', name: 'offset4', pidLow: 0x0001, pidHigh: 0x0014, unit: 'semitones', displayMin: -1, displayMax: 1 },
+  'global.offset4': { block: 'global', name: 'offset4', displayLabel: "D 4", pidLow: 0x0001, pidHigh: 0x0014, unit: 'semitones', displayMin: -1, displayMax: 1 },
   // per-string tuning offset — HW unverified
-  'global.offset5': { block: 'global', name: 'offset5', pidLow: 0x0001, pidHigh: 0x0015, unit: 'semitones', displayMin: -1, displayMax: 1 },
+  'global.offset5': { block: 'global', name: 'offset5', displayLabel: "A 5", pidLow: 0x0001, pidHigh: 0x0015, unit: 'semitones', displayMin: -1, displayMax: 1 },
   // per-string tuning offset — HW unverified
-  'global.offset6': { block: 'global', name: 'offset6', pidLow: 0x0001, pidHigh: 0x0016, unit: 'semitones', displayMin: -1, displayMax: 1 },
+  'global.offset6': { block: 'global', name: 'offset6', displayLabel: "E 6", pidLow: 0x0001, pidHigh: 0x0016, unit: 'semitones', displayMin: -1, displayMax: 1 },
   // GEQ band ±12 dB convention — HW unverified
   'global.out2eq1': { block: 'global', name: 'out2eq1', pidLow: 0x0001, pidHigh: 0x0022, unit: 'db', displayMin: -12, displayMax: 12 },
   // GEQ band ±12 dB convention — HW unverified
@@ -4377,38 +4377,38 @@ export const KNOWN_PARAMS = {
   // GEQ band ±12 dB convention — HW unverified
   'global.out2eq10': { block: 'global', name: 'out2eq10', pidLow: 0x0001, pidHigh: 0x002b, unit: 'db', displayMin: -12, displayMax: 12 },
   // gate threshold offset dB — HW unverified
-  'global.gate_offset': { block: 'global', name: 'gate_offset', pidLow: 0x0001, pidHigh: 0x002d, unit: 'db', displayMin: -40, displayMax: 0 },
+  'global.gate_offset': { block: 'global', name: 'gate_offset', displayLabel: "Noisegate Offset", pidLow: 0x0001, pidHigh: 0x002d, unit: 'db', displayMin: -40, displayMax: 0 },
   // HW-112 (Session 96) — captured at 1.0 = "Last Two"; full enum table pending HW
-  'global.tap_tempo_mode': { block: 'global', name: 'tap_tempo_mode', pidLow: 0x0001, pidHigh: 0x002e, unit: 'enum', displayMin: 0, displayMax: 7 },
+  'global.tap_tempo_mode': { block: 'global', name: 'tap_tempo_mode', displayLabel: "Tap Tempo Mode", pidLow: 0x0001, pidHigh: 0x002e, unit: 'enum', displayMin: 0, displayMax: 7 },
   // input trim percent — HW unverified
-  'global.in1_trim': { block: 'global', name: 'in1_trim', pidLow: 0x0001, pidHigh: 0x002f, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'global.in1_trim': { block: 'global', name: 'in1_trim', displayLabel: "Input Pad", pidLow: 0x0001, pidHigh: 0x002f, unit: 'percent', displayMin: 0, displayMax: 100 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.out1_config': { block: 'global', name: 'out1_config', pidLow: 0x0001, pidHigh: 0x0030, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.out1_config': { block: 'global', name: 'out1_config', displayLabel: "Output Mode", pidLow: 0x0001, pidHigh: 0x0030, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.out1_phase': { block: 'global', name: 'out1_phase', pidLow: 0x0001, pidHigh: 0x0031, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.out1_phase': { block: 'global', name: 'out1_phase', displayLabel: "Output Phase", pidLow: 0x0001, pidHigh: 0x0031, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.in1_source': { block: 'global', name: 'in1_source', pidLow: 0x0001, pidHigh: 0x0034, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.in1_source': { block: 'global', name: 'in1_source', displayLabel: "Input Source", pidLow: 0x0001, pidHigh: 0x0034, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
   'global.in1_config': { block: 'global', name: 'in1_config', pidLow: 0x0001, pidHigh: 0x0035, unit: 'count', displayMin: 0, displayMax: 127 },
   // percent inferred from AM4-Edit display — HW unverified
-  'global.lcd_contrast': { block: 'global', name: 'lcd_contrast', pidLow: 0x0001, pidHigh: 0x0038, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'global.lcd_contrast': { block: 'global', name: 'lcd_contrast', displayLabel: "LCD Contrast", pidLow: 0x0001, pidHigh: 0x0038, unit: 'percent', displayMin: 0, displayMax: 100 },
   // press-hold timeout ms — HW unverified
-  'global.fc_hold_timeout': { block: 'global', name: 'fc_hold_timeout', pidLow: 0x0001, pidHigh: 0x0039, unit: 'ms', displayMin: 0, displayMax: 5000 },
+  'global.fc_hold_timeout': { block: 'global', name: 'fc_hold_timeout', displayLabel: "Hold Timeout", pidLow: 0x0001, pidHigh: 0x0039, unit: 'ms', displayMin: 0, displayMax: 5000 },
   // MIDI channel 1..16
-  'global.midi_chan': { block: 'global', name: 'midi_chan', pidLow: 0x0001, pidHigh: 0x003a, unit: 'count', displayMin: 1, displayMax: 16 },
+  'global.midi_chan': { block: 'global', name: 'midi_chan', displayLabel: "MIDI Channel", pidLow: 0x0001, pidHigh: 0x003a, unit: 'count', displayMin: 1, displayMax: 16 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.midi_prog_change': { block: 'global', name: 'midi_prog_change', pidLow: 0x0001, pidHigh: 0x003b, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.midi_prog_change': { block: 'global', name: 'midi_prog_change', displayLabel: "Receive MIDI PC", pidLow: 0x0001, pidHigh: 0x003b, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.no_redundant_pc': { block: 'global', name: 'no_redundant_pc', pidLow: 0x0001, pidHigh: 0x003c, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.no_redundant_pc': { block: 'global', name: 'no_redundant_pc', displayLabel: "Ignore Redundant PC", pidLow: 0x0001, pidHigh: 0x003c, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.send_midipc': { block: 'global', name: 'send_midipc', pidLow: 0x0001, pidHigh: 0x003f, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.in1_vol_cc': { block: 'global', name: 'in1_vol_cc', pidLow: 0x0001, pidHigh: 0x0046, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.out1_vol_cc': { block: 'global', name: 'out1_vol_cc', pidLow: 0x0001, pidHigh: 0x0047, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.tempo_cc': { block: 'global', name: 'tempo_cc', pidLow: 0x0001, pidHigh: 0x0048, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.tuner_cc': { block: 'global', name: 'tuner_cc', pidLow: 0x0001, pidHigh: 0x0049, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.scene_cc': { block: 'global', name: 'scene_cc', pidLow: 0x0001, pidHigh: 0x004a, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.scene_incr_cc': { block: 'global', name: 'scene_incr_cc', pidLow: 0x0001, pidHigh: 0x004b, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.scene_decr_cc': { block: 'global', name: 'scene_decr_cc', pidLow: 0x0001, pidHigh: 0x004c, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.send_midipc': { block: 'global', name: 'send_midipc', displayLabel: "Send MIDI PC", pidLow: 0x0001, pidHigh: 0x003f, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.in1_vol_cc': { block: 'global', name: 'in1_vol_cc', displayLabel: "Input Volume", pidLow: 0x0001, pidHigh: 0x0046, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.out1_vol_cc': { block: 'global', name: 'out1_vol_cc', displayLabel: "Output Volume", pidLow: 0x0001, pidHigh: 0x0047, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.tempo_cc': { block: 'global', name: 'tempo_cc', displayLabel: "Tap Tempo", pidLow: 0x0001, pidHigh: 0x0048, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.tuner_cc': { block: 'global', name: 'tuner_cc', displayLabel: "Tuner", pidLow: 0x0001, pidHigh: 0x0049, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.scene_cc': { block: 'global', name: 'scene_cc', displayLabel: "Scene Select", pidLow: 0x0001, pidHigh: 0x004a, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.scene_incr_cc': { block: 'global', name: 'scene_incr_cc', displayLabel: "Scene +1", pidLow: 0x0001, pidHigh: 0x004b, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.scene_decr_cc': { block: 'global', name: 'scene_decr_cc', displayLabel: "Scene -1", pidLow: 0x0001, pidHigh: 0x004c, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
   'global.scene_revert': { block: 'global', name: 'scene_revert', pidLow: 0x0001, pidHigh: 0x004d, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
@@ -4416,43 +4416,43 @@ export const KNOWN_PARAMS = {
   // safe placeholder (range unverified) — Ghidra catalog entry only
   'global.tuner_source': { block: 'global', name: 'tuner_source', pidLow: 0x0001, pidHigh: 0x0053, unit: 'count', displayMin: 0, displayMax: 127 },
   // AM4 has 4 scenes (1..4)
-  'global.default_scene': { block: 'global', name: 'default_scene', pidLow: 0x0001, pidHigh: 0x0056, unit: 'count', displayMin: 1, displayMax: 4 },
+  'global.default_scene': { block: 'global', name: 'default_scene', displayLabel: "Default Scene", pidLow: 0x0001, pidHigh: 0x0056, unit: 'count', displayMin: 1, displayMax: 4 },
   // percent inferred from AM4-Edit display — HW unverified
-  'global.fc_ring_bright_level': { block: 'global', name: 'fc_ring_bright_level', pidLow: 0x0001, pidHigh: 0x0058, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'global.fc_ring_bright_level': { block: 'global', name: 'fc_ring_bright_level', displayLabel: "Switch LED Bright", pidLow: 0x0001, pidHigh: 0x0058, unit: 'percent', displayMin: 0, displayMax: 100 },
   // percent inferred from AM4-Edit display — HW unverified
-  'global.fc_ring_dim_level': { block: 'global', name: 'fc_ring_dim_level', pidLow: 0x0001, pidHigh: 0x0059, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'global.fc_ring_dim_level': { block: 'global', name: 'fc_ring_dim_level', displayLabel: "Switch LED Dim", pidLow: 0x0001, pidHigh: 0x0059, unit: 'percent', displayMin: 0, displayMax: 100 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.linefreq': { block: 'global', name: 'linefreq', pidLow: 0x0001, pidHigh: 0x005a, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.preset_incr_cc': { block: 'global', name: 'preset_incr_cc', pidLow: 0x0001, pidHigh: 0x005d, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.preset_decr_cc': { block: 'global', name: 'preset_decr_cc', pidLow: 0x0001, pidHigh: 0x005e, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.linefreq': { block: 'global', name: 'linefreq', displayLabel: "AC Line Frequency", pidLow: 0x0001, pidHigh: 0x005a, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.preset_incr_cc': { block: 'global', name: 'preset_incr_cc', displayLabel: "Preset +1", pidLow: 0x0001, pidHigh: 0x005d, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.preset_decr_cc': { block: 'global', name: 'preset_decr_cc', displayLabel: "Preset -1", pidLow: 0x0001, pidHigh: 0x005e, unit: 'count', displayMin: 0, displayMax: 127 },
   // unit inferred from USBLEVEL1 sibling — HW unverified
-  'global.metlevel1': { block: 'global', name: 'metlevel1', pidLow: 0x0001, pidHigh: 0x0061, unit: 'db', displayMin: -64, displayMax: 24 },
+  'global.metlevel1': { block: 'global', name: 'metlevel1', displayLabel: "Metronome Level", pidLow: 0x0001, pidHigh: 0x0061, unit: 'db', displayMin: -64, displayMax: 24 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.usb78_source': { block: 'global', name: 'usb78_source', pidLow: 0x0001, pidHigh: 0x0062, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.usb78_source': { block: 'global', name: 'usb78_source', displayLabel: "USB 3/4 Record Source", pidLow: 0x0001, pidHigh: 0x0062, unit: 'count', displayMin: 0, displayMax: 127 },
   // HW-112 (Session 96) — captured at 1.11 dB
-  'global.usblevel1': { block: 'global', name: 'usblevel1', pidLow: 0x0001, pidHigh: 0x0063, unit: 'db', displayMin: -64, displayMax: 24 },
+  'global.usblevel1': { block: 'global', name: 'usblevel1', displayLabel: "USB 1/2 Level", pidLow: 0x0001, pidHigh: 0x0063, unit: 'db', displayMin: -64, displayMax: 24 },
   // unit inferred from USBLEVEL1 sibling — HW unverified
-  'global.usblevel2': { block: 'global', name: 'usblevel2', pidLow: 0x0001, pidHigh: 0x0064, unit: 'db', displayMin: -64, displayMax: 24 },
+  'global.usblevel2': { block: 'global', name: 'usblevel2', displayLabel: "USB 3/4 Level", pidLow: 0x0001, pidHigh: 0x0064, unit: 'db', displayMin: -64, displayMax: 24 },
   // unit inferred from USBLEVEL1 sibling — HW unverified
-  'global.aeslevel': { block: 'global', name: 'aeslevel', pidLow: 0x0001, pidHigh: 0x0065, unit: 'db', displayMin: -64, displayMax: 24 },
+  'global.aeslevel': { block: 'global', name: 'aeslevel', displayLabel: "SPDIF In Level", pidLow: 0x0001, pidHigh: 0x0065, unit: 'db', displayMin: -64, displayMax: 24 },
   // down-tune semitones — HW unverified
-  'global.downtune': { block: 'global', name: 'downtune', pidLow: 0x0001, pidHigh: 0x0067, unit: 'semitones', displayMin: -12, displayMax: 0 },
+  'global.downtune': { block: 'global', name: 'downtune', displayLabel: "Downtune", pidLow: 0x0001, pidHigh: 0x0067, unit: 'semitones', displayMin: -12, displayMax: 0 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.tuneraccidentals': { block: 'global', name: 'tuneraccidentals', pidLow: 0x0001, pidHigh: 0x0068, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.tuneraccidentals': { block: 'global', name: 'tuneraccidentals', displayLabel: "Display Mode", pidLow: 0x0001, pidHigh: 0x0068, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.midi_thru': { block: 'global', name: 'midi_thru', pidLow: 0x0001, pidHigh: 0x006d, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.midi_thru': { block: 'global', name: 'midi_thru', displayLabel: "MIDI Thru", pidLow: 0x0001, pidHigh: 0x006d, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.tuner_on_volume': { block: 'global', name: 'tuner_on_volume', pidLow: 0x0001, pidHigh: 0x006e, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.bypass_fx1_cc': { block: 'global', name: 'bypass_fx1_cc', pidLow: 0x0001, pidHigh: 0x006f, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.bypass_fx2_cc': { block: 'global', name: 'bypass_fx2_cc', pidLow: 0x0001, pidHigh: 0x0070, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.bypass_fx3_cc': { block: 'global', name: 'bypass_fx3_cc', pidLow: 0x0001, pidHigh: 0x0071, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.bypass_fx4_cc': { block: 'global', name: 'bypass_fx4_cc', pidLow: 0x0001, pidHigh: 0x0072, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.channel_fx1_cc': { block: 'global', name: 'channel_fx1_cc', pidLow: 0x0001, pidHigh: 0x0073, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.channel_fx2_cc': { block: 'global', name: 'channel_fx2_cc', pidLow: 0x0001, pidHigh: 0x0074, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.channel_fx3_cc': { block: 'global', name: 'channel_fx3_cc', pidLow: 0x0001, pidHigh: 0x0075, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.channel_fx4_cc': { block: 'global', name: 'channel_fx4_cc', pidLow: 0x0001, pidHigh: 0x0076, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.tuner_on_volume': { block: 'global', name: 'tuner_on_volume', displayLabel: "Tuner on Heel Down", pidLow: 0x0001, pidHigh: 0x006e, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.bypass_fx1_cc': { block: 'global', name: 'bypass_fx1_cc', displayLabel: "FX1 Bypass", pidLow: 0x0001, pidHigh: 0x006f, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.bypass_fx2_cc': { block: 'global', name: 'bypass_fx2_cc', displayLabel: "FX2 Bypass", pidLow: 0x0001, pidHigh: 0x0070, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.bypass_fx3_cc': { block: 'global', name: 'bypass_fx3_cc', displayLabel: "FX3 Bypass", pidLow: 0x0001, pidHigh: 0x0071, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.bypass_fx4_cc': { block: 'global', name: 'bypass_fx4_cc', displayLabel: "FX4 Bypass", pidLow: 0x0001, pidHigh: 0x0072, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.channel_fx1_cc': { block: 'global', name: 'channel_fx1_cc', displayLabel: "FX1 Channel", pidLow: 0x0001, pidHigh: 0x0073, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.channel_fx2_cc': { block: 'global', name: 'channel_fx2_cc', displayLabel: "FX2 Channel", pidLow: 0x0001, pidHigh: 0x0074, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.channel_fx3_cc': { block: 'global', name: 'channel_fx3_cc', displayLabel: "FX3 Channel", pidLow: 0x0001, pidHigh: 0x0075, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.channel_fx4_cc': { block: 'global', name: 'channel_fx4_cc', displayLabel: "FX4 Channel", pidLow: 0x0001, pidHigh: 0x0076, unit: 'count', displayMin: 0, displayMax: 127 },
   // external CC routing — CC number 0..127
-  'global.ext_cc_begin': { block: 'global', name: 'ext_cc_begin', pidLow: 0x0001, pidHigh: 0x0077, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.ext_cc_begin': { block: 'global', name: 'ext_cc_begin', displayLabel: "External 1", pidLow: 0x0001, pidHigh: 0x0077, unit: 'count', displayMin: 0, displayMax: 127 },
   // external CC routing — CC number 0..127
   'global.ext_cc_begin_1': { block: 'global', name: 'ext_cc_begin_1', pidLow: 0x0001, pidHigh: 0x0078, unit: 'count', displayMin: 0, displayMax: 127 },
   // external CC routing — CC number 0..127
@@ -4460,7 +4460,7 @@ export const KNOWN_PARAMS = {
   // external CC routing — CC number 0..127
   'global.ext_cc_begin_3': { block: 'global', name: 'ext_cc_begin_3', pidLow: 0x0001, pidHigh: 0x007a, unit: 'count', displayMin: 0, displayMax: 127 },
   // external CC initial value 0..127
-  'global.ext_startval_begin': { block: 'global', name: 'ext_startval_begin', pidLow: 0x0001, pidHigh: 0x007b, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.ext_startval_begin': { block: 'global', name: 'ext_startval_begin', displayLabel: "External 1", pidLow: 0x0001, pidHigh: 0x007b, unit: 'count', displayMin: 0, displayMax: 127 },
   // external CC initial value 0..127
   'global.ext_startval_begin_1': { block: 'global', name: 'ext_startval_begin_1', pidLow: 0x0001, pidHigh: 0x007c, unit: 'count', displayMin: 0, displayMax: 127 },
   // external CC initial value 0..127
@@ -4468,47 +4468,47 @@ export const KNOWN_PARAMS = {
   // external CC initial value 0..127
   'global.ext_startval_begin_3': { block: 'global', name: 'ext_startval_begin_3', pidLow: 0x0001, pidHigh: 0x007e, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.auto_truebypass': { block: 'global', name: 'auto_truebypass', pidLow: 0x0001, pidHigh: 0x0081, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.truebypass_cc': { block: 'global', name: 'truebypass_cc', pidLow: 0x0001, pidHigh: 0x0083, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.auto_truebypass': { block: 'global', name: 'auto_truebypass', displayLabel: "Automatic AM4 Bypass", pidLow: 0x0001, pidHigh: 0x0081, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.truebypass_cc': { block: 'global', name: 'truebypass_cc', displayLabel: "AM4 Bypass", pidLow: 0x0001, pidHigh: 0x0083, unit: 'count', displayMin: 0, displayMax: 127 },
   // press-hold timeout ms — HW unverified
-  'global.fs_press_hold1': { block: 'global', name: 'fs_press_hold1', pidLow: 0x0001, pidHigh: 0x0084, unit: 'ms', displayMin: 0, displayMax: 5000 },
+  'global.fs_press_hold1': { block: 'global', name: 'fs_press_hold1', displayLabel: "Press & Hold 1", pidLow: 0x0001, pidHigh: 0x0084, unit: 'ms', displayMin: 0, displayMax: 5000 },
   // press-hold timeout ms — HW unverified
-  'global.fs_press_hold2': { block: 'global', name: 'fs_press_hold2', pidLow: 0x0001, pidHigh: 0x0085, unit: 'ms', displayMin: 0, displayMax: 5000 },
+  'global.fs_press_hold2': { block: 'global', name: 'fs_press_hold2', displayLabel: "Press & Hold 2", pidLow: 0x0001, pidHigh: 0x0085, unit: 'ms', displayMin: 0, displayMax: 5000 },
   // press-hold timeout ms — HW unverified
-  'global.fs_press_hold3': { block: 'global', name: 'fs_press_hold3', pidLow: 0x0001, pidHigh: 0x0086, unit: 'ms', displayMin: 0, displayMax: 5000 },
+  'global.fs_press_hold3': { block: 'global', name: 'fs_press_hold3', displayLabel: "Press & Hold 3", pidLow: 0x0001, pidHigh: 0x0086, unit: 'ms', displayMin: 0, displayMax: 5000 },
   // press-hold timeout ms — HW unverified
-  'global.fs_press_hold4': { block: 'global', name: 'fs_press_hold4', pidLow: 0x0001, pidHigh: 0x0087, unit: 'ms', displayMin: 0, displayMax: 5000 },
+  'global.fs_press_hold4': { block: 'global', name: 'fs_press_hold4', displayLabel: "Press & Hold 4", pidLow: 0x0001, pidHigh: 0x0087, unit: 'ms', displayMin: 0, displayMax: 5000 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.startup_mode': { block: 'global', name: 'startup_mode', pidLow: 0x0001, pidHigh: 0x0089, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.startup_mode': { block: 'global', name: 'startup_mode', displayLabel: "Startup Mode", pidLow: 0x0001, pidHigh: 0x0089, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.gap_fill': { block: 'global', name: 'gap_fill', pidLow: 0x0001, pidHigh: 0x008f, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.gap_fill': { block: 'global', name: 'gap_fill', displayLabel: "Gapless Changes", pidLow: 0x0001, pidHigh: 0x008f, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.select_fade': { block: 'global', name: 'select_fade', pidLow: 0x0001, pidHigh: 0x0091, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.select_fade': { block: 'global', name: 'select_fade', displayLabel: "Fade Timeout", pidLow: 0x0001, pidHigh: 0x0091, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.presshold_mode': { block: 'global', name: 'presshold_mode', pidLow: 0x0001, pidHigh: 0x0092, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.presshold_mode': { block: 'global', name: 'presshold_mode', displayLabel: "Press & Hold Mode", pidLow: 0x0001, pidHigh: 0x0092, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.tap_amp_fx_mode': { block: 'global', name: 'tap_amp_fx_mode', pidLow: 0x0001, pidHigh: 0x0093, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.tap_amp_fx_mode': { block: 'global', name: 'tap_amp_fx_mode', displayLabel: "Tap Amp in FX Mode", pidLow: 0x0001, pidHigh: 0x0093, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.tap_amp_ch_amp_mode': { block: 'global', name: 'tap_amp_ch_amp_mode', pidLow: 0x0001, pidHigh: 0x0094, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.tap_amp_ch_amp_mode': { block: 'global', name: 'tap_amp_ch_amp_mode', displayLabel: "Tap Current Ch. in Amp Mode", pidLow: 0x0001, pidHigh: 0x0094, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.cabinetbyp': { block: 'global', name: 'cabinetbyp', pidLow: 0x0001, pidHigh: 0x0095, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.cabinetbyp': { block: 'global', name: 'cabinetbyp', displayLabel: "Cab Modeling", pidLow: 0x0001, pidHigh: 0x0095, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.pwrampbyp': { block: 'global', name: 'pwrampbyp', pidLow: 0x0001, pidHigh: 0x0096, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.pwrampbyp': { block: 'global', name: 'pwrampbyp', displayLabel: "Power Amp Modeling", pidLow: 0x0001, pidHigh: 0x0096, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.sprk_model': { block: 'global', name: 'sprk_model', pidLow: 0x0001, pidHigh: 0x0097, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.amp_chan_cc': { block: 'global', name: 'amp_chan_cc', pidLow: 0x0001, pidHigh: 0x0098, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.out_boost_cc': { block: 'global', name: 'out_boost_cc', pidLow: 0x0001, pidHigh: 0x0099, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.sprk_model': { block: 'global', name: 'sprk_model', displayLabel: "Speaker Imp. Curve", pidLow: 0x0001, pidHigh: 0x0097, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.amp_chan_cc': { block: 'global', name: 'amp_chan_cc', displayLabel: "Amp Channel", pidLow: 0x0001, pidHigh: 0x0098, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.out_boost_cc': { block: 'global', name: 'out_boost_cc', displayLabel: "Amp Out Boost", pidLow: 0x0001, pidHigh: 0x0099, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.scenesync_ch': { block: 'global', name: 'scenesync_ch', pidLow: 0x0001, pidHigh: 0x009c, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.scenesync_cc': { block: 'global', name: 'scenesync_cc', pidLow: 0x0001, pidHigh: 0x009d, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.scenesync_ch': { block: 'global', name: 'scenesync_ch', displayLabel: "Scene Sync Channel", pidLow: 0x0001, pidHigh: 0x009c, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.scenesync_cc': { block: 'global', name: 'scenesync_cc', displayLabel: "Scene Sync CC#", pidLow: 0x0001, pidHigh: 0x009d, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
   'global.dynacab_sync': { block: 'global', name: 'dynacab_sync', pidLow: 0x0001, pidHigh: 0x009e, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.amp1_vol_cc': { block: 'global', name: 'amp1_vol_cc', pidLow: 0x0001, pidHigh: 0x009f, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.amp1_vol_cc': { block: 'global', name: 'amp1_vol_cc', displayLabel: "Amp Block Out Vol", pidLow: 0x0001, pidHigh: 0x009f, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.metronome': { block: 'global', name: 'metronome', pidLow: 0x0001, pidHigh: 0x00a0, unit: 'count', displayMin: 0, displayMax: 127 },
-  'global.metronome_cc': { block: 'global', name: 'metronome_cc', pidLow: 0x0001, pidHigh: 0x00a1, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.metronome': { block: 'global', name: 'metronome', displayLabel: "Metronome", pidLow: 0x0001, pidHigh: 0x00a0, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.metronome_cc': { block: 'global', name: 'metronome_cc', displayLabel: "Metronome", pidLow: 0x0001, pidHigh: 0x00a1, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
-  'global.inspdif_config': { block: 'global', name: 'inspdif_config', pidLow: 0x0001, pidHigh: 0x00a2, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.inspdif_config': { block: 'global', name: 'inspdif_config', displayLabel: "SPDIF Input Mode", pidLow: 0x0001, pidHigh: 0x00a2, unit: 'count', displayMin: 0, displayMax: 127 },
 
   // ============================================================
   // Session 96 (2026-05-17) UI-MISSING closeout — wires the
@@ -4535,7 +4535,7 @@ export const KNOWN_PARAMS = {
 
   // ---- CABINET (pidLow=0x003e) — 4 entries ----
   'amp.cab_proximity_2':       { block: 'amp', name: 'cab_proximity_2',       displayLabel: 'Proximity', pidLow: 0x003e, pidHigh: 0x0015, unit: 'percent',     displayMin: 0,   displayMax: 100 },
-  'amp.cab_zoom':              { block: 'amp', name: 'cab_zoom',              pidLow: 0x003e, pidHigh: 0x0021, unit: 'count',       displayMin: 0,   displayMax: 127 },
+  'amp.cab_zoom':              { block: 'amp', name: 'cab_zoom', displayLabel: "ZOOM",              pidLow: 0x003e, pidHigh: 0x0021, unit: 'count',       displayMin: 0,   displayMax: 127 },
   'amp.cab_dynacab_z_1':       { block: 'amp', name: 'cab_dynacab_z_1',       displayLabel: 'Distance', pidLow: 0x003e, pidHigh: 0x0047, unit: 'percent',     displayMin: 0,   displayMax: 100 },
   'amp.cab_dynacab_z_2':       { block: 'amp', name: 'cab_dynacab_z_2',       displayLabel: 'Distance', pidLow: 0x003e, pidHigh: 0x0048, unit: 'percent',     displayMin: 0,   displayMax: 100 },
 
