@@ -13,8 +13,9 @@
  * just have users confirm it works. not list anything as unsupported
  * until [tested]." Per that direction the unified surface now wires
  * `set_param` / `get_param` / `get_params` / `set_params` through the
- * II-derived 0x02 SET_PARAMETER envelope (see `./setParam.ts`
- * `FN_SET_PARAMETER` for the community evidence chain). Every response
+ * III-native fn=0x01 PARAMETER_SETGET envelope (see `./setParam.ts`
+ * `FN_PARAMETER_SETGET` for the community evidence chain — byte-
+ * verified against 10 public captures, Session 97). Every response
  * carries a 🟡 BETA warning naming the unverified surfaces; the device
  * also surfaces malformed-request rejections as 0x64
  * MULTIPURPOSE_RESPONSE frames, which we catch and surface inline.
@@ -25,7 +26,9 @@
  * MULTIPURPOSE_RESPONSE rejections inline so users can report results.
  *
  * Unified surface status:
- *   - get_param / set_param      : 🟡 0x02 envelope, II-shape inferred
+ *   - get_param / set_param      : 🟡 fn=0x01 envelope, byte-verified
+ *                                  SET (10 public captures); GET shape
+ *                                  hypothesized, no public GET capture
  *   - get_params / set_params    : 🟡 loop over the above
  *   - set_bypass                 : 🟡 spec-documented (function 0x0A)
  *   - switch_scene               : 🟡 spec-documented (function 0x0C)

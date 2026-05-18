@@ -30,13 +30,6 @@ export {
 export const AM4_PORT_NEEDLES = ['am4', 'fractal'] as const;
 
 /**
- * Backwards-compat alias retained while the codebase migrates from the
- * single-device era. New code should use `MidiConnection` from
- * `@/core/midi/transport`.
- */
-export type AM4Connection = MidiConnection;
-
-/**
  * AM4-flavored port info: the generic `MidiPortInfo` plus a
  * `looksLikeAM4` flag tagged against the AM4 needle list. Existing
  * call sites read `looksLikeAM4` directly; new code should pass the
