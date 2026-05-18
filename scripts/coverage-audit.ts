@@ -80,6 +80,28 @@ let catalogTotal = 0;
 // matches the UI-WIDGET classification in coverage-cross-ref-audit.ts.
 const UI_WIDGET_PARAMID_MIN = 65000;
 
+// GHOST symbols (Session 97 cont 5): catalog has the paramId but
+// NO AM4-Edit XML renders a control for it (regular OR expert page,
+// across all conditional amp-type variants). These are firmware-
+// internal — addressable in theory but with no user-facing UI on
+// AM4. Filter them from the headline denominator so coverage %
+// reflects ONLY entries the user can see in AM4-Edit. The cross-
+// ref audit's GHOST class catalogs them separately for visibility.
+//
+// If a future HW-114 capture surfaces any GHOST symbol on the AM4
+// front-panel Expert Edit menu, wiring it into params.ts (with a
+// hardware-verified label) automatically moves it out of GHOST.
+const XML_REG = 'samples/captured/decoded/binarydata/extracted/__block_layout.xml';
+const XML_EXPERT = 'samples/captured/decoded/binarydata/extracted/__block_layout_expert.xml';
+const xmlSymbols = new Set<string>();
+for (const xmlPath of [XML_REG, XML_EXPERT]) {
+  if (!existsSync(xmlPath)) continue;
+  const xml = readFileSync(xmlPath, 'utf-8');
+  for (const m of xml.matchAll(/parameterName="([A-Z][A-Z0-9_]*)"/g)) {
+    xmlSymbols.add(m[1]);
+  }
+}
+
 if (existsSync(GHIDRA_AM4)) {
   const raw = JSON.parse(readFileSync(GHIDRA_AM4, 'utf-8'));
   for (const eff of Object.values(raw.effect_types) as any[]) {
@@ -87,6 +109,11 @@ if (existsSync(GHIDRA_AM4)) {
     const arr: CatalogEntry[] = Array.isArray(eff.params)
       ? eff.params
           .filter((p: any) => p.paramId < UI_WIDGET_PARAMID_MIN)
+          // Exclude GHOSTs only when XML data is available — if XML
+          // can't be loaded (e.g. fresh clone before BinaryData
+          // extraction), fall back to the unfiltered count rather
+          // than silently dropping every catalog entry.
+          .filter((p: any) => xmlSymbols.size === 0 || xmlSymbols.has(p.name))
           .map((p: any) => ({ paramId: p.paramId, name: p.name }))
       : [];
     catalogByFamily[eff.effectFamily] = arr;
@@ -184,8 +211,17 @@ for (const [block, family] of Object.entries(BLOCK_TO_FAMILY)) {
 // Group families by which catalog paramIds are addressed in params.ts
 // (to compute catalog coverage rather than just entry count). Multiple
 // blocks → same family means we de-dupe by paramId.
+//
+// IMPORTANT: only count addressed paramIds that ALSO survive the
+// catalog filter (UI-widget + GHOST filter applied above). A params.ts
+// entry at paramId X where X is filtered out (GHOST or widget) would
+// produce a >100% coverage ratio otherwise.
 const catalogParamsAddressed: Record<string, Set<number>> = {};
-for (const fam of Object.keys(familyMap)) catalogParamsAddressed[fam] = new Set();
+const catalogParamIdsByFamily: Record<string, Set<number>> = {};
+for (const fam of Object.keys(familyMap)) {
+  catalogParamsAddressed[fam] = new Set();
+  catalogParamIdsByFamily[fam] = new Set(catalogByFamily[fam]?.map((e) => e.paramId) ?? []);
+}
 
 for (const p of params) {
   const family = PIDLOW_TO_FAMILY[p.pidLow] ?? BLOCK_TO_FAMILY[p.block];
@@ -205,7 +241,11 @@ for (const p of params) {
     fc.genericCount += 1;
   } else {
     // pidHigh in catalog-paramId range — count toward catalog coverage
-    catalogParamsAddressed[family].add(p.pidHigh);
+    // only if the paramId survives the catalog filter (i.e. it's an
+    // XML-rendered, non-UI-widget catalog entry).
+    if (catalogParamIdsByFamily[family]?.has(p.pidHigh)) {
+      catalogParamsAddressed[family].add(p.pidHigh);
+    }
   }
   if (goldenPidPairs.has(`${p.pidLow.toString(16)}.${p.pidHigh.toString(16)}`)) {
     fc.goldenCount += 1;

@@ -4676,81 +4676,32 @@ export const KNOWN_PARAMS = {
   'enhancer.phase_invert':     { block: 'enhancer', name: 'phase_invert',     displayLabel: 'Phase Invert',      pidLow: 0x007a, pidHigh: 0x000f, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
 
   // ============================================================
-  // Session 97 cont 4 (2026-05-18) — III-INHERITED EXPERT params,
-  // wired speculatively pending AM4 hardware confirmation.
+  // Session 97 cont 5 (2026-05-18) — REMOVED 15 speculative III-
+  // inherited entries that Session 97 cont 3+4 had wired (DISTORT
+  // TONETYPE/EXCURSIONTIME/RECOVERYTIME/CFGRID/DYNPRES/DYNDEPTH/
+  // TREMFREQ/TREMDEPTH/BIASTYPE/INDYNAMICS/PRECOMPTYPE/CFHARDNESS/
+  // DRIVETYPE/FBTYPE + COMP_LIGHTTYPE).
   //
-  // These 15 catalog entries are present in the AM4's Ghidra-mined
-  // paramId table but NOT in any AM4-Edit XML resource (regular,
-  // expert, or components). They DO appear in the Axe-Fx III's
-  // `__amp_layout.xml` with user labels (see
-  // `samples/captured/decoded/binarydata/axe-edit-iii-allzips/
-  // extracted/__amp_layout.xml`). AM4 inherits the III's amp engine,
-  // and the AM4 manual (p. 25-26, p. 68) states the AM4 hardware
-  // Expert Edit menu (PAGE LEFT + PAGE RIGHT simultaneously while
-  // editing a block) "includes many of the settings and options
-  // found on our other products, including preamp boost, power
-  // supply sag, variac, and more" — suggesting the hardware UI may
-  // expose controls the desktop AM4-Edit Expert tab omits.
+  // Comprehensive scan of `__block_layout_expert.xml` (all 141
+  // unique DISTORT_/COMP_ parameterNames across every conditional
+  // Table for every amp type variant) confirmed: zero of the 29
+  // catalog-only candidate symbols appear anywhere in AM4-Edit's
+  // expert XML. The 15 had been wired from III `__amp_layout.xml`
+  // labels — those don't apply to AM4.
   //
-  // **Verification status: UNCONFIRMED on AM4.** The III amp_layout
-  // XML provides display labels, but:
+  // The 29 remain as GHOST in the cross-ref audit (catalog symbol,
+  // no AM4 XML). If a future HW-114 capture surfaces any of them
+  // on the AM4 front-panel Expert Edit menu, they'll be re-added
+  // here with HARDWARE-VERIFIED labels (not III speculation).
   //
-  //   1. AM4-Edit DESKTOP's Expert tab (5 sub-pages: Expert/Preamp/
-  //      Power Amp/Cabinet/Speaker — see Session 40+41 captures)
-  //      does NOT render these specific controls. The desktop Expert
-  //      XML uses different DISTORT_* parameterName values that are
-  //      already wired (HARDNESS2 not GRIDHARDNESS; FEEDFWDFREQ1 not
-  //      TRIODE1RATIO; etc.).
-  //   2. AM4-Edit Expert coverage is already 100% via those existing
-  //      entries — these 15 are NOT what the desktop UI uses.
-  //   3. Whether the AM4 *hardware* Expert Edit (front-panel only)
-  //      surfaces any of these is unverified — HW-114 will photograph
-  //      every Expert Edit page across multiple amp types to confirm.
-  //
-  // **Why ship them anyway** (user-directed decision, Session 97
-  // cont 4): the firmware's paramId table includes them, so SET
-  // writes to these addresses ARE wire-valid (the device's MULTIPURPOSE
-  // response would reject if not). If the AM4 hardware Expert Edit
-  // does expose them, this MCP becomes the second access path. If it
-  // doesn't, writes silently succeed but produce no audible effect
-  // (or modify firmware-internal state that the AMP TYPE selector
-  // would normally configure).
-  //
-  // **Unit/range:** uniform `count 0..127` — no calibration confirmed.
-  // The agent treating "5" as middle-range is purely heuristic. Each
-  // entry's displayLabel carries an explicit "⚠ Speculative" prefix
-  // so the LLM surfaces the caveat to the user before writing.
-  //
-  // **Skipped from this batch** (read-only meters / display strings):
-  //   - DISTORT_MDMON, DISTORT_INDYNMON (gain meters)
-  //   - COMP_XMARK, COMP_YMARK (XY-pad graph markers)
-  //   - CABINET_TYPE1_NAME, CABINET_TYPE2_NAME (read-only name strings)
-  //
-  // **Deferred** (catalog-only, no III amp_layout match either; 14
-  // entries listed in HW-114):
-  //   - DISTORT: XFLEAKAGE, WSLPF, WSHPF, OFFSET1, CLIPTYPE2, PI_RATIO,
-  //              GRIDHARDNESS, TRIODE2EXTIME, TRIODE2RECTIME,
-  //              TRIODE1RATIO, RESOLUTION, DYNIMP, VERSION,
-  //              DISABLECABSYNC
+  // Coverage shift back to honest values:
+  //   - WIRED-MATCHED 609 -> 594, GHOST 34 -> 49
+  //   - AM4-Edit XML rendered controls: 100% wired (was already 100%
+  //     before Session 97 cont 3 — the 15 added were not part of
+  //     the rendered surface)
+  //   - coverage-audit.ts headline becomes meaningful: every wired
+  //     entry corresponds to a control the user can see in AM4-Edit.
 
-  // ---- DISTORT / amp III-inherited Expert (pidLow=0x003a) — 14 entries ----
-  'amp.tonestack_type':        { block: 'amp', name: 'tonestack_type',        displayLabel: '⚠ Speculative (III label): Tonestack Type',     pidLow: 0x003a, pidHigh: 0x0029, unit: 'count', displayMin: 0, displayMax: 127 },
-  'amp.drive_type':            { block: 'amp', name: 'drive_type',            displayLabel: '⚠ Speculative (III label): Drive Type',         pidLow: 0x003a, pidHigh: 0x0025, unit: 'count', displayMin: 0, displayMax: 127 },
-  'amp.feedback_type':         { block: 'amp', name: 'feedback_type',         displayLabel: '⚠ Speculative (III label): Feedback Type',      pidLow: 0x003a, pidHigh: 0x002c, unit: 'count', displayMin: 0, displayMax: 127 },
-  'amp.bias_ratio':            { block: 'amp', name: 'bias_ratio',            displayLabel: '⚠ Speculative (III label): Bias Ratio',         pidLow: 0x003a, pidHigh: 0x0062, unit: 'count', displayMin: 0, displayMax: 127 },
-  'amp.precomp_type':          { block: 'amp', name: 'precomp_type',          displayLabel: '⚠ Speculative (III label): Pre-Comp Type',      pidLow: 0x003a, pidHigh: 0x0076, unit: 'count', displayMin: 0, displayMax: 127 },
-  'amp.excursion_time':        { block: 'amp', name: 'excursion_time',        displayLabel: '⚠ Speculative (III label): Excursion Time',     pidLow: 0x003a, pidHigh: 0x0047, unit: 'count', displayMin: 0, displayMax: 127 },
-  'amp.recovery_time':         { block: 'amp', name: 'recovery_time',         displayLabel: '⚠ Speculative (III label): Recovery Time',      pidLow: 0x003a, pidHigh: 0x0048, unit: 'count', displayMin: 0, displayMax: 127 },
-  'amp.grid_clipping':         { block: 'amp', name: 'grid_clipping',         displayLabel: '⚠ Speculative (III label): Grid Clipping',      pidLow: 0x003a, pidHigh: 0x0058, unit: 'count', displayMin: 0, displayMax: 127 },
-  'amp.cf_hardness':           { block: 'amp', name: 'cf_hardness',           displayLabel: '⚠ Speculative (III label): CF Hardness',        pidLow: 0x003a, pidHigh: 0x0078, unit: 'count', displayMin: 0, displayMax: 127 },
-  'amp.dynamic_presence':      { block: 'amp', name: 'dynamic_presence',      displayLabel: '⚠ Speculative (III label): Dynamic Presence',   pidLow: 0x003a, pidHigh: 0x005b, unit: 'count', displayMin: 0, displayMax: 127 },
-  'amp.dynamic_depth':         { block: 'amp', name: 'dynamic_depth',         displayLabel: '⚠ Speculative (III label): Dynamic Depth',      pidLow: 0x003a, pidHigh: 0x005c, unit: 'count', displayMin: 0, displayMax: 127 },
-  'amp.input_dynamics':        { block: 'amp', name: 'input_dynamics',        displayLabel: '⚠ Speculative (III label): Input Dynamics',     pidLow: 0x003a, pidHigh: 0x006a, unit: 'count', displayMin: 0, displayMax: 127 },
-  'amp.tremolo_freq':          { block: 'amp', name: 'tremolo_freq',          displayLabel: '⚠ Speculative (III label): Tremolo Freq',       pidLow: 0x003a, pidHigh: 0x0060, unit: 'count', displayMin: 0, displayMax: 127 },
-  'amp.tremolo_depth':         { block: 'amp', name: 'tremolo_depth',         displayLabel: '⚠ Speculative (III label): Tremolo Depth',      pidLow: 0x003a, pidHigh: 0x0061, unit: 'count', displayMin: 0, displayMax: 127 },
-
-  // ---- COMP III-inherited Expert (pidLow=0x002e) — 1 entry ----
-  'compressor.light_type':     { block: 'compressor', name: 'light_type',     displayLabel: '⚠ Speculative (III label): Light Type',         pidLow: 0x002e, pidHigh: 0x001e, unit: 'count', displayMin: 0, displayMax: 127 },
 } as const satisfies Record<string, Param>;
 
 export type ParamKey = keyof typeof KNOWN_PARAMS;
