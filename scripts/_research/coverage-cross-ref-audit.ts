@@ -158,6 +158,12 @@ const BLOCK_TO_FAMILY: Record<string, string> = {
 // at pidLow=0x003e belongs to CABINET, not DISTORT).
 const PIDLOW_TO_FAMILY: Record<number, string> = {
   0x003e: 'CABINET',
+  // GLOBAL (case 0x1 in dispatcher) — Session 96 (HW-112) cracked
+  // pidLow=0x0001; 98 entries shipped under block:'global' in params.ts.
+  // BLOCK_TO_FAMILY can't reach this because 'global' isn't a placeable
+  // AM4 block, and the family-detection majority-vote needs the override
+  // to count it as anything but PIDLOW-UNKNOWN. See docs/SYSEX-MAP.md §6bb.
+  0x0001: 'GLOBAL',
 };
 
 function derivePidlowMap(params: ParamEntry[]): Map<string, number> {
@@ -251,7 +257,22 @@ for (const [family, entries] of catalog) {
       // catalog symbol is Fractal's internal name; the agent doesn't see
       // it. If there's no UI display, there's no user-facing label to
       // mismatch against, so treat as WIRED-MATCHED.
-      const matched = xmlDisplay ? namesMatch(paramEntry.name, xmlDisplay) : true;
+      //
+      // GLOBAL family carve-out (Session 96): GLOBAL paramIds were wired
+      // Session 96 (HW-112) by mechanical generation from the Ghidra
+      // catalog's GLOBAL_* symbols (e.g. GLOBAL_TUNINGREF → name='tuningref').
+      // The AM4-Edit XML carries a UI label for some of these (e.g.
+      // "Calibration" for TUNINGREF), but GLOBAL controls live on the
+      // device's Settings page rather than the per-block effect editor.
+      // The user-facing label is surfaced through the displayLabel field
+      // on each param entry; the name field is the stable wire symbol.
+      // Comparing wire-name vs Settings-page UI label here would
+      // misclassify ~70 entries as MISLABEL even though the wire name is
+      // canonical (and the agent reads the UI label via displayLabel).
+      // Treat GLOBAL like the no-XML case: WIRED-MATCHED whenever the
+      // (pidLow, paramId) address is bound.
+      const skipXmlNameMatch = family === 'GLOBAL';
+      const matched = (xmlDisplay && !skipXmlNameMatch) ? namesMatch(paramEntry.name, xmlDisplay) : true;
       findings.push({
         family,
         paramId,
