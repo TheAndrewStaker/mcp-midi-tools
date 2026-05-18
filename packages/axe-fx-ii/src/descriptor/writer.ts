@@ -289,7 +289,7 @@ export const writer: DeviceWriter = {
       op: 'switch_preset',
       target: String(slot),
       acked: true,
-      warning: `Loaded display slot ${slot} (wire ${n}). Any unsaved working-buffer edits were discarded.`,
+      info: `Loaded display slot ${slot} (wire ${n}). Any unsaved working-buffer edits were discarded.`,
     };
   },
 
@@ -322,10 +322,13 @@ export const writer: DeviceWriter = {
         op: 'save_preset',
         target: String(slot),
         acked: parsed.ok,
-        warning: parsed.ok
+        info: parsed.ok
           ? (name
               ? `Saved "${name}" to display slot ${slot} (wire ${n}).`
               : `Working buffer saved to display slot ${slot} (wire ${n}).`)
+          : undefined,
+        warning: parsed.ok
+          ? undefined
           : `Device returned result code 0x${parsed.resultCode.toString(16)} — save likely rejected.`,
       };
     } catch (err) {
@@ -352,7 +355,7 @@ export const writer: DeviceWriter = {
       op: 'switch_scene',
       target: `scene:${scene}`,
       acked: true,
-      warning: `Switched to scene ${scene} (wire ${scene - 1}). Subsequent param writes land in this scene's context.`,
+      info: `Switched to scene ${scene} (wire ${scene - 1}). Subsequent param writes land in this scene's context.`,
     };
   },
 
@@ -397,8 +400,11 @@ export const writer: DeviceWriter = {
         op: 'set_block',
         target: `r${row}c${col}=${blockName}`,
         acked: parsed.ok,
-        warning: parsed.ok
+        info: parsed.ok
           ? `Placed ${blockName} at row ${row}, col ${col}. Note: this write does NOT propagate routing — downstream cells' input masks still point at the previous occupant's position.`
+          : undefined,
+        warning: parsed.ok
+          ? undefined
           : `Device returned result code 0x${parsed.resultCode.toString(16)} — placement rejected.`,
       };
     } catch (err) {
@@ -425,7 +431,7 @@ export const writer: DeviceWriter = {
       op: 'set_bypass',
       target: `${block.name}:${bypassed ? 'bypassed' : 'engaged'}`,
       acked: true,
-      warning: `${block.name} set to ${bypassed ? 'BYPASSED' : 'ENGAGED'}. Axe-Fx II SET is fire-and-forget — verify on the device.`,
+      info: `${block.name} set to ${bypassed ? 'BYPASSED' : 'ENGAGED'}. Axe-Fx II SET is fire-and-forget — verify on the device.`,
     };
   },
 
@@ -667,7 +673,7 @@ export const writer: DeviceWriter = {
         op: 'rename',
         target: 'preset',
         acked: true,
-        warning: `Working-buffer preset renamed to "${name}". Press SAVE or call save_preset to persist.`,
+        info: `Working-buffer preset renamed to "${name}". Press SAVE or call save_preset to persist.`,
       };
     }
     // 'scene:N' — no decoded SET_SCENE_NAME on Axe-Fx II yet.

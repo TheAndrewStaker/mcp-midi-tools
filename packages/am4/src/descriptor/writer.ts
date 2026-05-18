@@ -462,8 +462,11 @@ export const writer: DeviceWriter = {
       op: 'switch_preset',
       target: formatLocationDisplay(locationIndex),
       acked: result.acked,
-      warning: result.acked
+      info: result.acked
         ? 'Any unsaved working-buffer edits were discarded. Channel cache cleared.'
+        : undefined,
+      warning: result.acked
+        ? undefined
         : 'No write-echo within timeout — verify on the AM4 display.',
     };
   },
@@ -509,9 +512,8 @@ export const writer: DeviceWriter = {
       op: 'save_preset',
       target: formatLocationDisplay(locationIndex),
       acked: true,
-      warning: switchTrouble
-        ? `${baseWarning} ${switchTrouble}`
-        : `${baseWarning} Active location switched to ${formatLocationDisplay(locationIndex)}.`,
+      info: `${baseWarning} Active location switched to ${formatLocationDisplay(locationIndex)}.`,
+      warning: switchTrouble,
     };
   },
 
@@ -531,8 +533,11 @@ export const writer: DeviceWriter = {
       op: 'switch_scene',
       target: `scene:${scene}`,
       acked: result.acked,
-      warning: result.acked
+      info: result.acked
         ? 'Channel cache cleared — the new scene may point each block at a different channel.'
+        : undefined,
+      warning: result.acked
+        ? undefined
         : 'No write-echo within timeout — verify on the AM4 display.',
     };
   },
@@ -570,8 +575,11 @@ export const writer: DeviceWriter = {
       op: 'set_block',
       target: `slot:${slot}=${displayName}`,
       acked: result.acked,
-      warning: result.acked
+      info: result.acked
         ? `Placed ${displayName} in slot ${slot}.`
+        : undefined,
+      warning: result.acked
+        ? undefined
         : `No write-echo within timeout — verify on the AM4 display.`,
     };
   },
@@ -594,8 +602,11 @@ export const writer: DeviceWriter = {
       op: 'set_bypass',
       target: `${block}:${stateWord}`,
       acked: result.acked,
-      warning: result.acked
+      info: result.acked
         ? `${block} set to ${stateWord} on the active scene. To change a different scene's bypass, switch_scene first and re-issue.`
+        : undefined,
+      warning: result.acked
+        ? undefined
         : `No write-echo within timeout — verify on the AM4 display.`,
     };
   },
@@ -1037,8 +1048,11 @@ export const writer: DeviceWriter = {
       op: 'rename',
       target,
       acked: result.acked,
-      warning: result.acked
+      info: result.acked
         ? `Scene ${sceneIdx + 1} renamed to "${name}" in the working buffer. Call save_preset to persist.`
+        : undefined,
+      warning: result.acked
+        ? undefined
         : `Scene rename sent but no ack — verify on the AM4 display.`,
     };
   },

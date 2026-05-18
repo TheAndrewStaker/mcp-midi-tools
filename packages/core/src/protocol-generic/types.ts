@@ -240,8 +240,15 @@ export interface WriteResult {
    *  set_param's echo, switch_preset's write-echo, save's command-ack. */
   acked: boolean;
   /** Soft-warning when ack succeeded but the side effect may not have
-   *  landed (e.g. block not placed in active preset). */
+   *  landed (e.g. block not placed in active preset). Also used for
+   *  no-ack timeouts and partial-failure cases. Reserve for genuine
+   *  concerns — routine post-success advisory text goes in `info`. */
   warning?: string;
+  /** Routine post-success advisory text — e.g. "switched to Z03, any
+   *  unsaved buffer edits were discarded". Distinct from `warning` so
+   *  callers (and agents) can tell a successful navigation's normal
+   *  footnote apart from a genuine "something is off" warning. */
+  info?: string;
   // ── Param-write specific (only populated by set_param / set_params) ──
   block?: string;
   name?: string;

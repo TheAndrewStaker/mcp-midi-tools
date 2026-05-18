@@ -12,13 +12,16 @@ MIDI primitives (CC, NRPN, SysEx, program change, …) work against any
 USB MIDI device, so synths, looper pedals, and other gear are reachable
 from day one.
 
-> **Unaffiliated community tool.** "Fractal Audio", "AM4", "Axe-Fx II",
-> "ASM", "Hydrasynth", and related product names are trademarks of
-> their respective owners (Fractal Audio Systems, Inc. and Ashun Sound
-> Machines). This project neither claims endorsement from, nor
-> affiliation with, those manufacturers. It communicates with hardware
-> the user already owns via SysEx / NRPN / CC messages. See
-> [`NOTICE`](./NOTICE) for the full trademark statement.
+> **Unaffiliated community tool.** "Fractal Audio", "AM4", "Axe-Fx",
+> "Axe-Fx II", "Axe-Fx III", "FM3", "FM9", "ASM", "Hydrasynth", and
+> related product names are trademarks of their respective owners
+> (Fractal Audio Systems, Inc. and Ashun Sound Machines). This project
+> neither claims endorsement from, nor affiliation with, those
+> manufacturers. It communicates with hardware the user already owns
+> via SysEx / NRPN / CC messages, using publicly-documented protocol
+> information (including Fractal Audio's own "MIDI for Third-Party
+> Devices" specifications). See [`NOTICE`](./NOTICE) for the full
+> trademark statement.
 
 ---
 

@@ -1,19 +1,35 @@
-MCP MIDI Tools
+MCP MIDI Control
 Copyright 2026 Stephen Staker
 
 This product is licensed under the Apache License, Version 2.0.
 See the LICENSE file for the full license text.
+
+This repository also contains the `fractal-midi` package — a
+codec-only TypeScript library that builds and parses Fractal Audio
+SysEx wire bytes without depending on a MIDI transport. The same
+trademark statement below applies to `fractal-midi`.
 
 ---
 
 TRADEMARKS
 
 This project is an unaffiliated community tool. "Fractal Audio",
-"AM4", and related product names are trademarks of Fractal Audio
-Systems, Inc. This project neither claims endorsement from, nor
-affiliation with, Fractal Audio Systems. It is a software utility
-that communicates with AM4 hardware the user already owns via
-publicly-documented SysEx messages.
+"AM4", "Axe-Fx", "Axe-Fx II", "Axe-Fx III", "FM3", "FM9", and
+related product names are trademarks of Fractal Audio Systems, Inc.
+"ASM", "Ashun Sound Machines", and "Hydrasynth" are trademarks of
+Ashun Sound Machines.
+
+This project neither claims endorsement from, nor affiliation with,
+Fractal Audio Systems or Ashun Sound Machines. It is a software
+utility that communicates with hardware the user already owns via
+publicly-documented SysEx, NRPN, and CC messages — including, for
+Fractal devices, the protocol information Fractal Audio itself
+publishes in its "MIDI for Third-Party Devices" specifications.
+
+The package name `fractal-midi` uses the "Fractal" trademark
+descriptively (nominative fair use) to identify the hardware the
+library targets. The package does not claim official status and
+is not affiliated with Fractal Audio Systems, Inc.
 
 ---
 

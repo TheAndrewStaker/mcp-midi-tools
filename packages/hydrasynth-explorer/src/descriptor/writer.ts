@@ -154,7 +154,7 @@ export const writer: DeviceWriter = {
       name,
       wire_value: wireValue,
       acked: true,
-      warning:
+      info:
         'Hydrasynth NRPN writes are fire-and-forget — verify by audible / visible response on the device front panel.',
     };
   },
@@ -195,7 +195,7 @@ export const writer: DeviceWriter = {
       op: 'switch_preset',
       target: parsed.display,
       acked: true,
-      warning:
+      info:
         `Switched to ${parsed.display} (bank ${parsed.bank}, patch ${parsed.patch}). ` +
         `Requires "Pgm Chg RX = On" on MIDI Page 11 of System Setup. ` +
         `Any unsaved working-buffer edits were discarded by the patch load.`,

@@ -268,23 +268,33 @@ async function verifyAm4(client: Client): Promise<void> {
     );
   }
 
-  // Dirty-buffer gate on switch_preset: dirty the working buffer via
-  // set_param, then try to switch_preset without on_active_preset_edited.
-  // Expect refusal naming the working preset.
+  // Dirty-buffer gate on switch_preset: dirty the working buffer via a
+  // STRUCTURAL write (set_block), then try to switch_preset without
+  // on_active_preset_edited. Expect refusal naming the working preset.
+  //
+  // Why set_block, not set_param: the AM4 stores per-block params (e.g.
+  // amp.gain) in a "phantom" register that's readable via get_param even
+  // when the block isn't actually placed in any slot — but those phantom
+  // bytes are NOT included in the working-buffer dump. If Z3's stored
+  // preset has all-empty slots (which happens after enough wipe/save
+  // cycles), set_param amp.gain "succeeds" but doesn't change the dump
+  // bytes, and the fingerprint-based dirty gate compares equal-to-equal
+  // and silently proceeds. set_block places a block — that's a
+  // structural change always captured in the dump regardless of starting
+  // state, so the gate reliably trips.
   {
-    // First, ensure we're starting from a known clean location: discard-
-    // navigate to Z3 (the previous test's audition-at-Z4 will have left
-    // the buffer dirty). Audition-at-Z3 with no params lands the buffer
-    // clean enough for the next test setup.
+    // Discard-navigate to Z3 — the previous test's audition-at-Z4 will
+    // have left the buffer dirty, so use discard mode.
     await client.callTool({
       name: 'switch_preset',
       arguments: { port: 'am4', location: 'Z3', on_active_preset_edited: 'discard' },
     });
 
-    // Dirty the buffer.
+    // Dirty the buffer with a structural write that always lands in the
+    // dump regardless of Z3's stored slot layout.
     const setR = await client.callTool({
-      name: 'set_param',
-      arguments: { port: 'am4', block: 'amp', name: 'gain', value: 6 },
+      name: 'set_block',
+      arguments: { port: 'am4', slot: 1, block_type: 'amp' },
     });
     const setOk = !isError(setR);
 
