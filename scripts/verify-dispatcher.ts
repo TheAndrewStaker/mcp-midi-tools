@@ -490,7 +490,7 @@ console.log('\nPresetSpec params-shape routing (AM4 unified surface):');
 
 function expectValidatePresetOk(label: string, spec: unknown): void {
   try {
-    AM4_DESCRIPTOR.writer.validatePreset!(spec as Parameters<typeof AM4_DESCRIPTOR.writer.validatePreset>[0]);
+    AM4_DESCRIPTOR.writer.validatePreset!(spec as Parameters<NonNullable<typeof AM4_DESCRIPTOR.writer.validatePreset>>[0]);
     passed++;
   } catch (err) {
     failed++;
@@ -500,7 +500,7 @@ function expectValidatePresetOk(label: string, spec: unknown): void {
 
 function expectValidatePresetError(label: string, spec: unknown, fragment: string): void {
   try {
-    AM4_DESCRIPTOR.writer.validatePreset!(spec as Parameters<typeof AM4_DESCRIPTOR.writer.validatePreset>[0]);
+    AM4_DESCRIPTOR.writer.validatePreset!(spec as Parameters<NonNullable<typeof AM4_DESCRIPTOR.writer.validatePreset>>[0]);
     failed++;
     console.error(`  ✗ ${label}\n      expected error, got success`);
   } catch (err) {
@@ -659,7 +659,14 @@ for (const descriptor of registered) {
       );
       if (flatParsed.success) {
         try {
-          descriptor.writer.validatePreset!(flatParsed.data);
+          // Cast through NonNullable<…> because validatePreset is an
+          // optional capability on the writer interface; the `!` above
+          // narrows the runtime value but TS still surfaces undefined
+          // in the type expression. Zod-inferred data is structurally
+          // compatible at runtime — its SceneSpec.channels is `?:`
+          // vs PresetSpec's required — so the cast bridges schema
+          // looseness without weakening the dispatcher contract.
+          descriptor.writer.validatePreset!(flatParsed.data as Parameters<NonNullable<typeof descriptor.writer.validatePreset>>[0]);
           passed++;
         } catch (err) {
           failed++;
@@ -668,7 +675,7 @@ for (const descriptor of registered) {
       }
       if (nestedParsed.success) {
         try {
-          descriptor.writer.validatePreset!(nestedParsed.data);
+          descriptor.writer.validatePreset!(nestedParsed.data as Parameters<NonNullable<typeof descriptor.writer.validatePreset>>[0]);
           passed++;
         } catch (err) {
           failed++;
@@ -691,7 +698,7 @@ for (const descriptor of registered) {
       );
       if (flatParsed.success) {
         try {
-          descriptor.writer.validatePreset!(flatParsed.data);
+          descriptor.writer.validatePreset!(flatParsed.data as Parameters<NonNullable<typeof descriptor.writer.validatePreset>>[0]);
           passed++;
         } catch (err) {
           failed++;
@@ -714,7 +721,7 @@ for (const descriptor of registered) {
         );
         if (nestedParsed.success) {
           try {
-            descriptor.writer.validatePreset!(nestedParsed.data);
+            descriptor.writer.validatePreset!(nestedParsed.data as Parameters<NonNullable<typeof descriptor.writer.validatePreset>>[0]);
             failed++;
             console.error(`  ✗ ${descriptor.id}/${blockName}: nested params on non-channel block — executor accepted (should reject with clear error)`);
           } catch (err) {
