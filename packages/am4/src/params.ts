@@ -4509,6 +4509,99 @@ export const KNOWN_PARAMS = {
   'global.metronome_cc': { block: 'global', name: 'metronome_cc', pidLow: 0x0001, pidHigh: 0x00a1, unit: 'count', displayMin: 0, displayMax: 127 },
   // safe placeholder (range unverified) — Ghidra catalog entry only
   'global.inspdif_config': { block: 'global', name: 'inspdif_config', pidLow: 0x0001, pidHigh: 0x00a2, unit: 'count', displayMin: 0, displayMax: 127 },
+
+  // ============================================================
+  // Session 96 (2026-05-17) UI-MISSING closeout — wires the
+  // remaining placeable-family entries the AM4-Edit XML exposes
+  // but params.ts didn't carry. Catalog symbols sourced from
+  // `samples/captured/decoded/ghidra-am4-paramnames.json`,
+  // display labels from `__block_layout.xml` /
+  // `__block_layout_expert.xml` (mined by
+  // `scripts/_research/list-ui-missing.ts`).
+  //
+  // UI widgets (paramId >= 65000 — name/label/button/graph/menu
+  // sentinels) intentionally skipped: those addresses back UI
+  // chrome in AM4-Edit, not writable preset data. Catalog symbols
+  // dropped: CABINET_NAME{1,2}, CABINET_LABEL{1,2},
+  // CABINET_ALIGN_*, CABINET_COPY_MENU{1,2}, DISTORT_ZEROEQ.
+  //
+  // Unit/range pairs are name-inferred. Toggle-style switches
+  // (*_SW / *_ONOFF) get enum 0..1 with OFF/ON. Type/menu/color
+  // enums without captured enum tables default to count 0..127 so
+  // the agent can write any in-range value without claiming an
+  // interpretation. Knob-style names (Sag / Breakup / Compensation
+  // / Pres. Shift) get knob_0_10 — a reasonable convention for the
+  // amp Extras / Speaker pages until HW captures pin exact ranges.
+
+  // ---- CABINET (pidLow=0x003e) — 4 entries ----
+  'amp.cab_proximity_2':       { block: 'amp', name: 'cab_proximity_2',       displayLabel: 'Proximity', pidLow: 0x003e, pidHigh: 0x0015, unit: 'percent',     displayMin: 0,   displayMax: 100 },
+  'amp.cab_zoom':              { block: 'amp', name: 'cab_zoom',              pidLow: 0x003e, pidHigh: 0x0021, unit: 'count',       displayMin: 0,   displayMax: 127 },
+  'amp.cab_dynacab_z_1':       { block: 'amp', name: 'cab_dynacab_z_1',       displayLabel: 'Distance', pidLow: 0x003e, pidHigh: 0x0047, unit: 'percent',     displayMin: 0,   displayMax: 100 },
+  'amp.cab_dynacab_z_2':       { block: 'amp', name: 'cab_dynacab_z_2',       displayLabel: 'Distance', pidLow: 0x003e, pidHigh: 0x0048, unit: 'percent',     displayMin: 0,   displayMax: 100 },
+
+  // ---- DISTORT / amp Extras + Speaker pages (pidLow=0x003a) — 18 entries ----
+  'amp.in_boost_sw':           { block: 'amp', name: 'in_boost_sw',           displayLabel: 'In Boost Sw',           pidLow: 0x003a, pidHigh: 0x002f, unit: 'enum',  displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'amp.saturation_sw':         { block: 'amp', name: 'saturation_sw',         displayLabel: 'Saturation Sw',         pidLow: 0x003a, pidHigh: 0x003d, unit: 'enum',  displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'amp.preamp_tube_type':      { block: 'amp', name: 'preamp_tube_type',      displayLabel: 'Preamp Tube Type',      pidLow: 0x003a, pidHigh: 0x004c, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.power_type':            { block: 'amp', name: 'power_type',            displayLabel: 'Power Type',            pidLow: 0x003a, pidHigh: 0x005d, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.preamp_sag':            { block: 'amp', name: 'preamp_sag',            displayLabel: 'Preamp Sag',            pidLow: 0x003a, pidHigh: 0x0067, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'amp.in_eq_type':            { block: 'amp', name: 'in_eq_type',            displayLabel: 'Type',                  pidLow: 0x003a, pidHigh: 0x006d, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.pres_shift':            { block: 'amp', name: 'pres_shift',            displayLabel: 'Pres. Shift',           pidLow: 0x003a, pidHigh: 0x006f, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'amp.eq_location':           { block: 'amp', name: 'eq_location',           displayLabel: 'Location',              pidLow: 0x003a, pidHigh: 0x0075, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.in_boost_type':         { block: 'amp', name: 'in_boost_type',         displayLabel: 'In Boost Type',         pidLow: 0x003a, pidHigh: 0x0082, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.eq_onoff':              { block: 'amp', name: 'eq_onoff',              displayLabel: 'Off / On',              pidLow: 0x003a, pidHigh: 0x0085, unit: 'enum',  displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'amp.spkr_imp_curve':        { block: 'amp', name: 'spkr_imp_curve',        displayLabel: 'Spkr Imp. Curve',       pidLow: 0x003a, pidHigh: 0x0087, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.power_amp_modeling':    { block: 'amp', name: 'power_amp_modeling',    displayLabel: 'Power Amp Modeling',    pidLow: 0x003a, pidHigh: 0x008d, unit: 'enum',  displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'amp.spkr_breakup':          { block: 'amp', name: 'spkr_breakup',          displayLabel: 'Breakup',               pidLow: 0x003a, pidHigh: 0x008e, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'amp.plate_suppr_diodes':    { block: 'amp', name: 'plate_suppr_diodes',    displayLabel: 'Plate Suppr. Diodes',   pidLow: 0x003a, pidHigh: 0x0090, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.dynamatch':             { block: 'amp', name: 'dynamatch',             displayLabel: 'DynaMatch',             pidLow: 0x003a, pidHigh: 0x0092, unit: 'enum',  displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'amp.nfb_compensation':      { block: 'amp', name: 'nfb_compensation',      displayLabel: 'NFB Compensation',      pidLow: 0x003a, pidHigh: 0x0093, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'amp.mid_gain_boost':        { block: 'amp', name: 'mid_gain_boost',        displayLabel: 'Mid/Gain Boost',        pidLow: 0x003a, pidHigh: 0x0094, unit: 'enum',  displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'amp.tubes':                 { block: 'amp', name: 'tubes',                 displayLabel: 'Tubes',                 pidLow: 0x003a, pidHigh: 0x0095, unit: 'count', displayMin: 0, displayMax: 127 },
+
+  // ---- PATCH (pidLow=0x00ce) — 29 entries ----
+  // Channel A/B/C/D color pickers. AM4-Edit shows ~8 named colors;
+  // exact enum table not yet captured, so count 0..127 as
+  // safe-write placeholder.
+  'preset.channel_a_color':    { block: 'preset', name: 'channel_a_color',    displayLabel: 'Channel A Color', pidLow: 0x00ce, pidHigh: 0x0071, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.channel_b_color':    { block: 'preset', name: 'channel_b_color',    displayLabel: 'Channel B Color', pidLow: 0x00ce, pidHigh: 0x0072, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.channel_c_color':    { block: 'preset', name: 'channel_c_color',    displayLabel: 'Channel C Color', pidLow: 0x00ce, pidHigh: 0x0073, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.channel_d_color':    { block: 'preset', name: 'channel_d_color',    displayLabel: 'Channel D Color', pidLow: 0x00ce, pidHigh: 0x0074, unit: 'count', displayMin: 0, displayMax: 127 },
+
+  // Scene MIDI EXEC slots (paramId 118..137 — 4 + 16 = 20).
+  // XML labels are empty for these — they're PATCH-page editor
+  // infrastructure. Catalog still lists them as writable params,
+  // so we ship them as count placeholders for programmatic access
+  // (copy/clear/inspect scene-MIDI command state from a script).
+  // Naming mirrors the existing preset.scene_N_midi_M_{type,
+  // channel,value} pattern shipping at pidHigh 0x40..0x67.
+  'preset.scene_1_midi_exec':  { block: 'preset', name: 'scene_1_midi_exec',  pidLow: 0x00ce, pidHigh: 0x0076, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_2_midi_exec':  { block: 'preset', name: 'scene_2_midi_exec',  pidLow: 0x00ce, pidHigh: 0x0077, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_3_midi_exec':  { block: 'preset', name: 'scene_3_midi_exec',  pidLow: 0x00ce, pidHigh: 0x0078, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_4_midi_exec':  { block: 'preset', name: 'scene_4_midi_exec',  pidLow: 0x00ce, pidHigh: 0x0079, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_1_midi_exec_1':{ block: 'preset', name: 'scene_1_midi_exec_1',pidLow: 0x00ce, pidHigh: 0x007a, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_1_midi_exec_2':{ block: 'preset', name: 'scene_1_midi_exec_2',pidLow: 0x00ce, pidHigh: 0x007b, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_1_midi_exec_3':{ block: 'preset', name: 'scene_1_midi_exec_3',pidLow: 0x00ce, pidHigh: 0x007c, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_1_midi_exec_4':{ block: 'preset', name: 'scene_1_midi_exec_4',pidLow: 0x00ce, pidHigh: 0x007d, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_2_midi_exec_1':{ block: 'preset', name: 'scene_2_midi_exec_1',pidLow: 0x00ce, pidHigh: 0x007e, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_2_midi_exec_2':{ block: 'preset', name: 'scene_2_midi_exec_2',pidLow: 0x00ce, pidHigh: 0x007f, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_2_midi_exec_3':{ block: 'preset', name: 'scene_2_midi_exec_3',pidLow: 0x00ce, pidHigh: 0x0080, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_2_midi_exec_4':{ block: 'preset', name: 'scene_2_midi_exec_4',pidLow: 0x00ce, pidHigh: 0x0081, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_3_midi_exec_1':{ block: 'preset', name: 'scene_3_midi_exec_1',pidLow: 0x00ce, pidHigh: 0x0082, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_3_midi_exec_2':{ block: 'preset', name: 'scene_3_midi_exec_2',pidLow: 0x00ce, pidHigh: 0x0083, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_3_midi_exec_3':{ block: 'preset', name: 'scene_3_midi_exec_3',pidLow: 0x00ce, pidHigh: 0x0084, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_3_midi_exec_4':{ block: 'preset', name: 'scene_3_midi_exec_4',pidLow: 0x00ce, pidHigh: 0x0085, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_4_midi_exec_1':{ block: 'preset', name: 'scene_4_midi_exec_1',pidLow: 0x00ce, pidHigh: 0x0086, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_4_midi_exec_2':{ block: 'preset', name: 'scene_4_midi_exec_2',pidLow: 0x00ce, pidHigh: 0x0087, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_4_midi_exec_3':{ block: 'preset', name: 'scene_4_midi_exec_3',pidLow: 0x00ce, pidHigh: 0x0088, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_4_midi_exec_4':{ block: 'preset', name: 'scene_4_midi_exec_4',pidLow: 0x00ce, pidHigh: 0x0089, unit: 'count', displayMin: 0, displayMax: 127 },
+
+  // Per-scene MIDI menu trigger + clear-all action.
+  'preset.scene_1_menu':       { block: 'preset', name: 'scene_1_menu',       displayLabel: 'SCENE 1 menu', pidLow: 0x00ce, pidHigh: 0x008a, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_2_menu':       { block: 'preset', name: 'scene_2_menu',       displayLabel: 'SCENE 2 menu', pidLow: 0x00ce, pidHigh: 0x008b, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_3_menu':       { block: 'preset', name: 'scene_3_menu',       displayLabel: 'SCENE 3 menu', pidLow: 0x00ce, pidHigh: 0x008c, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.scene_4_menu':       { block: 'preset', name: 'scene_4_menu',       displayLabel: 'SCENE 4 menu', pidLow: 0x00ce, pidHigh: 0x008d, unit: 'count', displayMin: 0, displayMax: 127 },
+  'preset.clear_all':          { block: 'preset', name: 'clear_all',          displayLabel: 'Clear All',    pidLow: 0x00ce, pidHigh: 0x008e, unit: 'count', displayMin: 0, displayMax: 127 },
 } as const satisfies Record<string, Param>;
 
 export type ParamKey = keyof typeof KNOWN_PARAMS;

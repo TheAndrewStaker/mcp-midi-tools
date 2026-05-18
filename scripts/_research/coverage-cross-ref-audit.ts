@@ -504,7 +504,29 @@ console.log(`Inferred pidLow for ${pidlowMap.size} families.`);
 // remaining 154 are documented intentional disambiguations (cabinet
 // _1/_2 pairs, LFO N target/tempo pairs, GEQ/WAH numeric bands, etc.) —
 // see the earlier per-session notes for the specific shapes.
-const WIRED_MISLABEL_CEILING = 154;
+// Session 96 (2026-05-17): bumped 154 → 161 for the PATCH/CABINET/
+// DISTORT UI-MISSING closeout (50 hand-authored entries; AM4 TOTAL
+// 84% → 91%). All 7 new MISLABELs are intentional context-disambig
+// names where the AM4-Edit XML label alone would be too generic for
+// LLM key lookup ("Type", "Location", "Distance", "Off / On", "Breakup",
+// "Proximity"). Concretely:
+//   • amp.cab_proximity_2  (XML "Proximity"  — sibling of amp.proximity_1)
+//   • amp.cab_dynacab_z_1  (XML "Distance"   — DynaCab Z = mic distance,
+//                            sibling of existing amp.cab_dynacab_z patterns)
+//   • amp.cab_dynacab_z_2  (XML "Distance")
+//   • amp.in_eq_type       (XML "Type"       — disambig from amp.type at
+//                            pidLow=0x003a / pidHigh=0x000a)
+//   • amp.eq_location      (XML "Location"   — input-EQ position selector)
+//   • amp.eq_onoff         (XML "Off / On"   — input-EQ enable toggle,
+//                            name explains WHAT toggle vs the generic XML)
+//   • amp.spkr_breakup     (XML "Breakup"    — speaker breakup knob on
+//                            the Speaker page, spkr_ prefix mirrors
+//                            sibling amp.spkr_imp_curve)
+// LLM still surfaces the friendly XML label via param.displayLabel — the
+// rename is purely about the lookup key being discoverable from the
+// natural-language prompt ("turn on the input EQ" → amp.eq_onoff is more
+// findable than amp.off_on which is what XML-direct would produce).
+const WIRED_MISLABEL_CEILING = 161;
 if (totals['WIRED-MISLABEL'] > WIRED_MISLABEL_CEILING) {
   console.error('');
   console.error(`FAIL: WIRED-MISLABEL count is ${totals['WIRED-MISLABEL']}, ceiling is ${WIRED_MISLABEL_CEILING}.`);
