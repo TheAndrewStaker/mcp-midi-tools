@@ -54,18 +54,16 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 // both the default one-line shape and the multi-line HW-075 / HW-077
 // promotion paragraph the founder wrote.
 //
-// **KNOWN GAP — this preservation only covers the Status paragraph.**
-// The current file ALSO carries hand-authored content the generator
-// doesn't reproduce:
+// **KNOWN GAP — this preservation covers the Status paragraph and
+// the Session 94 Ghidra addendum block, but NOT:**
 //   • `DELAY_TEMPO_VALUES` enum const (HW-091 / HW-093 measurement,
 //     2026-05-11) — wire 0..32 tempo-division ladder.
 //   • `displayScale?: 'linear' | 'log10'` field on `AxeFxIIParam`
 //     interface (HW-090, 2026-05-11) — log10 confirmed for cab/amp
 //     filter frequencies.
 // Running this regen will still clobber both. Do NOT regen
-// unattended — the broader preservation work (markers / extension
-// file / patch reapply) is queued separately. Status-header
-// preservation is the foundation, not the full solution.
+// unattended for those — the broader preservation work (markers /
+// extension file / patch reapply) is queued separately.
 
 const STATUS_BLOCK_RE = /^( \* Status:[^\n]*(?:\n \* [^\n]*)*)$/m;
 
@@ -85,6 +83,54 @@ function applyStatusPreservation(generated: string, preserved: string | undefine
   // fallback — no risk of corrupting the file).
   if (!STATUS_BLOCK_RE.test(generated)) return generated;
   return generated.replace(STATUS_BLOCK_RE, preserved);
+}
+
+// ── Ghidra-addendum block preservation ────────────────────────────────
+//
+// Session 94 (2026-05-17) added 221 net-new entries to `params.ts`
+// recovered via direct-pattern-scan Ghidra mining of `Axe-Edit.exe`
+// (`scripts/ghidra/SeekParamTablesII.java`). The block sits between
+// the last wiki entry and the closing `} as const`, wrapped in
+// `// >>> BEGIN_GHIDRA_ADDENDUM` / `// <<< END_GHIDRA_ADDENDUM`
+// markers exactly so this preservation step can pattern-match and
+// re-splice it across regens.
+//
+// Match shape: from the BEGIN marker line (indented 4 spaces) through
+// the END marker line. Captures the entire block verbatim including
+// the per-block section comments and trailing blank.
+//
+// Re-splice: just before the `} as const satisfies Readonly<Record
+// <string, AxeFxIIParam>>;` close line, with a leading blank line
+// separator from the last wiki entry.
+//
+// Lossless fallback: if the existing file has no addendum block
+// (fresh worktree, or a future deletion), nothing is spliced and the
+// regen output matches the legacy shape exactly.
+
+const ADDENDUM_BLOCK_RE =
+  /( {4}\/\/ >>> BEGIN_GHIDRA_ADDENDUM[\s\S]*?\/\/ <<< END_GHIDRA_ADDENDUM[^\r\n]*)/m;
+const PARAMS_CLOSE_RE =
+  /\n(} as const satisfies Readonly<Record<string, AxeFxIIParam>>;)/;
+
+function readPreservedAddendumBlock(path: string): string | undefined {
+  if (!existsSync(path)) return undefined;
+  const src = readFileSync(path, 'utf8');
+  const m = ADDENDUM_BLOCK_RE.exec(src);
+  return m ? m[1] : undefined;
+}
+
+function applyAddendumPreservation(generated: string, preserved: string | undefined): string {
+  if (!preserved) return generated;
+  if (!PARAMS_CLOSE_RE.test(generated)) return generated; // lossless fallback
+  // Idempotency: if the freshly-generated text already contains an
+  // addendum (e.g. future generator gains its own emit), don't double-
+  // splice — leave generated as-is.
+  if (ADDENDUM_BLOCK_RE.test(generated)) return generated;
+  // Match line-ending convention of the generated file so the splice
+  // doesn't mix LF/CRLF (round-trip identity test fails by 2 bytes
+  // otherwise on Windows-checkout repos).
+  const eol = generated.includes('\r\n') ? '\r\n' : '\n';
+  return generated.replace(PARAMS_CLOSE_RE, eol + eol + preserved + eol + '$1');
 }
 
 // ── Inputs / outputs ──────────────────────────────────────────────────
@@ -698,8 +744,16 @@ mkdirSync('samples/captured/decoded/labels', { recursive: true });
 // behaviour, nothing to preserve.
 const PRESERVED_BLOCKTYPES_STATUS = readPreservedStatusBlock(OUT_BLOCKTYPES_TS);
 const PRESERVED_PARAMS_STATUS = readPreservedStatusBlock(OUT_PARAMS_TS);
+const PRESERVED_PARAMS_ADDENDUM = readPreservedAddendumBlock(OUT_PARAMS_TS);
 writeFileSync(OUT_BLOCKTYPES_TS, applyStatusPreservation(emitBlockTypes(), PRESERVED_BLOCKTYPES_STATUS), 'utf8');
-writeFileSync(OUT_PARAMS_TS, applyStatusPreservation(emitParams(), PRESERVED_PARAMS_STATUS), 'utf8');
+writeFileSync(
+    OUT_PARAMS_TS,
+    applyAddendumPreservation(
+        applyStatusPreservation(emitParams(), PRESERVED_PARAMS_STATUS),
+        PRESERVED_PARAMS_ADDENDUM,
+    ),
+    'utf8',
+);
 writeFileSync(
     OUT_DEBUG_JSON,
     JSON.stringify(
