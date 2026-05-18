@@ -464,7 +464,34 @@ console.log(`Inferred pidLow for ${pidlowMap.size} families.`);
 //   • phaser.vcr_curve   (XML "Type"  — alpha-curve "Type" on Config page)
 //   • phaser.lfo_mode    (XML "Mode"  vs phaser.mode at 0x15 unlabeled)
 //   • filter.order_2     (XML "Order" vs cache-pipeline filter.order at 0x1c)
-const WIRED_MISLABEL_CEILING = 144;
+// Session 92 (2026-05-17): bumped 144 → 158 for the CABINET UI-MISSING
+// closeout (24 hand-authored entries at pidLow=0x003e; AM4 TOTAL 81%
+// → 84%). All 14 new MISLABELs are intentional `_1`/`_2` disambig
+// suffixes — each second-cab entry shares an AM4-Edit display label
+// with the existing first-cab entry, so collapsing to a single key
+// would lose addressability for the stereo cab. Per-cab `_1`/`_2`
+// affixes follow the established `cab_1_blend`/`cab_2_blend` and
+// `low_slope`/`high_slope` patterns. Concretely:
+//   • amp.bank_2          (XML "Bank"        vs amp.bank at 0x000a)
+//   • amp.cab_2           (XML "Cab #"       vs amp.cab at 0x000c)
+//   • amp.pan_2           (XML "Pan"         vs amp.pan at 0x0010)
+//   • amp.low_slope_2     (XML "Low Slope"   vs amp.low_slope at 0x003b)
+//   • amp.high_slope_2    (XML "High Slope"  vs amp.high_slope at 0x003d)
+//   • amp.dynacab_2       (XML "DynaCab"     vs amp.dynacab at 0x0045)
+//   • amp.proximity_1     (XML "Proximity"   vs cacheParams amp.proximity
+//                          which covers PROXIMITY2 via cross-block resolver)
+//   • amp.cab_mute_1      (XML "M"           vs amp.cab_mute_2 — both share
+//                          the cryptic single-letter editor label)
+//   • amp.cab_mute_2      (XML "M")
+//   • amp.master_low_cut  (XML "Low Cut" / "Master Low Cut" — first XML hit
+//                          is regular layout "Low Cut")
+//   • amp.cab_1_low_cut   (XML "Low Cut"     vs amp.master_low_cut above)
+//   • amp.cab_pretype     (XML "Type"        — disambig from amp.type at
+//                          pidLow=0x003a / pidHigh=0x000a)
+//   • amp.cab_bass        (XML "Bass"        vs amp.bass at 0x000c on the
+//                          DISTORT register — separate tone stack)
+//   • amp.cab_mid         (XML "Mid"         vs amp.mid at 0x000d ditto)
+const WIRED_MISLABEL_CEILING = 158;
 if (totals['WIRED-MISLABEL'] > WIRED_MISLABEL_CEILING) {
   console.error('');
   console.error(`FAIL: WIRED-MISLABEL count is ${totals['WIRED-MISLABEL']}, ceiling is ${WIRED_MISLABEL_CEILING}.`);

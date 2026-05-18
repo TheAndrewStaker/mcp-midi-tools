@@ -4214,6 +4214,89 @@ export const KNOWN_PARAMS = {
   'filter.detector_source':   { block: 'filter', name: 'detector_source',    displayLabel: 'Detector Source', pidLow: 0x0072, pidHigh: 0x0025, unit: 'count', displayMin: 0, displayMax: 3 },
   'filter.detect':            { block: 'filter', name: 'detect',             displayLabel: 'Detect',         pidLow: 0x0072, pidHigh: 0x0026, unit: 'count', displayMin: 0, displayMax: 3 },
   'filter.tempo':             { block: 'filter', name: 'tempo',              displayLabel: 'Tempo',          pidLow: 0x0072, pidHigh: 0x0028, unit: 'enum', displayMin: 0, displayMax: 78, enumValues: TEMPO_DIVISIONS_VALUES },
+
+  // ── Session 92 (2026-05-17) — CABINET UI-MISSING closeout ──
+  // 24 hand-authored entries on the canonical CABINET register
+  // (pidLow=0x003e). Catalog source: Ghidra-extracted PATCH family
+  // params via samples/captured/decoded/ghidra-am4-paramnames.json,
+  // cross-referenced with AM4-Edit's __block_layout.xml +
+  // __block_layout_expert.xml. Display labels come from the XML
+  // `name=` attribute; entries lacking a display string are XML-
+  // invisible firmware-internal controls (still wired via the
+  // catalog).
+  //
+  // Deferred from this session (already addressable via the cross-
+  // block resolver path at pidLow=0x003a):
+  //   • CABINET_PROXIMITY2 → amp.proximity in cacheParams.ts at 0x15
+  //   • CABINET_DYNACAB_Z1 → amp.distance in cacheParams.ts at 0x47
+  //   • CABINET_DYNACAB_Z2 → amp.distance_dynacab_z2 at 0x48
+  //   • CABINET_ZOOM (UI-toggle for editor zoom view, not a real
+  //     device-side setting — btnRectangleToggle in expert XML only)
+  //
+  // Confidence tiers:
+  //   HIGH   — mirrors an existing first-cab entry (bank/cab/pan/
+  //            low_slope/high_slope/dynacab)
+  //   MEDIUM — labeled in XML, tonal unit inferred from sibling
+  //            controls (BASS/MID = knob_0_10 like amp tone stack)
+  //   LOWER  — no XML label; unit: 'count' as a safe-write placeholder
+  //            until hardware verification supplies the range/enum
+  //
+  // Naming convention: `_1`/`_2` suffix mirrors existing
+  // `cab_1_blend`/`cab_2_blend` / `low_slope`/`high_slope` pattern.
+  // Per-cab knob names get the `cab_` prefix when the bare name would
+  // collide with an amp-stack knob (cab_bass vs amp.bass, cab_mid
+  // vs amp.mid).
+
+  // Second-cab mirrors of existing first-cab entries (HIGH confidence).
+  'amp.bank_2':           { block: 'amp', name: 'bank_2',           displayLabel: 'Bank',           pidLow: 0x003e, pidHigh: 0x000b, unit: 'enum', displayMin: 0, displayMax: 31 },
+  'amp.cab_2':            { block: 'amp', name: 'cab_2',            displayLabel: 'Cab #',          pidLow: 0x003e, pidHigh: 0x000d, unit: 'count', displayMin: 0, displayMax: 511 },
+  'amp.pan_2':            { block: 'amp', name: 'pan_2',            displayLabel: 'Pan',            pidLow: 0x003e, pidHigh: 0x0011, unit: 'bipolar_percent', displayMin: -100, displayMax: 100 },
+  'amp.low_slope_2':      { block: 'amp', name: 'low_slope_2',      displayLabel: 'Low Slope',      pidLow: 0x003e, pidHigh: 0x003c, unit: 'enum', displayMin: 0, displayMax: 7 },
+  'amp.high_slope_2':     { block: 'amp', name: 'high_slope_2',     displayLabel: 'High Slope',     pidLow: 0x003e, pidHigh: 0x003e, unit: 'enum', displayMin: 0, displayMax: 7 },
+  'amp.dynacab_2':        { block: 'amp', name: 'dynacab_2',        displayLabel: 'DynaCab',        pidLow: 0x003e, pidHigh: 0x0046, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+
+  // Per-cab level + proximity + mute (LEVEL1/2 have no XML label —
+  // firmware-internal, but the names follow the established `_N`
+  // suffix convention).
+  'amp.cab_level_1':      { block: 'amp', name: 'cab_level_1',      pidLow: 0x003e, pidHigh: 0x000e, unit: 'db', displayMin: -80, displayMax: 20 },
+  'amp.cab_level_2':      { block: 'amp', name: 'cab_level_2',      pidLow: 0x003e, pidHigh: 0x000f, unit: 'db', displayMin: -80, displayMax: 20 },
+  'amp.proximity_1':      { block: 'amp', name: 'proximity_1',      displayLabel: 'Proximity',      pidLow: 0x003e, pidHigh: 0x0014, unit: 'percent', displayMin: 0, displayMax: 100 },
+  'amp.cab_mute_1':       { block: 'amp', name: 'cab_mute_1',       displayLabel: 'M',              pidLow: 0x003e, pidHigh: 0x0016, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+  'amp.cab_mute_2':       { block: 'amp', name: 'cab_mute_2',       displayLabel: 'M',              pidLow: 0x003e, pidHigh: 0x0017, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+
+  // Master / cab-level Hz filters (LOCUT = master low cut on the
+  // Cab Master EQ page; LOCUT1 = per-cab-1 low cut on the Cab page).
+  // The existing `cab_master_low_cut` at pidHigh=0x22 is actually
+  // wired to CABINET_PROXFREQ (catalog id 34) — a Session 53-era
+  // misname that's left as-is for backward compatibility; this new
+  // `master_low_cut` is the true CABINET_LOCUT control.
+  'amp.master_low_cut':   { block: 'amp', name: 'master_low_cut',   displayLabel: 'Low Cut',        pidLow: 0x003e, pidHigh: 0x001f, unit: 'hz', displayMin: 20, displayMax: 20000 },
+  'amp.cab_1_low_cut':    { block: 'amp', name: 'cab_1_low_cut',    displayLabel: 'Low Cut',        pidLow: 0x003e, pidHigh: 0x0035, unit: 'hz', displayMin: 20, displayMax: 20000 },
+
+  // Mic-preamp tone-stack on the Cab Mic Preamp page (BASS/MID at
+  // catalog ids 37/38; the existing `cab_mic_preamp_treble` at
+  // pidHigh=0x27 already covers TREBLE at id 39). PRETYPE is the
+  // Type dropdown on the same page (mic-preamp circuit selector).
+  'amp.cab_pretype':      { block: 'amp', name: 'cab_pretype',      displayLabel: 'Type',           pidLow: 0x003e, pidHigh: 0x0024, unit: 'count', displayMin: 0, displayMax: 15 },
+  'amp.cab_bass':         { block: 'amp', name: 'cab_bass',         displayLabel: 'Bass',           pidLow: 0x003e, pidHigh: 0x0025, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+  'amp.cab_mid':          { block: 'amp', name: 'cab_mid',          displayLabel: 'Mid',            pidLow: 0x003e, pidHigh: 0x0026, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+
+  // SMOOTH1/2 / ORDER / GAINMONITOR — no XML labels (firmware-
+  // internal). LOWER confidence: shipped as 'count' so the agent
+  // can write any in-range value without claiming an interpretation.
+  // HW-NNN capture needed to confirm semantics.
+  'amp.cab_smooth_1':     { block: 'amp', name: 'cab_smooth_1',     pidLow: 0x003e, pidHigh: 0x0029, unit: 'count', displayMin: 0, displayMax: 10 },
+  'amp.cab_smooth_2':     { block: 'amp', name: 'cab_smooth_2',     pidLow: 0x003e, pidHigh: 0x002a, unit: 'count', displayMin: 0, displayMax: 10 },
+  'amp.cab_order':        { block: 'amp', name: 'cab_order',        pidLow: 0x003e, pidHigh: 0x002b, unit: 'count', displayMin: 1, displayMax: 12 },
+  'amp.cab_gain_monitor': { block: 'amp', name: 'cab_gain_monitor', pidLow: 0x003e, pidHigh: 0x0033, unit: 'knob_0_10', displayMin: 0, displayMax: 10 },
+
+  // DynaCab quad (TYPE1/2/MIC1/2). XML has empty `name=""` in regular
+  // layout and "Cab"/"Mic" in expert layout — the audit picks the
+  // first XML hit, so these will MATCH (empty display).
+  'amp.dynacab_type_1':   { block: 'amp', name: 'dynacab_type_1',   pidLow: 0x003e, pidHigh: 0x0041, unit: 'count', displayMin: 0, displayMax: 31 },
+  'amp.dynacab_type_2':   { block: 'amp', name: 'dynacab_type_2',   pidLow: 0x003e, pidHigh: 0x0042, unit: 'count', displayMin: 0, displayMax: 31 },
+  'amp.dynacab_mic_1':    { block: 'amp', name: 'dynacab_mic_1',    pidLow: 0x003e, pidHigh: 0x0043, unit: 'count', displayMin: 0, displayMax: 31 },
+  'amp.dynacab_mic_2':    { block: 'amp', name: 'dynacab_mic_2',    pidLow: 0x003e, pidHigh: 0x0044, unit: 'count', displayMin: 0, displayMax: 31 },
 } as const satisfies Record<string, Param>;
 
 export type ParamKey = keyof typeof KNOWN_PARAMS;
