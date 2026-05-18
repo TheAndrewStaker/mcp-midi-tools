@@ -194,8 +194,13 @@ const III_SUFFIX_ALIAS: Readonly<Record<string, string>> = {
   // previous alias `reverb_delay` was a misread.
   REVERBDELAY: 'reverbdelay',
   INPUTSELECT: 'input_select',
-  LOWSLOPE: 'low_slope',
-  HIGHSLOPE: 'high_slope',
+  // Session 95: AM4 REVERB renamed `low_slope` → `low_cut_slope` and
+  // `high_slope` → `high_cut_slope` to match the AM4-Edit XML labels.
+  // FAMILY_TO_AM4_BLOCKS only maps REVERB → ['reverb'], so this alias
+  // affects only the III's REVERB family lookup (where AM4 reverb hosts
+  // the canonical calibration); CABINET is not joined here.
+  LOWSLOPE: 'low_cut_slope',
+  HIGHSLOPE: 'high_cut_slope',
   // AM4's cache symbols are `basetype` / `tonetype` (one word). The
   // previous aliases `base_type` / `tone_type` didn't match anything.
   BASETYPE: 'basetype',
@@ -210,9 +215,11 @@ const III_SUFFIX_ALIAS: Readonly<Record<string, string>> = {
   PITCHLPF: 'pitch_lpf',
   PITCHMIX: 'pitch_mix',
   PITCHFDBK: 'pitch_fdbk',
-  PITCHDIR: 'pitch_dir',
+  // Session 95: AM4 REVERB renamed `pitch_dir` → `pitch_direction` and
+  // `pitch_pos` → `pitch_position` to spell out the AM4-Edit XML labels.
+  PITCHDIR: 'pitch_direction',
   PITCHTIME: 'pitch_time',
-  PITCHPOS: 'pitch_pos',
+  PITCHPOS: 'pitch_position',
   PITCHMOD: 'pitch_mod',
   PITCHBAL: 'pitch_bal',
   FEEDR: 'feed_r',

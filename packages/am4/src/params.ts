@@ -4033,8 +4033,17 @@ export const KNOWN_PARAMS = {
   'reverb.predly_tempo':     { block: 'reverb', name: 'predly_tempo',      displayLabel: 'Pre-Delay Tempo', pidLow: 0x0042, pidHigh: 0x0040, unit: 'enum', displayMin: 0, displayMax: 78, enumValues: TEMPO_DIVISIONS_VALUES },
   // REVERB slope/toggle (MEDIUM — 2-value toggles, labels are conventional
   // guesses based on Blocks Guide §Reverb Common Page; wire writes safe):
-  'reverb.low_slope':        { block: 'reverb', name: 'low_slope',         displayLabel: 'Low Slope',    pidLow: 0x0042, pidHigh: 0x0035, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'Normal', 1: 'Steep' } },
-  'reverb.high_slope':       { block: 'reverb', name: 'high_slope',        displayLabel: 'High Slope',   pidLow: 0x0042, pidHigh: 0x0036, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'Normal', 1: 'Steep' } },
+  // Session 96 cont 2 review pass (2026-05-17): renamed `low_slope` →
+  // `low_cut_slope` and `high_slope` → `high_cut_slope` to match the
+  // AM4-Edit XML display labels exactly ("Low Cut Slope" / "High Cut
+  // Slope"). Sibling `reverb.low_cut_q` / `reverb.high_cut_q` (pidHigh
+  // 0x47/0x48) already use the `low_cut_` / `high_cut_` family prefix,
+  // so this aligns the slope pair with the Q pair. Disambiguates from
+  // `amp.low_slope` / `amp.high_slope` on the DISTORT register (whose
+  // XML label is "Low Slope" — no "Cut"). LLM prompt "make the reverb
+  // low cut slope steeper" now matches the param key directly.
+  'reverb.low_cut_slope':    { block: 'reverb', name: 'low_cut_slope',     displayLabel: 'Low Cut Slope',   pidLow: 0x0042, pidHigh: 0x0035, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'Normal', 1: 'Steep' } },
+  'reverb.high_cut_slope':   { block: 'reverb', name: 'high_cut_slope',    displayLabel: 'High Cut Slope',  pidLow: 0x0042, pidHigh: 0x0036, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'Normal', 1: 'Steep' } },
   'reverb.spring_type':      { block: 'reverb', name: 'spring_type',       displayLabel: 'Spring Type',  pidLow: 0x0042, pidHigh: 0x0044, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'A', 1: 'B' } },
   'reverb.predly_tap':       { block: 'reverb', name: 'predly_tap',        displayLabel: 'Pre-Delay Tap', pidLow: 0x0042, pidHigh: 0x0046, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
   // REVERB input-select (MEDIUM — matches the standard Fractal input-select
@@ -4043,8 +4052,14 @@ export const KNOWN_PARAMS = {
   // REVERB pitch direction / position (LOWER — multi-value with no cache
   // labels). Shipped as 'count' so the agent can write any in-range
   // value without claiming to know the labels.
-  'reverb.pitch_dir':        { block: 'reverb', name: 'pitch_dir',         displayLabel: 'Pitch Direction', pidLow: 0x0042, pidHigh: 0x003b, unit: 'count', displayMin: 0, displayMax: 3 },
-  'reverb.pitch_pos':        { block: 'reverb', name: 'pitch_pos',         displayLabel: 'Pitch Position',  pidLow: 0x0042, pidHigh: 0x003d, unit: 'count', displayMin: 0, displayMax: 2 },
+  // Session 96 cont 2 review pass (2026-05-17): renamed `pitch_dir` →
+  // `pitch_direction` and `pitch_pos` → `pitch_position` to spell out
+  // the XML display labels ("Pitch Direction" / "Pitch Position"). The
+  // agent picks up "pitch direction" / "pitch position" prompts
+  // directly without needing to remember the truncated `_dir` / `_pos`
+  // form.
+  'reverb.pitch_direction':  { block: 'reverb', name: 'pitch_direction',   displayLabel: 'Pitch Direction', pidLow: 0x0042, pidHigh: 0x003b, unit: 'count', displayMin: 0, displayMax: 3 },
+  'reverb.pitch_position':   { block: 'reverb', name: 'pitch_position',    displayLabel: 'Pitch Position',  pidLow: 0x0042, pidHigh: 0x003d, unit: 'count', displayMin: 0, displayMax: 2 },
   // DELAY tempo-sync (HIGH — shared TEMPO_DIVISIONS dictionary on right
   // channel + LFO1/2/3/4 tempo):
   'delay.tempo_r':           { block: 'delay',  name: 'tempo_r',           displayLabel: 'Tempo R',      pidLow: 0x0046, pidHigh: 0x0021, unit: 'enum', displayMin: 0, displayMax: 78, enumValues: TEMPO_DIVISIONS_VALUES },

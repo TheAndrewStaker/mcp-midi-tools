@@ -491,7 +491,20 @@ console.log(`Inferred pidLow for ${pidlowMap.size} families.`);
 //   • amp.cab_bass        (XML "Bass"        vs amp.bass at 0x000c on the
 //                          DISTORT register — separate tone stack)
 //   • amp.cab_mid         (XML "Mid"         vs amp.mid at 0x000d ditto)
-const WIRED_MISLABEL_CEILING = 158;
+// Session 95 (2026-05-17): tightened 158 → 154 after a focused review pass
+// over the WIRED-MISLABEL findings. Four REVERB entries were renamed to
+// match the AM4-Edit XML display exactly:
+//   • reverb.low_slope  → reverb.low_cut_slope  (XML "Low Cut Slope")
+//   • reverb.high_slope → reverb.high_cut_slope (XML "High Cut Slope")
+//   • reverb.pitch_dir  → reverb.pitch_direction (XML "Pitch Direction")
+//   • reverb.pitch_pos  → reverb.pitch_position  (XML "Pitch Position")
+// All four were hand-authored in params.ts (Session 90 cont) and had no
+// downstream consumers outside params.ts + the two AM4/III catalog
+// generator NAMING_ALIAS tables (updated in the same commit). The
+// remaining 154 are documented intentional disambiguations (cabinet
+// _1/_2 pairs, LFO N target/tempo pairs, GEQ/WAH numeric bands, etc.) —
+// see the earlier per-session notes for the specific shapes.
+const WIRED_MISLABEL_CEILING = 154;
 if (totals['WIRED-MISLABEL'] > WIRED_MISLABEL_CEILING) {
   console.error('');
   console.error(`FAIL: WIRED-MISLABEL count is ${totals['WIRED-MISLABEL']}, ceiling is ${WIRED_MISLABEL_CEILING}.`);

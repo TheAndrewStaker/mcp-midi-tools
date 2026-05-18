@@ -117,8 +117,13 @@ const NAMING_ALIAS: Record<string, string> = {
   REVERBLEVEL: 'reverb_level',
   REVERBDELAY: 'reverb_delay',
   INPUTSELECT: 'input_select',
-  LOWSLOPE: 'low_slope',
-  HIGHSLOPE: 'high_slope',
+  // Session 95: REVERB_LOWSLOPE / REVERB_HIGHSLOPE display as "Low Cut
+  // Slope" / "High Cut Slope" in AM4-Edit, so the AM4 alias matches the
+  // XML label. CABINET_LO/HISLOPE2 (cabinet "Low Slope" / "High Slope")
+  // is not generator-driven here (CABINET family is absent from
+  // FAMILY_TO_BLOCKS) — this alias only affects REVERB today.
+  LOWSLOPE: 'low_cut_slope',
+  HIGHSLOPE: 'high_cut_slope',
   BASETYPE: 'base_type',
   SHIFT1: 'shift_1',
   SHIFT2: 'shift_2',
@@ -131,9 +136,12 @@ const NAMING_ALIAS: Record<string, string> = {
   PITCHLPF: 'pitch_lpf',
   PITCHMIX: 'pitch_mix',
   PITCHFDBK: 'pitch_fdbk',
-  PITCHDIR: 'pitch_dir',
+  // Session 95: REVERB_PITCHDIR / REVERB_PITCHPOS display as "Pitch
+  // Direction" / "Pitch Position" in AM4-Edit; expand the abbreviations
+  // so the LLM-facing name matches what the user reads on screen.
+  PITCHDIR: 'pitch_direction',
   PITCHTIME: 'pitch_time',
-  PITCHPOS: 'pitch_pos',
+  PITCHPOS: 'pitch_position',
   PITCHMOD: 'pitch_mod',
   PITCHBAL: 'pitch_bal',
   FEEDR: 'feed_r',
