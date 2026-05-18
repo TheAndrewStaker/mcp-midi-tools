@@ -274,6 +274,33 @@ const III_SUFFIX_ALIAS: Readonly<Record<string, string>> = {
   STACKFDBK: 'stack_feedback',
   LEVELL: 'level_l',
   LEVELR: 'level_r',
+  // ── Cross-block generic-param aliases ────────────────────────────
+  // The III concatenates these into one screaming-snake suffix; AM4
+  // exposes them per-block under snake_case names. Each alias listed
+  // here is verified present in AM4 for at least one block — the
+  // findAm4Override walk over FAMILY_TO_AM4_BLOCKS will pick up the
+  // hit for whichever block the III family resolves to. Suffixes
+  // AM4 doesn't expose at all (BYPASS, GLOBALMIX, SCENEIGNORE) are
+  // deliberately omitted — would resolve to nothing and stay
+  // 'unverified' regardless of alias.
+  BYPASSMODE: 'bypass_mode',
+  // ── DISTORT-family AM4 amp-section aliases ───────────────────────
+  // The III's DISTORT family covers both AMP and DRIVE blocks. Most
+  // of the AMP tone-shaping knobs the III concatenates are present on
+  // AM4 under snake_case names, just with `_` separators the III
+  // omits. Each alias verified by name-grep in AM4 packages/am4/src/
+  // params.ts. Where the III's name doesn't map cleanly (e.g.
+  // WSLPF = wave-shaper LPF; XFHPF/XFLPF = transformer HPF/LPF), no
+  // alias is added because the AM4 entry doesn't exist.
+  BRIGHTCAP: 'bright_cap',
+  SUPPLYSAG: 'supply_sag',
+  PRESFREQ: 'presence_freq',
+  PREAMPBIAS: 'preamp_bias',
+  GRIDBIAS: 'grid_bias',
+  DEPTHFREQ: 'depth_freq',
+  SPKRDRIVE: 'spkr_drive',
+  SPKRCOMP: 'spkr_compression',
+  SPKRIMPED: 'speaker_impedance',
 };
 
 /**
@@ -363,11 +390,15 @@ function loadOverridesFromFile(path: string): Map<string, Am4Override> {
       // unit + displayMin + displayMax line. unit names mix lowercase
       // letters + digits + underscores (e.g. `knob_0_10`). displayMin/
       // Max can be negative or fractional, so capture as a signed
-      // numeric.
-      String.raw`[\s\S]*?unit:\s*'(?<unit>[a-z][a-z0-9_]*)',\s*displayMin:\s*(?<displayMin>-?\d+(?:\.\d+)?),\s*displayMax:\s*(?<displayMax>-?\d+(?:\.\d+)?),`,
+      // numeric. The trailing comma after `displayMax: N` is optional —
+      // single-line entries (e.g. all AM4 `geq_band_*` rows) close the
+      // brace on the same line with `displayMax: 12 }` and no comma,
+      // while multi-line entries (`scaling:` continuation) keep the
+      // comma. Both shapes must match.
+      String.raw`[\s\S]*?unit:\s*'(?<unit>[a-z][a-z0-9_]*)',\s*displayMin:\s*(?<displayMin>-?\d+(?:\.\d+)?),\s*displayMax:\s*(?<displayMax>-?\d+(?:\.\d+)?),?`,
       // Optional remainder before the closing brace. Captures
       // `scaling: 'log10'` if present, and a marker for `enumValues:`.
-      String.raw`(?<tail>[\s\S]*?)\},`,
+      String.raw`(?<tail>[\s\S]*?)\}`,
     ].join(''),
     'g',
   );
