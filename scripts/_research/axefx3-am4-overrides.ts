@@ -59,7 +59,7 @@
  *    generator without source changes produces a byte-stable file.
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -324,8 +324,14 @@ export interface Am4Override {
   block: string;
   name: string;
   unit: string;
-  displayMin: number;
-  displayMax: number;
+  /**
+   * Display range. Always populated for `'am4'` and `'universal'`
+   * sources; absent for `'xml'`-only matches because XML mining
+   * recovers parameterName + displayLabel + controlType but not the
+   * knob's numeric bounds.
+   */
+  displayMin?: number;
+  displayMax?: number;
   scaling?: 'linear' | 'log10';
   /**
    * True if AM4's entry was an enum (`unit: 'enum'` + `enumValues: …`).
@@ -335,6 +341,35 @@ export interface Am4Override {
    * and shipping AM4's values for an III enum would be misleading.
    */
   enum: boolean;
+  /**
+   * Provenance of the calibration. `'am4'` means we joined directly
+   * to an AM4 entry by symbol name (the Session 88 approach — uses
+   * AM4's hardware-verified unit/range). `'universal'` means we filled
+   * the calibration from a Fractal-wide naming convention (every
+   * `*_BYPASS` is enum, every `*_PAN` is bipolar_percent -100..100,
+   * etc.) without a direct AM4 entry — used for the III families AM4
+   * doesn't carry (PITCH, GLOBAL, CONTROLLERS, …) and for cross-block
+   * generic params AM4 doesn't ship at pidHigh ≥ 10. `'xml'` means
+   * the unit was inferred from the AxeEdit III JUCE-BinaryData
+   * controlType (dropdown→enum, knob→numeric, etc.) — see
+   * [[reference_axeedit3_xml_labels]] for the mining artifact. XML-
+   * source overrides are weakest (no range), but still useful: the
+   * enum-vs-numeric distinction alone steers the LLM agent away from
+   * passing a number to a dropdown-shaped knob.
+   *
+   * The generator emits different trailing comments per source so the
+   * file's audit trail stays separable.
+   */
+  source: 'am4' | 'universal' | 'xml';
+  /**
+   * Display label from the AxeEdit III XML mining (the human-readable
+   * knob name shown in the editor — e.g. `'Drive'` for `DISTORT_DRIVE`).
+   * Populated for any entry whose name appears in
+   * `axeedit3-xml-labels.json`, regardless of which calibration source
+   * (AM4 / universal / XML) supplied the unit + range. Useful as a
+   * prompt-context hint to the LLM agent independent of calibration.
+   */
+  displayLabel?: string;
 }
 
 /**
@@ -417,6 +452,7 @@ function loadOverridesFromFile(path: string): Map<string, Am4Override> {
       displayMin: Number(g.displayMin),
       displayMax: Number(g.displayMax),
       enum: g.unit === 'enum' || hasEnumValues,
+      source: 'am4',
     };
     if (scalingMatch) {
       override.scaling = scalingMatch[1] as 'linear' | 'log10';
@@ -457,25 +493,332 @@ export function loadAm4ParamOverrides(): Map<string, Am4Override> {
   return merged;
 }
 
+// ── AxeEdit III JUCE-BinaryData XML labels ─────────────────────────
+//
+// Parallel-agent Session 93 cont (2026-05-17) mined the III's JUCE
+// BinaryData XML files (`__block_layout.xml`, `__amp_layout.xml`,
+// per-firmware amp-layout variants) into a flat JSON catalog at
+// `samples/captured/decoded/axeedit3-xml-labels.json` — 2,017 unique
+// parameterName entries with displayLabel + controlType. ~90% of the
+// 2,216-paramId III Ghidra catalog has an XML match by name. See
+// `scripts/_research/mine-axeedit3-xml-labels.ts` for the miner and
+// [[reference_axeedit3_xml_labels]] for context.
+//
+// Two consumption paths in this module:
+//
+//   1. `displayLabel` overlay (lossless). When an XML entry exists for
+//      the III symbol, its `displayLabel` is attached to whatever
+//      calibration source ultimately wins (AM4 / universal / XML).
+//      Independent of unit + range — the label is just the editor's
+//      knob caption, useful as LLM prompt context.
+//
+//   2. controlType → unit inference (3rd-tier fallback). When AM4
+//      and universal-convention both miss, the XML controlType is
+//      mapped to a coarse unit (dropdown* / btn* / toggle* → `'enum'`,
+//      knob* / slider* / readout numeric → `'numeric'`, etc.). The
+//      enum-vs-numeric distinction alone is high-value for the agent:
+//      a `unit: 'enum'` tells it to suggest a categorical value, not
+//      a number.
+
+interface XmlLabelEntry {
+  parameterName: string;
+  displayLabel: string;
+  controlType: string;
+}
+
+export interface XmlLabel {
+  displayLabel: string;
+  controlType: string;
+}
+
+const XML_LABELS_PATH = join(
+  REPO_ROOT,
+  'samples',
+  'captured',
+  'decoded',
+  'axeedit3-xml-labels.json',
+);
+
 /**
- * Look up an AM4 calibration override for a given III catalog entry.
+ * Load the AxeEdit III XML-mined parameterName → label/controlType
+ * catalog. Returns an empty map if the file is absent (the JSON lives
+ * under `samples/` which is gitignored — fresh worktrees may not have
+ * it, in which case the generator falls back to AM4 + universal
+ * sources only). Caller can detect "XML disabled" via `map.size === 0`.
+ */
+export function loadXmlLabels(): Map<string, XmlLabel> {
+  if (!existsSync(XML_LABELS_PATH)) return new Map();
+  const raw = JSON.parse(readFileSync(XML_LABELS_PATH, 'utf8')) as XmlLabelEntry[];
+  const m = new Map<string, XmlLabel>();
+  for (const e of raw) {
+    // Duplicate parameterName entries can occur when the miner aggregates
+    // across multiple XML source files (one parameter may appear in
+    // both __block_layout.xml and a per-firmware __amp_layout_v*.xml).
+    // First-write-wins keeps the result deterministic.
+    if (m.has(e.parameterName)) continue;
+    m.set(e.parameterName, { displayLabel: e.displayLabel, controlType: e.controlType });
+  }
+  return m;
+}
+
+/**
+ * Map an AxeEdit III XML controlType (the JUCE widget kind used to
+ * render the param in the editor) to a coarse Fractal unit. The map
+ * is intentionally limited to widget types whose unit semantics are
+ * unambiguous — pure label / cab-bank picker / dynacab-control widgets
+ * are omitted so they stay `unit: 'unverified'` rather than getting a
+ * misleading inference.
  *
- * Returns the first AM4 entry that matches `(am4Block, am4Name)` for
- * any `am4Block` in `FAMILY_TO_AM4_BLOCKS[family]`. Returns undefined
- * if the III family is unmapped, or if no AM4 entry exists for the
- * resolved name.
+ * `enum` vs `numeric` is the only dimension XML can decide reliably
+ * (range / scaling can't be recovered from controlType alone). The
+ * resulting overrides emit without `displayMin`/`displayMax`.
+ */
+const XML_CONTROL_TYPE_TO_UNIT: Readonly<Record<string, { unit: string; enum: boolean }>> = {
+  // ── Continuous numeric knobs / sliders ───────────────────────────
+  // No range info — emit unit only. We use `'numeric'` (a new unit in
+  // the III Unit union) to distinguish "we know this is a number" from
+  // `'unverified'` (we know nothing).
+  knob:                      { unit: 'numeric', enum: false },
+  knobCompact:               { unit: 'numeric', enum: false },
+  knobMini:                  { unit: 'numeric', enum: false },
+  knobSmall:                 { unit: 'numeric', enum: false },
+  knobMiniReadout:           { unit: 'numeric', enum: false },
+  knobMiniReadout2:          { unit: 'numeric', enum: false },
+  slider:                    { unit: 'numeric', enum: false },
+  sliderMiniA:               { unit: 'numeric', enum: false },
+  sliderMiniB:               { unit: 'numeric', enum: false },
+  readoutValueFloat:         { unit: 'numeric', enum: false },
+  readoutValueInt:           { unit: 'numeric', enum: false },
+  readoutCabNumber:          { unit: 'numeric', enum: false },
+  readoutCtrl8:              { unit: 'numeric', enum: false },
+  // Meters are dB-scale display readouts on the III. They're read-only
+  // in normal usage but appear in the catalog because some are
+  // host-addressable for automation. Coarse `'db'` unit; specific
+  // range not in XML.
+  meterGainVert:             { unit: 'db',      enum: false },
+  meterGainVertNoReadout:    { unit: 'db',      enum: false },
+  meterGainVertShort:        { unit: 'db',      enum: false },
+  meterGainHeadroom:         { unit: 'db',      enum: false },
+  meterVuVert:               { unit: 'db',      enum: false },
+  // ── Categorical (dropdown / toggle / button) ─────────────────────
+  // Every dropdown* / btn* / toggle* maps to a small finite menu. We
+  // emit `unit: 'enum'` so the agent treats it as categorical — no
+  // enumValues table because XML doesn't expose the value vocabulary
+  // (those live in the editor's binary code, not in the layout XML).
+  dropdown1:                 { unit: 'enum',    enum: true  },
+  dropdown1Tight:            { unit: 'enum',    enum: true  },
+  dropdown1Tight1Line:       { unit: 'enum',    enum: true  },
+  dropdown1TightXtra:        { unit: 'enum',    enum: true  },
+  dropdown1LFO:              { unit: 'enum',    enum: true  },
+  'dropdown1LFO-Off':        { unit: 'enum',    enum: true  },
+  dropdown1mhz:              { unit: 'enum',    enum: true  },
+  dropdown1p5:               { unit: 'enum',    enum: true  },
+  dropdown1p5Tight:          { unit: 'enum',    enum: true  },
+  dropdown1p5Tight1Line:     { unit: 'enum',    enum: true  },
+  dropdown1p5ThinTight1Line: { unit: 'enum',    enum: true  },
+  dropdown1p5Mini:           { unit: 'enum',    enum: true  },
+  dropdownNoLabel:           { unit: 'enum',    enum: true  },
+  dropdownMini:              { unit: 'enum',    enum: true  },
+  dropdownMiniReadout:       { unit: 'enum',    enum: true  },
+  dropdownThin1Line:         { unit: 'enum',    enum: true  },
+  dropdownThin2Line:         { unit: 'enum',    enum: true  },
+  dropdownCabBank:           { unit: 'enum',    enum: true  },
+  dropdownCompact:           { unit: 'enum',    enum: true  },
+  dropdownCompact3:          { unit: 'enum',    enum: true  },
+  dropdownLeftLabel:         { unit: 'enum',    enum: true  },
+  btnBypass:                 { unit: 'enum',    enum: true  },
+  btnIgnoreScene:            { unit: 'enum',    enum: true  },
+  btnKillDry:                { unit: 'enum',    enum: true  },
+  btnRectangle:              { unit: 'enum',    enum: true  },
+  btnRectangleLong:          { unit: 'enum',    enum: true  },
+  btnSquare:                 { unit: 'enum',    enum: true  },
+  btnSquareReverse:          { unit: 'enum',    enum: true  },
+  toggle:                    { unit: 'enum',    enum: true  },
+  toggleHorz:                { unit: 'enum',    enum: true  },
+  toggleCompact:             { unit: 'enum',    enum: true  },
+  'toggle-looper-once':      { unit: 'enum',    enum: true  },
+  'toggle-looper-play':      { unit: 'enum',    enum: true  },
+  'toggle-looper-overdub':   { unit: 'enum',    enum: true  },
+  'toggle-looper-reverse':   { unit: 'enum',    enum: true  },
+  'toggle-looper-undo':      { unit: 'enum',    enum: true  },
+  // ── Intentionally omitted ────────────────────────────────────────
+  // `label*` widgets are read-only captions/headings — not knobs.
+  // `readoutNameShortRO` / `readoutNameLong` are string-valued name
+  // displays. `dynaCabControl` / `readoutMidiBlock` are custom
+  // composite widgets. We don't infer a unit for any of these — they
+  // still pick up a `displayLabel` via the lossless overlay, but the
+  // unit stays `'unverified'`.
+};
+
+function inferOverrideFromXml(
+  iiiSymbolName: string,
+  xmlLabels: Map<string, XmlLabel>,
+): Am4Override | undefined {
+  const xml = xmlLabels.get(iiiSymbolName);
+  if (!xml) return undefined;
+  const inference = XML_CONTROL_TYPE_TO_UNIT[xml.controlType];
+  if (!inference) return undefined;
+  return {
+    block: '_xml',
+    name: iiiSymbolName.toLowerCase(),
+    unit: inference.unit,
+    enum: inference.enum,
+    source: 'xml',
+    displayLabel: xml.displayLabel,
+  };
+}
+
+// ── Universal Fractal-convention suffix fallbacks ──────────────────
+//
+// Some III symbol suffixes mean the same thing on every Fractal block,
+// regardless of family. AM4 doesn't ship per-block entries for these
+// (most live at pidHigh 0..9 generic-params that the catalog scope
+// excludes), so the family-keyed AM4 join misses every time even
+// though the calibration is well-known. Filling them in from
+// convention is safe: the III's UI for these knobs follows the same
+// design language as the AM4's, and ranges are bounded by
+// audio-engineering reality (a pan knob is -100..100 percent because
+// any other shape would be a UI design break).
+//
+// Each fallback fires AFTER the AM4-name lookup misses, so legitimate
+// AM4 hits (e.g. `amp.pan` exists in AM4 — DISTORT_PAN still resolves
+// through the AM4 path with its own verified range) take precedence.
+//
+// Entries here are conservative: only suffixes whose convention is
+// stable across every Fractal block. `*_LEVEL` is deliberately NOT
+// in this table — block output level is typically `db -80..20`, but
+// `GLOBAL_USBLEVEL` / `GLOBAL_AESLEVEL` etc. use different ranges,
+// and family-blind LEVEL fallback would mis-calibrate those.
+
+const UNIVERSAL_SUFFIX_FALLBACKS: Readonly<Record<string, Omit<Am4Override, 'block' | 'name'>>> = {
+  // Per-block bypass switch — universally an enum. AM4 has block
+  // bypass at pidHigh 0..9 generic-params but doesn't expose it in
+  // `params.ts` under a `<block>.bypass` key, so every III `*_BYPASS`
+  // misses the AM4 join despite being conventionally OFF/ON.
+  BYPASS:      { unit: 'enum',            displayMin: 0,    displayMax: 1,   enum: true,  source: 'universal' },
+  // Bypass-mode selector (Thru / Mute FX Out / Mute Out / etc.). AM4
+  // ships 11 of these and the `BYPASSMODE: 'bypass_mode'` alias
+  // resolves them; this fallback covers the III families AM4 doesn't
+  // share (PITCH, GLOBAL, MULTITAP, CONTROLLERS, …).
+  BYPASSMODE:  { unit: 'enum',            displayMin: 0,    displayMax: 0,   enum: true,  source: 'universal' },
+  // Stereo pan knob. AM4 only carries `amp.pan` (verified
+  // bipolar_percent -100..100); this fallback covers every other
+  // block's PAN, and indexed PAN1..PANn variants via the regex below.
+  PAN:         { unit: 'bipolar_percent', displayMin: -100, displayMax: 100, enum: false, source: 'universal' },
+  // Block-level Global Mix — what fraction of the block's wet output
+  // mixes into the preset's global mix bus. III adds this per block;
+  // AM4 doesn't expose the knob at all (its mix model is preset-level
+  // only). Universally percent 0..100.
+  GLOBALMIX:   { unit: 'percent',         displayMin: 0,    displayMax: 100, enum: false, source: 'universal' },
+  // Per-parameter scene-ignore flag. III's scene model lets the user
+  // exempt a specific knob from scene recall; AM4's scene model is
+  // implicit (records bypass + channel only, no per-param flags).
+  // Always an enum (OFF/ON).
+  SCENEIGNORE: { unit: 'enum',            displayMin: 0,    displayMax: 1,   enum: true,  source: 'universal' },
+  // Wet/dry mix knob — universally percent 0..100 on Fractal blocks.
+  // AM4 ships per-block `*.mix` for the AM4-mapped families, which
+  // resolve through the AM4 path; this fallback covers III families
+  // AM4 doesn't share (PITCH, MULTITAP, TONEMATCH, …).
+  MIX:         { unit: 'percent',         displayMin: 0,    displayMax: 100, enum: false, source: 'universal' },
+};
+
+function findUniversalFallback(iiiSymbolName: string): Am4Override | undefined {
+  const u = iiiSymbolName.indexOf('_');
+  if (u < 0) return undefined;
+  const suffix = iiiSymbolName.substring(u + 1);
+  const exact = UNIVERSAL_SUFFIX_FALLBACKS[suffix];
+  if (exact) {
+    return { block: '_universal', name: suffix.toLowerCase(), ...exact };
+  }
+  // Indexed PAN variants (PAN1..PANn — multi-voice / multi-band pan
+  // on Pitch, Multi-tap, Vocoder, etc.). Same -100..100 bipolar_percent
+  // shape as the unindexed PAN knob.
+  if (/^PAN\d+$/.test(suffix)) {
+    return { block: '_universal', name: suffix.toLowerCase(), ...UNIVERSAL_SUFFIX_FALLBACKS.PAN };
+  }
+  return undefined;
+}
+
+/**
+ * Look up a calibration override for a given III catalog entry.
+ *
+ * Three-tier resolution (best to weakest):
+ *   1. **AM4-name join.** If the III family maps to AM4 blocks via
+ *      `FAMILY_TO_AM4_BLOCKS`, look up `(am4Block, am4Name)` in the
+ *      loaded overrides. First hit wins. This is the hardware-verified
+ *      path — calibration is copied directly from AM4's catalog
+ *      including range + scaling.
+ *   2. **Universal Fractal-convention fallback.** If the AM4 join
+ *      misses (family unmapped, or AM4 doesn't carry the specific
+ *      suffix), check `UNIVERSAL_SUFFIX_FALLBACKS` for a suffix-keyed
+ *      match (BYPASS, PAN, GLOBALMIX, SCENEIGNORE, MIX, PANn).
+ *   3. **AxeEdit III XML controlType inference.** If both above miss
+ *      and `xmlLabels` is supplied, look up the III symbol's XML
+ *      controlType and map it to a coarse unit (enum vs numeric vs dB).
+ *      No range info — `displayMin`/`displayMax` stay undefined.
+ *
+ * Separately, the XML displayLabel is ALWAYS overlaid onto whichever
+ * source wins (or stands alone when no calibration source matched),
+ * because the editor's knob caption is independent of unit. Callers
+ * shouldn't double-apply the label — this function returns the final
+ * override with `displayLabel` already populated if XML has a hit.
+ *
+ * Returns undefined only when all three calibration tiers miss AND
+ * the XML doesn't even know the symbol — those entries stay
+ * `unit: 'unverified'` in the emitted catalog.
  */
 export function findAm4Override(
   family: string,
   iiiSymbolName: string,
   overrides: Map<string, Am4Override>,
+  xmlLabels?: Map<string, XmlLabel>,
 ): Am4Override | undefined {
+  let result: Am4Override | undefined;
   const am4Blocks = FAMILY_TO_AM4_BLOCKS[family];
-  if (!am4Blocks || am4Blocks.length === 0) return undefined;
-  const am4Name = iiiSymbolToAm4Name(iiiSymbolName);
-  for (const block of am4Blocks) {
-    const hit = overrides.get(`${block}.${am4Name}`);
-    if (hit) return hit;
+  if (am4Blocks && am4Blocks.length > 0) {
+    const am4Name = iiiSymbolToAm4Name(iiiSymbolName);
+    for (const block of am4Blocks) {
+      const hit = overrides.get(`${block}.${am4Name}`);
+      if (hit) {
+        result = hit;
+        break;
+      }
+    }
   }
-  return undefined;
+  if (!result) result = findUniversalFallback(iiiSymbolName);
+  if (!result && xmlLabels) result = inferOverrideFromXml(iiiSymbolName, xmlLabels);
+
+  // Lossless displayLabel overlay. Independent of unit/range, so safe
+  // to apply whether the calibration came from AM4, universal, XML,
+  // or — when only the XML label is known but the controlType isn't in
+  // our inference map — when there's no calibration source at all
+  // (returns a label-only synthetic override).
+  if (xmlLabels) {
+    const xmlInfo = xmlLabels.get(iiiSymbolName);
+    if (xmlInfo) {
+      if (result) {
+        // Clone before mutating; the AM4 map is shared across catalog
+        // entries (e.g. CHORUS_LEVEL and FLANGER_LEVEL might both hit
+        // the same generic `*.level` entry), so mutating in place
+        // would leak displayLabel across families.
+        if (!result.displayLabel) {
+          result = { ...result, displayLabel: xmlInfo.displayLabel };
+        }
+      } else if (XML_CONTROL_TYPE_TO_UNIT[xmlInfo.controlType] === undefined) {
+        // No calibration at all, but XML knows the label — emit a
+        // label-only synthetic. unit stays 'unverified'; we surface
+        // the label so the agent has prompt context. Source tag
+        // `'xml'` keeps audit trail honest.
+        result = {
+          block: '_xml-label-only',
+          name: iiiSymbolName.toLowerCase(),
+          unit: 'unverified',
+          enum: false,
+          source: 'xml',
+          displayLabel: xmlInfo.displayLabel,
+        };
+      }
+    }
+  }
+  return result;
 }

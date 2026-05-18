@@ -90,6 +90,7 @@ import { fileURLToPath } from 'node:url';
 import {
   findAm4Override,
   loadAm4ParamOverrides,
+  loadXmlLabels,
   type Am4Override,
 } from './axefx3-am4-overrides.js';
 
@@ -302,6 +303,16 @@ function main(): void {
   // hardware-verified unit/range. Joined per III catalog entry below.
   const am4Overrides = loadAm4ParamOverrides();
 
+  // Load AxeEdit III JUCE-BinaryData XML labels. Map of parameterName →
+  // {displayLabel, controlType}. Used in two ways inside findAm4Override:
+  // (1) lossless displayLabel overlay onto whichever calibration source
+  // wins, (2) 3rd-tier controlType→unit inference when AM4 + universal
+  // both miss. Empty map when the JSON artifact isn't present (fresh
+  // worktree without `samples/` populated) — the generator falls back
+  // to AM4 + universal sources only and the III file simply ships
+  // fewer display labels.
+  const xmlLabels = loadXmlLabels();
+
   // Sanity: count per family.
   const familyCounts: Record<string, number> = {};
   for (const e of flat) {
@@ -344,18 +355,37 @@ function main(): void {
   const totalCount = flat.length;
   const familyCount = cases.length;
 
-  // Pre-compute the AM4 override (if any) for every entry — used by
-  // every emit step below. Deterministic and pure.
+  // Pre-compute the calibration override (if any) for every entry —
+  // used by every emit step below. Deterministic and pure. Two sources
+  // contribute: AM4-name joins (verified, copied from AM4's catalog)
+  // and universal Fractal-convention fallbacks (BYPASS/PAN/GLOBALMIX/
+  // SCENEIGNORE/MIX shapes that hold cross-block on every Fractal
+  // device). See `axefx3-am4-overrides.ts` for the two-tier resolution
+  // contract.
   const overrideByEntry: Map<string, Am4Override | undefined> = new Map();
   let calibratedCount = 0;
+  let calibratedFromAm4 = 0;
+  let calibratedFromConvention = 0;
+  let calibratedFromXml = 0;
+  let withDisplayLabel = 0;
   const calibratedByFamily: Record<string, number> = {};
   for (const e of flat) {
-    const ov = findAm4Override(e.family, e.name, am4Overrides);
+    const ov = findAm4Override(e.family, e.name, am4Overrides, xmlLabels);
     const key = `${e.family}.${e.name}`;
     overrideByEntry.set(key, ov);
     if (ov) {
-      calibratedCount += 1;
-      calibratedByFamily[e.family] = (calibratedByFamily[e.family] ?? 0) + 1;
+      // "Calibrated" = unit is non-'unverified' (carries useful shape
+      // info). Label-only XML synthetics (unit still 'unverified', but
+      // displayLabel populated) don't count as calibrated, but DO
+      // contribute to withDisplayLabel.
+      if (ov.unit !== 'unverified') {
+        calibratedCount += 1;
+        if (ov.source === 'universal') calibratedFromConvention += 1;
+        else if (ov.source === 'xml') calibratedFromXml += 1;
+        else calibratedFromAm4 += 1;
+        calibratedByFamily[e.family] = (calibratedByFamily[e.family] ?? 0) + 1;
+      }
+      if (ov.displayLabel) withDisplayLabel += 1;
     }
   }
 
@@ -375,19 +405,56 @@ function main(): void {
     if (!ov) {
       return `${head} unit: 'unverified' },`;
     }
+
+    // Source-stamped trailing comment. The three tiers each emit a
+    // distinct phrase so a future audit can separate provenance lanes
+    // by grep without re-running the generator.
+    const trailingComment = (() => {
+      switch (ov.source) {
+        case 'am4': return '// inferred from AM4';
+        case 'universal': return '// inferred from Fractal convention';
+        case 'xml': return ov.unit === 'unverified'
+          ? '// label from AxeEdit III XML'
+          : '// inferred from AxeEdit III XML controlType';
+      }
+    })();
+
+    // Optional displayLabel — present whenever the XML mining matched
+    // this III symbol, regardless of which calibration tier supplied
+    // the unit. Emitted before unit for readability (callers scan
+    // human labels first when debugging).
+    const labelClause = ov.displayLabel
+      ? ` displayLabel: ${emitString(ov.displayLabel)},`
+      : '';
+
+    // Label-only synthetics (XML matched but controlType wasn't in
+    // our inference table — e.g. label*, readoutNameLong, dynaCabControl)
+    // emit `unit: 'unverified'` so they're indistinguishable from
+    // un-matched entries except for the displayLabel field.
+    if (ov.unit === 'unverified') {
+      return `${head}${labelClause} unit: 'unverified' }, ${trailingComment}`;
+    }
     // For enum entries: emit `unit: 'enum'` WITHOUT displayMin /
-    // displayMax. The AM4's enum cardinality is firmware-specific
-    // (AM4's REVERB has 79 algorithms; the III has more), and
-    // surfacing AM4's count would falsely suggest the III's vocabulary
-    // is bounded the same way. The III's enum cardinality needs III-
-    // side Ghidra mining or capture.
+    // displayMax. AM4's enum cardinality is firmware-specific (AM4's
+    // REVERB has 79 algorithms; the III has more), and surfacing AM4's
+    // count would falsely suggest the III's vocabulary is bounded the
+    // same way. The III's enum vocabulary needs III-side Ghidra mining
+    // or hardware capture. XML-source enums also have no enumValues
+    // because the layout XML doesn't expose the value menu.
     if (ov.enum || ov.unit === 'enum') {
-      return `${head} unit: 'enum' }, // inferred from AM4`;
+      return `${head}${labelClause} unit: 'enum' }, ${trailingComment}`;
+    }
+    // XML-source numeric / dB entries carry unit but no range — XML
+    // mining recovers controlType, not the knob's numeric bounds.
+    // Omit displayMin/displayMax in that case rather than emitting
+    // NaN.
+    if (ov.displayMin === undefined || ov.displayMax === undefined) {
+      return `${head}${labelClause} unit: ${emitString(ov.unit)} }, ${trailingComment}`;
     }
     const scalingClause = ov.scaling
       ? `, scaling: ${emitString(ov.scaling)}`
       : '';
-    return `${head} unit: ${emitString(ov.unit)}, displayMin: ${formatNumeric(ov.displayMin)}, displayMax: ${formatNumeric(ov.displayMax)}${scalingClause} }, // inferred from AM4`;
+    return `${head}${labelClause} unit: ${emitString(ov.unit)}, displayMin: ${formatNumeric(ov.displayMin)}, displayMax: ${formatNumeric(ov.displayMax)}${scalingClause} }, ${trailingComment}`;
   }
 
   // Collect the set of distinct calibrated units actually used, so
@@ -422,12 +489,26 @@ function main(): void {
   lines.push(" *");
   lines.push(" * Coverage:");
   lines.push(` *   - ${totalCount} parameters across ${familyCount} effect families.`);
-  lines.push(` *   - ${calibratedCount} entries carry AM4-inferred display`);
-  lines.push(" *     calibration (`// inferred from AM4` trailing comment +");
-  lines.push(" *     non-`'unverified'` unit + displayMin/Max + optional scaling).");
+  lines.push(` *   - ${calibratedCount} entries carry inferred display calibration`);
+  lines.push(" *     (non-`'unverified'` unit + optional displayMin/Max + optional scaling).");
+  lines.push(` *       • ${calibratedFromAm4} via AM4 symbol-name join — trailing`);
+  lines.push(" *         `// inferred from AM4`. Hardware-verified on AM4;");
+  lines.push(" *         display convention shared with the III.");
+  lines.push(` *       • ${calibratedFromConvention} via universal Fractal-convention`);
+  lines.push(" *         fallback — trailing `// inferred from Fractal convention`.");
+  lines.push(" *         Suffixes like `*_BYPASS`, `*_PAN`, `*_GLOBALMIX`,");
+  lines.push(" *         `*_SCENEIGNORE`, `*_MIX` whose calibration is stable");
+  lines.push(" *         across every Fractal block.");
+  lines.push(` *       • ${calibratedFromXml} via AxeEdit III XML controlType — trailing`);
+  lines.push(" *         `// inferred from AxeEdit III XML controlType`. Distinguishes");
+  lines.push(" *         enum-vs-numeric-vs-dB widgets from the JUCE BinaryData");
+  lines.push(" *         layout XML; carries no range info, so displayMin/Max omitted.");
+  lines.push(` *   - ${withDisplayLabel} entries carry a \`displayLabel\` (the editor's`);
+  lines.push(" *     knob caption — e.g. `'Drive'` for `DISTORT_DRIVE`). Independent of");
+  lines.push(" *     calibration tier — XML labels overlay onto AM4/universal/XML units.");
   lines.push(` *   - ${totalCount - calibratedCount} entries remain \`unit: 'unverified'\``);
-  lines.push(" *     (III-specific blocks like CABINET/FUZZ/IRPLAYER, or AM4-mapped");
-  lines.push(" *     families where the III's symbol has no AM4 analog).");
+  lines.push(" *     (III-specific blocks like FUZZ/IRPLAYER without enum-shape labels,");
+  lines.push(" *     or symbols absent from both AM4 and the XML mining catalog).");
   lines.push(" *");
   lines.push(" * Calibration sources (per-family inferred count):");
   if (calibratedSummary.length > 0) {
@@ -517,10 +598,19 @@ function main(): void {
   lines.push("   */");
   lines.push("  name: string;");
   lines.push("  /**");
+  lines.push("   * Human-readable display label from the AxeEdit III JUCE-BinaryData");
+  lines.push("   * XML mining — the editor's knob caption (e.g. `'Drive'` for");
+  lines.push("   * `DISTORT_DRIVE`, `'Reverb Time'` for `REVERB_TIME`). Populated");
+  lines.push("   * for ~91% of catalog entries; absent for symbols the editor");
+  lines.push("   * doesn't render (firmware-internal blocks, sentinel paramIds).");
+  lines.push("   * Useful as LLM prompt context independent of unit/range.");
+  lines.push("   */");
+  lines.push("  displayLabel?: string;");
+  lines.push("  /**");
   lines.push("   * Display unit tag. `'unverified'` until III hardware confirms");
-  lines.push("   * the real shape; otherwise inferred from AM4 (see file-level");
-  lines.push("   * header for the caveat — these are display conventions, not");
-  lines.push("   * wire encodings).");
+  lines.push("   * the real shape; otherwise inferred from one of three sources");
+  lines.push("   * (see file-level header for provenance — these are display");
+  lines.push("   * conventions, not wire encodings).");
   lines.push("   */");
   lines.push("  unit: Unit;");
   lines.push("  /**");
@@ -590,15 +680,22 @@ function main(): void {
     // Reuse emitEntry by stripping the trailing comma + comment so the
     // line slots into an object-literal value slot cleanly.
     const entry = emitEntry(e, '');
-    // emitEntry returns either:
+    // emitEntry returns one of:
     //   `{ family: 'X', ... unit: 'unverified' },`
-    // or
     //   `{ family: 'X', ... }, // inferred from AM4`
-    // We need the bare object literal followed by `,` for the key map.
+    //   `{ family: 'X', ... }, // inferred from Fractal convention`
+    //   `{ family: 'X', ... }, // inferred from AxeEdit III XML controlType`
+    //   `{ family: 'X', ... }, // label from AxeEdit III XML`
+    // We need the bare object literal followed by `,` for the key
+    // map, with the source comment preserved at end-of-line. The
+    // permissive `(?:inferred|label) from …` form matches all four
+    // commented variants without lock-in to one phrasing.
+    const commentMatch = entry.match(/(\/\/ (?:inferred|label) from [^\n]+)$/);
+    const trailingComment = commentMatch ? ` ${commentMatch[1]}` : '';
     const bareObject = entry
-      .replace(/, \/\/ inferred from AM4$/, '')
+      .replace(/, \/\/ (?:inferred|label) from [^\n]+$/, '')
       .replace(/,$/, '');
-    lines.push(`  ${emitKey(key)}: ${bareObject},${entry.includes('// inferred from AM4') ? ' // inferred from AM4' : ''}`);
+    lines.push(`  ${emitKey(key)}: ${bareObject},${trailingComment}`);
   }
   lines.push("};");
   lines.push("");
@@ -620,7 +717,11 @@ function main(): void {
     `generate-axefx3-params-from-catalog: wrote ${OUTPUT_PATH}\n` +
     `  source: ${catalogSource}\n` +
     `  ${totalCount} params across ${familyCount} families\n` +
-    `  ${calibratedCount} entries calibrated from AM4 overrides\n` +
+    `  ${calibratedCount} entries calibrated (` +
+      `${calibratedFromAm4} via AM4 join, ` +
+      `${calibratedFromConvention} via Fractal-convention fallback, ` +
+      `${calibratedFromXml} via AxeEdit III XML controlType)\n` +
+    `  ${withDisplayLabel} entries carry displayLabel from AxeEdit III XML\n` +
     `  calibrated by family: ${calibratedSummary || '(none)'}\n` +
     `  ${overlayCount} firmware-legacy paramId overlays (FLANGER_OLD_* etc.)\n` +
     `  families: ${familySummary}`,
