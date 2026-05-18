@@ -101,6 +101,41 @@ const CASES: DisplayCase[] = [
     prefxType: 'Lo-Fi',
     expectDisplay: '22050',
   },
+
+  // ── HW-109 (2026-05-17): env time wire→display, 27 points captured live
+  //    from front panel of Hydrasynth Explorer. These pin the ATTACK/HOLD
+  //    table (0..36 s) and the DECAY/RELEASE table (0..60 s) to byte-exact
+  //    device output. Decay and release share the same table — covering
+  //    both protects against a future refactor that diverges them.
+  { desc: 'HW-109 env2attacksyncoff N=0   → "0 ms"',     name: 'env2attacksyncoff',  userInput: 0,   expectDisplay: '0 ms'      },
+  { desc: 'HW-109 env2attacksyncoff N=5   → "5 ms"',     name: 'env2attacksyncoff',  userInput: 5,   expectDisplay: '5 ms'      },
+  { desc: 'HW-109 env2attacksyncoff N=10  → "10 ms"',    name: 'env2attacksyncoff',  userInput: 10,  expectDisplay: '10 ms'     },
+  { desc: 'HW-109 env2attacksyncoff N=25  → "30 ms"',    name: 'env2attacksyncoff',  userInput: 25,  expectDisplay: '30 ms'     },
+  { desc: 'HW-109 env2attacksyncoff N=50  → "160 ms"',   name: 'env2attacksyncoff',  userInput: 50,  expectDisplay: '160 ms'    },
+  { desc: 'HW-109 env2attacksyncoff N=75  → "960 ms"',   name: 'env2attacksyncoff',  userInput: 75,  expectDisplay: '960 ms'    },
+  { desc: 'HW-109 env2attacksyncoff N=100 → "5.12 Sec"', name: 'env2attacksyncoff',  userInput: 100, expectDisplay: '5.12 Sec'  },
+  { desc: 'HW-109 env2attacksyncoff N=120 → "20.0 Sec"', name: 'env2attacksyncoff',  userInput: 120, expectDisplay: '20.0 Sec'  },
+  { desc: 'HW-109 env2attacksyncoff N=127 → "34.0 Sec"', name: 'env2attacksyncoff',  userInput: 127, expectDisplay: '34.0 Sec'  },
+
+  { desc: 'HW-109 env2decaysyncoff N=0    → "0 ms"',     name: 'env2decaysyncoff',   userInput: 0,   expectDisplay: '0 ms'      },
+  { desc: 'HW-109 env2decaysyncoff N=5    → "10 ms"',    name: 'env2decaysyncoff',   userInput: 5,   expectDisplay: '10 ms'     },
+  { desc: 'HW-109 env2decaysyncoff N=10   → "20 ms"',    name: 'env2decaysyncoff',   userInput: 10,  expectDisplay: '20 ms'     },
+  { desc: 'HW-109 env2decaysyncoff N=25   → "60 ms"',    name: 'env2decaysyncoff',   userInput: 25,  expectDisplay: '60 ms'     },
+  { desc: 'HW-109 env2decaysyncoff N=50   → "320 ms"',   name: 'env2decaysyncoff',   userInput: 50,  expectDisplay: '320 ms'    },
+  { desc: 'HW-109 env2decaysyncoff N=75   → "1.92 Sec"', name: 'env2decaysyncoff',   userInput: 75,  expectDisplay: '1.92 Sec'  },
+  { desc: 'HW-109 env2decaysyncoff N=100  → "10.0 Sec"', name: 'env2decaysyncoff',   userInput: 100, expectDisplay: '10.0 Sec'  },
+  { desc: 'HW-109 env2decaysyncoff N=120  → "44.0 Sec"', name: 'env2decaysyncoff',   userInput: 120, expectDisplay: '44.0 Sec'  },
+  { desc: 'HW-109 env2decaysyncoff N=127  → "58.0 Sec"', name: 'env2decaysyncoff',   userInput: 127, expectDisplay: '58.0 Sec'  },
+
+  { desc: 'HW-109 env2releasesyncoff N=0    → "0 ms"',     name: 'env2releasesyncoff', userInput: 0,   expectDisplay: '0 ms'      },
+  { desc: 'HW-109 env2releasesyncoff N=5    → "10 ms"',    name: 'env2releasesyncoff', userInput: 5,   expectDisplay: '10 ms'     },
+  { desc: 'HW-109 env2releasesyncoff N=10   → "20 ms"',    name: 'env2releasesyncoff', userInput: 10,  expectDisplay: '20 ms'     },
+  { desc: 'HW-109 env2releasesyncoff N=25   → "60 ms"',    name: 'env2releasesyncoff', userInput: 25,  expectDisplay: '60 ms'     },
+  { desc: 'HW-109 env2releasesyncoff N=50   → "320 ms"',   name: 'env2releasesyncoff', userInput: 50,  expectDisplay: '320 ms'    },
+  { desc: 'HW-109 env2releasesyncoff N=75   → "1.92 Sec"', name: 'env2releasesyncoff', userInput: 75,  expectDisplay: '1.92 Sec'  },
+  { desc: 'HW-109 env2releasesyncoff N=100  → "10.0 Sec"', name: 'env2releasesyncoff', userInput: 100, expectDisplay: '10.0 Sec'  },
+  { desc: 'HW-109 env2releasesyncoff N=120  → "44.0 Sec"', name: 'env2releasesyncoff', userInput: 120, expectDisplay: '44.0 Sec'  },
+  { desc: 'HW-109 env2releasesyncoff N=127  → "58.0 Sec"', name: 'env2releasesyncoff', userInput: 127, expectDisplay: '58.0 Sec'  },
 ];
 
 function actualDisplay(c: DisplayCase): string {

@@ -88,11 +88,16 @@ function timeTable(segments: ReadonlyArray<{ count: number; baseMs: number; step
     }
   }
   return {
-    unitLabel: 'ms / s',
+    unitLabel: 'ms / Sec',
     decode: (wire) => {
       const idx = Math.min(Math.max(Math.round(wire / 64), 0), lookup.length - 1);
       const ms = lookup[idx]!;
-      if (ms >= 1000) return `${(ms / 1000).toFixed(2).replace(/\.?0+$/, '')} s`;
+      if (ms >= 1000) {
+        // Device shows seconds with at least one decimal, e.g. "20.0 Sec",
+        // "5.12 Sec", "1.92 Sec". Trim trailing zero past the first decimal.
+        const seconds = (ms / 1000).toFixed(2).replace(/(\.\d)0+$/, '$1');
+        return `${seconds} Sec`;
+      }
       return `${Math.round(ms)} ms`;
     },
   };
