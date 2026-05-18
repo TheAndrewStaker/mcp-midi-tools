@@ -126,8 +126,20 @@ export function buildBlocks(): Record<string, BlockSchema> {
     // params on incompatible types.
     const bridge = resolveBridge(block, name);
     const applicability = describeApplicability(key);
+    // `display_name` is the friendly label the LLM sees in list_params /
+    // describe_device output. Priority order:
+    //   1. `param.displayLabel` — hand-set in params.ts from the
+    //      AM4-Edit XML join (scripts/_research/add-display-labels.ts).
+    //      Most accurate per-entry source.
+    //   2. `bridge?.canonicalLabel` — resolver-derived label from
+    //      parameterBridge.ts (XML + paramNames.ts merge).
+    //   3. `name` — snake_case key as a last-resort fallback.
+    // The wire-side key (used by the dispatcher's resolveParamName) is
+    // still `name`; this change only affects what the LLM reads as the
+    // friendly label. Mirrors the Axe-Fx II pattern at
+    // packages/axe-fx-ii/src/descriptor/schema.ts:193.
     blocks[block].params[name] = {
-      display_name: name,
+      display_name: param.displayLabel ?? bridge?.canonicalLabel ?? name,
       unit: param.unit,                 // AM4-native name passes through
       display_min: param.unit === 'enum' ? undefined : param.displayMin,
       display_max: param.unit === 'enum' ? undefined : param.displayMax,
