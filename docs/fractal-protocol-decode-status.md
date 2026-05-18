@@ -5,29 +5,38 @@ work. If you're a new session (human or agent) trying to figure
 out "what do we know about the Fractal protocol family, and where
 is everything documented?", start here.
 
-Last meaningful update: Session 96 (2026-05-17 — HW-112 closed
+Last meaningful update: Session 96 (2026-05-17 / 18 — HW-112 closed
 (AM4 GLOBAL family `pidLow=0x0001` cracked + 98 entries wired);
 HW-109 closed (Hydrasynth envelope time wire→ms tables verified
 across 27 sample points); HW-105 closed (Axe-Fx II `apply_setlist`
-3-preset round-trip on Q8.02 XL+); cross-ref audit drift guard
-holding at `WIRED_MISLABEL_CEILING=154`; III `0x02 SET_PARAMETER`
-still 🟡 untested — only true hardware-gated unlock left).
+3-preset round-trip on Q8.02 XL+); UI-MISSING closeout across PATCH /
+CABINET / DISTORT lifted AM4 placeable coverage 84% → **91%**;
+`displayLabel` resolver landed in `list_params` `display_name` +
+116-entry XML splice pass on shipped entries; cross-ref audit drift
+guard at `WIRED_MISLABEL_CEILING=161` (bumped from 154 for the
+7 intentional context-disambig MISLABELs in the UI-MISSING closeout);
+III `0x02 SET_PARAMETER` still 🟡 untested — only true hardware-gated
+unlock left).
 
 > **Run `npm run coverage-audit` before trusting any state claim in
 > this doc.** The audit reads `packages/*/src/params.ts` +
 > `scripts/verify-msg.ts` directly and reports current AM4-placeable
 > coverage by-device — most reliable single-command answer to "where
-> are we?" As of Session 96: AM4 placeable coverage is **84%**
-> (716 catalog entries / 690 placeable params.ts entries; 792 total
+> are we?" As of Session 96: AM4 placeable coverage is **91%**
+> (716 catalog entries / 741 placeable params.ts entries; 791 total
 > entries in `packages/am4/src/params.ts` once GLOBAL's 98 system-
 > settings entries and CABINET cross-block bonus are counted). 183
 > distinct (pidLow, pidHigh) goldens carry byte-exact wire tests
 > in `scripts/verify-msg.ts`. Cross-ref audit
 > (`scripts/_research/coverage-cross-ref-audit.ts`) joins Ghidra
 > catalog ↔ AM4-Edit XML ↔ `params.ts` and currently reports
-> **WIRED-MATCHED=442 / WIRED-MISLABEL=154 / UI-MISSING=79 /
-> GHOST=49 / PIDLOW-UNKNOWN=1008**. Wired into preflight as a drift
-> guard at `WIRED_MISLABEL_CEILING=154`.
+> **WIRED-MATCHED=585 / WIRED-MISLABEL=161 / UI-MISSING=28 /
+> GHOST=49 / PIDLOW-UNKNOWN=909**. Wired into preflight as a drift
+> guard at `WIRED_MISLABEL_CEILING=161`. (Note: GLOBAL family is now
+> classified via `PIDLOW_TO_FAMILY[0x0001]='GLOBAL'` with a per-family
+> carve-out that treats GLOBAL entries as WIRED-MATCHED whenever
+> the wire address is bound — GLOBAL's `name` field is the canonical
+> wire symbol; the user-facing label is surfaced via `displayLabel`.)
 
 ---
 
@@ -35,7 +44,7 @@ still 🟡 untested — only true hardware-gated unlock left).
 
 | Device | Model byte | Protocol family | Editor binary | Ghidra project | Decode state |
 |---|---|---|---|---|---|
-| AM4 | `0x15` | Axe-Fx III (subset + extensions) | `AM4-Edit.exe` | `C:\Users\Steph\ghidra-am4-edit.gpr` | **Most complete.** 792 entries in `packages/am4/src/params.ts` (690 placeable + 98 GLOBAL system-settings + cross-block bonus); placeable coverage **84%** of AM4-placeable catalog. PATCH family closed Sessions 84–87 (routing — §6n-patch; scene-MIDI 48 params — §6n-scene-midi; scene-MIDI test-send partial — §6n-scene-midi-test, HW-111 open). **GLOBAL family closed Session 96** (`pidLow=0x0001` cracked from `samples/captured/session-95-am4-global-pidlow.pcapng`; 98 entries wired; see `docs/SYSEX-MAP.md` §6bb). 1732 paramId/name pairs across 47 families mined Session 82 (catalog). Optional `displayLabel` field generated from AM4-Edit XML, now surfaced through `list_params` `display_name` resolver (Session 96). Cross-ref audit: WIRED-MATCHED=442 / WIRED-MISLABEL=154 / UI-MISSING=79 / GHOST=49. |
+| AM4 | `0x15` | Axe-Fx III (subset + extensions) | `AM4-Edit.exe` | `C:\Users\Steph\ghidra-am4-edit.gpr` | **Most complete.** 791 entries in `packages/am4/src/params.ts` (741 placeable + 98 GLOBAL system-settings + cross-block bonus); placeable coverage **91%** of AM4-placeable catalog. PATCH family closed Sessions 84–87 (routing — §6n-patch; scene-MIDI 48 params — §6n-scene-midi; scene-MIDI test-send partial — §6n-scene-midi-test, HW-111 open). **GLOBAL family closed Session 96** (`pidLow=0x0001` cracked from `samples/captured/session-95-am4-global-pidlow.pcapng`; 98 entries wired; see `docs/SYSEX-MAP.md` §6bb). **UI-MISSING closeout Session 96** added 50 PATCH / CABINET / DISTORT entries from the AM4-Edit XML → Ghidra catalog join (`scripts/_research/list-ui-missing.ts`). 1732 paramId/name pairs across 47 families mined Session 82 (catalog). Optional `displayLabel` field generated from AM4-Edit XML, now surfaced through `list_params` `display_name` resolver (Session 96); 116-entry XML splice pass made every MISLABEL entry resolver-friendly. Cross-ref audit: WIRED-MATCHED=585 / WIRED-MISLABEL=161 / UI-MISSING=28 / GHOST=49. |
 | Axe-Fx III | `0x10` | Axe-Fx III (full spec + community RE) | `Axe-Edit III.exe` (v1.14.31) | `C:\Users\Steph\ghidra-axe-edit-3.gpr` | **Partial.** v1.4 PDF opcodes shipping (bypass/channel/scene/tempo/looper/status). Ghidra Session 82 mined **2,216 paramIds across 49 families** + **21 fn bytes confirmed in binary** (vs 10 in v1.4 PDF). `0x02 SET_PARAMETER` ported from II model byte `0x03`→`0x10` and shipped 🟡 untested Sessions 85+86 — see SYSEX-MAP-AXE-FX-III §0x02 SET_PARAMETER. MCP tools `axefx3_set_parameter` / `axefx3_get_parameter` exist with explicit `⚠ UNTESTED` banners; **one III contributor running `axefx3_get_parameter(block="Reverb 1", param_id=0)` against a scratch preset converts 🟡→🟢 and unlocks all 2,216 paramIds**. HW-AXEFX3-002 is the only remaining true hardware-gated unlock in the project. Preset-save 0x77/0x78/0x79 community-known (forum thread #159885 archived). |
 | Axe-Fx II XL+ | `0x07` | Axe-Fx II (separate family) | `Axe-Edit.exe` | `C:\Users\Steph\ghidra-axe-edit.gpr` | **1,126 params shipping** via wiki + capture decode + Session 94 Ghidra direct-pattern-scan addendum (221 net-new entries). `0x02 SET_PARAMETER` hardware-verified (HW-075 / HW-077). `apply_setlist` 3-preset round-trip hardware-verified on Q8.02 XL+ (HW-105, Session 96 cont). Earlier "skip Ghidra for II" recommendation overturned Session 94 — the 32-bit binary's param tables are recoverable via byte-pattern scan even when dispatcher xrefs fail; see `scripts/ghidra/SeekParamTablesII.java`. |
 | Hydrasynth Explorer | (vendor: ASM, not Fractal) | NRPN-based | n/a | n/a | Functional but separate workstream — included here for cross-reference. HW-109 closed Session 95 — envelope time wire→ms mapping verified across 27 sample points; `packages/hydrasynth-explorer/src/nrpnDisplay.ts` `timeTable` confirmed zero-correction against device. Verify script: `scripts/hydrasynth/verify-nrpn-display.ts`. |
@@ -116,7 +125,11 @@ Under `scripts/_research/`:
 | `generate-axe-fx-ii-params-from-ghidra.ts` | Emit proposed II `params.ts` entries from Session 94 direct-scan output, preserving the hardware-verified header + Ghidra addendum block across regens |
 | `validate-params-against-catalog.ts` | Validate `params.ts` correctness against catalog + blockTypes.ts |
 | `am4-catalog-coverage-report.ts` | Emit per-block markdown coverage report |
-| `coverage-cross-ref-audit.ts` | **Three-way join (catalog ↔ XML ↔ params.ts)** — Session 87 cont. Classifies every catalog entry as WIRED-MATCHED / WIRED-MISLABEL / UI-MISSING / GHOST / PIDLOW-UNKNOWN. Wired into preflight as a drift guard at `WIRED_MISLABEL_CEILING=154`. Output: `samples/captured/decoded/coverage-cross-ref-audit.md` |
+| `coverage-cross-ref-audit.ts` | **Three-way join (catalog ↔ XML ↔ params.ts)** — Session 87 cont, refreshed Session 96 with GLOBAL family classification + carve-out. Classifies every catalog entry as WIRED-MATCHED / WIRED-MISLABEL / UI-MISSING / GHOST / PIDLOW-UNKNOWN. Wired into preflight as a drift guard at `WIRED_MISLABEL_CEILING=161`. Output: `samples/captured/decoded/coverage-cross-ref-audit.md` |
+| `list-ui-missing.ts` | Session 96 — uncapped UI-MISSING dump for one or more families (the shipping audit caps at top 50). `npx tsx scripts/_research/list-ui-missing.ts PATCH CABINET DISTORT` |
+| `list-mislabel-without-displaylabel.ts` | Session 96 — surfaces WIRED-MISLABEL entries that the `displayLabel` resolver doesn't already cover. Drives the idempotent label-splice pass. |
+| `inplace-patch-display-labels.ts` | Session 96 — idempotent regenerator. Joins (block_pidLow, pidHigh) → Ghidra catalog symbol → AM4-Edit XML label, splices `displayLabel: "..."` into any entry that doesn't already have one. Safe to re-run. |
+| `generate-am4-global-block.ts` | Session 96 — regenerates the GLOBAL family params.ts block (98 entries under pidLow=0x0001) from the Ghidra catalog + XML labels. Source-of-truth for HW-112-derived GLOBAL entries. |
 | `add-display-labels.ts` | Idempotent generator that populates the optional `displayLabel` field on `params.ts` entries from AM4-Edit XML |
 | `decode-session-85-scene-midi.ts` | Decode scene-MIDI captures into 16-msg Type/Channel/Value rows (Session 85+86) |
 | `decode-hw110.ts` | Decode HW-110 scene-MIDI test-send capture (Session 87 cont) |
@@ -186,7 +199,7 @@ In rough order of impact:
 
 3. **HW-111 — decode the scene-MIDI test-send per-row payload byte packing** (Session 87 cont). Per-scene "Send All" payload fully decoded: `byte[2] = (scene_idx<<5) | 0x0F`. Per-row payload partial. Closes SYSEX-MAP §6n-scene-midi-test from 🟡 → 🟢. P3, non-blocking.
 
-4. **WIRED-MISLABEL review pass** (154 entries, ceiling at `WIRED_MISLABEL_CEILING=154`). Most are intentional disambiguation (e.g. cabinet `_1`/`_2` pairs, four `delay.lfo_{1,2,3,4}_type` entries all displaying as "LFO Type"). Targeted reviews tightened the count Sessions 90/95; further passes could lower the ceiling and improve LLM prompt matching.
+4. **WIRED-MISLABEL review pass** (161 entries, ceiling at `WIRED_MISLABEL_CEILING=161`). After the Session 96 `displayLabel` resolver + 116-entry XML splice, every MISLABEL entry already surfaces the friendly AM4-Edit label to the LLM via `display_name` — the underlying `name`-vs-XML mismatch is a cosmetic audit metric, not a UX gap. Most are intentional disambiguation (cabinet `_1`/`_2` pairs, COMP `sidechain_*` prefixes, four `delay.lfo_{1,2,3,4}_type` entries all displaying as "LFO Type"). Targeted reviews tightened the count Sessions 90 / 95; further passes could lower the ceiling but the agent-facing UX is already covered by `displayLabel`. Use `scripts/_research/list-mislabel-without-displaylabel.ts` to find entries that still need `displayLabel` attention.
 
 5. **action=0x0017 anomaly trigger still unknown.** Session 87 cont ruled out test-send buttons via HW-110 (16 per-row + 4 per-scene clicks → zero `action=0x0017` frames; test-send fires `action=0x0004 / pidHigh=0x0070` instead). Next candidate hypotheses: "Quick Build" button or another page-level AM4-Edit action. NOT blocking any user-facing feature.
 
