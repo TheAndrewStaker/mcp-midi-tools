@@ -391,6 +391,8 @@ read the one byte we need.
 | `0x003A` | `0x000B` | Amp Gain | displayed × 0.1 (UI 0–10 → internal 0–1) | preset A01, session 04 |
 | `0x003A` | `0x003E` | Parametric EQ band 1 gain | displayed × (1/12) for −12…+12 dB UI | session 05 |
 | `0x003A` | `0x07D2` | Amp active channel (A/B/C/D) | enum int 0..3 packed as float32 | session 08 (toggle captures, all 4 confirmed) |
+| `0x0001` | `0x0063` | GLOBAL_USBLEVEL1 (USB 1/2 Level, dB) | float32 LE, displayed verbatim (1.11 dB capture verified) | HW-112 (Session 96) |
+| `0x0001` | `0x002E` | GLOBAL_TAP_TEMPO_MODE (enum int) | enum 0..N packed as float32 (1.0 = "Last Two") | HW-112 (Session 96) |
 
 > The Amp channel-selector parameter (`pidH = 0x07D2`) is the first
 > observation that `0x0f52` in the parse-capture body dump was **two 7-bit
@@ -456,6 +458,48 @@ value field is 5 bytes (positions 16..20). This is why our linear-pack
 hypothesis appeared non-linear: we were including a header byte in the
 "value" bits, and that header byte differs across parameters even when
 the value is the same.
+
+---
+
+## 6bb. GLOBAL Family Register 🟢
+
+**Cracked HW-112 (Session 96, 2026-05-17).** Capture
+`samples/captured/session-95-am4-global-pidlow.pcapng`. Confirms that
+the AM4's 99 system-level settings (USB levels, tap tempo, MIDI thru,
+display brightness, modeling toggles, etc.) are addressable via the
+**same `0x01` PARAM_RW envelope** as placeable blocks — only the
+`pidLow` is different.
+
+### Address
+
+- **pidLow** `0x0001` — GLOBAL family register (fixed for all 99 system
+  params). Ghidra dispatcher catalog labels this `case_0x1`; the
+  in-firmware label prefix is `GLOBAL_*`.
+- **pidHigh** = the paramId from the Ghidra catalog
+  (`samples/captured/decoded/ghidra-am4-paramnames.json`, key
+  `effect_types.case_0x1.params[*].paramId`). 99 paramIds total.
+
+### Value
+
+Float32 LE, same Q16 fixed-point convention as placeable blocks (§6a /
+§6b). Continuous params use the `internal × inverse_scale` pattern;
+enum dropdowns ride the same float wire as integer-valued enums (e.g.
+`GLOBAL_TAP_TEMPO_MODE` = `1.0` selects "Last Two").
+
+### Captured writes (HW-112)
+
+Both decoded byte-exact from `session-95-am4-global-pidlow.pcapng`. The
+host→device frames are unique writes; the surrounding ~3.4k frames are
+AM4-Edit's idle polling at the same address.
+
+| Frame | paramId | Ghidra name | Wire payload (5 packed bytes) | f32 decoded | Display |
+|-------|---------|-------------|-------------------------------|-------------|---------|
+| 6117  | 99 | `GLOBAL_USBLEVEL1` | `3D 45 11 63 78` | 1.110 | "USB 1/2 Level: 1.11 dB" |
+| 11589 | 46 | `GLOBAL_TAP_TEMPO_MODE` | `00 00 10 03 78` | 1.000 | "Tap Tempo Mode: Last Two" |
+
+The Ghidra catalog already carries all 99 paramId+name pairs. Generating
+`params.ts` GLOBAL entries from this finding is mechanical (the next
+follow-up after this decode).
 
 ---
 
