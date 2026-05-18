@@ -45,8 +45,8 @@ import {
   buildReadParam,
   buildSetBlockBypass,
   buildSwitchScene,
-} from '@mcp-midi-control/am4/setParam.js';
-import { BLOCK_TYPE_VALUES } from '@mcp-midi-control/am4/blockTypes.js';
+} from 'fractal-midi/am4';
+import { BLOCK_TYPE_VALUES } from 'fractal-midi/am4';
 
 const BYPASS_PID_HIGH = 0x0003;
 const READ_ACTION = 0x0d;

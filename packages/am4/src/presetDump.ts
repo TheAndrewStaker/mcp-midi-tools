@@ -29,7 +29,7 @@
  * verbatim re-emit goes back to the source location only.
  */
 
-import { fractalChecksum } from '@mcp-midi-control/core/fractal-shared/checksum.js';
+import { fractalChecksum } from 'fractal-midi/shared';
 import type { MidiConnection } from '@mcp-midi-control/core/midi/transport.js';
 
 const SYSEX_START = 0xf0;

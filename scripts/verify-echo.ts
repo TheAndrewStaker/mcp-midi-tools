@@ -13,7 +13,7 @@
  * Run:  npx tsx scripts/verify-echo.ts
  */
 
-import { buildSetParam, isWriteEcho } from '@mcp-midi-control/am4/setParam.js';
+import { buildSetParam, isWriteEcho } from 'fractal-midi/am4';
 
 function bytes(hex: string): number[] {
   const out: number[] = [];

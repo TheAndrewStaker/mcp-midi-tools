@@ -6,7 +6,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { unpackFloat32LE, unpackValue } from '@mcp-midi-control/core/fractal-shared/packValue.js';
+import { unpackFloat32LE, unpackValue } from 'fractal-midi/shared';
 
 interface Record {
   frame: number;

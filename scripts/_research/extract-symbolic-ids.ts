@@ -15,7 +15,7 @@
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { PARAM_NAMES, type ParamNameEntry } from '@mcp-midi-control/am4/paramNames.js';
+import { PARAM_NAMES, type ParamNameEntry } from 'fractal-midi/am4';
 
 interface ExtractedString { offset: number; kind: 'ascii' | 'utf16le'; value: string; }
 interface CacheRec {

@@ -4,7 +4,7 @@
  * Used in Session 46 cont 5 to answer the founder's question of which
  * amp types expose the rare knobs picked for the HW-053 spot-check sweep.
  */
-import { EDITOR_CONTROLS } from '@mcp-midi-control/am4/editorControlLabels.js';
+import { EDITOR_CONTROLS } from 'fractal-midi/am4';
 
 const TARGETS = [
   'DISTORT_PRESFREQ',

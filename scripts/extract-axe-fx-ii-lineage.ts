@@ -35,14 +35,29 @@
  *   npx tsx scripts/extract-axe-fx-ii-lineage.ts
  */
 
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
-const LINEAGE_DIR = path.join(ROOT, 'packages', 'core', 'src', 'fractal-shared', 'lineage');
-const PARAMS_PATH = path.join(ROOT, 'packages', 'axe-fx-ii', 'src', 'params.ts');
+// Lineage data + Axe-Fx II param source live in the sibling `fractal-midi`
+// repo (per the Phase-B extraction, 2026-05-18). This is a maintainer-
+// only data-gen script — it edits source files in `fractal-midi/`, so it
+// can't use `require.resolve('fractal-midi/shared')` (that points at the
+// built dist). Assumes the sibling-repo layout `C:/dev/{mcp-midi-tools,
+// fractal-midi}` documented in `docs/fractal-midi-extraction-plan.md`.
+const FRACTAL_MIDI_REPO = path.resolve(ROOT, '..', 'fractal-midi');
+const LINEAGE_DIR = path.join(FRACTAL_MIDI_REPO, 'src', 'shared', 'lineage');
+const PARAMS_PATH = path.join(FRACTAL_MIDI_REPO, 'src', 'axe-fx-ii', 'params.ts');
+
+if (!existsSync(FRACTAL_MIDI_REPO)) {
+    console.error(
+        `extract-axe-fx-ii-lineage: sibling fractal-midi repo not found at ${FRACTAL_MIDI_REPO}.\n` +
+        `Set up the sibling layout (clone fractal-midi next to mcp-midi-tools) or run this script from elsewhere.`,
+    );
+    process.exit(1);
+}
 
 // ─── Matching helpers ────────────────────────────────────────────────────
 
@@ -384,7 +399,7 @@ function emit(
 ): void {
     const { records, stats } = extractBlock(block, enumName);
     const out: EmittedJSON = {
-        _source: `Re-keyed from packages/core/src/fractal-shared/lineage/${block}-lineage.json against AMP_EFFECT_TYPE_VALUES from packages/axe-fx-ii/src/params.ts`,
+        _source: `Re-keyed from fractal-midi/src/shared/lineage/${block}-lineage.json against AMP_EFFECT_TYPE_VALUES from fractal-midi/src/axe-fx-ii/params.ts`,
         _extractedAt: new Date().toISOString(),
         _enumSize: stats.total,
         _matched: stats.matched,
@@ -410,4 +425,4 @@ emit('amp', 'AMP');
 emit('drive', 'DRIVE');
 emit('reverb', 'REVERB');
 emit('delay', 'DELAY');
-console.log('Done. Output: packages/core/src/fractal-shared/lineage/axefx2-{amp,drive,reverb,delay}-lineage.json');
+console.log(`Done. Output: ${LINEAGE_DIR}/axefx2-{amp,drive,reverb,delay}-lineage.json`);

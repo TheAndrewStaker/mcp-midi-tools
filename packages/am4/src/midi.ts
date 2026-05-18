@@ -16,8 +16,8 @@ import {
   type MidiPortInfo as GenericMidiPortInfo,
   type MockResponder,
 } from '@mcp-midi-control/core/midi/transport.js';
-import { fractalChecksum } from '@mcp-midi-control/core/fractal-shared/checksum.js';
-import { packValue, packValueChunked } from '@mcp-midi-control/core/fractal-shared/packValue.js';
+import { fractalChecksum } from 'fractal-midi/shared';
+import { packValue, packValueChunked } from 'fractal-midi/shared';
 
 export {
   connect,

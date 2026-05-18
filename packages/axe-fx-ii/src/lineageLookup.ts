@@ -25,11 +25,9 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 // Axe-Fx II lineage JSON lives alongside AM4 lineage data inside the
-// @mcp-midi-control/core package. Resolve via the package's exports so
-// the path works whether we run from source (tsx) or built dist.
-const coreLineageLookup = require.resolve(
-  '@mcp-midi-control/core/fractal-shared/lineageLookup.js',
-);
+// fractal-midi package's shared/ subpath. Resolve via the package's
+// exports so the path works whether we run from source (tsx) or built dist.
+const coreLineageLookup = require.resolve('fractal-midi/shared');
 const LINEAGE_DIR = path.join(path.dirname(coreLineageLookup), 'lineage');
 
 export const AXE_FX_II_LINEAGE_BLOCKS = ['amp', 'drive', 'reverb', 'delay'] as const;

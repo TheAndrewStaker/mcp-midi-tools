@@ -1,0 +1,132 @@
+name: release
+
+# Triggered when a version tag is pushed, e.g.
+#   git tag v0.1.0
+#   git push origin v0.1.0
+# Produces a GitHub Release with the bundled Windows ZIP attached.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write  # required to create releases
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify tag matches package.json version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $pkgVersion = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $expected = "v$pkgVersion"
+          if ($tag -ne $expected) {
+            Write-Error "Tag '$tag' does not match package.json version '$expected'. Bump package.json before tagging."
+            exit 1
+          }
+          Write-Host "Tag matches package.json version: $tag"
+
+      - name: Preflight (typecheck + goldens)
+        run: npm run preflight
+
+      - name: Build release bundle
+        run: npm run build:installer
+
+      - name: Stage release assets (versioned + stable names)
+        id: assets
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.TrimStart('v')
+          $src = "build/dist/mcp-midi-control-v$version.zip"
+          if (-not (Test-Path $src)) {
+            Write-Error "Expected $src to exist after build:installer"
+            exit 1
+          }
+          $versioned = "build/dist/mcp-midi-control-v$version-win-x64.zip"
+          $stable = "build/dist/mcp-midi-control-win-x64.zip"
+          Copy-Item $src $versioned -Force
+          Copy-Item $src $stable -Force
+          $sha = (Get-FileHash -Algorithm SHA256 $versioned).Hash.ToLower()
+          "versioned=$versioned" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "stable=$stable"       | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "sha256=$sha"          | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Versioned: $versioned"
+          Write-Host "Stable:    $stable"
+          Write-Host "SHA256:    $sha"
+
+      - name: Extract CHANGELOG section for this version
+        id: notes
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.TrimStart('v')
+          $body = ""
+          if (Test-Path CHANGELOG.md) {
+            $lines = Get-Content CHANGELOG.md
+            $start = -1
+            for ($i = 0; $i -lt $lines.Length; $i++) {
+              if ($lines[$i] -match "^##\s+\[$([regex]::Escape($version))\]") { $start = $i + 1; break }
+            }
+            if ($start -ge 0) {
+              $end = $lines.Length
+              for ($i = $start; $i -lt $lines.Length; $i++) {
+                if ($lines[$i] -match '^##\s+\[') { $end = $i; break }
+              }
+              $body = ($lines[$start..($end - 1)] -join "`n").Trim()
+            }
+          }
+          if (-not $body) {
+            $body = "_Release notes auto-generated from commits below._"
+          }
+          $sha = "${{ steps.assets.outputs.sha256 }}"
+          $header = @"
+          ## Download
+
+          - **Windows (x64), bundled Node + native MIDI:** ``mcp-midi-control-v$version-win-x64.zip``
+          - Stable latest URL (same file, version-stable name): ``mcp-midi-control-win-x64.zip``
+          - SHA256 (versioned ZIP): ``$sha``
+
+          ## Install
+
+          1. Download the ZIP and extract it (right-click -> Extract All).
+          2. Double-click ``setup.cmd``.
+          3. Fully quit and relaunch Claude Desktop.
+
+          See ``instructions.txt`` inside the ZIP for full details.
+
+          ---
+
+          "@
+          $full = $header + $body
+          $notesFile = "build/dist/release-notes.md"
+          $full | Out-File -FilePath $notesFile -Encoding utf8
+          "notes_file=$notesFile" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $versioned = "${{ steps.assets.outputs.versioned }}"
+          $stable = "${{ steps.assets.outputs.stable }}"
+          $notesFile = "${{ steps.notes.outputs.notes_file }}"
+          gh release create $tag $versioned $stable `
+            --title $tag `
+            --notes-file $notesFile

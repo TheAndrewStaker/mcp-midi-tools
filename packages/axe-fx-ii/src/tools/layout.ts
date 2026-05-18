@@ -6,7 +6,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import * as z from 'zod/v4';
 
-import { BLOCK_BY_ID } from '../blockTypes.js';
+import { BLOCK_BY_ID } from 'fractal-midi/axe-fx-ii';
 import {
   buildGetGridLayout,
   buildSetCellRouting,
@@ -17,7 +17,7 @@ import {
   parseGetGridLayoutResponse,
   parseSetCellRoutingResponse,
   parseSetGridCellResponse,
-} from '../setParam.js';
+} from 'fractal-midi/axe-fx-ii';
 
 import { renderGridAscii, renderGridJson, renderGridMarkdown, renderGridSummary } from './gridRender.js';
 import {

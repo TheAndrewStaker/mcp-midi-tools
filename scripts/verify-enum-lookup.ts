@@ -5,7 +5,7 @@
  * rejection, and invalid-input rejection.
  */
 
-import { KNOWN_PARAMS, resolveEnumValue } from '@mcp-midi-control/am4/params.js';
+import { KNOWN_PARAMS, resolveEnumValue } from 'fractal-midi/am4';
 
 interface Case {
   key: keyof typeof KNOWN_PARAMS;

@@ -58,11 +58,11 @@ import {
   TOTAL_LOCATIONS,
   formatLocationCode,
   parseLocationCode,
-} from '@mcp-midi-control/am4/locations.js';
+} from 'fractal-midi/am4';
 import {
   buildGetPresetName,
   parseGetPresetNameResponse,
-} from '@mcp-midi-control/am4/setParam.js';
+} from 'fractal-midi/am4';
 import type { MidiConnection } from '@mcp-midi-control/am4/midi.js';
 
 const BANK_PATH = 'samples/factory/AM4-Factory-Presets-1p01.syx';

@@ -11,7 +11,7 @@
  */
 import fs from 'fs';
 import readline from 'readline';
-import { unpackFloat32LE } from '@mcp-midi-control/core/fractal-shared/packValue.js';
+import { unpackFloat32LE } from 'fractal-midi/shared';
 
 const FILE = process.argv[2] ?? 'samples/captured/session-85-scene-midi.tshark.txt';
 

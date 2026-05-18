@@ -21,8 +21,8 @@ import {
     BLOCK_NAMES_BY_VALUE,
     BLOCK_TYPE_VALUES,
     resolveBlockType,
-} from '../blockTypes.js';
-import { formatLocationDisplay } from '../locations.js';
+} from 'fractal-midi/am4';
+import { formatLocationDisplay } from 'fractal-midi/am4';
 import {
     BLOCK_SLOT_PID_HIGH_BASE,
     BLOCK_SLOT_PID_LOW,
@@ -30,7 +30,7 @@ import {
     isReadResponseLong,
     parseLongReadBypassFlag,
     READ_TYPE_LONG,
-} from '../setParam.js';
+} from 'fractal-midi/am4';
 
 import { ensureMidi } from '@mcp-midi-control/core/server-shared/connections.js';
 import { READ_RESPONSE_TIMEOUT_MS, sendReadAndParse } from '../shared/readOps.js';

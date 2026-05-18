@@ -32,7 +32,7 @@
 
 import type { DeviceDescriptor } from '@mcp-midi-control/core/protocol-generic/types.js';
 
-import { AXE_FX_II_BLOCKS } from './blockTypes.js';
+import { AXE_FX_II_BLOCKS } from 'fractal-midi/axe-fx-ii';
 
 import { AXEFX2_AGENT_GUIDANCE } from './descriptor/agentGuidance.js';
 import { buildBlocks, buildBlockTypes } from './descriptor/schema.js';

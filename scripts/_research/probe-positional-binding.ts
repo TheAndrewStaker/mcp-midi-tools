@@ -22,8 +22,8 @@
 // signal to follow up with an alignment-and-emit pass.
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { PARAM_NAMES, type ParamNameEntry } from '@mcp-midi-control/am4/paramNames.js';
-import { PARAMETER_BRIDGE } from '@mcp-midi-control/am4/parameterBridge.js';
+import { PARAM_NAMES, type ParamNameEntry } from 'fractal-midi/am4';
+import { PARAMETER_BRIDGE } from 'fractal-midi/am4';
 
 interface CacheRec {
     block: number;

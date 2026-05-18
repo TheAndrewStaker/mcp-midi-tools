@@ -30,8 +30,8 @@ import {
   BLOCK_BY_ID,
   resolveBlock,
   type AxeFxIIBlock,
-} from '../blockTypes.js';
-import { KNOWN_PARAMS, type AxeFxIIParam } from '../params.js';
+} from 'fractal-midi/axe-fx-ii';
+import { KNOWN_PARAMS, type AxeFxIIParam } from 'fractal-midi/axe-fx-ii';
 import {
   buildGetBlockParameterValue,
   buildGetPresetName,
@@ -46,14 +46,14 @@ import {
   parseGetPresetNumberResponse,
   wireToDisplay,
   type AxeFxIIChannel,
-} from '../setParam.js';
+} from 'fractal-midi/axe-fx-ii';
 import {
   AXE_FX_II_LINEAGE_BLOCKS,
   formatAxeFxIILineageRecord,
   runAxeFxIILineageLookup,
   type AxeFxIILineageBlock,
 } from '../lineageLookup.js';
-import { findParamFuzzy } from '../paramAliases.js';
+import { findParamFuzzy } from 'fractal-midi/axe-fx-ii';
 
 import { findBlockBySlug, parseAxeFxIILocation } from './schema.js';
 

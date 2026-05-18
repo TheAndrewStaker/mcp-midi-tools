@@ -21,7 +21,7 @@
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-import { buildRequestActiveBufferDump } from '../setParam.js';
+import { buildRequestActiveBufferDump } from 'fractal-midi/am4';
 import { receivePresetDumpStream } from '../presetDump.js';
 import { toHex } from '@mcp-midi-control/core/midi/transport.js';
 

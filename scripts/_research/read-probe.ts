@@ -28,7 +28,7 @@
  * See HARDWARE-TASKS.md HW-044 for the full task spec.
  */
 import { connectAM4, describeAm4InboundMessage, toHex } from '@mcp-midi-control/am4/midi.js';
-import { buildReadParam } from '@mcp-midi-control/am4/setParam.js';
+import { buildReadParam } from 'fractal-midi/am4';
 
 interface ReadTarget {
   label: string;

@@ -61,7 +61,7 @@ import {
   DeviceCapabilities,
   ReadResponse,
   BaseParam,
-} from '@mcp-midi-control/core/fractal-shared/device.js';
+} from 'fractal-midi/shared';
 
 const NOT_YET = (): never => {
   throw new Error(
@@ -129,5 +129,5 @@ export const AXE_FX_II_DEVICE: FractalDevice = {
 // in src/fractal/index.ts and call registerDevice() when v0.1.1
 // implementation lands.
 //
-// import { registerDevice } from '@mcp-midi-control/core/fractal-shared/device.js';
+// import { registerDevice } from 'fractal-midi/shared';
 // registerDevice(AXE_FX_II_DEVICE);

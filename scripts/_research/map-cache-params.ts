@@ -34,7 +34,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { KNOWN_PARAMS, type Param } from '@mcp-midi-control/am4/params.js';
+import { KNOWN_PARAMS, type Param } from 'fractal-midi/am4';
 
 interface CacheRec {
   offset: number;

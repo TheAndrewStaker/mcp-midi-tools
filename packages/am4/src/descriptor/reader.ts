@@ -30,8 +30,8 @@ import {
   decode as am4Decode,
   type Param,
   type ParamKey,
-} from '../params.js';
-import { formatLocationDisplay } from '../locations.js';
+} from 'fractal-midi/am4';
+import { formatLocationDisplay } from 'fractal-midi/am4';
 import { readPresetName, sendReadAndParse } from '../shared/readOps.js';
 import {
   CHANNEL_BLOCKS,
@@ -42,16 +42,16 @@ import {
   formatLineageRecord,
   loadLineage,
   runLineageLookup,
-} from '@mcp-midi-control/core/fractal-shared/lineageLookup.js';
-import { TYPE_APPLICABILITY } from '../typeApplicability.js';
-import { checkApplicability } from '../applicability.js';
+} from 'fractal-midi/shared';
+import { TYPE_APPLICABILITY } from 'fractal-midi/am4';
+import { checkApplicability } from 'fractal-midi/am4';
 import {
   AMP_TYPES,
   COMPRESSOR_TYPES,
   DELAY_TYPES,
   DRIVE_TYPES,
   REVERB_TYPES,
-} from '../cacheEnums.js';
+} from 'fractal-midi/am4';
 
 import { parseAm4Location } from './schema.js';
 

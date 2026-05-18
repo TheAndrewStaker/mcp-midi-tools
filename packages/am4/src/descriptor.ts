@@ -32,8 +32,8 @@ import type {
   DeviceDescriptor,
 } from '@mcp-midi-control/core/protocol-generic/types.js';
 
-import { findCompatibleTypes as am4FindCompatibleTypes } from './applicability.js';
-import { TOTAL_LOCATIONS } from './locations.js';
+import { findCompatibleTypes as am4FindCompatibleTypes } from 'fractal-midi/am4';
+import { TOTAL_LOCATIONS } from 'fractal-midi/am4';
 
 import { AM4_AGENT_GUIDANCE } from './descriptor/agentGuidance.js';
 import { buildBlocks, buildBlockTypes } from './descriptor/schema.js';

@@ -27,10 +27,10 @@ import { DispatchError } from '@mcp-midi-control/core/protocol-generic/types.js'
 import {
   KNOWN_PARAMS,
   type AxeFxIIParam,
-} from '../params.js';
-import { AXE_FX_II_BLOCKS, type AxeFxIIBlock } from '../blockTypes.js';
-import { displayToWire, wireToDisplay } from '../setParam.js';
-import { PARAM_ALIASES_AXEFX2 } from '../paramAliases.js';
+} from 'fractal-midi/axe-fx-ii';
+import { AXE_FX_II_BLOCKS, type AxeFxIIBlock } from 'fractal-midi/axe-fx-ii';
+import { displayToWire, wireToDisplay } from 'fractal-midi/axe-fx-ii';
+import { PARAM_ALIASES_AXEFX2 } from 'fractal-midi/axe-fx-ii';
 
 // ── Encode / Decode closures ────────────────────────────────────────
 //

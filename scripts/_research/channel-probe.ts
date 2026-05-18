@@ -44,7 +44,7 @@
  *      (The script restores the starting channel at the end.)
  */
 import { connectAM4, describeAm4InboundMessage, toHex } from '@mcp-midi-control/am4/midi.js';
-import { buildReadParam, buildSetParam } from '@mcp-midi-control/am4/setParam.js';
+import { buildReadParam, buildSetParam } from 'fractal-midi/am4';
 
 const RESPONSE_WINDOW_MS = 500;
 const CHANNEL_REG = { pidLow: 0x003a, pidHigh: 0x07d2 };

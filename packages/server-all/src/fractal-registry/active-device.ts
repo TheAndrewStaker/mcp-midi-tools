@@ -11,7 +11,7 @@
 import {
   FRACTAL_DEVICE_REGISTRY,
   type FractalDevice,
-} from '@mcp-midi-control/core/fractal-shared/device.js';
+} from 'fractal-midi/shared';
 
 // Side-effect import: registers all built-in devices with the registry.
 import './index.js';

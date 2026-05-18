@@ -10,7 +10,7 @@
 import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
-import { unpackFloat32LE } from '@mcp-midi-control/core/fractal-shared/packValue.js';
+import { unpackFloat32LE } from 'fractal-midi/shared';
 
 interface Decoded {
   pidLow: number; pidHigh: number; hdr2: number; floatLE: number; hex: string; time: number;

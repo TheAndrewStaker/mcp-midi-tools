@@ -3,8 +3,8 @@
  * formats for the 4×12 routing grid. Used by axefx2_get_grid_layout.
  */
 
-import { BLOCK_BY_ID, type AxeFxIIBlock } from '../blockTypes.js';
-import type { GridCell } from '../setParam.js';
+import { BLOCK_BY_ID, type AxeFxIIBlock } from 'fractal-midi/axe-fx-ii';
+import type { GridCell } from 'fractal-midi/axe-fx-ii';
 
 export function describeCell(cell: GridCell): { label: string; kind: 'block' | 'shunt' | 'empty' } {
   if (cell.blockId === 0) return { label: '·', kind: 'empty' };

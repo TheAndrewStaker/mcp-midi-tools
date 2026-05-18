@@ -30,7 +30,7 @@ import {
   isGetGridLayoutResponse,
   parseGetGridLayoutResponse,
   type GridCell,
-} from '@mcp-midi-control/axe-fx-ii/setParam.js';
+} from 'fractal-midi/axe-fx-ii';
 import {
   buildApplyPresetAtOps,
   runApplyPresetAtOps,

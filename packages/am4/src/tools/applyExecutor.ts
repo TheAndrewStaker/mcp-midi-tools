@@ -24,13 +24,13 @@ import {
     PARAM_ALIASES,
     type Param,
     type ParamKey,
-} from '../params.js';
+} from 'fractal-midi/am4';
 import {
     BLOCK_NAMES_BY_VALUE,
     BLOCK_TYPE_VALUES,
     resolveBlockType,
-} from '../blockTypes.js';
-import { formatLocationDisplay } from '../locations.js';
+} from 'fractal-midi/am4';
+import { formatLocationDisplay } from 'fractal-midi/am4';
 import type { MidiConnection } from '@mcp-midi-control/core/midi/transport.js';
 
 import {
@@ -48,8 +48,8 @@ import {
     resolveChannel,
     CHANNEL_BLOCKS,
 } from '../shared/channels.js';
-import { checkApplicability } from '../applicability.js';
-import { EnumAmbiguityError, resolveValue, suggestParamName } from '../shared/paramHelpers.js';
+import { checkApplicability } from 'fractal-midi/am4';
+import { EnumAmbiguityError, resolveValue, suggestParamName } from 'fractal-midi/am4';
 import { sendAndAwaitAck } from '../shared/wireOps.js';
 import {
     buildSaveToLocation,
@@ -62,7 +62,7 @@ import {
     buildSwitchScene,
     isCommandAck,
     isWriteEcho,
-} from '../setParam.js';
+} from 'fractal-midi/am4';
 
 // --- Apply-preset prepared-write types ---
 

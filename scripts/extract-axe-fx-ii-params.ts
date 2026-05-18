@@ -31,6 +31,8 @@
 // See `docs/SYSEX-MAP-AXE-FX-II.md` for the current state.
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // ── Hardware-verified header preservation ─────────────────────────────
 //
@@ -313,8 +315,27 @@ const DELAY_TEMPO_VALUES_DATA: ReadonlyArray<readonly [number, string]> = [
 
 const WIKI_HTML = 'docs/_private/wiki-cache/axe-fx-ii-midi-sysex.html';
 const XML_CATALOG_JSON = 'samples/captured/decoded/labels/axe-edit-catalog.json';
-const OUT_BLOCKTYPES_TS = 'packages/axe-fx-ii/src/blockTypes.ts';
-const OUT_PARAMS_TS = 'packages/axe-fx-ii/src/params.ts';
+
+// Axe-Fx II params + blockTypes now live in the sibling `fractal-midi`
+// repo (Phase B extraction, 2026-05-18). Maintainer-only regen — edits
+// source files in fractal-midi/, so it can't use `require.resolve`
+// (that points at built dist). Assumes sibling-repo layout
+// `C:/dev/{mcp-midi-tools, fractal-midi}` per
+// `docs/fractal-midi-extraction-plan.md`.
+const _scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const FRACTAL_MIDI_REPO = path.resolve(_scriptDir, '..', '..', 'fractal-midi');
+const FRACTAL_MIDI_AXEFX2_SRC = path.join(FRACTAL_MIDI_REPO, 'src', 'axe-fx-ii');
+
+if (!existsSync(FRACTAL_MIDI_REPO)) {
+    console.error(
+        `extract-axe-fx-ii-params: sibling fractal-midi repo not found at ${FRACTAL_MIDI_REPO}.\n` +
+        `Clone fractal-midi next to mcp-midi-tools to run this regen script.`,
+    );
+    process.exit(1);
+}
+
+const OUT_BLOCKTYPES_TS = path.join(FRACTAL_MIDI_AXEFX2_SRC, 'blockTypes.ts');
+const OUT_PARAMS_TS = path.join(FRACTAL_MIDI_AXEFX2_SRC, 'params.ts');
 const OUT_DEBUG_JSON = 'samples/captured/decoded/labels/axe-fx-ii-params.json';
 
 // ── Wiki group code → Axe-Edit XML block name ────────────────────────
@@ -987,7 +1008,7 @@ export const REGISTRY_STATS = Object.freeze({
 
 // ── Persist ───────────────────────────────────────────────────────────
 
-mkdirSync('packages/axe-fx-ii/src', { recursive: true });
+mkdirSync(FRACTAL_MIDI_AXEFX2_SRC, { recursive: true });
 mkdirSync('samples/captured/decoded/labels', { recursive: true });
 
 // Splice the preserved Status: paragraph from each existing file

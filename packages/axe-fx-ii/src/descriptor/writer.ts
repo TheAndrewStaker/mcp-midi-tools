@@ -54,8 +54,8 @@ import {
   BLOCK_BY_ID,
   resolveBlock,
   type AxeFxIIBlock,
-} from '../blockTypes.js';
-import { KNOWN_PARAMS, type AxeFxIIParam } from '../params.js';
+} from 'fractal-midi/axe-fx-ii';
+import { KNOWN_PARAMS, type AxeFxIIParam } from 'fractal-midi/axe-fx-ii';
 import {
   buildGetPresetName,
   buildSetBlockBypass,
@@ -76,7 +76,7 @@ import {
   parseStorePresetResponse,
   wireToDisplay,
   type AxeFxIIChannel,
-} from '../setParam.js';
+} from 'fractal-midi/axe-fx-ii';
 
 import {
   buildApplyPresetAtOps,
@@ -85,7 +85,7 @@ import {
   type ApplyPresetAtInput,
   type ApplyPresetInput,
 } from '../tools/applyExecutor.js';
-import { findParamFuzzy } from '../paramAliases.js';
+import { findParamFuzzy } from 'fractal-midi/axe-fx-ii';
 import { guardActiveBufferOrSave } from '../tools/shared.js';
 
 import { findBlockBySlug, parseAxeFxIILocation } from './schema.js';

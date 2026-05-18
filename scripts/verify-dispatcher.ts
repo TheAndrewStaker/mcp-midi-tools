@@ -36,7 +36,7 @@ import {
 import { presetShape } from '@mcp-midi-control/core/protocol-generic/tools/shared.js';
 import { DispatchError } from '@mcp-midi-control/core/protocol-generic/types.js';
 import { AM4_DESCRIPTOR } from '@mcp-midi-control/am4/descriptor.js';
-import { buildSetParam } from '@mcp-midi-control/am4/setParam.js';
+import { buildSetParam } from 'fractal-midi/am4';
 import { prepareApplyPresetWrites } from '@mcp-midi-control/am4/tools/applyExecutor.js';
 import { AXEFX2_DESCRIPTOR } from '@mcp-midi-control/axe-fx-ii/descriptor.js';
 import {
@@ -44,7 +44,7 @@ import {
   buildStorePreset,
   buildSwitchPreset,
   displayToWire,
-} from '@mcp-midi-control/axe-fx-ii/setParam.js';
+} from 'fractal-midi/axe-fx-ii';
 
 function hex(arr: number[]): string {
   return arr.map((b) => b.toString(16).padStart(2, '0')).join('');

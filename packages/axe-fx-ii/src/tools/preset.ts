@@ -23,7 +23,7 @@ import {
   buildGetGridLayout,
   isGetGridLayoutResponse,
   parseGetGridLayoutResponse,
-} from '../setParam.js';
+} from 'fractal-midi/axe-fx-ii';
 
 import { buildApplyPresetOps, runApplyPresetAtOps, type ApplyPresetAtOp, type ApplyPresetInput } from './applyExecutor.js';
 import { renderGridSummary } from './gridRender.js';

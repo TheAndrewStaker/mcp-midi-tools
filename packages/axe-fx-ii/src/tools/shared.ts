@@ -15,10 +15,10 @@ import {
   BLOCK_BY_ID,
   resolveBlock,
   type AxeFxIIBlock,
-} from '../blockTypes.js';
-import { KNOWN_PARAMS, type AxeFxIIParam } from '../params.js';
+} from 'fractal-midi/axe-fx-ii';
+import { KNOWN_PARAMS, type AxeFxIIParam } from 'fractal-midi/axe-fx-ii';
 import { connectAxeFxII, listAxeFxIIOutputs, type AxeFxIIConnection } from '../midi.js';
-import { findParamFuzzy } from '../paramAliases.js';
+import { findParamFuzzy } from 'fractal-midi/axe-fx-ii';
 import {
   buildGetPresetName,
   buildGetPresetNumber,
@@ -30,7 +30,7 @@ import {
   parseGetPresetNameResponse,
   parseGetPresetNumberResponse,
   parseStorePresetResponse,
-} from '../setParam.js';
+} from 'fractal-midi/axe-fx-ii';
 import { isDirty } from '@mcp-midi-control/core/server-shared/bufferDirty.js';
 import {
   ON_EDITED_DESCRIPTION as SHARED_ON_EDITED_DESCRIPTION,

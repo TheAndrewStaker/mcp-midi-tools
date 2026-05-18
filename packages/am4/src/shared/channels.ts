@@ -17,15 +17,15 @@
  * reporting stale data across those boundaries.
  */
 
-import { type ParamKey } from '../params.js';
+import { type ParamKey } from 'fractal-midi/am4';
 import {
     checkApplicability,
     describeApplicability,
-} from '../applicability.js';
+} from 'fractal-midi/am4';
 import {
     buildSetParam,
     isWriteEcho,
-} from '../setParam.js';
+} from 'fractal-midi/am4';
 import type { MidiConnection } from '@mcp-midi-control/core/midi/transport.js';
 
 import { WRITE_ECHO_TIMEOUT_MS, recordAckOutcome } from '@mcp-midi-control/core/server-shared/connections.js';

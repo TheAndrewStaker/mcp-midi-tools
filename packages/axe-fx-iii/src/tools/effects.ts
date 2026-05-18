@@ -1,12 +1,15 @@
 /**
- * Axe-Fx III block-level effect tools — bypass + channel writes
+ * Axe-Fx III block-level effect tools — channel + bypass read
  * using v1.4 spec Appendix 1 effect IDs.
  *
  * These operate on the ACTIVE scene only (per v1.4 spec — the III
  * has no per-scene bypass / channel writes in the public spec).
  *
+ * `axefx3_set_bypass` was removed 2026-05-18 — the unified
+ * `set_bypass({port:'axe-fx-iii', block, bypassed})` covers it via
+ * the descriptor writer.setBypass path.
+ *
  * Tools registered:
- *   - axefx3_set_bypass(block, bypassed)
  *   - axefx3_get_bypass(block)
  *   - axefx3_set_channel(block, channel)
  *   - axefx3_get_channel(block)
@@ -15,9 +18,8 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import * as z from 'zod/v4';
 
-import { resolveEffectId } from '../blockTypes.js';
+import { resolveEffectId } from 'fractal-midi/axe-fx-iii';
 import {
-  buildSetBypass,
   buildGetBypass,
   buildSetChannel,
   buildGetChannel,
@@ -25,7 +27,7 @@ import {
   isSetGetChannelResponse,
   parseBypassResponse,
   parseChannelResponse,
-} from '../setParam.js';
+} from 'fractal-midi/axe-fx-iii';
 
 import {
   BETA_NOTE,
@@ -51,47 +53,6 @@ const BLOCK_INPUT_DESCRIPTION = [
 const CHANNEL_VALUES = { A: 0, B: 1, C: 2, D: 3 } as const;
 
 export function registerAxeFxIIIEffectTools(server: McpServer): void {
-
-  server.registerTool('axefx3_set_bypass', {
-    description: [
-      'Set the bypass state of a block on the Axe-Fx III. Targets the',
-      'ACTIVE scene only — the v1.4 spec has no per-scene bypass write.',
-      '',
-      'Wire: SET_BYPASS (function 0x0A). Payload: `id id dd` where',
-      '  id id = 14-bit effect ID per v1.4 Appendix 1 (LS-first)',
-      '  dd    = 0 (engaged) or 1 (bypassed)',
-      '',
-      NO_ACK_NOTE,
-      '',
-      BETA_NOTE,
-    ].join('\n'),
-    inputSchema: {
-      block: z.string().describe(BLOCK_INPUT_DESCRIPTION),
-      bypassed: z.boolean().describe(
-        'true → bypass (block is muted/skipped), false → engage (block is in signal chain).',
-      ),
-    },
-  }, async ({ block, bypassed }) => {
-    const effectId = resolveEffectId(block);
-    const bytes = buildSetBypass(effectId, bypassed);
-    const c = ensureConn();
-    const errorReport = await sendAndWatchForError(c, bytes);
-    const errorBlock = errorReport
-      ? `\n${formatMultipurposeError(errorReport)}\n`
-      : '';
-    return {
-      content: [{
-        type: 'text',
-        text:
-          `Sent SET_BYPASS → ${block} (effect ID ${effectId}) ` +
-          `${bypassed ? 'BYPASSED' : 'ENGAGED'}.\n` +
-          `Wrote ${bytes.length} bytes: ${toHex(bytes)}\n` +
-          errorBlock +
-          `\n${NO_ACK_NOTE}\n\n${BETA_NOTE}`,
-      }],
-    };
-  });
-
 
   server.registerTool('axefx3_get_bypass', {
     description: [

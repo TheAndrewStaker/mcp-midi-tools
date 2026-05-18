@@ -21,7 +21,7 @@ import { join } from 'node:path';
 import {
   formatLocationCode,
   parseLocationCode,
-} from '@mcp-midi-control/am4/locations.js';
+} from 'fractal-midi/am4';
 import {
   PRESET_DUMP_LEN,
   parsePresetBank,

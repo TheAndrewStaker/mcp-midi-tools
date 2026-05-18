@@ -35,13 +35,13 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import * as z from 'zod/v4';
 
-import { resolveEffectId } from '../blockTypes.js';
+import { resolveEffectId } from 'fractal-midi/axe-fx-iii';
 import {
   buildSetParameter,
   buildGetParameter,
   isSetGetParameterResponse,
   parseSetGetParameterResponse,
-} from '../setParam.js';
+} from 'fractal-midi/axe-fx-iii';
 
 import {
   AXEFX3_DIRTY_LABEL,

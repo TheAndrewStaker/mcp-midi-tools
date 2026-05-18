@@ -144,10 +144,10 @@ registerMidiPrimitiveTools(server); // send_cc / _note / _program_change / _nrpn
 // Tool names are namespaced (`am4_*`, `axefx2_*`, `hydra_*`) so they
 // can't collide. See docs/MULTI-DEVICE-ROADMAP.md for the rationale.
 
-registerAM4Tools(server);           // 30 am4_* tools
-registerAxeFxIITools(server);       // 9 axefx2_* tools
-registerAxeFxIIITools(server);      // 8 axefx3_* tools (🟡 community beta)
-registerHydrasynthTools(server);    // 12 hydra_* tools
+registerAM4Tools(server);           // 5 am4_* tools (read/buffer-dump only after v0.3)
+registerAxeFxIITools(server);       // 10 axefx2_* tools (grid/routing + reads/diagnostics)
+registerAxeFxIIITools(server);      // 18 axefx3_* tools (🟡 community beta)
+registerHydrasynthTools(server);    // 8 hydra_* tools (system CC + macros + patch lifecycle)
 
 // -- Unified-surface descriptor registration (BK-051) -----------------------
 //

@@ -39,14 +39,14 @@ import { connectAM4 } from '@mcp-midi-control/am4/midi.js';
 import {
   buildSetParam,
   isWriteEcho,
-} from '@mcp-midi-control/am4/setParam.js';
+} from 'fractal-midi/am4';
 import { sendReadAndParse } from '@mcp-midi-control/am4/shared/readOps.js';
 import { sendAndAwaitAck } from '@mcp-midi-control/am4/shared/wireOps.js';
-import { KNOWN_PARAMS, type Param, type ParamKey } from '@mcp-midi-control/am4/params.js';
-import { decode as am4Decode } from '@mcp-midi-control/am4/params.js';
-import { AMP_TYPES } from '@mcp-midi-control/am4/cacheEnums.js';
-import { TYPE_APPLICABILITY } from '@mcp-midi-control/am4/typeApplicability.js';
-import { checkApplicability } from '@mcp-midi-control/am4/applicability.js';
+import { KNOWN_PARAMS, type Param, type ParamKey } from 'fractal-midi/am4';
+import { decode as am4Decode } from 'fractal-midi/am4';
+import { AMP_TYPES } from 'fractal-midi/am4';
+import { TYPE_APPLICABILITY } from 'fractal-midi/am4';
+import { checkApplicability } from 'fractal-midi/am4';
 
 const ICONIC_KNOBS = ['gain', 'bass', 'mid', 'treble', 'presence', 'master', 'level', 'depth'];
 

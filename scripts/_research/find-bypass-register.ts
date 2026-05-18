@@ -44,7 +44,7 @@ import {
   buildSetBlockBypass,
   isReadResponse,
   parseReadResponse,
-} from '@mcp-midi-control/am4/setParam.js';
+} from 'fractal-midi/am4';
 
 const BLOCK_PID_LOW = 0x0042; // reverb
 const BLOCK_LABEL = 'reverb';

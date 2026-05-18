@@ -4,7 +4,7 @@
  * shape for `am4_get_preset_name(location)`.
  */
 
-import { unpackValue, packValue } from '@mcp-midi-control/core/fractal-shared/packValue.js';
+import { unpackValue, packValue } from 'fractal-midi/shared';
 
 // First 8 captured tails (frames 45,49,53,57,61,65,69,73 — index 0..7).
 const tails = [

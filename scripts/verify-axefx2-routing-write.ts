@@ -27,8 +27,8 @@ import {
   isGetGridLayoutResponse,
   parseGetGridLayoutResponse,
   type GridCell,
-} from '@mcp-midi-control/axe-fx-ii/setParam.js';
-import { fractalChecksum } from '@mcp-midi-control/core/fractal-shared/checksum.js';
+} from 'fractal-midi/axe-fx-ii';
+import { fractalChecksum } from 'fractal-midi/shared';
 
 const SLOT_666_WIRE = 665;
 const AMP1_BLOCK_ID = 106; // 0x6a

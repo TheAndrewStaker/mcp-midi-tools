@@ -8,7 +8,7 @@
  * `buildApplyPresetAtOps`).
  */
 
-import type { AxeFxIIBlock } from '../blockTypes.js';
+import type { AxeFxIIBlock } from 'fractal-midi/axe-fx-ii';
 import {
   buildGetGridLayout,
   buildSetBlockBypass as buildSetBlockBypassEnvelope,
@@ -30,7 +30,7 @@ import {
   parseSetGridCellResponse,
   parseStorePresetResponse,
   type AxeFxIIChannel,
-} from '../setParam.js';
+} from 'fractal-midi/axe-fx-ii';
 
 import { GET_RESPONSE_TIMEOUT_MS, findBlock, findParam } from './shared.js';
 

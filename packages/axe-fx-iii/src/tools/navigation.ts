@@ -1,5 +1,5 @@
 /**
- * Axe-Fx III navigation tools — switch + read tools per v1.4 PDF spec.
+ * Axe-Fx III navigation tools — read tools per v1.4 PDF spec.
  *
  * NOTE: there is NO `axefx3_switch_preset` tool because the III's
  * v1.4 spec does NOT include a SysEx preset-switch function. III
@@ -7,8 +7,11 @@
  * CC 0 / CC 32 Bank Select for slots > 127), which is outside this
  * SysEx-focused tool surface.
  *
+ * `axefx3_switch_scene` was removed 2026-05-18 — the unified
+ * `switch_scene({port:'axe-fx-iii', scene})` covers it via the
+ * descriptor writer.switchScene path.
+ *
  * Tools registered:
- *   - axefx3_switch_scene       (function 0x0C set)
  *   - axefx3_get_active_scene   (function 0x0C query)
  *   - axefx3_get_preset_name    (function 0x0D — returns preset # + name)
  *   - axefx3_get_scene_name     (function 0x0E)
@@ -18,7 +21,6 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import * as z from 'zod/v4';
 
 import {
-  buildSetScene,
   buildGetScene,
   buildQueryPatchName,
   buildQuerySceneName,
@@ -28,60 +30,16 @@ import {
   parseSceneResponse,
   parseQueryPatchNameResponse,
   parseQuerySceneNameResponse,
-} from '../setParam.js';
+} from 'fractal-midi/axe-fx-iii';
 
 import {
   BETA_NOTE,
   GET_RESPONSE_TIMEOUT_MS,
-  NO_ACK_NOTE,
   ensureConn,
-  formatMultipurposeError,
-  sendAndWatchForError,
   toHex,
 } from './shared.js';
 
 export function registerAxeFxIIINavigationTools(server: McpServer): void {
-
-  server.registerTool('axefx3_switch_scene', {
-    description: [
-      'Switch the active scene within the current preset on the Axe-Fx',
-      'III. The III has 8 scenes per preset.',
-      '',
-      'Wire: SET_SCENE (function 0x0C). 1-indexed scene number gets',
-      'converted to 0-indexed wire byte by this tool.',
-      '',
-      'CAUTION: scene switching does NOT discard working-buffer edits',
-      'in the same way preset switching does — scenes are part of the',
-      'same preset.',
-      '',
-      NO_ACK_NOTE,
-      '',
-      BETA_NOTE,
-    ].join('\n'),
-    inputSchema: {
-      scene: z.number().int().min(1).max(8).describe(
-        '1-indexed scene number (1..8). Mapped to 0..7 on the wire.',
-      ),
-    },
-  }, async ({ scene }) => {
-    const bytes = buildSetScene(scene - 1);
-    const c = ensureConn();
-    const errorReport = await sendAndWatchForError(c, bytes);
-    const errorBlock = errorReport
-      ? `\n${formatMultipurposeError(errorReport)}\n`
-      : '';
-    return {
-      content: [{
-        type: 'text',
-        text:
-          `Sent SET_SCENE → scene ${scene} (wire ${scene - 1}).\n` +
-          `Wrote ${bytes.length} bytes: ${toHex(bytes)}\n` +
-          errorBlock +
-          `\n${NO_ACK_NOTE}\n\n${BETA_NOTE}`,
-      }],
-    };
-  });
-
 
   server.registerTool('axefx3_get_active_scene', {
     description: [

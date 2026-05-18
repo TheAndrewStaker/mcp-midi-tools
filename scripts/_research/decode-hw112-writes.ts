@@ -2,7 +2,7 @@
 // Confirms (1) pidLow=0x0001 = GLOBAL, (2) action=0x01 = WRITE, (3) what the
 // founder actually toggled on the AM4-Edit Setup pages.
 
-import { unpackValue } from '@mcp-midi-control/core/fractal-shared/packValue.js';
+import { unpackValue } from 'fractal-midi/shared';
 
 type Write = { frame: number; pidHigh: number; packed: number[] };
 

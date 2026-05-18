@@ -26,7 +26,7 @@
 
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { formatLocationCode } from '../locations.js';
+import { formatLocationCode } from 'fractal-midi/am4';
 import {
   type ParsedPresetDump,
   parsePresetBank,

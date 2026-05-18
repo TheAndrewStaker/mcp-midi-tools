@@ -22,11 +22,15 @@
 
 import { readFileSync } from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { createRequire } from 'node:module';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.join(__dirname, '..');
-const LINEAGE_DIR = path.join(ROOT, 'packages', 'core', 'src', 'fractal-shared', 'lineage');
+// Lineage JSON now lives inside the `fractal-midi` package. Resolve via
+// the package's `./shared` subpath export so this works whether we run
+// from source (tsx) or built dist — same trick `packages/axe-fx-ii/src/
+// lineageLookup.ts` uses.
+const require = createRequire(import.meta.url);
+const sharedIndex = require.resolve('fractal-midi/shared');
+const LINEAGE_DIR = path.join(path.dirname(sharedIndex), 'lineage');
 
 interface AxeFxIIRecord {
     axefx2Name: string;

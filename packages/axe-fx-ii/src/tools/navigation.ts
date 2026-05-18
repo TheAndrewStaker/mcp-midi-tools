@@ -31,7 +31,7 @@ import {
   parseGetPresetNameResponse,
   parseGetPresetNumberResponse,
   type AxeFxIIChannel,
-} from '../setParam.js';
+} from 'fractal-midi/axe-fx-ii';
 
 import {
   GET_RESPONSE_TIMEOUT_MS,

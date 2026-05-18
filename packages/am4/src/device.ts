@@ -15,12 +15,12 @@ import {
   DeviceIdentity,
   ReadResponse,
   registerDevice,
-} from '@mcp-midi-control/core/fractal-shared/device.js';
+} from 'fractal-midi/shared';
 import {
   KNOWN_PARAMS,
   PARAM_ALIASES,
   type ParamKey,
-} from './params.js';
+} from 'fractal-midi/am4';
 import {
   AM4_MODEL_ID,
   type ParamId,
@@ -37,18 +37,18 @@ import {
   isCommandAck,
   isReadResponse,
   parseReadResponse,
-} from './setParam.js';
+} from 'fractal-midi/am4';
 import {
   BLOCK_TYPE_VALUES,
   BLOCK_NAMES_BY_VALUE,
   resolveBlockType,
-} from './blockTypes.js';
+} from 'fractal-midi/am4';
 import {
   TOTAL_LOCATIONS,
   parseLocationCode,
   formatLocationCode,
   formatLocationDisplay,
-} from './locations.js';
+} from 'fractal-midi/am4';
 
 const CAPABILITIES: DeviceCapabilities = {
   sceneCount: 4,

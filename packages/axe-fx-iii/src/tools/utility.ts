@@ -25,7 +25,7 @@ import {
   parseTempoResponse,
   parseLooperStateResponse,
   type LooperAction,
-} from '../setParam.js';
+} from 'fractal-midi/axe-fx-iii';
 
 import {
   BETA_NOTE,

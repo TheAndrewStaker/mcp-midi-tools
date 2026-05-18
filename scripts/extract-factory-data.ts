@@ -87,7 +87,7 @@ import path from 'node:path';
 import {
   TOTAL_LOCATIONS,
   formatLocationCode,
-} from '@mcp-midi-control/am4/locations.js';
+} from 'fractal-midi/am4';
 import {
   BLOCK_SLOT_PID_HIGH_BASE,
   BLOCK_SLOT_PID_LOW,
@@ -97,8 +97,8 @@ import {
   isReadResponse,
   parseGetPresetNameResponse,
   parseReadResponse,
-} from '@mcp-midi-control/am4/setParam.js';
-import { BLOCK_NAMES_BY_VALUE } from '@mcp-midi-control/am4/blockTypes.js';
+} from 'fractal-midi/am4';
+import { BLOCK_NAMES_BY_VALUE } from 'fractal-midi/am4';
 import { connectAM4, type MidiConnection } from '@mcp-midi-control/am4/midi.js';
 
 const OUTPUT_PATH = path.resolve(

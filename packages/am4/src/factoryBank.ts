@@ -39,7 +39,7 @@ import {
 import {
   TOTAL_LOCATIONS,
   formatLocationCode,
-} from './locations.js';
+} from 'fractal-midi/am4';
 import type { MidiConnection } from '@mcp-midi-control/core/midi/transport.js';
 
 /**

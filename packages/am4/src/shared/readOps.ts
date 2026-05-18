@@ -14,7 +14,7 @@ import {
     isReadResponse,
     parseGetPresetNameResponse,
     parseReadResponse,
-} from '../setParam.js';
+} from 'fractal-midi/am4';
 import type { MidiConnection } from '@mcp-midi-control/core/midi/transport.js';
 
 export const READ_RESPONSE_TIMEOUT_MS = 300;

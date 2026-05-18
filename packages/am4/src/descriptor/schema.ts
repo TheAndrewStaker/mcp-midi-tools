@@ -32,15 +32,15 @@ import {
   resolveEnumValue,
   type Param,
   type ParamKey,
-} from '../params.js';
-import { EnumAmbiguityError } from '../shared/paramHelpers.js';
-import { BLOCK_TYPE_VALUES, BLOCK_NAMES_BY_VALUE } from '../blockTypes.js';
+} from 'fractal-midi/am4';
+import { EnumAmbiguityError } from 'fractal-midi/am4';
+import { BLOCK_TYPE_VALUES, BLOCK_NAMES_BY_VALUE } from 'fractal-midi/am4';
 import {
   parseLocationCode,
   TOTAL_LOCATIONS,
-} from '../locations.js';
-import { resolveBridge } from '../parameterBridge.js';
-import { describeApplicability } from '../applicability.js';
+} from 'fractal-midi/am4';
+import { resolveBridge } from 'fractal-midi/am4';
+import { describeApplicability } from 'fractal-midi/am4';
 
 // ── Unit pass-through ───────────────────────────────────────────────
 //

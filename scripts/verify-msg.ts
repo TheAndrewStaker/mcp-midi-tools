@@ -21,10 +21,10 @@ import {
   isReadResponse,
   parseGetPresetNameResponse,
   parseReadResponse,
-} from '@mcp-midi-control/am4/setParam.js';
-import { KNOWN_PARAMS } from '@mcp-midi-control/am4/params.js';
-import { BLOCK_TYPE_VALUES, BLOCK_NAMES_BY_VALUE } from '@mcp-midi-control/am4/blockTypes.js';
-import { parseLocationCode } from '@mcp-midi-control/am4/locations.js';
+} from 'fractal-midi/am4';
+import { KNOWN_PARAMS } from 'fractal-midi/am4';
+import { BLOCK_TYPE_VALUES, BLOCK_NAMES_BY_VALUE } from 'fractal-midi/am4';
+import { parseLocationCode } from 'fractal-midi/am4';
 import {
   PRESET_DUMP_LEN,
 } from '@mcp-midi-control/am4/presetDump.js';
@@ -1561,8 +1561,8 @@ console.log(`${decodePass}/${decodeCases.length} read-response decode cases pass
 // log10 (per cache typecode). Verifies `decode()` produces the right
 // display value against the empirical Sultans-of-Swing readback values.
 // (KNOWN_PARAMS already imported at top of file; only `decode` is new.)
-import { decode } from '@mcp-midi-control/am4/params.js';
-import type { Param } from '@mcp-midi-control/am4/params.js';
+import { decode } from 'fractal-midi/am4';
+import type { Param } from 'fractal-midi/am4';
 type DecodeCase = { key: string; internal: number; expect: number; tol: number };
 const decodeRuleCases: DecodeCase[] = [
   // Empirical from Sultans-of-Swing test (Session 43 cont):
@@ -2484,7 +2484,7 @@ console.log(
 // correlation. Lineage data is sourced from the project's existing
 // src/fractal/shared/lineage/*-lineage.json files so the goldens stay
 // byte-stable across runs.
-import { runLineageLookup, type LineageLookupAsk } from '@mcp-midi-control/core/fractal-shared/lineageLookup.js';
+import { runLineageLookup, type LineageLookupAsk } from 'fractal-midi/shared';
 
 type LineagesGoldenCase = {
   label: string;

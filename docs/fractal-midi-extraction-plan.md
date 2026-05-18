@@ -279,6 +279,98 @@ When the extraction is triggered, this is the order I'd run it:
     the only way to confirm the cross-repo wiring didn't lose any
     runtime-resolution invariants.
 
+## Post-extraction — III calibration ✅ + FM3 / FM9 add (Session 97 cont 7)
+
+After the initial extraction landed (2026-05-18), the III device was
+lifted from "experimental ~11% calibration" to **Codec ✅ + Calibration
+✅** entirely in `C:/dev/fractal-midi` without hardware. The
+mechanical path is documented because it generalizes to FM3 and FM9.
+
+### What landed for III in `fractal-midi`
+
+- **A1 — Round-trip codec goldens.** `test/axe-fx-iii/setparam.test.ts`
+  jumped from 36 → 302 goldens. Added 264 `build → parse → equality`
+  cases across {4 effectIds × 6 paramIds × 11 values}, plus 2
+  `parseStateBroadcast` assertions. Added named `parseStateBroadcast`
+  helper + `AxeFxIIIParameterFrameKind` discriminator union so callers
+  can branch on `'set_echo'` vs `'state_broadcast'` without re-reading
+  sub-action bytes.
+- **A2 — Enum vocabulary overlay.** New module
+  `src/axe-fx-iii/enumOverlay.ts` ships universal-Fractal vocabularies
+  (binary OFF/ON, channel A/B/C/D, filter slopes, LFO waveforms,
+  tempo divisions) + III-specific direct overrides, each tagged with
+  a `provenance: 'am4-shared' | 'fractal-convention' | 'iii-spec'`
+  field. Resolves to ~13% of III's 749 enum-typed entries; the
+  remaining 87% return `undefined` and are user-facing reminders for
+  GitHub issue contribution.
+- **A3 — Post-generation overlay script.** New script
+  `scripts/axe-fx-iii/apply-calibration-overlay.ts` extends the
+  upstream generator's universal-suffix fallback with a much broader
+  table (`_MODE`/`_TYPE`/`_BEGIN`/`_LAYOUT*`/`_FC*`/`_FEEDBACK*` etc.).
+  Drove `unit: 'unverified'` from 572 entries → 48 (all string-typed
+  `_NAME` / `_LABEL*` / `_MSG` exempted by the calibration gate). Each
+  modified entry carries a trailing `// post-gen overlay: <reason>`
+  audit tag.
+- **A4 — Calibration acceptance gate.** New
+  `test/axe-fx-iii/calibration.test.ts` asserts every non-string-typed
+  catalog entry carries a non-`'unverified'` unit (the hard gate
+  behind the README ✅) and reports coverage of numeric range / enum
+  vocabulary as soft metrics. Wired into the test runner.
+
+Final III state at `fractal-midi@0.1.0-alpha.0+session-97-cont-7`:
+catalog 2216 / calibration 100% unit-coverage / enum vocab 13% /
+numeric ranges 23%.
+
+### Phase B — FM3 (Catalog + Codec + Calibration, all ❌ → ✅)
+
+Once the founder has the FM3-Edit installer:
+
+1. **Founder action.** Download FM3-Edit installer from
+   `fractalaudio.com/fm3-downloads`. Extract the JUCE BinaryData zip
+   into `samples/captured/decoded/binarydata/fm3-edit-allzips/extracted/`
+   (mirrors the III path already in place).
+2. **Catalog mining** (no hardware needed once binary is in hand):
+   adapt `mine-axeedit3-xml-labels.ts` to FM3-Edit's
+   `__block_layout.xml`. Ghidra-mine the FM3-Edit dispatcher using
+   the `SeekParamTablesII.java` direct-pattern-scan technique. Output
+   `(paramId, symbolicName)` pairs by family.
+3. **Generate catalog.** Adapt
+   `scripts/_research/generate-axefx3-params-from-catalog.ts` to
+   produce `packages/fm3/src/params.ts` (or, post-extraction, write
+   directly to `fractal-midi/src/fm3/`). Same Param interface shape
+   as III.
+4. **Codec.** Clone III's `setParam.ts` → swap `AXE_FX_III_MODEL_ID
+   = 0x10` to `FM3_MODEL_ID = 0x11`. Wire envelope, sub-action codes,
+   `packValue16`, `encode14` are family-shared per Fractal's v1.4
+   PDF. Add the same 302+ round-trip goldens.
+5. **Calibration.** Re-run the Phase-A pipeline:
+   `apply-calibration-overlay.ts` → universal suffix table closes
+   `'unverified'`. Clone `enumOverlay.ts` and re-tune direct overrides
+   for FM3-specific names.
+6. **Acceptance gate.** Clone `calibration.test.ts` → assert
+   100% unit-coverage for FM3.
+7. **README footnote.** Same form as III's: "FM3 codec and
+   calibration derived from FM3-Edit binary mining and the Fractal
+   v1.4 MIDI spec; hardware verification welcome via GitHub issue."
+
+Estimate: ~2.5 days once founder pulls binary.
+
+### Phase C — FM9 (mirror of Phase B)
+
+Identical to Phase B; swap `0x11` → `0x12`, FM3-Edit → FM9-Edit.
+Estimate: ~2.5 days once founder pulls binary.
+
+### Generalizing the III lift
+
+The Phase-A scripts in `fractal-midi/scripts/axe-fx-iii/` are
+device-specific by data only, not by mechanism. For FM3/FM9 the same
+suffix table, enum overlay shape, and calibration gate apply
+verbatim — only the paths and the model byte change. Consider
+extracting a shared `fractal-midi/scripts/lib/` module that takes a
+device key and applies the pipeline, parametrized on params.ts path
+and model byte. Worth doing **after** FM3 lands, not before — the
+abstraction is cheaper to write once the third copy exists.
+
 ## Strategic notes
 
 - **AlGrenadine collaboration window.** The

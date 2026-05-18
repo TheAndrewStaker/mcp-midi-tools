@@ -13,12 +13,12 @@
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-import { AXE_FX_III_BLOCKS } from '../blockTypes.js';
+import { AXE_FX_III_BLOCKS } from 'fractal-midi/axe-fx-iii';
 import {
   buildStatusDump,
   isStatusDumpResponse,
   parseStatusDumpResponse,
-} from '../setParam.js';
+} from 'fractal-midi/axe-fx-iii';
 
 import {
   BETA_NOTE,

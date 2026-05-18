@@ -20,9 +20,21 @@
  */
 
 import { readFileSync, existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 
-const PARAMS_TS = 'packages/am4/src/params.ts';
-const BLOCK_TYPES_TS = 'packages/am4/src/blockTypes.ts';
+// AM4 params + blockTypes now live in the `fractal-midi` npm package.
+// Resolve via the package's subpath exports so the path works regardless
+// of where the consumer cloned mcp-midi-control. We read the compiled
+// .js (which preserves the object-literal entry shape the regex below
+// matches) rather than the .ts source.
+const require = createRequire(import.meta.url);
+const FRACTAL_MIDI_AM4_DIR = dirname(require.resolve('fractal-midi/am4'));
+const FRACTAL_MIDI_AXEFX2_DIR = dirname(require.resolve('fractal-midi/axe-fx-ii'));
+const FRACTAL_MIDI_AXEFX3_DIR = dirname(require.resolve('fractal-midi/axe-fx-iii'));
+
+const PARAMS_TS = join(FRACTAL_MIDI_AM4_DIR, 'params.js');
+const BLOCK_TYPES_TS = join(FRACTAL_MIDI_AM4_DIR, 'blockTypes.js');
 const VERIFY_MSG_TS = 'scripts/verify-msg.ts';
 const GHIDRA_AM4 = 'samples/captured/decoded/ghidra-am4-paramnames.json';
 
@@ -340,14 +352,14 @@ if (productLineOnly.length > 0) {
 const deviceFiles = [
   {
     device: 'Axe-Fx II',
-    path: 'packages/axe-fx-ii/src/params.ts',
+    path: join(FRACTAL_MIDI_AXEFX2_DIR, 'params.js'),
     // II uses object-array entries keyed by `groupCode`/`paramId` with
     // double-quoted values (auto-generated, JSON-style).
     signature: /groupCode:\s*["']/g,
   },
   {
     device: 'Axe-Fx III',
-    path: 'packages/axe-fx-iii/src/blockTypes.ts',
+    path: join(FRACTAL_MIDI_AXEFX3_DIR, 'blockTypes.js'),
     // III currently exposes blocks (not per-param) through blockTypes.ts.
     // Count `firstId:` lines as a block count proxy until per-param ships.
     signature: /firstId:\s/g,

@@ -32,7 +32,7 @@ import {
   buildSwitchPreset,
   isGetGridLayoutResponse,
   parseGetGridLayoutResponse,
-} from '@mcp-midi-control/axe-fx-ii/setParam.js';
+} from 'fractal-midi/axe-fx-ii';
 
 function toHex(bytes: readonly number[]): string {
   return bytes.map((b) => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');

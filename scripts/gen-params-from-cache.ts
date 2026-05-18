@@ -35,12 +35,31 @@
  *   — compares cacheParams against KNOWN_PARAMS for known-name entries
  *     and fails if they diverge (address, unit, or range).
  */
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { PARAM_NAMES, type ParamNameEntry } from '@mcp-midi-control/am4/paramNames.js';
-import { GENERATED_PARAM_NAMES } from '@mcp-midi-control/am4/paramNamesGenerated.js';
-import type { Unit } from '@mcp-midi-control/am4/params.js';
+import { PARAM_NAMES, type ParamNameEntry } from 'fractal-midi/am4';
+import { GENERATED_PARAM_NAMES } from 'fractal-midi/am4';
+import type { Unit } from 'fractal-midi/am4';
+
+// cacheParams.ts now lives in the sibling `fractal-midi` repo (Phase B
+// extraction, 2026-05-18). This is a maintainer-only regen script — it
+// edits source files in `fractal-midi/`, so it can't use
+// `require.resolve('fractal-midi/am4')` (that resolves to the built
+// dist). Assumes the sibling-repo layout `C:/dev/{mcp-midi-tools,
+// fractal-midi}` documented in `docs/fractal-midi-extraction-plan.md`.
+const _scriptDir = dirname(fileURLToPath(import.meta.url));
+const FRACTAL_MIDI_REPO = resolve(_scriptDir, '..', '..', 'fractal-midi');
+const CACHE_PARAMS_OUT = join(FRACTAL_MIDI_REPO, 'src', 'am4', 'cacheParams.ts');
+
+if (!existsSync(FRACTAL_MIDI_REPO)) {
+    console.error(
+        `gen-params-from-cache: sibling fractal-midi repo not found at ${FRACTAL_MIDI_REPO}.\n` +
+        `Clone fractal-midi next to mcp-midi-tools to run this regen script.`,
+    );
+    process.exit(1);
+}
 
 /**
  * Merge hand-curated `paramNames.ts` with the resolver-derived
@@ -356,9 +375,8 @@ ${entries.map(formatEntry).join('\n')}
 export type CacheParamKey = keyof typeof CACHE_PARAMS;
 `;
 
-  const outPath = 'packages/am4/src/cacheParams.ts';
-  writeFileSync(outPath, header);
-  console.log(`wrote ${outPath} — ${entries.length} entries`);
+  writeFileSync(CACHE_PARAMS_OUT, header);
+  console.log(`wrote ${CACHE_PARAMS_OUT} — ${entries.length} entries`);
   for (const e of entries) {
     console.log(`  ${e.key} — pidHigh=0x${e.pidHigh.toString(16).padStart(4, '0')} (${e.unit})`);
   }

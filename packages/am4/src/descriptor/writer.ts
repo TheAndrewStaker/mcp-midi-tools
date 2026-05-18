@@ -45,12 +45,12 @@ import {
   KNOWN_PARAMS,
   type Param,
   type ParamKey,
-} from '../params.js';
+} from 'fractal-midi/am4';
 import {
   BLOCK_NAMES_BY_VALUE,
   BLOCK_TYPE_VALUES,
   resolveBlockType,
-} from '../blockTypes.js';
+} from 'fractal-midi/am4';
 import {
   buildSaveToLocation,
   buildSetBlockBypass,
@@ -62,7 +62,7 @@ import {
   buildSwitchScene,
   isCommandAck,
   isWriteEcho,
-} from '../setParam.js';
+} from 'fractal-midi/am4';
 import {
   prepareApplyPresetWrites,
   runApplyPresetAt,
@@ -87,7 +87,7 @@ import {
   observeWrittenParam,
   switchBlockChannel,
 } from '../shared/channels.js';
-import { checkApplicability } from '../applicability.js';
+import { checkApplicability } from 'fractal-midi/am4';
 import type { ApplyPresetSkippedParam } from '../tools/applyExecutor.js';
 
 /**
@@ -115,7 +115,7 @@ function formatSkippedNote(skipped: readonly ApplyPresetSkippedParam[]): string 
 import {
   formatLocationCode,
   formatLocationDisplay,
-} from '../locations.js';
+} from 'fractal-midi/am4';
 
 import { parseAm4Location } from './schema.js';
 

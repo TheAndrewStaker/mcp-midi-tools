@@ -15,8 +15,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { KNOWN_PARAMS } from '@mcp-midi-control/am4/params.js';
-import { resolveAllCacheIds } from '@mcp-midi-control/am4/variantResolverTables.js';
+import { KNOWN_PARAMS } from 'fractal-midi/am4';
+import { resolveAllCacheIds } from 'fractal-midi/am4';
 
 interface JsonGate {
   typeEnum: string;

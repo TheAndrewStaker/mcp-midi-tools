@@ -59,9 +59,9 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { EDITOR_CONTROLS } from '@mcp-midi-control/am4/editorControlLabels.js';
-import { PARAM_NAMES, type ParamNameEntry } from '@mcp-midi-control/am4/paramNames.js';
-import { KNOWN_PARAMS } from '@mcp-midi-control/am4/params.js';
+import { EDITOR_CONTROLS } from 'fractal-midi/am4';
+import { PARAM_NAMES, type ParamNameEntry } from 'fractal-midi/am4';
+import { KNOWN_PARAMS } from 'fractal-midi/am4';
 
 function nameOfHandEntry(entry: ParamNameEntry): string {
   return typeof entry === 'string' ? entry : entry.name;

@@ -13,9 +13,9 @@
  *
  *   npx tsx scripts/verify-cache-params.ts
  */
-import { CACHE_PARAMS } from '@mcp-midi-control/am4/cacheParams.js';
-import { KNOWN_PARAMS } from '@mcp-midi-control/am4/params.js';
-import type { Param } from '@mcp-midi-control/am4/params.js';
+import { CACHE_PARAMS } from 'fractal-midi/am4';
+import { KNOWN_PARAMS } from 'fractal-midi/am4';
+import type { Param } from 'fractal-midi/am4';
 
 interface Divergence {
   key: string;

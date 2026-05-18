@@ -83,8 +83,8 @@ import {
   AXE_FX_III_BLOCKS,
   resolveEffectId,
   type AxeFxIIIBlock,
-} from './blockTypes.js';
-import { PARAMS_BY_FAMILY, type Param as AxeFxIIIParam } from './params.js';
+} from 'fractal-midi/axe-fx-iii';
+import { PARAMS_BY_FAMILY, type Param as AxeFxIIIParam } from 'fractal-midi/axe-fx-iii';
 import {
   buildGetParameter,
   buildSetGridCell,
@@ -99,7 +99,7 @@ import {
   parseMultipurposeResponse,
   parseSetGetParameterResponse,
   buildSetBypass,
-} from './setParam.js';
+} from 'fractal-midi/axe-fx-iii';
 import { guardActiveBufferOrSave } from './tools/shared.js';
 import { markDirty } from '@mcp-midi-control/core/server-shared/bufferDirty.js';
 import { AXEFX3_LABEL } from '@mcp-midi-control/core/server-shared/connections.js';

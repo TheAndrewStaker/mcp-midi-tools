@@ -134,8 +134,8 @@ async function main(): Promise<void> {
     'hydra_navigate_to',
     // hydra_play_note removed — use unified play_note({port:'hydrasynth',...}).
     'hydra_reconnect_midi',
-    'hydra_set_engine_param',
-    'hydra_set_engine_params',
+    // hydra_set_engine_param, hydra_set_engine_params removed 2026-05-18
+    // — use unified set_param / set_params with port="hydrasynth".
     'hydra_set_macro',
     'hydra_set_param',
     // Fractal Axe-Fx II tools — registered alongside AM4 + Hydrasynth on

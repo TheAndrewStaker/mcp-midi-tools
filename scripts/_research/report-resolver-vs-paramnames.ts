@@ -20,9 +20,9 @@
 // Used to plan the resolver-driven paramNames.ts refactor.
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { PARAM_NAMES, type ParamNameEntry } from '@mcp-midi-control/am4/paramNames.js';
-import { EDITOR_CONTROLS } from '@mcp-midi-control/am4/editorControlLabels.js';
-import { PARAMETER_NAME_TO_CACHE_ID } from '@mcp-midi-control/am4/variantResolverTables.js';
+import { PARAM_NAMES, type ParamNameEntry } from 'fractal-midi/am4';
+import { EDITOR_CONTROLS } from 'fractal-midi/am4';
+import { PARAMETER_NAME_TO_CACHE_ID } from 'fractal-midi/am4';
 
 const OUT_JSON = 'samples/captured/decoded/labels/resolver-vs-paramnames.json';
 const OUT_MD   = 'samples/captured/decoded/labels/resolver-vs-paramnames.md';

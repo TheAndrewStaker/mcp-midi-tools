@@ -22,7 +22,7 @@ import {
   isQueryPatchNameResponse,
   parseMultipurposeResponse,
   parseQueryPatchNameResponse,
-} from '../setParam.js';
+} from 'fractal-midi/axe-fx-iii';
 import { connectAxeFxIII, type MidiConnection } from '../midi.js';
 import { isDirty } from '@mcp-midi-control/core/server-shared/bufferDirty.js';
 import { AXEFX3_LABEL } from '@mcp-midi-control/core/server-shared/connections.js';

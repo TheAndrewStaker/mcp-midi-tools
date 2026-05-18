@@ -35,9 +35,9 @@ import { AM4_LABEL } from '@mcp-midi-control/core/server-shared/connections.js';
 import type { DirtyGuardResult, OnEditedMode } from '@mcp-midi-control/core/server-shared/safeEdit.js';
 
 import type { MidiConnection } from '@mcp-midi-control/core/midi/transport.js';
-import { formatLocationDisplay } from '../locations.js';
+import { formatLocationDisplay } from 'fractal-midi/am4';
 import { sendReadAndParse, readPresetName } from '../shared/readOps.js';
-import { buildRequestActiveBufferDump, buildSaveToLocation } from '../setParam.js';
+import { buildRequestActiveBufferDump, buildSaveToLocation } from 'fractal-midi/am4';
 import { receivePresetDumpStream } from '../presetDump.js';
 import {
   cacheFingerprint,

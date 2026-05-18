@@ -36,9 +36,18 @@
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
+
+// AM4 params now live in the `fractal-midi` npm package. Resolve via the
+// package's subpath export so the path works regardless of where the
+// consumer cloned mcp-midi-control. The compiled `.js` preserves the
+// object-literal entry shape this script's regex matches.
+const require = createRequire(import.meta.url);
+const FRACTAL_MIDI_AM4_DIR = dirname(require.resolve('fractal-midi/am4'));
 
 const GHIDRA_AM4 = 'samples/captured/decoded/ghidra-am4-paramnames.json';
-const PARAMS_TS = 'packages/am4/src/params.ts';
+const PARAMS_TS = join(FRACTAL_MIDI_AM4_DIR, 'params.js');
 const XML_REG = 'samples/captured/decoded/binarydata/extracted/__block_layout.xml';
 const XML_EXPERT = 'samples/captured/decoded/binarydata/extracted/__block_layout_expert.xml';
 const OUTPUT = 'samples/captured/decoded/coverage-cross-ref-audit.md';

@@ -27,8 +27,8 @@
  * AM4-Edit if open) jumps to "0.5", then 250 ms later restores to 1.0.
  */
 import { connectAM4, toHex } from '@mcp-midi-control/am4/midi.js';
-import { buildSetFloatParam } from '@mcp-midi-control/am4/setParam.js';
-import { KNOWN_PARAMS } from '@mcp-midi-control/am4/params.js';
+import { buildSetFloatParam } from 'fractal-midi/am4';
+import { KNOWN_PARAMS } from 'fractal-midi/am4';
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));

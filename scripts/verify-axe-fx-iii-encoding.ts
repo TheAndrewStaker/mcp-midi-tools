@@ -56,9 +56,9 @@ import {
   parseMultipurposeResponse,
   parseSetGetParameterResponse,
   describeMultipurposeResultCode,
-} from '@mcp-midi-control/axe-fx-iii/setParam.js';
-import { resolveEffectId, AXE_FX_III_BLOCKS } from '@mcp-midi-control/axe-fx-iii/blockTypes.js';
-import { fractalChecksum } from '@mcp-midi-control/core/fractal-shared/checksum.js';
+} from 'fractal-midi/axe-fx-iii';
+import { resolveEffectId, AXE_FX_III_BLOCKS } from 'fractal-midi/axe-fx-iii';
+import { fractalChecksum } from 'fractal-midi/shared';
 
 function hex(bytes: readonly number[]): string {
   return bytes.map((b) => b.toString(16).padStart(2, '0')).join('');

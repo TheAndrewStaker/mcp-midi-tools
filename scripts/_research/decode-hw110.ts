@@ -6,7 +6,7 @@
  * the AM4-Edit scene-MIDI ▶ test-send buttons.
  */
 import fs from 'fs';
-import { unpackValue } from '@mcp-midi-control/core/fractal-shared/packValue.js';
+import { unpackValue } from 'fractal-midi/shared';
 
 const file = process.argv[2];
 if (!file) {
