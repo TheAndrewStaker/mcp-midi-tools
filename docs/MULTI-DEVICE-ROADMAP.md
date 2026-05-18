@@ -319,6 +319,11 @@ Trigger: founder ships polish on Axe-Fx II writes + Hydrasynth patch
 sends, OR AM4 surface is mature enough that extraction earns its keep
 without slowing core iteration.
 
+> **Detailed plan:** [`docs/fractal-midi-extraction-plan.md`](fractal-midi-extraction-plan.md)
+> — per-file move table, consumer surface, blockers, execution
+> sequencing. Authored 2026-05-17 to be picked up when the trigger
+> above fires.
+
 - [ ] Extract `packages/{am4,axe-fx-ii,axe-fx-iii}/` + the Fractal-shared
       bits of `packages/core/src/fractal-shared/` into a standalone
       `fractal-midi` repo. Pure protocol package, no MCP. Subpaths per
