@@ -54,16 +54,22 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 // both the default one-line shape and the multi-line HW-075 / HW-077
 // promotion paragraph the founder wrote.
 //
-// **KNOWN GAP — this preservation covers the Status paragraph and
-// the Session 94 Ghidra addendum block, but NOT:**
+// **Session 94 cont 2 (2026-05-17): hand-curated hardware calibrations
+// are now BAKED INTO THE GENERATOR.** Specifically:
 //   • `DELAY_TEMPO_VALUES` enum const (HW-091 / HW-093 measurement,
-//     2026-05-11) — wire 0..32 tempo-division ladder.
+//     2026-05-11) — wire 0..32 tempo-division ladder — emitted from
+//     `DELAY_TEMPO_VALUES_DATA` constant below, alongside the wiki-
+//     derived enum tables.
 //   • `displayScale?: 'linear' | 'log10'` field on `AxeFxIIParam`
-//     interface (HW-090, 2026-05-11) — log10 confirmed for cab/amp
-//     filter frequencies.
-// Running this regen will still clobber both. Do NOT regen
-// unattended for those — the broader preservation work (markers /
-// extension file / patch reapply) is queued separately.
+//     interface (HW-090, 2026-05-11) — present in the emitted
+//     interface template.
+//   • Per-entry display calibrations measured on real Axe-Fx II XL+
+//     (Q8.02) across HW-079/HW-088/HW-089/HW-090/HW-091/HW-092/HW-093
+//     + Session 68 — emitted via the `HARDWARE_OVERRIDES` table below.
+//     20 entries; each carries its provenance comment as a leading
+//     line above the emitted entry in `params.ts`.
+// Regen is now SAFE. The Status header + Ghidra addendum block
+// preservation passes below still apply.
 
 const STATUS_BLOCK_RE = /^( \* Status:[^\n]*(?:\n \* [^\n]*)*)$/m;
 
@@ -132,6 +138,176 @@ function applyAddendumPreservation(generated: string, preserved: string | undefi
   const eol = generated.includes('\r\n') ? '\r\n' : '\n';
   return generated.replace(PARAMS_CLOSE_RE, eol + eol + preserved + eol + '$1');
 }
+
+// ── Hardware-verified overrides (HW-079..HW-093 + Session 68) ─────────
+//
+// Hand-measured fields the wiki + XML pipeline doesn't carry. Baked into
+// the generator so regen preserves them; the wiki source remains the
+// primary input, this layer only injects additional metadata on matching
+// entries.
+//
+// Each entry shadows the wiki-derived emit() output: `displayMin`,
+// `displayMax`, `displayScale`, `step`, and `enumValuesRef` (the latter
+// for delay.tempo which points at the HW-091/HW-093 measured const).
+// `comment` lines (one or more, joined by '\n') emit as `// ` prefix
+// lines above the entry in `params.ts`, preserving the HW-NNN
+// provenance for code review.
+
+interface HardwareOverride {
+  displayMin?: number;
+  displayMax?: number;
+  displayScale?: 'log10';
+  step?: number;
+  enumValuesRef?: string;
+  comment?: string;
+}
+
+const HARDWARE_OVERRIDES: Readonly<Record<string, HardwareOverride>> = {
+  // HW-079 (Session 42, 2026-05-01): five amp first-page knobs at 0..10
+  // linear. Group comment lives on the first entry (amp.1).
+  'amp.1': {
+    displayMin: 0, displayMax: 10,
+    comment:
+      'HW-079 calibration (2026-05-11): hardware sweep on Q8.02 confirmed\n' +
+      'wire 0..65534 ↔ display 0.00..10.00 linear for these 5 amp params,\n' +
+      'with quarter-scale anchors landing exactly at 2.50/5.00/7.50/10.00.\n' +
+      'Conversion: display = wire / 65534 * 10. NOT regenerated from\n' +
+      'wiki/XML — the wiki doesn\'t document display ranges for these.\n' +
+      'If you regen this file via `scripts/extract-axe-fx-ii-params.ts`\n' +
+      'and these displayMin/displayMax fields disappear, re-apply from\n' +
+      'this commit. See `docs/_private/HARDWARE-TASKS-AXEFX2.md` HW-079.',
+  },
+  'amp.2': { displayMin: 0, displayMax: 10 },
+  'amp.3': { displayMin: 0, displayMax: 10 },
+  'amp.4': { displayMin: 0, displayMax: 10 },
+  'amp.5': { displayMin: 0, displayMax: 10 },
+
+  // HW-092 (2026-05-11): cab/amp filter freqs log10 over 2 decades.
+  'amp.6': {
+    displayMin: 10, displayMax: 1000, displayScale: 'log10',
+    comment: 'HW-092 calibration (2026-05-11): 10..1000 Hz log10 over 2 decades.',
+  },
+  'amp.7': {
+    displayMin: 400, displayMax: 40000, displayScale: 'log10',
+    comment: 'HW-092 calibration (2026-05-11): 400..40000 Hz log10 over 2 decades.',
+  },
+
+  // Session 68: depth + presence are 0..10 same as input_drive et al.
+  // Group comment on amp.16 (depth).
+  'amp.16': {
+    displayMin: 0, displayMax: 10,
+    comment:
+      'Session 68 calibration: depth + presence are 0..10 knobs on the\n' +
+      'amp\'s front panel (same range as input_drive / bass / middle /\n' +
+      'treble / master_volume). Adding the explicit displayMin/Max\n' +
+      'unblocks apply_preset_at calls that pass display values like\n' +
+      '`presence: 6.5` — previously rejected as "wire out of range".',
+  },
+  'amp.20': { displayMin: 0, displayMax: 10 },
+
+  // HW-089 (2026-05-11): bipolar -100..+100.
+  'amp.22': {
+    displayMin: -100, displayMax: 100,
+    comment:
+      'HW-089 calibration (2026-05-11): wire 0..65534 ↔ -100..+100 ' +
+      'bipolar linear (wire 32767 = 0.0).',
+  },
+  'cab.7': {
+    displayMin: -100, displayMax: 100,
+    comment:
+      'HW-089 calibration (2026-05-11): wire 0..65534 ↔ -100..+100 ' +
+      'bipolar linear.',
+  },
+
+  // HW-088 (2026-05-11): cab.level -80..+20 dB; %-linear knobs at 0..100.
+  'cab.9': {
+    displayMin: -80, displayMax: 20,
+    comment:
+      'HW-088 calibration (2026-05-11): wire 0..65534 ↔ -80..+20 dB linear.',
+  },
+
+  // HW-090 (2026-05-11): cab filter freqs log10.
+  'cab.19': {
+    displayMin: 20, displayMax: 2000, displayScale: 'log10',
+    comment:
+      'HW-090 calibration (2026-05-11): wire 0..65534 ↔ 20..2000 Hz log10\n' +
+      '(2 decades). Verified at all 9 anchors against displayHz =\n' +
+      '20 × 100^(wire/65534): wire 32767 → 200 Hz (geometric mean) ✓.',
+  },
+  'cab.20': {
+    displayMin: 200, displayMax: 20000, displayScale: 'log10',
+    comment:
+      'HW-090 calibration (2026-05-11): wire 0..65534 ↔ 200..20000 Hz\n' +
+      'log10 (2 decades). Verified at all 9 anchors.',
+  },
+
+  // HW-088 %-linear knobs at 0..100.
+  'chorus.10': {
+    displayMin: 0, displayMax: 100,
+    comment:
+      'HW-088 calibration (2026-05-11): wire 0..65534 ↔ 0..100% linear.',
+  },
+
+  // HW-091 (2026-05-11): delay.time 1..8000 ms.
+  'delay.2': {
+    displayMin: 1, displayMax: 8000,
+    comment:
+      'HW-091 calibration (2026-05-11, tempo sync DISABLED): wire 0..65534\n' +
+      '↔ 1..8000 ms linear. NOTE: when `delay.tempo` is set to a non-NONE\n' +
+      'sync value, the device IGNORES manual `delay.time` writes and shows\n' +
+      'the tempo-derived time in parens (e.g. "(375 ms)"). Caller should\n' +
+      'set `delay.tempo` to wire 0 (NONE) before setting `delay.time`\n' +
+      'manually, OR accept that the time write will be silently overridden.',
+  },
+
+  // HW-088 delay.feedback bipolar.
+  'delay.4': {
+    displayMin: -100, displayMax: 100,
+    comment:
+      'HW-088 calibration (2026-05-11): wire 0..65534 ↔ -100..+100% ' +
+      'bipolar linear (wire 32767 = exact zero crossing).',
+  },
+
+  // HW-091 + HW-093 delay.tempo enum. Const emitted below; this entry
+  // references it via enumValuesRef.
+  'delay.9': {
+    enumValuesRef: 'DELAY_TEMPO_VALUES',
+    comment: 'HW-091 + HW-093 enum table (2026-05-11): 33 entries mapped wire 0..32.',
+  },
+
+  // HW-092 drive.gain 0..10.
+  'drive.1': {
+    displayMin: 0, displayMax: 10,
+    comment: 'HW-092 calibration (2026-05-11): 0..10 linear, same as AMP first-page knobs.',
+  },
+
+  // HW-088 reverb.mix %-linear.
+  'reverb.13': {
+    displayMin: 0, displayMax: 100,
+    comment: 'HW-088 calibration (2026-05-11): wire 0..65534 ↔ 0..100% linear.',
+  },
+};
+
+// HW-091 + HW-093 (2026-05-11): delay.tempo wire 0..32 → musical
+// division enum. Wires 1..21 are the canonical musical-division ladder
+// (TRIP / straight / DOT in increasing note-value); 22..24 are integer
+// bar multiples; 25..26 are polymeter ratios; 27..32 are odd-numerator
+// 64th-note ratios where 10/64 is parens-displayed as (5/32) — the
+// Axe-Fx II firmware's "reduced fraction" convention.
+const DELAY_TEMPO_VALUES_DATA: ReadonlyArray<readonly [number, string]> = [
+  [0, 'NONE'],
+  [1, '1/64 TRIP'], [2, '1/64'], [3, '1/64 DOT'],
+  [4, '1/32 TRIP'], [5, '1/32'], [6, '1/32 DOT'],
+  [7, '1/16 TRIP'], [8, '1/16'], [9, '1/16 DOT'],
+  [10, '1/8 TRIP'], [11, '1/8'], [12, '1/8 DOT'],
+  [13, '1/4 TRIP'], [14, '1/4'], [15, '1/4 DOT'],
+  [16, '1/2 TRIP'], [17, '1/2'], [18, '1/2 DOT'],
+  [19, '1 TRIP'], [20, '1'], [21, '1 DOT'],
+  [22, '2'], [23, '3'], [24, '4'],
+  [25, '4/3'], [26, '5/4'],
+  [27, '5/64'], [28, '7/64'], [29, '9/64'],
+  [30, '10/64 (5/32)'], [31, '11/64'], [32, '13/64'],
+];
 
 // ── Inputs / outputs ──────────────────────────────────────────────────
 
@@ -611,7 +787,17 @@ function emitParams(): string {
             if (r.parameterName) props.push(`parameterName: ${JSON.stringify(r.parameterName)}`);
             if (r.xmlLabel) props.push(`xmlLabel: ${JSON.stringify(r.xmlLabel)}`);
 
-            if (r.type === 'select' && r.options.length > 0) {
+            const overrideKey = `${block}.${r.paramId}`;
+            const override = HARDWARE_OVERRIDES[overrideKey];
+
+            if (override?.enumValuesRef === 'DELAY_TEMPO_VALUES') {
+                // Hardware-measured enum (HW-091/HW-093). The const itself
+                // is emitted by the alphabetic-position-injection pass
+                // below (see `injectDelayTempoConstAtAlphabeticPosition`)
+                // so it lands between DELAY_LFO1_DEPTH_RANGE_VALUES and
+                // DRIVE_EFFECT_TYPE_VALUES in the enumDecls output.
+                props.push(`enumValues: ${override.enumValuesRef}`);
+            } else if (r.type === 'select' && r.options.length > 0) {
                 const enumName = `${block.toUpperCase()}_${baseKey.toUpperCase()}_VALUES`;
                 enumDecls.push(
                     `export const ${enumName}: Readonly<Record<number, string>> = Object.freeze({\n` +
@@ -625,18 +811,80 @@ function emitParams(): string {
             const trimmedMin = r.min?.trim();
             const trimmedMax = r.max?.trim();
             const trimmedStep = r.step?.trim();
-            if (trimmedMin && Number.isFinite(Number(trimmedMin))) props.push(`displayMin: ${Number(trimmedMin)}`);
-            if (trimmedMax && Number.isFinite(Number(trimmedMax))) props.push(`displayMax: ${Number(trimmedMax)}`);
-            if (trimmedStep && Number.isFinite(Number(trimmedStep))) props.push(`step: ${Number(trimmedStep)}`);
+            // Wiki-derived ranges first (legacy order). Override values
+            // are emitted at end-of-entry (after modifierAssignable +
+            // gates) to match the shipping hand-curated entry shape —
+            // see HARDWARE_OVERRIDES above.
+            if (!override?.displayMin && trimmedMin && Number.isFinite(Number(trimmedMin)))
+                props.push(`displayMin: ${Number(trimmedMin)}`);
+            if (!override?.displayMax && trimmedMax && Number.isFinite(Number(trimmedMax)))
+                props.push(`displayMax: ${Number(trimmedMax)}`);
+            if (!override?.step && trimmedStep && Number.isFinite(Number(trimmedStep)))
+                props.push(`step: ${Number(trimmedStep)}`);
 
             if (r.modifierAssignable) props.push(`modifierAssignable: true`);
             if (r.fwAdded) props.push(`fwAdded: ${JSON.stringify(r.fwAdded)}`);
             if (r.controllingParamName) props.push(`gateOn: ${JSON.stringify(r.controllingParamName)}`);
             if (r.controllingParamValue) props.push(`gateValues: ${JSON.stringify(r.controllingParamValue)}`);
 
+            // Hardware-override fields emit at end-of-entry. Matches the
+            // shipping shape where hand-edits appended displayMin/Max
+            // after the existing wiki + XML fields.
+            if (override?.displayMin !== undefined) props.push(`displayMin: ${override.displayMin}`);
+            if (override?.displayMax !== undefined) props.push(`displayMax: ${override.displayMax}`);
+            if (override?.step !== undefined) props.push(`step: ${override.step}`);
+            if (override?.displayScale) props.push(`displayScale: '${override.displayScale}'`);
+
+            // Emit leading provenance comment for hand-curated entries
+            // (HW-079 / HW-088 / HW-089 / HW-090 / HW-091 / HW-092 /
+            // HW-093 / Session 68). Multi-line comments preserve the
+            // measurement context across regens.
+            if (override?.comment) {
+                for (const line of override.comment.split('\n')) {
+                    lines.push(`    // ${line}`);
+                }
+            }
             lines.push(`    ${JSON.stringify(fullKey)}: { ${props.join(', ')} },`);
             totalEntries++;
         }
+    }
+
+    // Inject the hardware-measured DELAY_TEMPO_VALUES const into the
+    // wiki-derived enumDecls in alphabetic position (between
+    // DELAY_LFO1_DEPTH_RANGE_VALUES and DRIVE_EFFECT_TYPE_VALUES, per
+    // the shipping file's ordering). The const + its docstring are
+    // baked into the generator from DELAY_TEMPO_VALUES_DATA.
+    if (HARDWARE_OVERRIDES['delay.9']?.enumValuesRef === 'DELAY_TEMPO_VALUES') {
+        const delayTempoConstText =
+            '/**\n' +
+            ' * Delay tempo-sync division enum — hardware-measured 2026-05-11 via\n' +
+            ' * HW-091 (wire 0..8) and HW-093 (wire 9..32). Wire 33+ not yet\n' +
+            ' * probed; the device likely saturates at wire 32 or rejects further.\n' +
+            ' *\n' +
+            ' * Pattern: wire 0 = NONE (disables sync); wires 1..21 are the\n' +
+            ' * canonical musical-division ladder TRIP/straight/DOT in increasing\n' +
+            ' * note-value; wires 22..24 are integer bar multiples; wires 25..26\n' +
+            ' * are polymeter ratios (4/3, 5/4); wires 27..32 are odd-numerator\n' +
+            ' * 64th-note ratios where 10/64 is parens-displayed as (5/32) — the\n' +
+            ' * Axe-Fx II firmware\'s "reduced fraction" convention (parens =\n' +
+            ' * computed value, same convention as tempo-gated `(375 ms)` on\n' +
+            ' * delay.time).\n' +
+            ' */\n' +
+            'export const DELAY_TEMPO_VALUES: Readonly<Record<number, string>> = Object.freeze({\n' +
+            DELAY_TEMPO_VALUES_DATA.map(
+                ([wire, label]) => `    ${wire}: ${JSON.stringify(label)},`,
+            ).join('\n') +
+            '\n});';
+        // Splice in after the last DELAY_*_VALUES const, before the
+        // first DRIVE_*_VALUES const. enumDecls is appended in entry-
+        // emit order, so we find the splice index by scanning for the
+        // DELAY→DRIVE family transition.
+        let spliceIdx = enumDecls.findIndex(
+            (d) => /export const DRIVE_/.test(d),
+        );
+        if (spliceIdx < 0) spliceIdx = enumDecls.length; // append fallback
+        enumDecls.splice(spliceIdx, 0, delayTempoConstText);
+        totalEnumEntries += DELAY_TEMPO_VALUES_DATA.length;
     }
 
     return `/**
@@ -703,6 +951,14 @@ export interface AxeFxIIParam {
     readonly displayMax?: number;
     /** Display step from wiki (when populated). */
     readonly step?: number;
+    /**
+     * Scale shape mapping wire 0..65534 to displayMin..displayMax.
+     * Defaults to \`'linear'\` when omitted. \`'log10'\` is for frequency
+     * knobs and similar log-perceptual scales (confirmed for Axe-Fx II
+     * cab/amp filter frequencies via HW-090, 2026-05-11). Requires
+     * positive displayMin/displayMax.
+     */
+    readonly displayScale?: 'linear' | 'log10';
     /** Whether a modifier can target this param. */
     readonly modifierAssignable?: boolean;
     /** Firmware version that introduced this param. */

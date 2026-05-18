@@ -3071,5 +3071,5 @@ export type AxeFxIIParamKey = keyof typeof KNOWN_PARAMS;
 /** Extraction summary (refresh by re-running the generator). */
 export const REGISTRY_STATS = Object.freeze({
     totalParams: 905,
-    totalEnumEntries: 1239,
+    totalEnumEntries: 1272,
 });
