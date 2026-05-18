@@ -217,7 +217,29 @@ const pidlowMap = derivePidlowMap(params);
 const paramsByAddr = new Map<string, ParamEntry>();
 for (const p of params) paramsByAddr.set(`${p.pidLow}.${p.pidHigh}`, p);
 
-type Status = 'WIRED-MATCHED' | 'WIRED-MISLABEL' | 'UI-MISSING' | 'GHOST' | 'PIDLOW-UNKNOWN';
+type Status = 'WIRED-MATCHED' | 'WIRED-MISLABEL' | 'UI-MISSING' | 'UI-WIDGET' | 'GHOST' | 'PIDLOW-UNKNOWN';
+
+/**
+ * Heuristic: is this catalog entry a UI widget (button/menu/label/meter
+ * chrome) rather than a writable preset parameter? Detected by either:
+ *   - paramId >= 65000 — AM4-Edit's internal range for ZeroAll buttons,
+ *     name fields, label slots, copy-menu triggers, ALIGN graph widgets,
+ *     etc. Confirmed via the Session 96 b67e23f UI-MISSING closeout
+ *     which explicitly skipped: CABINET_NAME{1,2}, CABINET_LABEL{1,2},
+ *     CABINET_ALIGN_*, CABINET_COPY_MENU{1,2}, DISTORT_ZEROEQ.
+ *   - empty XML display name — the XML control exists but carries no
+ *     user-facing label (e.g. VOLUME_METER paramId 20, an output level
+ *     meter widget shown as bars not numbers).
+ *
+ * These addresses back AM4-Edit chrome, not preset data. params.ts
+ * intentionally doesn't wire them — they should be counted separately
+ * from real UI-MISSING wiring gaps.
+ */
+function isUiWidget(paramId: number, xmlDisplay: string | undefined): boolean {
+  if (paramId >= 65000) return true;
+  if (xmlDisplay !== undefined && xmlDisplay.trim() === '') return true;
+  return false;
+}
 interface Finding {
   family: string;
   paramId: number;
@@ -284,11 +306,16 @@ for (const [family, entries] of catalog) {
         paramsTsName: paramEntry.name,
       });
     } else if (xmlList) {
+      // XML exposes a control but params.ts has nothing at this address.
+      // If it's a UI widget (chrome — name/label/menu/button/meter
+      // sentinels), classify separately so it doesn't count against
+      // the real wiring-gap headline.
+      const widget = isUiWidget(paramId, xmlDisplay);
       findings.push({
         family,
         paramId,
         symbol,
-        status: 'UI-MISSING',
+        status: widget ? 'UI-WIDGET' : 'UI-MISSING',
         xmlDisplay,
         xmlEffectName,
       });
@@ -321,7 +348,8 @@ w('| Status | Meaning |');
 w('|---|---|');
 w('| **WIRED-MATCHED** | params.ts has the param at the catalog-derived (pidLow, paramId) and its `name` matches the AM4-Edit display label. Healthy. |');
 w('| **WIRED-MISLABEL** | params.ts has the entry, but its `name` does NOT match the AM4-Edit display. Wired, but the LLM-facing key may not surface naturally from a "make Scene 1 Level louder" prompt. **Highest-priority class to inspect.** |');
-w('| **UI-MISSING** | AM4-Edit exposes the control, params.ts has no entry at the matching address. Real wiring gap. |');
+w('| **UI-MISSING** | AM4-Edit exposes the control AS A REAL KNOB, params.ts has no entry at the matching address. Real wiring gap. |');
+w('| **UI-WIDGET** | AM4-Edit exposes the control as UI chrome — paramId ≥ 65000 (NAME/LABEL/MENU/BUTTON/GRAPH/COPY widgets) or empty XML display name (METER sentinels). Not preset data; params.ts intentionally skips. |');
 w('| **GHOST** | catalog symbol with no AM4-Edit UI. Firmware-internal; don\'t count against UI coverage. |');
 w('| **PIDLOW-UNKNOWN** | family has no derivable pidLow (not placeable on AM4 or never captured). |');
 w('');
@@ -345,11 +373,11 @@ w('');
 // Summary counts per family
 w('## Summary per family');
 w('');
-w('| Family | WIRED-MATCHED | WIRED-MISLABEL | UI-MISSING | GHOST | PIDLOW-UNKNOWN |');
-w('|---|---|---|---|---|---|');
+w('| Family | WIRED-MATCHED | WIRED-MISLABEL | UI-MISSING | UI-WIDGET | GHOST | PIDLOW-UNKNOWN |');
+w('|---|---|---|---|---|---|---|');
 const counts: Record<string, Record<Status, number>> = {};
 for (const f of findings) {
-  counts[f.family] ??= { 'WIRED-MATCHED': 0, 'WIRED-MISLABEL': 0, 'UI-MISSING': 0, 'GHOST': 0, 'PIDLOW-UNKNOWN': 0 };
+  counts[f.family] ??= { 'WIRED-MATCHED': 0, 'WIRED-MISLABEL': 0, 'UI-MISSING': 0, 'UI-WIDGET': 0, 'GHOST': 0, 'PIDLOW-UNKNOWN': 0 };
   counts[f.family][f.status] += 1;
 }
 const famsSorted = Object.keys(counts).sort((a, b) => {
@@ -360,7 +388,7 @@ const famsSorted = Object.keys(counts).sort((a, b) => {
 });
 for (const f of famsSorted) {
   const c = counts[f];
-  w(`| ${f} | ${c['WIRED-MATCHED'] || '—'} | ${c['WIRED-MISLABEL'] || '—'} | ${c['UI-MISSING'] || '—'} | ${c['GHOST'] || '—'} | ${c['PIDLOW-UNKNOWN'] || '—'} |`);
+  w(`| ${f} | ${c['WIRED-MATCHED'] || '—'} | ${c['WIRED-MISLABEL'] || '—'} | ${c['UI-MISSING'] || '—'} | ${c['UI-WIDGET'] || '—'} | ${c['GHOST'] || '—'} | ${c['PIDLOW-UNKNOWN'] || '—'} |`);
 }
 w('');
 
@@ -407,6 +435,24 @@ if (um.length === 0) {
 }
 w('');
 
+// UI-WIDGET section — intentional skips, short summary
+w('## UI-WIDGET findings (chrome, not preset data — intentional skips)');
+w('');
+w('AM4-Edit exposes these as UI elements (button labels, name fields,');
+w('menu triggers, ALIGN graphs, copy-menus, METER readouts) but they\'re');
+w('not user-writable preset parameters. params.ts intentionally omits.');
+w('Detected by paramId ≥ 65000 OR empty XML display name.');
+w('');
+const uw = findings.filter((f) => f.status === 'UI-WIDGET');
+w(`${uw.length} widgets. Examples by family:`);
+w('');
+w('| Family | paramId | Catalog symbol | XML display |');
+w('|---|---|---|---|');
+for (const f of uw.sort((a, b) => a.family.localeCompare(b.family) || a.paramId - b.paramId)) {
+  w(`| ${f.family} | ${f.paramId} | \`${f.symbol}\` | ${f.xmlDisplay ? `"${f.xmlDisplay}"` : '_(empty)_'} |`);
+}
+w('');
+
 // GHOST section — short summary only
 w('## GHOST findings (catalog only, no AM4-Edit UI)');
 w('');
@@ -426,7 +472,7 @@ writeFileSync(OUTPUT, lines.join('\n'));
 console.log(`Wrote ${lines.length} lines to ${OUTPUT}`);
 console.log('');
 console.log('Headline counts:');
-const totals = { 'WIRED-MATCHED': 0, 'WIRED-MISLABEL': 0, 'UI-MISSING': 0, 'GHOST': 0, 'PIDLOW-UNKNOWN': 0 };
+const totals = { 'WIRED-MATCHED': 0, 'WIRED-MISLABEL': 0, 'UI-MISSING': 0, 'UI-WIDGET': 0, 'GHOST': 0, 'PIDLOW-UNKNOWN': 0 };
 for (const f of findings) totals[f.status]++;
 for (const [k, v] of Object.entries(totals)) console.log(`  ${k.padEnd(18)} ${v}`);
 console.log('');

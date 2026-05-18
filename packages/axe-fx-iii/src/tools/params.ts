@@ -77,10 +77,16 @@ const SET_VERIFIED_BANNER = [
 const GET_HYPOTHESIS_BANNER = [
   '⚠ GET is hypothesis-only — no captured III device-emitted SET response',
   'exists on the open web. The wire shape mirrors SET with the value field',
-  'zeroed; the III\'s actual state-feedback channel appears to be the',
-  'unsolicited STATE_BROADCAST (04 01 sub-action). If this tool times out,',
-  'treat that as "GET not supported on this firmware" and fall back to',
-  '0x13 STATUS_DUMP (bypass+channel only) or STATE_BROADCAST listening.',
+  'zeroed. Session 97 research (Fractal Forum thread #203336) revealed',
+  'the III\'s `04 01` STATE_BROADCAST traffic is an AxeEdit-driven heartbeat',
+  'poll, NOT a device-initiated push-on-edit. A bare III with no editor',
+  'running will likely produce NO inbound `04 01` frames at all — so a',
+  '250 ms timeout from this tool is the EXPECTED outcome on bare hardware,',
+  'not a tool error. Fallback strategies: (1) hold the SET value',
+  'optimistically and skip read-back; (2) use 0x13 STATUS_DUMP for the',
+  'bypass+channel state surface that v1.4 actually documents; (3) if a',
+  'user is running AxeEdit III alongside, listen for the heartbeat-poll',
+  'broadcasts on idle.',
 ].join('\n');
 
 export function registerAxeFxIIIParamTools(server: McpServer): void {

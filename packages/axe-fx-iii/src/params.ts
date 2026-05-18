@@ -75,12 +75,13 @@
  *     The composite key `(family, name)` IS unique; use
  *     `PARAM_BY_KEY` for stable lookup.
  *
- * 🟡 Untested on Axe-Fx III hardware as of Session 87. The 0x02
- * SET_PARAMETER wire shape itself was ported from the Axe-Fx II
- * encoder; whether III firmware honors it (and on which
- * paramIds) is the next III contributor's verification task.
- * See `scripts/_research/probe-axefx3-setparam-hypothesis.ts`
- * for the ranked hypothesis probe.
+ * 🟢 SET wire shape byte-verified Session 97 against 10 public
+ * captures: `fn=0x01` + sub-action `09 00` (typed-input), 23-byte
+ * envelope. NOT the pre-Session-97 `fn=0x02` II-port. Capture
+ * corpus + field layout: `docs/axefx3-set-parameter-captures.md`.
+ * 🟡 GET response shape still unverified — the `04 01`
+ * STATE_BROADCAST appears to be an AxeEdit-driven heartbeat poll,
+ * NOT a sync SET echo. See `docs/SYSEX-MAP-AXE-FX-III.md` §0x01.
  */
 
 // ── Types ──────────────────────────────────────────────────────────

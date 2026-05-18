@@ -256,16 +256,15 @@ content-hash field.
    - Or sniffing AxeEdit III's save sequence and replicating it
 2. **`set_param` for III still needs capture work.** Community RE
    consensus is that preset-file decode does NOT help with realtime
-   param control — those are separate wire paths. The III's
-   per-block param-ID sysex (function unknown, probably `0x02`
-   family-inferred) needs to be decoded from AxeEdit III network
-   traffic. **A ranked five-hypothesis probe lives at
-   `scripts/_research/probe-axefx3-setparam-hypothesis.ts`** with
-   the candidate envelopes documented byte-exact in
-   `docs/SYSEX-MAP-AXE-FX-III.md` §"0x02 SET_PARAMETER hypothesis".
-   Each hypothesis is built and ready to send — the first III
-   contributor can run the probe with `--live` and lock the decode
-   in a single 250 ms × 5 sweep.
+   param control — those are separate wire paths. **The III's
+   per-block param-write opcode was decoded Session 97** to `fn=0x01`
+   + sub-action `09 00` (typed-input), byte-verified against 10
+   public captures. See `docs/SYSEX-MAP-AXE-FX-III.md §0x01
+   PARAMETER_SETGET` and `docs/axefx3-set-parameter-captures.md`.
+   The hypothesis-probe script (`scripts/_research/probe-axefx3-
+   setparam-hypothesis.ts`) was retired in the same session since
+   the captures resolved the H1..H5 tree without needing the live
+   probe.
 3. **Block-level operations (bypass / channel / scene) are unaffected**
    — those use the documented v1.4 spec functions 0x0A / 0x0B / 0x0C
    with Appendix 1 effect IDs, which work TODAY.

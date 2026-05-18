@@ -215,12 +215,23 @@ goldens + 4 capture-parse goldens in
 field-layout table: [`docs/axefx3-set-parameter-captures.md`](
 axefx3-set-parameter-captures.md).
 
-**GET** wire shape is still hypothesis-only — no captured III SET
-response frames exist on the open web; the III's actual state-feedback
-channel appears to be the unsolicited `04 01` STATE_BROADCAST
-sub-action. The MCP tool `axefx3_get_parameter` ships the SET shape
-with the value field zeroed; callers should treat a 250 ms timeout as
-"GET not supported on this firmware" rather than a tool error.
+**GET** wire shape is still 🟡 hypothesis — and Session 97 research
+clarified the response side is more subtle than initially framed.
+Forum thread #203336 (j20056 + GlennO, April 2024) revealed that the
+`04 01` STATE_BROADCAST sub-action is an **AxeEdit-driven heartbeat
+poll**, NOT a device-initiated push-on-edit event. j20056 confirmed:
+*"as soon as I quit Axe-Edit, then all MIDI traffic stops."* This
+means a bare III (no editor running) will likely produce NO inbound
+`04 01` frames at all — so the MCP `axefx3_get_parameter` tool's
+250 ms timeout is the expected outcome on bare hardware, not a tool
+error. Callers should fall back to 0x13 STATUS_DUMP (bypass+channel
+only) for state queries, or hold the value optimistically after SET
+and only re-read when explicit user request demands it.
+
+Same passive-sniff capture also revealed an uncatalogued sub-action
+`2E 00` (~245-byte device-emitted frame, likely preset/scene state
+dump) — decode is unblocked, no hardware needed. See
+[`axefx3-fn01-decode.md`](axefx3-fn01-decode.md) §"Sub-action `2E 00`".
 
 ### Evidence chain (10 captures, 2 sources)
 
@@ -332,21 +343,22 @@ block, different paramId, different sub-action `09 00`) locked the
 field layout.
 
 **Probe script** `scripts/_research/probe-axefx3-setparam-hypothesis.ts`
-is now obsolete for SET_PARAMETER. It remains useful as a reference for
-the probe-pattern when investigating other undocumented III opcodes
-(e.g. SET_GRID_CELL, STORE_PRESET) where the wire shape is still
-hypothesis-only.
+was **deleted Session 97** — obsolete for SET_PARAMETER now that the
+wire is byte-verified. The probe pattern is general-purpose; if a
+future undocumented III opcode needs the same triage, re-implement
+against a fresh probe-id list. Historical script content is
+recoverable via `git log --diff-filter=D` if needed.
 
 ---
 
 (Pre-pivot hypothesis tree retained below for archival reasons.)
 
 The shipping encoder (Hypothesis 1 below) was one of several plausible
-candidate wire shapes for III SET_PARAMETER. Each candidate was built
-byte-exact by
-`scripts/_research/probe-axefx3-setparam-hypothesis.ts` so the first
-III contributor could run the full sweep and lock the decode in a
-single session.
+candidate wire shapes for III SET_PARAMETER. Each candidate had its
+byte-exact frame, hypothesis ID, and rejection criteria documented so
+the first III contributor could run a full sweep and lock the decode
+in a single session. (Probe script retired Session 97; the captures
+resolved the tree without needing the live probe.)
 
 **How to identify the winner.** The probe sends each frame in turn
 and listens 250 ms for inbound. A frame that earns an ECHO of its own
@@ -505,36 +517,19 @@ capture, no community mention — speculative but cheap to probe.
 
 **Probe id:** `H5_fn0x12_II_SHAPE`.
 
-### How to run the probe (hardware-ready)
+### How to run the probe (RETIRED Session 97)
 
-`scripts/_research/probe-axefx3-setparam-hypothesis.ts` ships with
-the five hypothesis envelopes byte-exact. The script defaults to
-**dry-run** mode (prints all candidate frames but opens no MIDI
-port) so any developer can review the hypothesis set without owning
-an Axe-Fx III.
-
-To execute against real III hardware:
+The probe script `scripts/_research/probe-axefx3-setparam-hypothesis.ts`
+was deleted Session 97 once the H1..H5 tree was resolved by the public
+captures. Historical reproduction is via git log if needed:
 
 ```bash
-# 1. Close AxeEdit III + Claude Desktop (Windows MIDI is single-writer).
-# 2. Switch the III to a scratch preset that contains a Reverb 1 block.
-# 3. Run the live probe:
-npx tsx scripts/_research/probe-axefx3-setparam-hypothesis.ts --live
+git log --diff-filter=D --pretty=oneline -- scripts/_research/probe-axefx3-setparam-hypothesis.ts
 ```
 
-The script sends each candidate frame in sequence, listens 250 ms
-for inbound after each, and classifies the response inline:
-
-- **`✓ ECHO of fn=0xNN`** — the device parsed this fn and echoed
-  back. The hypothesis with the matching `fn` is the winner.
-- **`❌ MULTIPURPOSE_RESPONSE (0x64): echoed_fn=0xNN result_code=0xMM`**
-  — definitive negative for that fn. The result code names exactly
-  what was wrong (e.g. `MSG_NOT_RECOGNIZED` = fn unsupported;
-  `INVALID_PARAMID` = effect ID or paramId out of range;
-  `BAD_ARGUMENT` = payload field wrong).
-- **`⏵ no response (silent)`** — ambiguous. Could be a real SET
-  that left no ack, or could be a malformed envelope dropped before
-  fn parsing.
+The probe pattern (send candidate frames, listen 250 ms, classify by
+inbound) is general-purpose — re-implement against a new probe-id
+list if a future undocumented III opcode needs the same triage.
 
 Once the winner is identified, update this section with the
 hardware-verified envelope and lock it via byte-exact goldens in
@@ -956,6 +951,6 @@ Given the function-byte map + Appendix 1 effect IDs:
 
 - **Project README and CLAUDE.md** — point at `docs/REFERENCES.md` for any "where do I find X" question. The III spec is row 30 there.
 - **III package source** — `packages/axe-fx-iii/src/setParam.ts` carries an inline pointer to this doc at the top of the file (after edits land).
-- **Community capture workflow** — [`docs/community/axefx3-captures.md`](community/axefx3-captures.md) and (private) `docs/_private/HARDWARE-TASKS-AXEFX3.md`.
+- **Community beta-testing workflow** — [`docs/community/axefx3-beta-testing.md`](community/axefx3-beta-testing.md). III owners run a small list of tool calls and report whether the front panel matches the response.
 - **Design notes** (some predate the bug discovery here) — [`docs/axefx3-design-notes.md`](axefx3-design-notes.md).
 - **Forum reverse-engineering** of preset save format — Fractal Forum thread #159885 ("Axe-Fx III and deconstructing / parsing a .syx / sysex preset file"). Three-function envelope: `0x77` (header, contains destination), 16× `0x78` (body chunks), `0x79` (footer).

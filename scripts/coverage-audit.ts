@@ -71,12 +71,23 @@ interface CatalogEntry { paramId: number; name: string; }
 const catalogByFamily: Record<string, CatalogEntry[]> = {};
 let catalogTotal = 0;
 
+// paramId ≥ 65000 are AM4-Edit internal UI widgets (NAME/LABEL/MENU/
+// BUTTON/GRAPH/COPY/METER sentinels), NOT writable preset parameters.
+// They show up in the Ghidra catalog because the editor binary
+// allocates paramId slots for every UI element, but params.ts
+// intentionally omits them. Filter at load time so they're excluded
+// from BOTH the family catalog count AND the % calculation —
+// matches the UI-WIDGET classification in coverage-cross-ref-audit.ts.
+const UI_WIDGET_PARAMID_MIN = 65000;
+
 if (existsSync(GHIDRA_AM4)) {
   const raw = JSON.parse(readFileSync(GHIDRA_AM4, 'utf-8'));
   for (const eff of Object.values(raw.effect_types) as any[]) {
     if (!eff.effectFamily) continue;
     const arr: CatalogEntry[] = Array.isArray(eff.params)
-      ? eff.params.map((p: any) => ({ paramId: p.paramId, name: p.name }))
+      ? eff.params
+          .filter((p: any) => p.paramId < UI_WIDGET_PARAMID_MIN)
+          .map((p: any) => ({ paramId: p.paramId, name: p.name }))
       : [];
     catalogByFamily[eff.effectFamily] = arr;
     catalogTotal += arr.length;

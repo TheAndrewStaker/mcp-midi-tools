@@ -104,8 +104,35 @@ would close it.
 
 ## Sub-action `04 01` — STATE_BROADCAST (device→host)
 
-Five captures from a passive sniff of AxeEdit III ↔ III traffic.
-These are inbound (device emitting), not outbound (host setting):
+**Behavioral finding (Session 97, 2026-05-18).** Originally captured
+by user j20056 in Fractal Forum thread #203336 (April 2024); analyzed
+in detail Session 97 via the local archive at
+`docs/_private/forum-batch-2026-05-16T01-20-21-643Z.txt` lines 73-81.
+
+Key behavioral facts:
+
+1. **Not a push-on-edit event.** The five frames below were captured
+   "without doing anything" (no user knob action) — they're idle
+   passive traffic.
+2. **AxeEdit-driven heartbeat poll, not device-initiated.** j20056:
+   *"as soon as I quit Axe-Edit, then all MIDI traffic stops."*
+   GlennO confirms: *"That parameter value response traffic is normal,
+   for example when running Axe-Edit."* The III only emits `04 01`
+   when an editor is actively polling.
+3. **Byte-exact repeats.** Sequence 654 in the original capture is a
+   byte-exact repeat of sequence 646 (same effect ID `3A 00`, same
+   value `46 01`) — heartbeat poll, not state delta.
+
+**Implication for `axefx3_get_parameter`:** sending a SET to a bare
+III (no AxeEdit running) will likely produce NO inbound `04 01`
+broadcast. The `04 01` shape is real and field-decodable, but it
+appears to be the editor-polling response channel, not a synchronous
+SET acknowledgement or a state-change push. Our `get_param` tool's
+🟡 banner correctly captures this — but the implementation should
+treat a timeout as "expected on bare hardware" rather than a tool
+error.
+
+Five captures, all from one passive sniff:
 
 ```
 pos:  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22
@@ -132,6 +159,20 @@ pos:  00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22
 The broadcast covers effect IDs across the full v1.4 Appendix
 range (1, 2, 58, 59, 190) — consistent with a stream the device
 emits when AxeEdit polls or auto-syncs state.
+
+## Sub-action `2E 00` — UNCATALOGUED (device→host, ~245 bytes)
+
+**Open decode question (Session 97).** Discovered as sequence 651 in
+j20056's passive sniff (thread #203336): a ~245-byte device-emitted
+frame interleaved with `04 01` STATE_BROADCAST + `01 00` STATE_DUMP
+traffic. None of the existing decoded sub-actions match this length
+class. Likely candidates: preset-grid snapshot, scene-state batch
+update, or routing dump — would tell us what AxeEdit III asks for
+periodically and how the III formats large multi-block state.
+
+Full bytes archived in
+`docs/_private/forum-batch-2026-05-16T01-20-21-643Z.txt` (~line 78).
+Decoding is unblocked — no hardware needed, just byte-level analysis.
 
 ## Sub-action `01 00` — STATE_DUMP (device→host, 87 bytes)
 
