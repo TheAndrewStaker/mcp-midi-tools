@@ -124,6 +124,46 @@ export const FAMILY_TO_AM4_BLOCKS: Readonly<Record<string, readonly string[]>> =
   VOLUME: ['volpan'],
 };
 
+// ── Hand-curated cross-family overrides ────────────────────────────
+//
+// Maps III SCREAMING_SNAKE symbol → AM4 `block.name` key, bypassing
+// the FAMILY_TO_AM4_BLOCKS restriction. Each entry is for a case where
+// the III family borrows a coherent subset from an AM4 block that
+// FAMILY_TO_AM4_BLOCKS deliberately doesn't join (because the broader
+// family overlap would produce false positives).
+//
+// Why not widen FAMILY_TO_AM4_BLOCKS instead?
+//   CABINET → ['amp'] would auto-join 126 III CABINET paramIds to
+//   AM4's 167 amp entries by name, surfacing the 4 right DynaCab
+//   matches AND 15-30 false positives (e.g. III's CABINET_LEVEL is a
+//   0..100 numeric mix; AM4's amp.level is -80..20 dB — same name,
+//   wrong calibration). A per-symbol whitelist is auditable at commit
+//   time without a per-generation review treadmill.
+//
+// Adding an entry:
+//   1. Confirm the III paramId and AM4 entry name refer to the same
+//      musical concept on both products (read both XMLs / manual).
+//   2. Add the row with a one-line rationale comment.
+//   3. Re-run the III catalog generator and inspect the diff —
+//      exactly one row should flip from unverified → calibrated.
+//
+// Inventory + rationale: `docs/_private/axefx3-unverified-audit-2026-05-18.md`.
+export const EXPLICIT_III_TO_AM4: Readonly<Record<string, string>> = {
+  // DynaCab IR-type and mic selectors. AM4 hosts the canonical
+  // DynaCab catalog under its `amp` block (per AM4 manual p. 25);
+  // III's CABINET family reuses the same enumeration. Range 0..31,
+  // count semantics.
+  CABINET_DYNACAB_TYPE1: 'amp.dynacab_type_1',
+  CABINET_DYNACAB_TYPE2: 'amp.dynacab_type_2',
+  CABINET_DYNACAB_MIC1: 'amp.dynacab_mic_1',
+  CABINET_DYNACAB_MIC2: 'amp.dynacab_mic_2',
+  // Drive clip-type selector. DISTORT_CLIPTYPE1 already auto-joins
+  // via FAMILY_TO_AM4_BLOCKS[DISTORT] → drive.clip_type; the `2`
+  // instance suffix breaks the auto-join name, so we land it
+  // explicitly. Same 14-value enum on both products.
+  DISTORT_CLIPTYPE2: 'drive.clip_type',
+};
+
 // ── III suffix ↔ AM4 name aliases ──────────────────────────────────
 //
 // Mirrors `generate-am4-params-from-catalog.ts`'s NAMING_ALIAS table.
@@ -781,14 +821,23 @@ export function findAm4Override(
   xmlLabels?: Map<string, XmlLabel>,
 ): Am4Override | undefined {
   let result: Am4Override | undefined;
-  const am4Blocks = FAMILY_TO_AM4_BLOCKS[family];
-  if (am4Blocks && am4Blocks.length > 0) {
-    const am4Name = iiiSymbolToAm4Name(iiiSymbolName);
-    for (const block of am4Blocks) {
-      const hit = overrides.get(`${block}.${am4Name}`);
-      if (hit) {
-        result = hit;
-        break;
+  // Hand-curated explicit cross-family override takes precedence over
+  // the family-based join — see EXPLICIT_III_TO_AM4 comment block for
+  // the rationale.
+  const explicitKey = EXPLICIT_III_TO_AM4[iiiSymbolName];
+  if (explicitKey) {
+    result = overrides.get(explicitKey);
+  }
+  if (!result) {
+    const am4Blocks = FAMILY_TO_AM4_BLOCKS[family];
+    if (am4Blocks && am4Blocks.length > 0) {
+      const am4Name = iiiSymbolToAm4Name(iiiSymbolName);
+      for (const block of am4Blocks) {
+        const hit = overrides.get(`${block}.${am4Name}`);
+        if (hit) {
+          result = hit;
+          break;
+        }
       }
     }
   }

@@ -13,9 +13,9 @@
  *
  * Coverage:
  *   - 2216 parameters across 48 effect families.
- *   - 2021 entries carry inferred display calibration
+ *   - 2026 entries carry inferred display calibration
  *     (non-`'unverified'` unit + optional displayMin/Max + optional scaling).
- *       • 229 via AM4 symbol-name join — trailing
+ *       • 236 via AM4 symbol-name join — trailing
  *         `// inferred from AM4`. Hardware-verified on AM4;
  *         display convention shared with the III.
  *       • 226 via universal Fractal-convention
@@ -23,19 +23,19 @@
  *         Suffixes like `*_BYPASS`, `*_PAN`, `*_GLOBALMIX`,
  *         `*_SCENEIGNORE`, `*_MIX` whose calibration is stable
  *         across every Fractal block.
- *       • 1566 via AxeEdit III XML controlType — trailing
+ *       • 1564 via AxeEdit III XML controlType — trailing
  *         `// inferred from AxeEdit III XML controlType`. Distinguishes
  *         enum-vs-numeric-vs-dB widgets from the JUCE BinaryData
  *         layout XML; carries no range info, so displayMin/Max omitted.
  *   - 1997 entries carry a `displayLabel` (the editor's
  *     knob caption — e.g. `'Drive'` for `DISTORT_DRIVE`). Independent of
  *     calibration tier — XML labels overlay onto AM4/universal/XML units.
- *   - 195 entries remain `unit: 'unverified'`
+ *   - 190 entries remain `unit: 'unverified'`
  *     (III-specific blocks like FUZZ/IRPLAYER without enum-shape labels,
  *     or symbols absent from both AM4 and the XML mining catalog).
  *
  * Calibration sources (per-family inferred count):
- *   CABINET=100, CHORUS=32, COMP=35, CONTROLLERS=136, CROSSOVER=15, DELAY=86, DISTORT=134, DYNDIST=12, ENHANCER=12, FC=8, FDBKRET=6, FILTER=37, FLANGER=55, FORMANT=12, FUZZ=43, GATE=19, GEQ=20, GLOBAL=228, INPUT=10, IRPLAYER=22, LOOPER=22, MEGATAP=34, MIDIBLOCK=10, MIXER=23, MOD=20, MULTICOMP=37, MULTIPLEXER=7, MULTITAP=116, OUTPUT=26, PEQ=33, PHASER=35, PITCH=112, PLEX=93, PRESET=51, RESONATOR=39, REVERB=71, RINGMOD=12, ROTARY=21, RTA=4, SYNTH=41, TENTAP=44, TONEMATCH=21, TREMOLO=22, VOCODER=67, VOLUME=13, WAH=25
+ *   CABINET=104, CHORUS=32, COMP=35, CONTROLLERS=136, CROSSOVER=15, DELAY=86, DISTORT=135, DYNDIST=12, ENHANCER=12, FC=8, FDBKRET=6, FILTER=37, FLANGER=55, FORMANT=12, FUZZ=43, GATE=19, GEQ=20, GLOBAL=228, INPUT=10, IRPLAYER=22, LOOPER=22, MEGATAP=34, MIDIBLOCK=10, MIXER=23, MOD=20, MULTICOMP=37, MULTIPLEXER=7, MULTITAP=116, OUTPUT=26, PEQ=33, PHASER=35, PITCH=112, PLEX=93, PRESET=51, RESONATOR=39, REVERB=71, RINGMOD=12, ROTARY=21, RTA=4, SYNTH=41, TENTAP=44, TONEMATCH=21, TREMOLO=22, VOCODER=67, VOLUME=13, WAH=25
  *
  * Inferred-from-AM4 caveat:
  *   - AM4 is the closest hardware-verified analog Fractal device.
@@ -650,7 +650,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'COMP', paramId: 22, name: 'COMP_FREQ', displayLabel: 'Frequency', unit: 'numeric' }, // inferred from AxeEdit III XML controlType
   { family: 'COMP', paramId: 23, name: 'COMP_Q', displayLabel: 'Q', unit: 'numeric' }, // inferred from AxeEdit III XML controlType
   { family: 'COMP', paramId: 24, name: 'COMP_LIGHTTYPE', displayLabel: 'Light Type', unit: 'enum' }, // inferred from AxeEdit III XML controlType
-  { family: 'COMP', paramId: 25, name: 'COMP_GAINMONITOR', displayLabel: 'Gain', unit: 'db' }, // inferred from AxeEdit III XML controlType
+  { family: 'COMP', paramId: 25, name: 'COMP_GAINMONITOR', displayLabel: 'Gain', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'COMP', paramId: 26, name: 'COMP_EQTYPE', displayLabel: 'Filter Type', unit: 'enum' }, // inferred from AxeEdit III XML controlType
   { family: 'COMP', paramId: 27, name: 'COMP_THRESH2', displayLabel: 'Threshold', unit: 'numeric' }, // inferred from AxeEdit III XML controlType
   { family: 'COMP', paramId: 28, name: 'COMP_XMARK', unit: 'unverified' },
@@ -734,7 +734,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'DISTORT', paramId: 15, name: 'DISTORT_INPUTSELECT', displayLabel: 'Input Select', unit: 'enum' }, // inferred from AM4
   { family: 'DISTORT', paramId: 16, name: 'DISTORT_DEPTH', displayLabel: 'Depth', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'DISTORT', paramId: 17, name: 'DISTORT_OFFSET1', unit: 'unverified' },
-  { family: 'DISTORT', paramId: 18, name: 'DISTORT_CLIPTYPE2', unit: 'unverified' },
+  { family: 'DISTORT', paramId: 18, name: 'DISTORT_CLIPTYPE2', unit: 'enum' }, // inferred from AM4
   { family: 'DISTORT', paramId: 19, name: 'DISTORT_SUPPLYSAG', displayLabel: 'Supply Sag', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'DISTORT', paramId: 20, name: 'DISTORT_PRESENCE', displayLabel: 'Presence', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'DISTORT', paramId: 21, name: 'DISTORT_LEVEL', displayLabel: 'Level', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
@@ -944,12 +944,12 @@ export const PARAMS: readonly Param[] = [
   { family: 'CABINET', paramId: 82, name: 'CABINET_PRELOSLOPE', displayLabel: 'Low Cut Slope', unit: 'enum' }, // inferred from AxeEdit III XML controlType
   { family: 'CABINET', paramId: 83, name: 'CABINET_PREHISLOPE', displayLabel: 'High Cut Slope', unit: 'enum' }, // inferred from AxeEdit III XML controlType
   { family: 'CABINET', paramId: 84, name: 'CABINET_SCENEIGNORE', displayLabel: 'Scene Ignore', unit: 'enum' }, // inferred from Fractal convention
-  { family: 'CABINET', paramId: 85, name: 'CABINET_DYNACAB_TYPE1', unit: 'unverified' },
-  { family: 'CABINET', paramId: 86, name: 'CABINET_DYNACAB_TYPE2', unit: 'unverified' },
+  { family: 'CABINET', paramId: 85, name: 'CABINET_DYNACAB_TYPE1', unit: 'count', displayMin: 0, displayMax: 31 }, // inferred from AM4
+  { family: 'CABINET', paramId: 86, name: 'CABINET_DYNACAB_TYPE2', unit: 'count', displayMin: 0, displayMax: 31 }, // inferred from AM4
   { family: 'CABINET', paramId: 87, name: 'CABINET_DYNACAB_TYPE3', unit: 'unverified' },
   { family: 'CABINET', paramId: 88, name: 'CABINET_DYNACAB_TYPE4', unit: 'unverified' },
-  { family: 'CABINET', paramId: 89, name: 'CABINET_DYNACAB_MIC1', unit: 'unverified' },
-  { family: 'CABINET', paramId: 90, name: 'CABINET_DYNACAB_MIC2', unit: 'unverified' },
+  { family: 'CABINET', paramId: 89, name: 'CABINET_DYNACAB_MIC1', unit: 'count', displayMin: 0, displayMax: 31 }, // inferred from AM4
+  { family: 'CABINET', paramId: 90, name: 'CABINET_DYNACAB_MIC2', unit: 'count', displayMin: 0, displayMax: 31 }, // inferred from AM4
   { family: 'CABINET', paramId: 91, name: 'CABINET_DYNACAB_MIC3', unit: 'unverified' },
   { family: 'CABINET', paramId: 92, name: 'CABINET_DYNACAB_MIC4', unit: 'unverified' },
   { family: 'CABINET', paramId: 93, name: 'CABINET_DYNACAB_R1', displayLabel: 'DynaCab', unit: 'unverified' }, // label from AxeEdit III XML
@@ -1982,7 +1982,7 @@ export const PARAMS: readonly Param[] = [
   { family: 'GATE', paramId: 10, name: 'GATE_PAN', displayLabel: 'Balance', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 }, // inferred from Fractal convention
   { family: 'GATE', paramId: 11, name: 'GATE_BYPASSMODE', displayLabel: 'Bypass Mode', unit: 'enum' }, // inferred from AM4
   { family: 'GATE', paramId: 12, name: 'GATE_BYPASS', displayLabel: 'Bypass', unit: 'enum' }, // inferred from Fractal convention
-  { family: 'GATE', paramId: 13, name: 'GATE_GAINMONITOR', displayLabel: 'Gain', unit: 'db' }, // inferred from AxeEdit III XML controlType
+  { family: 'GATE', paramId: 13, name: 'GATE_GAINMONITOR', displayLabel: 'Gain', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   { family: 'GATE', paramId: 14, name: 'GATE_TYPE', unit: 'enum' }, // inferred from AM4
   { family: 'GATE', paramId: 15, name: 'GATE_RANGE', displayLabel: 'Attenuation', unit: 'numeric' }, // inferred from AxeEdit III XML controlType
   { family: 'GATE', paramId: 16, name: 'GATE_PEAKRMS', displayLabel: 'Detector Type', unit: 'enum' }, // inferred from AxeEdit III XML controlType
@@ -2882,7 +2882,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'COMP', paramId: 22, name: 'COMP_FREQ', displayLabel: 'Frequency', unit: 'numeric' }, // inferred from AxeEdit III XML controlType
     { family: 'COMP', paramId: 23, name: 'COMP_Q', displayLabel: 'Q', unit: 'numeric' }, // inferred from AxeEdit III XML controlType
     { family: 'COMP', paramId: 24, name: 'COMP_LIGHTTYPE', displayLabel: 'Light Type', unit: 'enum' }, // inferred from AxeEdit III XML controlType
-    { family: 'COMP', paramId: 25, name: 'COMP_GAINMONITOR', displayLabel: 'Gain', unit: 'db' }, // inferred from AxeEdit III XML controlType
+    { family: 'COMP', paramId: 25, name: 'COMP_GAINMONITOR', displayLabel: 'Gain', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
     { family: 'COMP', paramId: 26, name: 'COMP_EQTYPE', displayLabel: 'Filter Type', unit: 'enum' }, // inferred from AxeEdit III XML controlType
     { family: 'COMP', paramId: 27, name: 'COMP_THRESH2', displayLabel: 'Threshold', unit: 'numeric' }, // inferred from AxeEdit III XML controlType
     { family: 'COMP', paramId: 28, name: 'COMP_XMARK', unit: 'unverified' },
@@ -2972,7 +2972,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'DISTORT', paramId: 15, name: 'DISTORT_INPUTSELECT', displayLabel: 'Input Select', unit: 'enum' }, // inferred from AM4
     { family: 'DISTORT', paramId: 16, name: 'DISTORT_DEPTH', displayLabel: 'Depth', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
     { family: 'DISTORT', paramId: 17, name: 'DISTORT_OFFSET1', unit: 'unverified' },
-    { family: 'DISTORT', paramId: 18, name: 'DISTORT_CLIPTYPE2', unit: 'unverified' },
+    { family: 'DISTORT', paramId: 18, name: 'DISTORT_CLIPTYPE2', unit: 'enum' }, // inferred from AM4
     { family: 'DISTORT', paramId: 19, name: 'DISTORT_SUPPLYSAG', displayLabel: 'Supply Sag', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
     { family: 'DISTORT', paramId: 20, name: 'DISTORT_PRESENCE', displayLabel: 'Presence', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
     { family: 'DISTORT', paramId: 21, name: 'DISTORT_LEVEL', displayLabel: 'Level', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
@@ -3184,12 +3184,12 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'CABINET', paramId: 82, name: 'CABINET_PRELOSLOPE', displayLabel: 'Low Cut Slope', unit: 'enum' }, // inferred from AxeEdit III XML controlType
     { family: 'CABINET', paramId: 83, name: 'CABINET_PREHISLOPE', displayLabel: 'High Cut Slope', unit: 'enum' }, // inferred from AxeEdit III XML controlType
     { family: 'CABINET', paramId: 84, name: 'CABINET_SCENEIGNORE', displayLabel: 'Scene Ignore', unit: 'enum' }, // inferred from Fractal convention
-    { family: 'CABINET', paramId: 85, name: 'CABINET_DYNACAB_TYPE1', unit: 'unverified' },
-    { family: 'CABINET', paramId: 86, name: 'CABINET_DYNACAB_TYPE2', unit: 'unverified' },
+    { family: 'CABINET', paramId: 85, name: 'CABINET_DYNACAB_TYPE1', unit: 'count', displayMin: 0, displayMax: 31 }, // inferred from AM4
+    { family: 'CABINET', paramId: 86, name: 'CABINET_DYNACAB_TYPE2', unit: 'count', displayMin: 0, displayMax: 31 }, // inferred from AM4
     { family: 'CABINET', paramId: 87, name: 'CABINET_DYNACAB_TYPE3', unit: 'unverified' },
     { family: 'CABINET', paramId: 88, name: 'CABINET_DYNACAB_TYPE4', unit: 'unverified' },
-    { family: 'CABINET', paramId: 89, name: 'CABINET_DYNACAB_MIC1', unit: 'unverified' },
-    { family: 'CABINET', paramId: 90, name: 'CABINET_DYNACAB_MIC2', unit: 'unverified' },
+    { family: 'CABINET', paramId: 89, name: 'CABINET_DYNACAB_MIC1', unit: 'count', displayMin: 0, displayMax: 31 }, // inferred from AM4
+    { family: 'CABINET', paramId: 90, name: 'CABINET_DYNACAB_MIC2', unit: 'count', displayMin: 0, displayMax: 31 }, // inferred from AM4
     { family: 'CABINET', paramId: 91, name: 'CABINET_DYNACAB_MIC3', unit: 'unverified' },
     { family: 'CABINET', paramId: 92, name: 'CABINET_DYNACAB_MIC4', unit: 'unverified' },
     { family: 'CABINET', paramId: 93, name: 'CABINET_DYNACAB_R1', displayLabel: 'DynaCab', unit: 'unverified' }, // label from AxeEdit III XML
@@ -4268,7 +4268,7 @@ export const PARAMS_BY_FAMILY: Readonly<Record<string, readonly Param[]>> = {
     { family: 'GATE', paramId: 10, name: 'GATE_PAN', displayLabel: 'Balance', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 }, // inferred from Fractal convention
     { family: 'GATE', paramId: 11, name: 'GATE_BYPASSMODE', displayLabel: 'Bypass Mode', unit: 'enum' }, // inferred from AM4
     { family: 'GATE', paramId: 12, name: 'GATE_BYPASS', displayLabel: 'Bypass', unit: 'enum' }, // inferred from Fractal convention
-    { family: 'GATE', paramId: 13, name: 'GATE_GAINMONITOR', displayLabel: 'Gain', unit: 'db' }, // inferred from AxeEdit III XML controlType
+    { family: 'GATE', paramId: 13, name: 'GATE_GAINMONITOR', displayLabel: 'Gain', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
     { family: 'GATE', paramId: 14, name: 'GATE_TYPE', unit: 'enum' }, // inferred from AM4
     { family: 'GATE', paramId: 15, name: 'GATE_RANGE', displayLabel: 'Attenuation', unit: 'numeric' }, // inferred from AxeEdit III XML controlType
     { family: 'GATE', paramId: 16, name: 'GATE_PEAKRMS', displayLabel: 'Detector Type', unit: 'enum' }, // inferred from AxeEdit III XML controlType
@@ -5195,7 +5195,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'COMP.COMP_FREQ': { family: 'COMP', paramId: 22, name: 'COMP_FREQ', displayLabel: 'Frequency', unit: 'numeric' }, // inferred from AxeEdit III XML controlType
   'COMP.COMP_Q': { family: 'COMP', paramId: 23, name: 'COMP_Q', displayLabel: 'Q', unit: 'numeric' }, // inferred from AxeEdit III XML controlType
   'COMP.COMP_LIGHTTYPE': { family: 'COMP', paramId: 24, name: 'COMP_LIGHTTYPE', displayLabel: 'Light Type', unit: 'enum' }, // inferred from AxeEdit III XML controlType
-  'COMP.COMP_GAINMONITOR': { family: 'COMP', paramId: 25, name: 'COMP_GAINMONITOR', displayLabel: 'Gain', unit: 'db' }, // inferred from AxeEdit III XML controlType
+  'COMP.COMP_GAINMONITOR': { family: 'COMP', paramId: 25, name: 'COMP_GAINMONITOR', displayLabel: 'Gain', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'COMP.COMP_EQTYPE': { family: 'COMP', paramId: 26, name: 'COMP_EQTYPE', displayLabel: 'Filter Type', unit: 'enum' }, // inferred from AxeEdit III XML controlType
   'COMP.COMP_THRESH2': { family: 'COMP', paramId: 27, name: 'COMP_THRESH2', displayLabel: 'Threshold', unit: 'numeric' }, // inferred from AxeEdit III XML controlType
   'COMP.COMP_XMARK': { family: 'COMP', paramId: 28, name: 'COMP_XMARK', unit: 'unverified' },
@@ -5279,7 +5279,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'DISTORT.DISTORT_INPUTSELECT': { family: 'DISTORT', paramId: 15, name: 'DISTORT_INPUTSELECT', displayLabel: 'Input Select', unit: 'enum' }, // inferred from AM4
   'DISTORT.DISTORT_DEPTH': { family: 'DISTORT', paramId: 16, name: 'DISTORT_DEPTH', displayLabel: 'Depth', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'DISTORT.DISTORT_OFFSET1': { family: 'DISTORT', paramId: 17, name: 'DISTORT_OFFSET1', unit: 'unverified' },
-  'DISTORT.DISTORT_CLIPTYPE2': { family: 'DISTORT', paramId: 18, name: 'DISTORT_CLIPTYPE2', unit: 'unverified' },
+  'DISTORT.DISTORT_CLIPTYPE2': { family: 'DISTORT', paramId: 18, name: 'DISTORT_CLIPTYPE2', unit: 'enum' }, // inferred from AM4
   'DISTORT.DISTORT_SUPPLYSAG': { family: 'DISTORT', paramId: 19, name: 'DISTORT_SUPPLYSAG', displayLabel: 'Supply Sag', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'DISTORT.DISTORT_PRESENCE': { family: 'DISTORT', paramId: 20, name: 'DISTORT_PRESENCE', displayLabel: 'Presence', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'DISTORT.DISTORT_LEVEL': { family: 'DISTORT', paramId: 21, name: 'DISTORT_LEVEL', displayLabel: 'Level', unit: 'db', displayMin: -80, displayMax: 20 }, // inferred from AM4
@@ -5489,12 +5489,12 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'CABINET.CABINET_PRELOSLOPE': { family: 'CABINET', paramId: 82, name: 'CABINET_PRELOSLOPE', displayLabel: 'Low Cut Slope', unit: 'enum' }, // inferred from AxeEdit III XML controlType
   'CABINET.CABINET_PREHISLOPE': { family: 'CABINET', paramId: 83, name: 'CABINET_PREHISLOPE', displayLabel: 'High Cut Slope', unit: 'enum' }, // inferred from AxeEdit III XML controlType
   'CABINET.CABINET_SCENEIGNORE': { family: 'CABINET', paramId: 84, name: 'CABINET_SCENEIGNORE', displayLabel: 'Scene Ignore', unit: 'enum' }, // inferred from Fractal convention
-  'CABINET.CABINET_DYNACAB_TYPE1': { family: 'CABINET', paramId: 85, name: 'CABINET_DYNACAB_TYPE1', unit: 'unverified' },
-  'CABINET.CABINET_DYNACAB_TYPE2': { family: 'CABINET', paramId: 86, name: 'CABINET_DYNACAB_TYPE2', unit: 'unverified' },
+  'CABINET.CABINET_DYNACAB_TYPE1': { family: 'CABINET', paramId: 85, name: 'CABINET_DYNACAB_TYPE1', unit: 'count', displayMin: 0, displayMax: 31 }, // inferred from AM4
+  'CABINET.CABINET_DYNACAB_TYPE2': { family: 'CABINET', paramId: 86, name: 'CABINET_DYNACAB_TYPE2', unit: 'count', displayMin: 0, displayMax: 31 }, // inferred from AM4
   'CABINET.CABINET_DYNACAB_TYPE3': { family: 'CABINET', paramId: 87, name: 'CABINET_DYNACAB_TYPE3', unit: 'unverified' },
   'CABINET.CABINET_DYNACAB_TYPE4': { family: 'CABINET', paramId: 88, name: 'CABINET_DYNACAB_TYPE4', unit: 'unverified' },
-  'CABINET.CABINET_DYNACAB_MIC1': { family: 'CABINET', paramId: 89, name: 'CABINET_DYNACAB_MIC1', unit: 'unverified' },
-  'CABINET.CABINET_DYNACAB_MIC2': { family: 'CABINET', paramId: 90, name: 'CABINET_DYNACAB_MIC2', unit: 'unverified' },
+  'CABINET.CABINET_DYNACAB_MIC1': { family: 'CABINET', paramId: 89, name: 'CABINET_DYNACAB_MIC1', unit: 'count', displayMin: 0, displayMax: 31 }, // inferred from AM4
+  'CABINET.CABINET_DYNACAB_MIC2': { family: 'CABINET', paramId: 90, name: 'CABINET_DYNACAB_MIC2', unit: 'count', displayMin: 0, displayMax: 31 }, // inferred from AM4
   'CABINET.CABINET_DYNACAB_MIC3': { family: 'CABINET', paramId: 91, name: 'CABINET_DYNACAB_MIC3', unit: 'unverified' },
   'CABINET.CABINET_DYNACAB_MIC4': { family: 'CABINET', paramId: 92, name: 'CABINET_DYNACAB_MIC4', unit: 'unverified' },
   'CABINET.CABINET_DYNACAB_R1': { family: 'CABINET', paramId: 93, name: 'CABINET_DYNACAB_R1', displayLabel: 'DynaCab', unit: 'unverified' }, // label from AxeEdit III XML
@@ -6527,7 +6527,7 @@ export const PARAM_BY_KEY: Readonly<Record<string, Param>> = {
   'GATE.GATE_PAN': { family: 'GATE', paramId: 10, name: 'GATE_PAN', displayLabel: 'Balance', unit: 'bipolar_percent', displayMin: -100, displayMax: 100 }, // inferred from Fractal convention
   'GATE.GATE_BYPASSMODE': { family: 'GATE', paramId: 11, name: 'GATE_BYPASSMODE', displayLabel: 'Bypass Mode', unit: 'enum' }, // inferred from AM4
   'GATE.GATE_BYPASS': { family: 'GATE', paramId: 12, name: 'GATE_BYPASS', displayLabel: 'Bypass', unit: 'enum' }, // inferred from Fractal convention
-  'GATE.GATE_GAINMONITOR': { family: 'GATE', paramId: 13, name: 'GATE_GAINMONITOR', displayLabel: 'Gain', unit: 'db' }, // inferred from AxeEdit III XML controlType
+  'GATE.GATE_GAINMONITOR': { family: 'GATE', paramId: 13, name: 'GATE_GAINMONITOR', displayLabel: 'Gain', unit: 'knob_0_10', displayMin: 0, displayMax: 10 }, // inferred from AM4
   'GATE.GATE_TYPE': { family: 'GATE', paramId: 14, name: 'GATE_TYPE', unit: 'enum' }, // inferred from AM4
   'GATE.GATE_RANGE': { family: 'GATE', paramId: 15, name: 'GATE_RANGE', displayLabel: 'Attenuation', unit: 'numeric' }, // inferred from AxeEdit III XML controlType
   'GATE.GATE_PEAKRMS': { family: 'GATE', paramId: 16, name: 'GATE_PEAKRMS', displayLabel: 'Detector Type', unit: 'enum' }, // inferred from AxeEdit III XML controlType

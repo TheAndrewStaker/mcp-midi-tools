@@ -160,19 +160,113 @@ The broadcast covers effect IDs across the full v1.4 Appendix
 range (1, 2, 58, 59, 190) — consistent with a stream the device
 emits when AxeEdit polls or auto-syncs state.
 
-## Sub-action `2E 00` — UNCATALOGUED (device→host, ~245 bytes)
+## Sub-action `2E 00` — LARGE DEVICE-EMITTED FRAME (device→host, 755 bytes)
 
-**Open decode question (Session 97).** Discovered as sequence 651 in
-j20056's passive sniff (thread #203336): a ~245-byte device-emitted
+**Status: structurally decoded Session 97 cont 7 — semantic ID still
+needs a controlled capture to confirm.** Discovered as sequence 651 in
+j20056's passive sniff (thread #203336): a 755-byte device-emitted
 frame interleaved with `04 01` STATE_BROADCAST + `01 00` STATE_DUMP
-traffic. None of the existing decoded sub-actions match this length
-class. Likely candidates: preset-grid snapshot, scene-state batch
-update, or routing dump — would tell us what AxeEdit III asks for
-periodically and how the III formats large multi-block state.
+traffic. The "~245 byte" framing in earlier handoffs underestimated by
+~3× — the actual payload is 745 bytes (8-byte envelope + 745-byte
+payload + cs + F7). Mechanical decode in
+`scripts/_research/decode-axefx3-2e00-frame.ts` +
+`scripts/_research/decode-axefx3-2e00-stride.ts`.
 
 Full bytes archived in
 `docs/_private/forum-batch-2026-05-16T01-20-21-643Z.txt` (~line 78).
-Decoding is unblocked — no hardware needed, just byte-level analysis.
+
+### Validated facts (byte-level)
+
+- **Length:** 755 bytes total. 8-byte envelope (`F0 00 01 74 10 01 2E
+  00`) + 745-byte payload + checksum (`5C`) + `F7`. Checksum verifies.
+- **Three regions** identifiable from non-zero density + repeating-
+  pattern boundaries:
+  - **Header** (payload offset 0..38, ~39 bytes) — sparse, fixed-field
+    look. Contains the marker `3F 01` at offset 4-5 (same constant
+    seen at pos 12-13 of the `01 00` STATE_DUMP captures, where it's
+    hypothesized to mean "all parameters" or "this is a full block
+    snapshot"). Other non-zero bytes: `05 4B`, `20`, `1D 2D 37 10 4A`
+    — likely (block_count, preset_number, scene_index) or similar
+    routing metadata.
+  - **Body** (offset 32..359, ~328 bytes) — densely populated with the
+    repeating 8-byte pattern `04 02 01 00 40 20 10 08` (and its
+    cyclic rotations) interspersed with 24-110-byte "real data"
+    chunks. Stride-40 alignment lays this out as **8 entries × 40
+    bytes each** — matching the III's 8-scene count or 8-snapshot
+    count exactly. The pattern bytes are NOT zero data — they decode
+    LSF-septet to `[04 02 01 80 40 20 10]` (seven bytes, each with a
+    single 1-bit, position cycling 2→1→0→7→6→5→4). Consistent with
+    a "default / unmodified" sentinel for one structural element per
+    scene.
+  - **Tail** (offset 360..744, ~385 bytes) — sparse, scattered non-
+    zero markers in clear LSB-first pairs (e.g. `3E 00 01 00`,
+    `4E 00 01 00`, `46 00 01 00`, `78 10 40`, `34 00 02 00`). Pattern
+    is "`[paramId-or-flag] 00 [value-byte] 00`" repeated — looks like
+    a flag/setting per parameter, NOT another scene block.
+- **Pattern boundary runs** (where `bytes[i] == bytes[i+8]`,
+  signaling "the 8-byte pattern continues"):
+  - 39..59 (20B), 121..132 (11B), 250..278 (28B), 287..315 (28B),
+    324..351 (27B) — confirms 5+ pattern-only regions inside the
+    body.
+
+### Working hypothesis: full-preset state snapshot
+
+Three regions × the III's known data shape gives the most likely fit:
+
+1. **Header** = preset metadata (preset #, scene #, edit-buffer-dirty
+   flag, block count active).
+2. **Body** = 8 scenes × 40-byte per-scene state. Each 40-byte block
+   contains "real data" (the scene's actual bypass/channel/CC values
+   for blocks that differ from default) plus the walking-bit "default"
+   sentinel for parameters at their default values. This is consistent
+   with the III's per-scene override model — scenes don't copy the
+   whole preset, they store deltas.
+3. **Tail** = global preset settings (output level, FX-loop
+   assignments, MIDI map overrides, tuner offset) — the sparse
+   `[id 00 val 00]` shape matches a 7-bit septet pair list of
+   (paramId, value).
+
+This makes the `2E 00` frame the III's **`GET_PRESET_DUMP`** response —
+the III's analogue of the II's `0x1D` preset envelope, but uncompressed
+and single-frame (vs. the III's 18-frame `0x77/0x78/0x79` Huffman-
+compressed save format which writes to flash, not the working buffer).
+
+If correct, sending a request to the III with sub-action `2E 00` and an
+empty payload should produce this dump for the active preset. Worth a
+read-only probe once a III is on hand. Frame to test:
+
+```
+F0 00 01 74 10 01 2E 00 [cs] F7
+```
+
+cs computed = `0x35`. Wire: `F0 00 01 74 10 01 2E 00 35 F7`.
+
+### What this unblocks (if hypothesis holds)
+
+- **`get_active_preset_dump()` MCP tool** — single round-trip read of
+  the III's full working-buffer state, no per-block STATUS_DUMP loop.
+- **Faster dirty-state polling** — one 755-byte frame vs. N block-
+  level reads. Trade-off: bigger frame, but fewer round-trips.
+- **Scene comparison without writing** — read once, parse 8 scene
+  blocks, compute deltas client-side.
+
+### What still requires hardware to confirm
+
+- Identity of the marker bytes in the header (`05 4B`, `20`,
+  `1D 2D 37 10 4A`). A controlled capture against a preset with known
+  name/number/scene-index would lock these fields.
+- Whether the per-scene 40-byte block is the III's actual scene-data
+  shape, or a different 8-element structure (e.g. snapshots, FX
+  loop assignments × 8 channels).
+- The septet-encoding choice — Fractal could be using LSF-collector,
+  MSF-collector, or a custom variant. Confirming this needs a single
+  scene with a known parameter value (e.g. amp gain = 5.0) and
+  matching the wire bytes against the expected decoded float.
+
+Decode is mechanical-complete; semantic confirmation needs HW-118
+(III owner runs `axefx3_send_sysex("F0 00 01 74 10 01 2E 00 35 F7")`
+against a preset with known scene-0 amp-gain value and dumps the
+response). Cheap probe, read-only.
 
 ## Sub-action `01 00` — STATE_DUMP (device→host, 87 bytes)
 
