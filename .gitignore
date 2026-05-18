@@ -53,3 +53,4 @@ scripts/spdsx-td0/
 # working in this repo locally.
 docs/_private/
 docs/spdsx-kits/
+/.claude/worktrees/

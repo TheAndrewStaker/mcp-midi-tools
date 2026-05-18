@@ -30,7 +30,62 @@
 // firmware. Every entry stays 🟡 wiki-documented until HW-074 lands.
 // See `docs/SYSEX-MAP-AXE-FX-II.md` for the current state.
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+
+// ── Hardware-verified header preservation ─────────────────────────────
+//
+// The emitter's default `Status:` paragraph reads
+// `🟡 wiki-documented, not yet hardware-verified` — the right truth
+// when the registry was first shipped. After HW-075/HW-077 verified
+// the encoder + paramId resolution on Quantum 8.02 (founder's XL+,
+// 2026-05-10), the file's header was hand-promoted to `🟢
+// hardware-verified`. The old emitter clobbered that promotion on
+// every regen, so the founder rejected regens that would otherwise
+// have closed wiki gaps.
+//
+// The preservation step below reads the existing params.ts file (when
+// present) and extracts whatever currently fills the `Status:`
+// paragraph, then splices it back into the freshly-generated header.
+// If the file is absent (first run / fresh worktree) or has no
+// recognisable Status: block, the default 🟡 string ships unchanged.
+//
+// Match shape: a `Status:` paragraph runs from the line starting
+// ` * Status: ` to the next blank-comment-line (` *\n`). That covers
+// both the default one-line shape and the multi-line HW-075 / HW-077
+// promotion paragraph the founder wrote.
+//
+// **KNOWN GAP — this preservation only covers the Status paragraph.**
+// The current file ALSO carries hand-authored content the generator
+// doesn't reproduce:
+//   • `DELAY_TEMPO_VALUES` enum const (HW-091 / HW-093 measurement,
+//     2026-05-11) — wire 0..32 tempo-division ladder.
+//   • `displayScale?: 'linear' | 'log10'` field on `AxeFxIIParam`
+//     interface (HW-090, 2026-05-11) — log10 confirmed for cab/amp
+//     filter frequencies.
+// Running this regen will still clobber both. Do NOT regen
+// unattended — the broader preservation work (markers / extension
+// file / patch reapply) is queued separately. Status-header
+// preservation is the foundation, not the full solution.
+
+const STATUS_BLOCK_RE = /^( \* Status:[^\n]*(?:\n \* [^\n]*)*)$/m;
+
+function readPreservedStatusBlock(path: string): string | undefined {
+  if (!existsSync(path)) return undefined;
+  const src = readFileSync(path, 'utf8');
+  const m = STATUS_BLOCK_RE.exec(src);
+  return m ? m[1] : undefined;
+}
+
+function applyStatusPreservation(generated: string, preserved: string | undefined): string {
+  if (!preserved) return generated;
+  // Only one Status: paragraph in the header block — replace the
+  // freshly-emitted default with the preserved one verbatim. If the
+  // generator format ever changes shape such that the regex misses,
+  // the function returns the generated text unchanged (lossless
+  // fallback — no risk of corrupting the file).
+  if (!STATUS_BLOCK_RE.test(generated)) return generated;
+  return generated.replace(STATUS_BLOCK_RE, preserved);
+}
 
 // ── Inputs / outputs ──────────────────────────────────────────────────
 
@@ -633,8 +688,18 @@ export const REGISTRY_STATS = Object.freeze({
 mkdirSync('packages/axe-fx-ii/src', { recursive: true });
 mkdirSync('samples/captured/decoded/labels', { recursive: true });
 
-writeFileSync(OUT_BLOCKTYPES_TS, emitBlockTypes(), 'utf8');
-writeFileSync(OUT_PARAMS_TS, emitParams(), 'utf8');
+// Splice the preserved Status: paragraph from each existing file
+// (when present) so the hardware-verified promotion the founder
+// applied after HW-075/HW-076/HW-077 survives the regen. Applied
+// independently to params.ts and blockTypes.ts because each carries
+// its own status note (HW-075/HW-077 promoted params.ts; HW-076
+// promoted blockTypes.ts). First-run or fresh-worktree case (no file
+// on disk) leaves the default 🟡 string in place — that's correct
+// behaviour, nothing to preserve.
+const PRESERVED_BLOCKTYPES_STATUS = readPreservedStatusBlock(OUT_BLOCKTYPES_TS);
+const PRESERVED_PARAMS_STATUS = readPreservedStatusBlock(OUT_PARAMS_TS);
+writeFileSync(OUT_BLOCKTYPES_TS, applyStatusPreservation(emitBlockTypes(), PRESERVED_BLOCKTYPES_STATUS), 'utf8');
+writeFileSync(OUT_PARAMS_TS, applyStatusPreservation(emitParams(), PRESERVED_PARAMS_STATUS), 'utf8');
 writeFileSync(
     OUT_DEBUG_JSON,
     JSON.stringify(
