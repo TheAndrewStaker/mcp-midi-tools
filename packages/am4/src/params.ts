@@ -4674,6 +4674,79 @@ export const KNOWN_PARAMS = {
   // OFF/ON enum mirrors filter.phase_invert (same XML "Phase Invert"
   // label, same shape).
   'enhancer.phase_invert':     { block: 'enhancer', name: 'phase_invert',     displayLabel: 'Phase Invert',      pidLow: 0x007a, pidHigh: 0x000f, unit: 'enum', displayMin: 0, displayMax: 1, enumValues: { 0: 'OFF', 1: 'ON' } },
+
+  // ============================================================
+  // Session 97 (2026-05-18) AM4 hardware Expert Edit closeout — wires
+  // 15 catalog entries the AM4-Edit *desktop* application doesn't
+  // render but the AM4 *hardware* exposes via its hidden Expert Edit
+  // menu (PAGE LEFT + PAGE RIGHT simultaneously while editing any
+  // block). AM4 manual p. 25-26 + p. 68 documents the access path
+  // and the parameter list ("preamp boost, power supply sag, variac,
+  // and more"). Display labels are sourced from the Axe-Fx III's
+  // `__amp_layout.xml` — the III shares the AM4's amp engine and its
+  // amp editor's labels are the canonical user-facing names per the
+  // AM4 manual's note: "Names shown on Expert pages generally match
+  // those used in the Axe-Fx, FM9, and FM3, ensuring familiarity for
+  // experienced users."
+  //
+  // Source provenance:
+  //   - Ghidra catalog: `samples/captured/decoded/ghidra-am4-paramnames.json`
+  //   - III amp_layout: `samples/captured/decoded/binarydata/axe-edit-iii-allzips/extracted/__amp_layout.xml`
+  //   - AM4 manual: `docs/manuals/AM4-Owners-Manual.txt:1041-1064, 2778-2779, 2815-2823`
+  //
+  // These entries appear in the cross-ref audit as GHOST (no AM4-Edit
+  // XML entry) because the desktop editor omits the Expert pages.
+  // After this block, they reclassify to WIRED-MATCHED — the headline
+  // metric reflects "user can write these via hardware Expert Edit OR
+  // via this MCP tool" rather than "AM4-Edit desktop renders them."
+  //
+  // **Unit / range caveat.** These are firmware-internal physical-
+  // modeling parameters (tube biases, recovery times, dynamic
+  // response curves). Their float scaling is NOT yet hardware-
+  // verified on the AM4. Default to `count 0..127` so the agent
+  // can address the wire but doesn't claim a calibrated display
+  // range. HW-114 (created Session 97) will capture the AM4 hardware
+  // Expert Edit page to pin exact ranges + unit-types.
+  //
+  // **Variant selectors** (DRIVETYPE / FBTYPE / BIASTYPE) ARE
+  // user-changeable enums per the AM4 `__block_layout_expert.xml`
+  // page-routing list at line 961: `parameters="DISTORT_TYPE,
+  // DISTORT_DRIVETYPE, DISTORT_EQTYPE, DISTORT_FBTYPE, DISTORT_BETA,
+  // DISTORT_BIASTYPE"`. They control which physical-modeling variants
+  // load when the AMP Type selector picks a model. Writing them
+  // directly may produce hybrid amp types not in the factory list.
+  //
+  // **Skipped** (read-only meters / display strings / graph markers):
+  //   - DISTORT_MDMON, DISTORT_INDYNMON     (gain meters, meterGainVert)
+  //   - COMP_XMARK, COMP_YMARK              (XY-pad graph markers)
+  //   - CABINET_TYPE1_NAME, CABINET_TYPE2_NAME (read-only name strings)
+  //
+  // **Deferred** to HW-114 hardware capture (14 entries lacking III
+  // amp_layout user labels — true firmware-internal or pre-AM4
+  // legacy that the III no longer exposes):
+  //   - DISTORT: XFLEAKAGE, WSLPF, WSHPF, OFFSET1, CLIPTYPE2, FBTYPE
+  //              (page-routing), PI_RATIO, GRIDHARDNESS,
+  //              TRIODE2EXTIME, TRIODE2RECTIME, TRIODE1RATIO,
+  //              RESOLUTION, DYNIMP, VERSION, DISABLECABSYNC
+
+  // ---- DISTORT / amp Expert Edit page (pidLow=0x003a) — 14 entries ----
+  'amp.tonestack_type':        { block: 'amp', name: 'tonestack_type',        displayLabel: '⚠ Expert: Tonestack Type',     pidLow: 0x003a, pidHigh: 0x0029, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.drive_type':            { block: 'amp', name: 'drive_type',            displayLabel: '⚠ Expert: Drive Type',         pidLow: 0x003a, pidHigh: 0x0025, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.feedback_type':         { block: 'amp', name: 'feedback_type',         displayLabel: '⚠ Expert: Feedback Type',      pidLow: 0x003a, pidHigh: 0x002c, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.bias_ratio':            { block: 'amp', name: 'bias_ratio',            displayLabel: '⚠ Expert: Bias Ratio',         pidLow: 0x003a, pidHigh: 0x0062, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.precomp_type':          { block: 'amp', name: 'precomp_type',          displayLabel: '⚠ Expert: Pre-Comp Type',      pidLow: 0x003a, pidHigh: 0x0076, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.excursion_time':        { block: 'amp', name: 'excursion_time',        displayLabel: '⚠ Expert: Excursion Time',     pidLow: 0x003a, pidHigh: 0x0047, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.recovery_time':         { block: 'amp', name: 'recovery_time',         displayLabel: '⚠ Expert: Recovery Time',      pidLow: 0x003a, pidHigh: 0x0048, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.grid_clipping':         { block: 'amp', name: 'grid_clipping',         displayLabel: '⚠ Expert: Grid Clipping',      pidLow: 0x003a, pidHigh: 0x0058, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.cf_hardness':           { block: 'amp', name: 'cf_hardness',           displayLabel: '⚠ Expert: CF Hardness',        pidLow: 0x003a, pidHigh: 0x0078, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.dynamic_presence':      { block: 'amp', name: 'dynamic_presence',      displayLabel: '⚠ Expert: Dynamic Presence',   pidLow: 0x003a, pidHigh: 0x005b, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.dynamic_depth':         { block: 'amp', name: 'dynamic_depth',         displayLabel: '⚠ Expert: Dynamic Depth',      pidLow: 0x003a, pidHigh: 0x005c, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.input_dynamics':        { block: 'amp', name: 'input_dynamics',        displayLabel: '⚠ Expert: Input Dynamics',     pidLow: 0x003a, pidHigh: 0x006a, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.tremolo_freq':          { block: 'amp', name: 'tremolo_freq',          displayLabel: '⚠ Expert: Tremolo Freq',       pidLow: 0x003a, pidHigh: 0x0060, unit: 'count', displayMin: 0, displayMax: 127 },
+  'amp.tremolo_depth':         { block: 'amp', name: 'tremolo_depth',         displayLabel: '⚠ Expert: Tremolo Depth',      pidLow: 0x003a, pidHigh: 0x0061, unit: 'count', displayMin: 0, displayMax: 127 },
+
+  // ---- COMP Expert Edit (pidLow=0x002e) — 1 entry ----
+  'compressor.light_type':     { block: 'compressor', name: 'light_type',     displayLabel: '⚠ Expert: Light Type',         pidLow: 0x002e, pidHigh: 0x001e, unit: 'count', displayMin: 0, displayMax: 127 },
 } as const satisfies Record<string, Param>;
 
 export type ParamKey = keyof typeof KNOWN_PARAMS;
