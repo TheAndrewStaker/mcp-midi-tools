@@ -4312,6 +4312,203 @@ export const KNOWN_PARAMS = {
   'amp.dynacab_type_2':   { block: 'amp', name: 'dynacab_type_2',   pidLow: 0x003e, pidHigh: 0x0042, unit: 'count', displayMin: 0, displayMax: 31 },
   'amp.dynacab_mic_1':    { block: 'amp', name: 'dynacab_mic_1',    pidLow: 0x003e, pidHigh: 0x0043, unit: 'count', displayMin: 0, displayMax: 31 },
   'amp.dynacab_mic_2':    { block: 'amp', name: 'dynacab_mic_2',    pidLow: 0x003e, pidHigh: 0x0044, unit: 'count', displayMin: 0, displayMax: 31 },
+
+  // ============================================================
+  // GLOBAL family (pidLow = 0x0001) — 98 entries.
+  //
+  // Wire pidLow decoded HW-112 (Session 96, 2026-05-17) from
+  // samples/captured/session-95-am4-global-pidlow.pcapng. paramIds
+  // sourced from samples/captured/decoded/ghidra-am4-paramnames.json
+  // (effect_types.case_0x1.params, 99 entries; GLOBAL_FC_HOLD_TIMEOUT
+  // appears twice at paramId 57 so deduped to 98).
+  //
+  // Two paramIds are HW-verified by the HW-112 capture: USBLEVEL1
+  // (99) at 1.11 dB and TAP_TEMPO_MODE (46) at 1.0 = "Last Two".
+  // All other unit/range pairs are name-inferred — entries default
+  // to unit: 'count' as a safe write placeholder pending hardware
+  // verification. The Ghidra catalog gives us the address and the
+  // symbolic name; UI semantics still need front-panel or AM4-Edit
+  // captures to confirm range/enum tables.
+  //
+  // Naming convention: `global.<lowercased>` with the GLOBAL_ prefix
+  // stripped and `+N` array suffixes converted to `_N` (so
+  // `GLOBAL_EXT_CC_BEGIN+1` -> `global.ext_cc_begin_1`).
+  //
+  // Regenerate: `npx tsx scripts/_research/generate-am4-global-block.ts`
+
+  // tuning reference Hz convention — HW unverified
+  'global.tuningref': { block: 'global', name: 'tuningref', pidLow: 0x0001, pidHigh: 0x000d, unit: 'hz', displayMin: 430, displayMax: 450 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.tunermute': { block: 'global', name: 'tunermute', pidLow: 0x0001, pidHigh: 0x000e, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.delayspill': { block: 'global', name: 'delayspill', pidLow: 0x0001, pidHigh: 0x000f, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.usetuneoffsets': { block: 'global', name: 'usetuneoffsets', pidLow: 0x0001, pidHigh: 0x0010, unit: 'count', displayMin: 0, displayMax: 127 },
+  // per-string tuning offset — HW unverified
+  'global.offset1': { block: 'global', name: 'offset1', pidLow: 0x0001, pidHigh: 0x0011, unit: 'semitones', displayMin: -1, displayMax: 1 },
+  // per-string tuning offset — HW unverified
+  'global.offset2': { block: 'global', name: 'offset2', pidLow: 0x0001, pidHigh: 0x0012, unit: 'semitones', displayMin: -1, displayMax: 1 },
+  // per-string tuning offset — HW unverified
+  'global.offset3': { block: 'global', name: 'offset3', pidLow: 0x0001, pidHigh: 0x0013, unit: 'semitones', displayMin: -1, displayMax: 1 },
+  // per-string tuning offset — HW unverified
+  'global.offset4': { block: 'global', name: 'offset4', pidLow: 0x0001, pidHigh: 0x0014, unit: 'semitones', displayMin: -1, displayMax: 1 },
+  // per-string tuning offset — HW unverified
+  'global.offset5': { block: 'global', name: 'offset5', pidLow: 0x0001, pidHigh: 0x0015, unit: 'semitones', displayMin: -1, displayMax: 1 },
+  // per-string tuning offset — HW unverified
+  'global.offset6': { block: 'global', name: 'offset6', pidLow: 0x0001, pidHigh: 0x0016, unit: 'semitones', displayMin: -1, displayMax: 1 },
+  // GEQ band ±12 dB convention — HW unverified
+  'global.out2eq1': { block: 'global', name: 'out2eq1', pidLow: 0x0001, pidHigh: 0x0022, unit: 'db', displayMin: -12, displayMax: 12 },
+  // GEQ band ±12 dB convention — HW unverified
+  'global.out2eq2': { block: 'global', name: 'out2eq2', pidLow: 0x0001, pidHigh: 0x0023, unit: 'db', displayMin: -12, displayMax: 12 },
+  // GEQ band ±12 dB convention — HW unverified
+  'global.out2eq3': { block: 'global', name: 'out2eq3', pidLow: 0x0001, pidHigh: 0x0024, unit: 'db', displayMin: -12, displayMax: 12 },
+  // GEQ band ±12 dB convention — HW unverified
+  'global.out2eq4': { block: 'global', name: 'out2eq4', pidLow: 0x0001, pidHigh: 0x0025, unit: 'db', displayMin: -12, displayMax: 12 },
+  // GEQ band ±12 dB convention — HW unverified
+  'global.out2eq5': { block: 'global', name: 'out2eq5', pidLow: 0x0001, pidHigh: 0x0026, unit: 'db', displayMin: -12, displayMax: 12 },
+  // GEQ band ±12 dB convention — HW unverified
+  'global.out2eq6': { block: 'global', name: 'out2eq6', pidLow: 0x0001, pidHigh: 0x0027, unit: 'db', displayMin: -12, displayMax: 12 },
+  // GEQ band ±12 dB convention — HW unverified
+  'global.out2eq7': { block: 'global', name: 'out2eq7', pidLow: 0x0001, pidHigh: 0x0028, unit: 'db', displayMin: -12, displayMax: 12 },
+  // GEQ band ±12 dB convention — HW unverified
+  'global.out2eq8': { block: 'global', name: 'out2eq8', pidLow: 0x0001, pidHigh: 0x0029, unit: 'db', displayMin: -12, displayMax: 12 },
+  // GEQ band ±12 dB convention — HW unverified
+  'global.out2eq9': { block: 'global', name: 'out2eq9', pidLow: 0x0001, pidHigh: 0x002a, unit: 'db', displayMin: -12, displayMax: 12 },
+  // GEQ band ±12 dB convention — HW unverified
+  'global.out2eq10': { block: 'global', name: 'out2eq10', pidLow: 0x0001, pidHigh: 0x002b, unit: 'db', displayMin: -12, displayMax: 12 },
+  // gate threshold offset dB — HW unverified
+  'global.gate_offset': { block: 'global', name: 'gate_offset', pidLow: 0x0001, pidHigh: 0x002d, unit: 'db', displayMin: -40, displayMax: 0 },
+  // HW-112 (Session 96) — captured at 1.0 = "Last Two"; full enum table pending HW
+  'global.tap_tempo_mode': { block: 'global', name: 'tap_tempo_mode', pidLow: 0x0001, pidHigh: 0x002e, unit: 'enum', displayMin: 0, displayMax: 7 },
+  // input trim percent — HW unverified
+  'global.in1_trim': { block: 'global', name: 'in1_trim', pidLow: 0x0001, pidHigh: 0x002f, unit: 'percent', displayMin: 0, displayMax: 100 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.out1_config': { block: 'global', name: 'out1_config', pidLow: 0x0001, pidHigh: 0x0030, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.out1_phase': { block: 'global', name: 'out1_phase', pidLow: 0x0001, pidHigh: 0x0031, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.in1_source': { block: 'global', name: 'in1_source', pidLow: 0x0001, pidHigh: 0x0034, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.in1_config': { block: 'global', name: 'in1_config', pidLow: 0x0001, pidHigh: 0x0035, unit: 'count', displayMin: 0, displayMax: 127 },
+  // percent inferred from AM4-Edit display — HW unverified
+  'global.lcd_contrast': { block: 'global', name: 'lcd_contrast', pidLow: 0x0001, pidHigh: 0x0038, unit: 'percent', displayMin: 0, displayMax: 100 },
+  // press-hold timeout ms — HW unverified
+  'global.fc_hold_timeout': { block: 'global', name: 'fc_hold_timeout', pidLow: 0x0001, pidHigh: 0x0039, unit: 'ms', displayMin: 0, displayMax: 5000 },
+  // MIDI channel 1..16
+  'global.midi_chan': { block: 'global', name: 'midi_chan', pidLow: 0x0001, pidHigh: 0x003a, unit: 'count', displayMin: 1, displayMax: 16 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.midi_prog_change': { block: 'global', name: 'midi_prog_change', pidLow: 0x0001, pidHigh: 0x003b, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.no_redundant_pc': { block: 'global', name: 'no_redundant_pc', pidLow: 0x0001, pidHigh: 0x003c, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.send_midipc': { block: 'global', name: 'send_midipc', pidLow: 0x0001, pidHigh: 0x003f, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.in1_vol_cc': { block: 'global', name: 'in1_vol_cc', pidLow: 0x0001, pidHigh: 0x0046, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.out1_vol_cc': { block: 'global', name: 'out1_vol_cc', pidLow: 0x0001, pidHigh: 0x0047, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.tempo_cc': { block: 'global', name: 'tempo_cc', pidLow: 0x0001, pidHigh: 0x0048, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.tuner_cc': { block: 'global', name: 'tuner_cc', pidLow: 0x0001, pidHigh: 0x0049, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.scene_cc': { block: 'global', name: 'scene_cc', pidLow: 0x0001, pidHigh: 0x004a, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.scene_incr_cc': { block: 'global', name: 'scene_incr_cc', pidLow: 0x0001, pidHigh: 0x004b, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.scene_decr_cc': { block: 'global', name: 'scene_decr_cc', pidLow: 0x0001, pidHigh: 0x004c, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.scene_revert': { block: 'global', name: 'scene_revert', pidLow: 0x0001, pidHigh: 0x004d, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.custom_scale': { block: 'global', name: 'custom_scale', pidLow: 0x0001, pidHigh: 0x0050, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.tuner_source': { block: 'global', name: 'tuner_source', pidLow: 0x0001, pidHigh: 0x0053, unit: 'count', displayMin: 0, displayMax: 127 },
+  // AM4 has 4 scenes (1..4)
+  'global.default_scene': { block: 'global', name: 'default_scene', pidLow: 0x0001, pidHigh: 0x0056, unit: 'count', displayMin: 1, displayMax: 4 },
+  // percent inferred from AM4-Edit display — HW unverified
+  'global.fc_ring_bright_level': { block: 'global', name: 'fc_ring_bright_level', pidLow: 0x0001, pidHigh: 0x0058, unit: 'percent', displayMin: 0, displayMax: 100 },
+  // percent inferred from AM4-Edit display — HW unverified
+  'global.fc_ring_dim_level': { block: 'global', name: 'fc_ring_dim_level', pidLow: 0x0001, pidHigh: 0x0059, unit: 'percent', displayMin: 0, displayMax: 100 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.linefreq': { block: 'global', name: 'linefreq', pidLow: 0x0001, pidHigh: 0x005a, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.preset_incr_cc': { block: 'global', name: 'preset_incr_cc', pidLow: 0x0001, pidHigh: 0x005d, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.preset_decr_cc': { block: 'global', name: 'preset_decr_cc', pidLow: 0x0001, pidHigh: 0x005e, unit: 'count', displayMin: 0, displayMax: 127 },
+  // unit inferred from USBLEVEL1 sibling — HW unverified
+  'global.metlevel1': { block: 'global', name: 'metlevel1', pidLow: 0x0001, pidHigh: 0x0061, unit: 'db', displayMin: -64, displayMax: 24 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.usb78_source': { block: 'global', name: 'usb78_source', pidLow: 0x0001, pidHigh: 0x0062, unit: 'count', displayMin: 0, displayMax: 127 },
+  // HW-112 (Session 96) — captured at 1.11 dB
+  'global.usblevel1': { block: 'global', name: 'usblevel1', pidLow: 0x0001, pidHigh: 0x0063, unit: 'db', displayMin: -64, displayMax: 24 },
+  // unit inferred from USBLEVEL1 sibling — HW unverified
+  'global.usblevel2': { block: 'global', name: 'usblevel2', pidLow: 0x0001, pidHigh: 0x0064, unit: 'db', displayMin: -64, displayMax: 24 },
+  // unit inferred from USBLEVEL1 sibling — HW unverified
+  'global.aeslevel': { block: 'global', name: 'aeslevel', pidLow: 0x0001, pidHigh: 0x0065, unit: 'db', displayMin: -64, displayMax: 24 },
+  // down-tune semitones — HW unverified
+  'global.downtune': { block: 'global', name: 'downtune', pidLow: 0x0001, pidHigh: 0x0067, unit: 'semitones', displayMin: -12, displayMax: 0 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.tuneraccidentals': { block: 'global', name: 'tuneraccidentals', pidLow: 0x0001, pidHigh: 0x0068, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.midi_thru': { block: 'global', name: 'midi_thru', pidLow: 0x0001, pidHigh: 0x006d, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.tuner_on_volume': { block: 'global', name: 'tuner_on_volume', pidLow: 0x0001, pidHigh: 0x006e, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.bypass_fx1_cc': { block: 'global', name: 'bypass_fx1_cc', pidLow: 0x0001, pidHigh: 0x006f, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.bypass_fx2_cc': { block: 'global', name: 'bypass_fx2_cc', pidLow: 0x0001, pidHigh: 0x0070, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.bypass_fx3_cc': { block: 'global', name: 'bypass_fx3_cc', pidLow: 0x0001, pidHigh: 0x0071, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.bypass_fx4_cc': { block: 'global', name: 'bypass_fx4_cc', pidLow: 0x0001, pidHigh: 0x0072, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.channel_fx1_cc': { block: 'global', name: 'channel_fx1_cc', pidLow: 0x0001, pidHigh: 0x0073, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.channel_fx2_cc': { block: 'global', name: 'channel_fx2_cc', pidLow: 0x0001, pidHigh: 0x0074, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.channel_fx3_cc': { block: 'global', name: 'channel_fx3_cc', pidLow: 0x0001, pidHigh: 0x0075, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.channel_fx4_cc': { block: 'global', name: 'channel_fx4_cc', pidLow: 0x0001, pidHigh: 0x0076, unit: 'count', displayMin: 0, displayMax: 127 },
+  // external CC routing — CC number 0..127
+  'global.ext_cc_begin': { block: 'global', name: 'ext_cc_begin', pidLow: 0x0001, pidHigh: 0x0077, unit: 'count', displayMin: 0, displayMax: 127 },
+  // external CC routing — CC number 0..127
+  'global.ext_cc_begin_1': { block: 'global', name: 'ext_cc_begin_1', pidLow: 0x0001, pidHigh: 0x0078, unit: 'count', displayMin: 0, displayMax: 127 },
+  // external CC routing — CC number 0..127
+  'global.ext_cc_begin_2': { block: 'global', name: 'ext_cc_begin_2', pidLow: 0x0001, pidHigh: 0x0079, unit: 'count', displayMin: 0, displayMax: 127 },
+  // external CC routing — CC number 0..127
+  'global.ext_cc_begin_3': { block: 'global', name: 'ext_cc_begin_3', pidLow: 0x0001, pidHigh: 0x007a, unit: 'count', displayMin: 0, displayMax: 127 },
+  // external CC initial value 0..127
+  'global.ext_startval_begin': { block: 'global', name: 'ext_startval_begin', pidLow: 0x0001, pidHigh: 0x007b, unit: 'count', displayMin: 0, displayMax: 127 },
+  // external CC initial value 0..127
+  'global.ext_startval_begin_1': { block: 'global', name: 'ext_startval_begin_1', pidLow: 0x0001, pidHigh: 0x007c, unit: 'count', displayMin: 0, displayMax: 127 },
+  // external CC initial value 0..127
+  'global.ext_startval_begin_2': { block: 'global', name: 'ext_startval_begin_2', pidLow: 0x0001, pidHigh: 0x007d, unit: 'count', displayMin: 0, displayMax: 127 },
+  // external CC initial value 0..127
+  'global.ext_startval_begin_3': { block: 'global', name: 'ext_startval_begin_3', pidLow: 0x0001, pidHigh: 0x007e, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.auto_truebypass': { block: 'global', name: 'auto_truebypass', pidLow: 0x0001, pidHigh: 0x0081, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.truebypass_cc': { block: 'global', name: 'truebypass_cc', pidLow: 0x0001, pidHigh: 0x0083, unit: 'count', displayMin: 0, displayMax: 127 },
+  // press-hold timeout ms — HW unverified
+  'global.fs_press_hold1': { block: 'global', name: 'fs_press_hold1', pidLow: 0x0001, pidHigh: 0x0084, unit: 'ms', displayMin: 0, displayMax: 5000 },
+  // press-hold timeout ms — HW unverified
+  'global.fs_press_hold2': { block: 'global', name: 'fs_press_hold2', pidLow: 0x0001, pidHigh: 0x0085, unit: 'ms', displayMin: 0, displayMax: 5000 },
+  // press-hold timeout ms — HW unverified
+  'global.fs_press_hold3': { block: 'global', name: 'fs_press_hold3', pidLow: 0x0001, pidHigh: 0x0086, unit: 'ms', displayMin: 0, displayMax: 5000 },
+  // press-hold timeout ms — HW unverified
+  'global.fs_press_hold4': { block: 'global', name: 'fs_press_hold4', pidLow: 0x0001, pidHigh: 0x0087, unit: 'ms', displayMin: 0, displayMax: 5000 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.startup_mode': { block: 'global', name: 'startup_mode', pidLow: 0x0001, pidHigh: 0x0089, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.gap_fill': { block: 'global', name: 'gap_fill', pidLow: 0x0001, pidHigh: 0x008f, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.select_fade': { block: 'global', name: 'select_fade', pidLow: 0x0001, pidHigh: 0x0091, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.presshold_mode': { block: 'global', name: 'presshold_mode', pidLow: 0x0001, pidHigh: 0x0092, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.tap_amp_fx_mode': { block: 'global', name: 'tap_amp_fx_mode', pidLow: 0x0001, pidHigh: 0x0093, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.tap_amp_ch_amp_mode': { block: 'global', name: 'tap_amp_ch_amp_mode', pidLow: 0x0001, pidHigh: 0x0094, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.cabinetbyp': { block: 'global', name: 'cabinetbyp', pidLow: 0x0001, pidHigh: 0x0095, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.pwrampbyp': { block: 'global', name: 'pwrampbyp', pidLow: 0x0001, pidHigh: 0x0096, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.sprk_model': { block: 'global', name: 'sprk_model', pidLow: 0x0001, pidHigh: 0x0097, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.amp_chan_cc': { block: 'global', name: 'amp_chan_cc', pidLow: 0x0001, pidHigh: 0x0098, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.out_boost_cc': { block: 'global', name: 'out_boost_cc', pidLow: 0x0001, pidHigh: 0x0099, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.scenesync_ch': { block: 'global', name: 'scenesync_ch', pidLow: 0x0001, pidHigh: 0x009c, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.scenesync_cc': { block: 'global', name: 'scenesync_cc', pidLow: 0x0001, pidHigh: 0x009d, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.dynacab_sync': { block: 'global', name: 'dynacab_sync', pidLow: 0x0001, pidHigh: 0x009e, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.amp1_vol_cc': { block: 'global', name: 'amp1_vol_cc', pidLow: 0x0001, pidHigh: 0x009f, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.metronome': { block: 'global', name: 'metronome', pidLow: 0x0001, pidHigh: 0x00a0, unit: 'count', displayMin: 0, displayMax: 127 },
+  'global.metronome_cc': { block: 'global', name: 'metronome_cc', pidLow: 0x0001, pidHigh: 0x00a1, unit: 'count', displayMin: 0, displayMax: 127 },
+  // safe placeholder (range unverified) — Ghidra catalog entry only
+  'global.inspdif_config': { block: 'global', name: 'inspdif_config', pidLow: 0x0001, pidHigh: 0x00a2, unit: 'count', displayMin: 0, displayMax: 127 },
 } as const satisfies Record<string, Param>;
 
 export type ParamKey = keyof typeof KNOWN_PARAMS;

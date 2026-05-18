@@ -135,6 +135,21 @@ const cases: { label: string; built: number[]; expected: string }[] = [
     built: buildSetParam('volpan.mode', 1),
     expected: 'f0000174150166000f00010000000400000010037816f7',
   },
+  // HW-112 (Session 96, 2026-05-17). GLOBAL family pidLow=0x0001 cracked
+  // from samples/captured/session-95-am4-global-pidlow.pcapng. Two unique
+  // host→device writes byte-decoded byte-exact; same envelope shape as
+  // placeable blocks, only pidLow differs. These goldens lock the GLOBAL
+  // wire path against the original capture.
+  {
+    label: 'buildSetParam("global.usblevel1", 1.11) — matches HW-112 frame 6117 (USB 1/2 Level)',
+    built: buildSetParam('global.usblevel1', 1.11),
+    expected: 'f00001741501010063000100000004003d4511637804f7',
+  },
+  {
+    label: 'buildSetParam("global.tap_tempo_mode", 1) — matches HW-112 frame 11589 (Tap Tempo Mode = "Last Two")',
+    built: buildSetParam('global.tap_tempo_mode', 1),
+    expected: 'f0000174150101002e00010000000400000010037850f7',
+  },
   // Session-18 block-placement captures. pidHigh base was 0x0010 when we
   // first wrote these tests; Session 19 hardware mapping showed position
   // 1 should send pidHigh 0x000F, not 0x0010, so captured pidHighs
