@@ -2745,6 +2745,325 @@ export const KNOWN_PARAMS = {
     "wah.taper": { groupCode: "WAH", block: "wah", paramId: 11, wikiName: "TAPER", name: "taper", controlType: "select", parameterName: "WAH_TAPER", xmlLabel: "Taper", enumValues: WAH_TAPER_VALUES },
     "wah.coil_bias": { groupCode: "WAH", block: "wah", paramId: 13, wikiName: "COIL BIAS", name: "coil_bias", controlType: "knob", parameterName: "WAH_BIAS", xmlLabel: "Coil Bias", fwAdded: "Since Quantum 6" },
     "wah.low_cut_freq": { groupCode: "WAH", block: "wah", paramId: 14, wikiName: "LOW CUT FREQ", name: "low_cut_freq", controlType: "knob", fwAdded: "Since Quantum 6" },
+
+    // >>> BEGIN_GHIDRA_ADDENDUM (Session 94, 2026-05-17) >>>
+    //
+    // 221 net-new entries recovered from Axe-Edit.exe via direct-pattern-
+    // scan Ghidra mining (`scripts/ghidra/SeekParamTablesII.java`).
+    // Source: `samples/captured/decoded/ghidra-axeedit2-paramtables.json`
+    // (1,353 raw (paramId, symbol) entries; 905 already ship via wiki; 221
+    // remain after (groupCode, paramId) dedup against shipping entries).
+    // Validated: 639/640 shipping (parameterName, paramId) pairs agree with
+    // the Ghidra catalog exactly. Two entirely new blocks (VOCODER 50,
+    // RESONATOR 40) get param coverage for the first time.
+    //
+    // Skipped during generation: groupCode-paramId-pair-already-shipping
+    // (876), family-unmapped:ID (71, layout enum), family-unmapped:EFFECT
+    // (48, layout strings), family-unmapped:MOD (16, per-param modifier
+    // config — not a placeable block).
+    //
+    // displayMin / displayMax NOT populated — needs hardware calibration
+    // sweep per block. Several `controlType: "unknown"` entries are wiring-
+    // present but the XML editor catalog had no UI widget for them
+    // (typically BYPASS / GLOBALMIX / SPARE).
+    //
+    // Append-only block — survives `extract-axe-fx-ii-params.ts` regens
+    // ONLY until the broader-preservation work the generator header queues
+    // separately lands. The `>>> BEGIN_GHIDRA_ADDENDUM` / `<<< END_GHIDRA_
+    // ADDENDUM` markers are designed for that preservation work to
+    // pattern-match and re-splice this block across regens.
+    //
+    // Regenerate via:
+    //   npx tsx scripts/_research/generate-axefx2-ghidra-addendum.ts
+    //   (writes samples/captured/decoded/axefx2-ghidra-addendum.ts.txt;
+    //    paste into THIS block between the BEGIN/END markers.)
+
+    // --- amp (AMP) ---
+    "amp.wslpf": { groupCode: "AMP", block: "amp", paramId: 11, wikiName: "WSLPF", name: "wslpf", controlType: "unknown", parameterName: "DISTORT_WSLPF" },
+    "amp.offset1": { groupCode: "AMP", block: "amp", paramId: 17, wikiName: "OFFSET1", name: "offset1", controlType: "unknown", parameterName: "DISTORT_OFFSET1" },
+    "amp.cliptype2": { groupCode: "AMP", block: "amp", paramId: 18, wikiName: "CLIPTYPE2", name: "cliptype2", controlType: "unknown", parameterName: "DISTORT_CLIPTYPE2" },
+    "amp.bypass": { groupCode: "AMP", block: "amp", paramId: 28, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "DISTORT_BYPASS" },
+    "amp.drivetype": { groupCode: "AMP", block: "amp", paramId: 30, wikiName: "DRIVETYPE", name: "drivetype", controlType: "unknown", parameterName: "DISTORT_DRIVETYPE" },
+    "amp.wshpf": { groupCode: "AMP", block: "amp", paramId: 32, wikiName: "WSHPF", name: "wshpf", controlType: "unknown", parameterName: "DISTORT_WSHPF" },
+    "amp.fbtype": { groupCode: "AMP", block: "amp", paramId: 37, wikiName: "FBTYPE", name: "fbtype", controlType: "unknown", parameterName: "DISTORT_FBTYPE" },
+    "amp.pi_ratio": { groupCode: "AMP", block: "amp", paramId: 38, wikiName: "PI_RATIO", name: "pi_ratio", controlType: "unknown", parameterName: "DISTORT_PI_RATIO" },
+    "amp.screenfreq": { groupCode: "AMP", block: "amp", paramId: 52, wikiName: "SCREENFREQ", name: "screenfreq", controlType: "unknown", parameterName: "DISTORT_SCREENFREQ" },
+    "amp.screenq": { groupCode: "AMP", block: "amp", paramId: 53, wikiName: "SCREENQ", name: "screenq", controlType: "unknown", parameterName: "DISTORT_SCREENQ" },
+    "amp.excursiontime": { groupCode: "AMP", block: "amp", paramId: 64, wikiName: "EXCURSIONTIME", name: "excursiontime", controlType: "unknown", parameterName: "DISTORT_EXCURSIONTIME" },
+    "amp.recoverytime": { groupCode: "AMP", block: "amp", paramId: 65, wikiName: "RECOVERYTIME", name: "recoverytime", controlType: "unknown", parameterName: "DISTORT_RECOVERYTIME" },
+    "amp.version": { groupCode: "AMP", block: "amp", paramId: 82, wikiName: "VERSION", name: "version", controlType: "knob", parameterName: "DISTORT_VERSION", xmlLabel: "Modeling Version" },
+    "amp.pickattack": { groupCode: "AMP", block: "amp", paramId: 83, wikiName: "PICKATTACK", name: "pickattack", controlType: "knob", parameterName: "DISTORT_PICKATTACK", xmlLabel: "Pick Attack" },
+    "amp.tremfreq": { groupCode: "AMP", block: "amp", paramId: 89, wikiName: "TREMFREQ", name: "tremfreq", controlType: "knob", parameterName: "DISTORT_TREMFREQ", xmlLabel: "Tremolo Freq" },
+    "amp.tremdepth": { groupCode: "AMP", block: "amp", paramId: 90, wikiName: "TREMDEPTH", name: "tremdepth", controlType: "knob", parameterName: "DISTORT_TREMDEPTH", xmlLabel: "Tremolo Depth" },
+    "amp.cbtime": { groupCode: "AMP", block: "amp", paramId: 94, wikiName: "CBTIME", name: "cbtime", controlType: "unknown", parameterName: "DISTORT_CBTIME" },
+    "amp.dynimp": { groupCode: "AMP", block: "amp", paramId: 95, wikiName: "DYNIMP", name: "dynimp", controlType: "knob", parameterName: "DISTORT_DYNIMP", xmlLabel: "Dynamic Damping" },
+    "amp.gridhardness": { groupCode: "AMP", block: "amp", paramId: 103, wikiName: "GRIDHARDNESS", name: "gridhardness", controlType: "unknown", parameterName: "DISTORT_GRIDHARDNESS" },
+    "amp.triode2extime": { groupCode: "AMP", block: "amp", paramId: 107, wikiName: "TRIODE2EXTIME", name: "triode2extime", controlType: "unknown", parameterName: "DISTORT_TRIODE2EXTIME" },
+    "amp.triode2rectime": { groupCode: "AMP", block: "amp", paramId: 108, wikiName: "TRIODE2RECTIME", name: "triode2rectime", controlType: "unknown", parameterName: "DISTORT_TRIODE2RECTIME" },
+    "amp.triode1ratio": { groupCode: "AMP", block: "amp", paramId: 112, wikiName: "TRIODE1RATIO", name: "triode1ratio", controlType: "unknown", parameterName: "DISTORT_TRIODE1RATIO" },
+    "amp.spkrdynamics": { groupCode: "AMP", block: "amp", paramId: 117, wikiName: "SPKRDYNAMICS", name: "spkrdynamics", controlType: "knob", parameterName: "DISTORT_SPKRDYNAMICS", xmlLabel: "Speaker\nCompl" },
+
+    // --- cab (CAB) ---
+    "cab.bypass": { groupCode: "CAB", block: "cab", paramId: 13, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "CABINET_BYPASS" },
+    "cab.refresh_all": { groupCode: "CAB", block: "cab", paramId: 40, wikiName: "REFRESH_ALL", name: "refresh_all", controlType: "unknown", parameterName: "CABINET_REFRESH_ALL" },
+
+    // --- chorus (CHO) ---
+    "chorus.bypass": { groupCode: "CHO", block: "chorus", paramId: 15, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "CHORUS_BYPASS" },
+
+    // --- controllers (CONTROLLERS) ---
+    "controllers.lfo2phase": { groupCode: "CONTROLLERS", block: "controllers", paramId: 10, wikiName: "LFO2PHASE", name: "lfo2phase", controlType: "knob", parameterName: "CONTROLLERS_LFO2PHASE", xmlLabel: "Output B Phase" },
+    "controllers.adsr2mode": { groupCode: "CONTROLLERS", block: "controllers", paramId: 20, wikiName: "ADSR2MODE", name: "adsr2mode", controlType: "select", parameterName: "CONTROLLERS_ADSR2MODE", xmlLabel: "Mode" },
+    "controllers.adsr2retrig": { groupCode: "CONTROLLERS", block: "controllers", paramId: 21, wikiName: "ADSR2RETRIG", name: "adsr2retrig", controlType: "switch", parameterName: "CONTROLLERS_ADSR2RETRIG", xmlLabel: "Retrig" },
+    "controllers.adsr2attack": { groupCode: "CONTROLLERS", block: "controllers", paramId: 22, wikiName: "ADSR2ATTACK", name: "adsr2attack", controlType: "knob", parameterName: "CONTROLLERS_ADSR2ATTACK", xmlLabel: "Attack" },
+    "controllers.adsr2decay": { groupCode: "CONTROLLERS", block: "controllers", paramId: 23, wikiName: "ADSR2DECAY", name: "adsr2decay", controlType: "knob", parameterName: "CONTROLLERS_ADSR2DECAY", xmlLabel: "Decay" },
+    "controllers.adsr2sustain": { groupCode: "CONTROLLERS", block: "controllers", paramId: 24, wikiName: "ADSR2SUSTAIN", name: "adsr2sustain", controlType: "knob", parameterName: "CONTROLLERS_ADSR2SUSTAIN", xmlLabel: "Sustain" },
+    "controllers.adsr2level": { groupCode: "CONTROLLERS", block: "controllers", paramId: 25, wikiName: "ADSR2LEVEL", name: "adsr2level", controlType: "knob", parameterName: "CONTROLLERS_ADSR2LEVEL", xmlLabel: "Level" },
+    "controllers.adsr2release": { groupCode: "CONTROLLERS", block: "controllers", paramId: 26, wikiName: "ADSR2RELEASE", name: "adsr2release", controlType: "knob", parameterName: "CONTROLLERS_ADSR2RELEASE", xmlLabel: "Release" },
+    "controllers.adsr2thresh": { groupCode: "CONTROLLERS", block: "controllers", paramId: 27, wikiName: "ADSR2THRESH", name: "adsr2thresh", controlType: "knob", parameterName: "CONTROLLERS_ADSR2THRESH", xmlLabel: "Threshold" },
+    "controllers.envattack": { groupCode: "CONTROLLERS", block: "controllers", paramId: 28, wikiName: "ENVATTACK", name: "envattack", controlType: "knob", parameterName: "CONTROLLERS_ENVATTACK", xmlLabel: "Attack" },
+    "controllers.envrelease": { groupCode: "CONTROLLERS", block: "controllers", paramId: 29, wikiName: "ENVRELEASE", name: "envrelease", controlType: "knob", parameterName: "CONTROLLERS_ENVRELEASE", xmlLabel: "Release" },
+    "controllers.envsens": { groupCode: "CONTROLLERS", block: "controllers", paramId: 30, wikiName: "ENVSENS", name: "envsens", controlType: "knob", parameterName: "CONTROLLERS_ENVSENS", xmlLabel: "Threshold" },
+    "controllers.autodelay": { groupCode: "CONTROLLERS", block: "controllers", paramId: 53, wikiName: "AUTODELAY", name: "autodelay", controlType: "unknown", parameterName: "CONTROLLERS_AUTODELAY" },
+    "controllers.lfo1runctrl": { groupCode: "CONTROLLERS", block: "controllers", paramId: 75, wikiName: "LFO1RUNCTRL", name: "lfo1runctrl", controlType: "unknown", parameterName: "CONTROLLERS_LFO1RUNCTRL" },
+    "controllers.lfo2runctrl": { groupCode: "CONTROLLERS", block: "controllers", paramId: 76, wikiName: "LFO2RUNCTRL", name: "lfo2runctrl", controlType: "unknown", parameterName: "CONTROLLERS_LFO2RUNCTRL" },
+    "controllers.seqrunctrl": { groupCode: "CONTROLLERS", block: "controllers", paramId: 77, wikiName: "SEQRUNCTRL", name: "seqrunctrl", controlType: "unknown", parameterName: "CONTROLLERS_SEQRUNCTRL" },
+    "controllers.scene2_val1": { groupCode: "CONTROLLERS", block: "controllers", paramId: 86, wikiName: "SCENE2_VAL1", name: "scene2_val1", controlType: "knob", parameterName: "CONTROLLERS_SCENE2_VAL1", xmlLabel: "Scene 1" },
+    "controllers.scene2_val2": { groupCode: "CONTROLLERS", block: "controllers", paramId: 87, wikiName: "SCENE2_VAL2", name: "scene2_val2", controlType: "knob", parameterName: "CONTROLLERS_SCENE2_VAL2", xmlLabel: "Scene 2" },
+    "controllers.scene2_val3": { groupCode: "CONTROLLERS", block: "controllers", paramId: 88, wikiName: "SCENE2_VAL3", name: "scene2_val3", controlType: "knob", parameterName: "CONTROLLERS_SCENE2_VAL3", xmlLabel: "Scene 3" },
+    "controllers.scene2_val4": { groupCode: "CONTROLLERS", block: "controllers", paramId: 89, wikiName: "SCENE2_VAL4", name: "scene2_val4", controlType: "knob", parameterName: "CONTROLLERS_SCENE2_VAL4", xmlLabel: "Scene 4" },
+    "controllers.scene2_val5": { groupCode: "CONTROLLERS", block: "controllers", paramId: 90, wikiName: "SCENE2_VAL5", name: "scene2_val5", controlType: "knob", parameterName: "CONTROLLERS_SCENE2_VAL5", xmlLabel: "Scene 5" },
+    "controllers.scene2_val6": { groupCode: "CONTROLLERS", block: "controllers", paramId: 91, wikiName: "SCENE2_VAL6", name: "scene2_val6", controlType: "knob", parameterName: "CONTROLLERS_SCENE2_VAL6", xmlLabel: "Scene 6" },
+    "controllers.scene2_val7": { groupCode: "CONTROLLERS", block: "controllers", paramId: 92, wikiName: "SCENE2_VAL7", name: "scene2_val7", controlType: "knob", parameterName: "CONTROLLERS_SCENE2_VAL7", xmlLabel: "Scene 7" },
+    "controllers.scene2_val8": { groupCode: "CONTROLLERS", block: "controllers", paramId: 93, wikiName: "SCENE2_VAL8", name: "scene2_val8", controlType: "knob", parameterName: "CONTROLLERS_SCENE2_VAL8", xmlLabel: "Scene 8" },
+    "controllers.lfo2quantize": { groupCode: "CONTROLLERS", block: "controllers", paramId: 95, wikiName: "LFO2QUANTIZE", name: "lfo2quantize", controlType: "select", parameterName: "CONTROLLERS_LFO2QUANTIZE", xmlLabel: "LFO2 Quantize" },
+    "controllers.end": { groupCode: "CONTROLLERS", block: "controllers", paramId: 96, wikiName: "END", name: "end", controlType: "unknown", parameterName: "CONTROLLERS_END", xmlLabel: "CONTROLLER 1" },
+    "controllers.metlevel": { groupCode: "CONTROLLERS", block: "controllers", paramId: 97, wikiName: "METLEVEL", name: "metlevel", controlType: "unknown", parameterName: "CONTROLLERS_METLEVEL" },
+    "controllers.metonoff": { groupCode: "CONTROLLERS", block: "controllers", paramId: 98, wikiName: "METONOFF", name: "metonoff", controlType: "unknown", parameterName: "CONTROLLERS_METONOFF" },
+
+    // --- compressor (CPR) ---
+    "compressor.bypass": { groupCode: "CPR", block: "compressor", paramId: 9, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "COMP_BYPASS" },
+
+    // --- delay (DLY) ---
+    "delay.feedl": { groupCode: "DLY", block: "delay", paramId: 5, wikiName: "FEEDL", name: "feedl", controlType: "unknown", parameterName: "DELAY_FEEDL" },
+    "delay.bypass": { groupCode: "DLY", block: "delay", paramId: 22, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "DELAY_BYPASS" },
+
+    // --- drive (DRV) ---
+    "drive.bypass": { groupCode: "DRV", block: "drive", paramId: 7, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "FUZZ_BYPASS" },
+    "drive.clipshape": { groupCode: "DRV", block: "drive", paramId: 20, wikiName: "CLIPSHAPE", name: "clipshape", controlType: "knob", parameterName: "FUZZ_CLIPSHAPE", xmlLabel: "Clip Shape" },
+
+    // --- enhancer (ENH) ---
+    "enhancer.bypass": { groupCode: "ENH", block: "enhancer", paramId: 5, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "ENHANCER_BYPASS" },
+
+    // --- filter (FIL) ---
+    "filter.bypass": { groupCode: "FIL", block: "filter", paramId: 8, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "FILTER_BYPASS" },
+
+    // --- flanger (FLG) ---
+    "flanger.bypass": { groupCode: "FLG", block: "flanger", paramId: 16, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "FLANGER_BYPASS" },
+    "flanger.lforeset": { groupCode: "FLG", block: "flanger", paramId: 23, wikiName: "LFORESET", name: "lforeset", controlType: "select", parameterName: "FLANGER_LFORESET", xmlLabel: "LFO Bypass Reset" },
+
+    // --- formant (FRM) ---
+    "formant.spare": { groupCode: "FRM", block: "formant", paramId: 10, wikiName: "SPARE", name: "spare", controlType: "unknown", parameterName: "FORMANT_SPARE" },
+    "formant.bypass": { groupCode: "FRM", block: "formant", paramId: 11, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "FORMANT_BYPASS" },
+
+    // --- graphiceq (GEQ) ---
+    "graphiceq.mix": { groupCode: "GEQ", block: "graphiceq", paramId: 10, wikiName: "MIX", name: "mix", controlType: "unknown", parameterName: "GEQ_MIX" },
+    "graphiceq.globalmix": { groupCode: "GEQ", block: "graphiceq", paramId: 14, wikiName: "GLOBALMIX", name: "globalmix", controlType: "unknown", parameterName: "GEQ_GLOBALMIX" },
+    "graphiceq.spare3": { groupCode: "GEQ", block: "graphiceq", paramId: 17, wikiName: "SPARE3", name: "spare3", controlType: "unknown", parameterName: "GEQ_SPARE3" },
+    "graphiceq.bypass": { groupCode: "GEQ", block: "graphiceq", paramId: 18, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "GEQ_BYPASS" },
+
+    // --- gateexpander (GTE) ---
+    "gateexpander.mix": { groupCode: "GTE", block: "gateexpander", paramId: 8, wikiName: "MIX", name: "mix", controlType: "unknown", parameterName: "GATE_MIX" },
+    "gateexpander.bypass": { groupCode: "GTE", block: "gateexpander", paramId: 12, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "GATE_BYPASS" },
+
+    // --- looper (LPR) ---
+    "looper.bypass": { groupCode: "LPR", block: "looper", paramId: 4, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "LOOPER_BYPASS" },
+    "looper.record": { groupCode: "LPR", block: "looper", paramId: 15, wikiName: "RECORD", name: "record", controlType: "unknown", parameterName: "LOOPER_RECORD" },
+    "looper.play": { groupCode: "LPR", block: "looper", paramId: 16, wikiName: "PLAY", name: "play", controlType: "unknown", parameterName: "LOOPER_PLAY" },
+    "looper.once": { groupCode: "LPR", block: "looper", paramId: 17, wikiName: "ONCE", name: "once", controlType: "unknown", parameterName: "LOOPER_ONCE" },
+    "looper.dub": { groupCode: "LPR", block: "looper", paramId: 18, wikiName: "DUB", name: "dub", controlType: "unknown", parameterName: "LOOPER_DUB" },
+    "looper.undo": { groupCode: "LPR", block: "looper", paramId: 19, wikiName: "UNDO", name: "undo", controlType: "unknown", parameterName: "LOOPER_UNDO" },
+    "looper.reverse": { groupCode: "LPR", block: "looper", paramId: 20, wikiName: "REVERSE", name: "reverse", controlType: "unknown", parameterName: "LOOPER_REVERSE" },
+    "looper.halfspeed": { groupCode: "LPR", block: "looper", paramId: 21, wikiName: "HALFSPEED", name: "halfspeed", controlType: "unknown", parameterName: "LOOPER_HALFSPEED" },
+
+    // --- multibandcomp (MBC) ---
+    "multibandcomp.mix": { groupCode: "MBC", block: "multibandcomp", paramId: 23, wikiName: "MIX", name: "mix", controlType: "unknown", parameterName: "MULTICOMP_MIX" },
+    "multibandcomp.bypass": { groupCode: "MBC", block: "multibandcomp", paramId: 27, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "MULTICOMP_BYPASS" },
+
+    // --- megatap (MGT) ---
+    "megatap.numtaps": { groupCode: "MGT", block: "megatap", paramId: 3, wikiName: "NUMTAPS", name: "numtaps", controlType: "knob", parameterName: "MEGATAP_NUMTAPS", xmlLabel: "Number of Taps" },
+    "megatap.timeshape": { groupCode: "MGT", block: "megatap", paramId: 4, wikiName: "TIMESHAPE", name: "timeshape", controlType: "select", parameterName: "MEGATAP_TIMESHAPE", xmlLabel: "Time Shape" },
+    "megatap.timealpha": { groupCode: "MGT", block: "megatap", paramId: 5, wikiName: "TIMEALPHA", name: "timealpha", controlType: "knob", parameterName: "MEGATAP_TIMEALPHA", xmlLabel: "Time Alpha" },
+    "megatap.ampshape": { groupCode: "MGT", block: "megatap", paramId: 6, wikiName: "AMPSHAPE", name: "ampshape", controlType: "select", parameterName: "MEGATAP_AMPSHAPE", xmlLabel: "Amplitude shape" },
+    "megatap.ampalpha": { groupCode: "MGT", block: "megatap", paramId: 7, wikiName: "AMPALPHA", name: "ampalpha", controlType: "knob", parameterName: "MEGATAP_AMPALPHA", xmlLabel: "Amplitude Alpha" },
+    "megatap.panshape": { groupCode: "MGT", block: "megatap", paramId: 8, wikiName: "PANSHAPE", name: "panshape", controlType: "select", parameterName: "MEGATAP_PANSHAPE", xmlLabel: "Pan Shape" },
+    "megatap.panalpha": { groupCode: "MGT", block: "megatap", paramId: 9, wikiName: "PANALPHA", name: "panalpha", controlType: "knob", parameterName: "MEGATAP_PANALPHA", xmlLabel: "Pan Alpha" },
+    "megatap.random": { groupCode: "MGT", block: "megatap", paramId: 10, wikiName: "RANDOM", name: "random", controlType: "knob", parameterName: "MEGATAP_RANDOM", xmlLabel: "Time Randomize" },
+    "megatap.mix": { groupCode: "MGT", block: "megatap", paramId: 11, wikiName: "MIX", name: "mix", controlType: "knob", parameterName: "MEGATAP_MIX", xmlLabel: "Mix" },
+    "megatap.level": { groupCode: "MGT", block: "megatap", paramId: 12, wikiName: "LEVEL", name: "level", controlType: "knob", parameterName: "MEGATAP_LEVEL", xmlLabel: "Level" },
+    "megatap.pan": { groupCode: "MGT", block: "megatap", paramId: 13, wikiName: "PAN", name: "pan", controlType: "knob", parameterName: "MEGATAP_PAN", xmlLabel: "Balance" },
+    "megatap.bypassmode": { groupCode: "MGT", block: "megatap", paramId: 14, wikiName: "BYPASSMODE", name: "bypassmode", controlType: "select", parameterName: "MEGATAP_BYPASSMODE", xmlLabel: "Bypass Mode" },
+    "megatap.globalmix": { groupCode: "MGT", block: "megatap", paramId: 15, wikiName: "GLOBALMIX", name: "globalmix", controlType: "unknown", parameterName: "MEGATAP_GLOBALMIX" },
+    "megatap.bypass": { groupCode: "MGT", block: "megatap", paramId: 16, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "MEGATAP_BYPASS" },
+
+    // --- multidelay (MTD) ---
+    "multidelay.bypass": { groupCode: "MTD", block: "multidelay", paramId: 34, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "MULTITAP_BYPASS" },
+    "multidelay.subdiv": { groupCode: "MTD", block: "multidelay", paramId: 80, wikiName: "SUBDIV", name: "subdiv", controlType: "unknown", parameterName: "MULTITAP_SUBDIV" },
+    "multidelay.decaystyle": { groupCode: "MTD", block: "multidelay", paramId: 83, wikiName: "DECAYSTYLE", name: "decaystyle", controlType: "unknown", parameterName: "MULTITAP_DECAYSTYLE" },
+    "multidelay.reftempo": { groupCode: "MTD", block: "multidelay", paramId: 114, wikiName: "REFTEMPO", name: "reftempo", controlType: "unknown", parameterName: "MULTITAP_REFTEMPO" },
+    "multidelay.tracktempo": { groupCode: "MTD", block: "multidelay", paramId: 115, wikiName: "TRACKTEMPO", name: "tracktempo", controlType: "unknown", parameterName: "MULTITAP_TRACKTEMPO" },
+    "multidelay.end": { groupCode: "MTD", block: "multidelay", paramId: 118, wikiName: "END", name: "end", controlType: "unknown", parameterName: "MULTITAP_END" },
+
+    // --- output (OUTPUT) ---
+    "output.bypass": { groupCode: "OUTPUT", block: "output", paramId: 19, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "OUTPUT_BYPASS" },
+
+    // --- parametriceq (PEQ) ---
+    "parametriceq.globalmix": { groupCode: "PEQ", block: "parametriceq", paramId: 22, wikiName: "GLOBALMIX", name: "globalmix", controlType: "unknown", parameterName: "PEQ_GLOBALMIX" },
+    "parametriceq.bypass": { groupCode: "PEQ", block: "parametriceq", paramId: 23, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "PEQ_BYPASS" },
+
+    // --- phaser (PHA) ---
+    "phaser.bypass": { groupCode: "PHA", block: "phaser", paramId: 16, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "PHASER_BYPASS" },
+
+    // --- pitch (PIT) ---
+    "pitch.bypass": { groupCode: "PIT", block: "pitch", paramId: 29, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "PITCH_BYPASS" },
+    "pitch.note2": { groupCode: "PIT", block: "pitch", paramId: 46, wikiName: "NOTE2", name: "note2", controlType: "select", parameterName: "PITCH_NOTE2", xmlLabel: "Note 2" },
+    "pitch.note3": { groupCode: "PIT", block: "pitch", paramId: 47, wikiName: "NOTE3", name: "note3", controlType: "select", parameterName: "PITCH_NOTE3", xmlLabel: "Note 3" },
+    "pitch.note4": { groupCode: "PIT", block: "pitch", paramId: 48, wikiName: "NOTE4", name: "note4", controlType: "select", parameterName: "PITCH_NOTE4", xmlLabel: "Note 4" },
+    "pitch.note5": { groupCode: "PIT", block: "pitch", paramId: 49, wikiName: "NOTE5", name: "note5", controlType: "select", parameterName: "PITCH_NOTE5", xmlLabel: "Note 5" },
+    "pitch.note6": { groupCode: "PIT", block: "pitch", paramId: 50, wikiName: "NOTE6", name: "note6", controlType: "select", parameterName: "PITCH_NOTE6", xmlLabel: "Note 6" },
+    "pitch.note7": { groupCode: "PIT", block: "pitch", paramId: 51, wikiName: "NOTE7", name: "note7", controlType: "select", parameterName: "PITCH_NOTE7", xmlLabel: "Note 7" },
+    "pitch.note8": { groupCode: "PIT", block: "pitch", paramId: 52, wikiName: "NOTE8", name: "note8", controlType: "select", parameterName: "PITCH_NOTE8", xmlLabel: "Note 8" },
+    "pitch.time1": { groupCode: "PIT", block: "pitch", paramId: 79, wikiName: "TIME1", name: "time1", controlType: "knob", parameterName: "PITCH_TIME1", xmlLabel: "Delay 1" },
+    "pitch.time2": { groupCode: "PIT", block: "pitch", paramId: 80, wikiName: "TIME2", name: "time2", controlType: "knob", parameterName: "PITCH_TIME2", xmlLabel: "Delay 2" },
+
+    // --- resonator (RES) ---
+    "resonator.mode": { groupCode: "RES", block: "resonator", paramId: 0, wikiName: "MODE", name: "mode", controlType: "unknown", parameterName: "RESONATOR_MODE" },
+    "resonator.chord": { groupCode: "RES", block: "resonator", paramId: 1, wikiName: "CHORD", name: "chord", controlType: "select", parameterName: "RESONATOR_CHORD", xmlLabel: "Chord Type" },
+    "resonator.ingain": { groupCode: "RES", block: "resonator", paramId: 2, wikiName: "INGAIN", name: "ingain", controlType: "knob", parameterName: "RESONATOR_INGAIN", xmlLabel: "Input Gain" },
+    "resonator.freq": { groupCode: "RES", block: "resonator", paramId: 3, wikiName: "FREQ", name: "freq", controlType: "knob", parameterName: "RESONATOR_FREQ", xmlLabel: "Frequency" },
+    "resonator.masterfreq": { groupCode: "RES", block: "resonator", paramId: 4, wikiName: "MASTERFREQ", name: "masterfreq", controlType: "knob", parameterName: "RESONATOR_MASTERFREQ", xmlLabel: "Master Frequency" },
+    "resonator.masterlvl": { groupCode: "RES", block: "resonator", paramId: 5, wikiName: "MASTERLVL", name: "masterlvl", controlType: "knob", parameterName: "RESONATOR_MASTERLVL", xmlLabel: "Master Level" },
+    "resonator.masterpan": { groupCode: "RES", block: "resonator", paramId: 6, wikiName: "MASTERPAN", name: "masterpan", controlType: "knob", parameterName: "RESONATOR_MASTERPAN", xmlLabel: "Master Pan" },
+    "resonator.masterfdbk": { groupCode: "RES", block: "resonator", paramId: 7, wikiName: "MASTERFDBK", name: "masterfdbk", controlType: "knob", parameterName: "RESONATOR_MASTERFDBK", xmlLabel: "Master Fdbk" },
+    "resonator.masterq": { groupCode: "RES", block: "resonator", paramId: 8, wikiName: "MASTERQ", name: "masterq", controlType: "knob", parameterName: "RESONATOR_MASTERQ", xmlLabel: "Master Q" },
+    "resonator.freq1": { groupCode: "RES", block: "resonator", paramId: 9, wikiName: "FREQ1", name: "freq1", controlType: "knob", parameterName: "RESONATOR_FREQ1", xmlLabel: "Freq  1" },
+    "resonator.freq2": { groupCode: "RES", block: "resonator", paramId: 10, wikiName: "FREQ2", name: "freq2", controlType: "knob", parameterName: "RESONATOR_FREQ2", xmlLabel: "Freq  2" },
+    "resonator.freq3": { groupCode: "RES", block: "resonator", paramId: 11, wikiName: "FREQ3", name: "freq3", controlType: "knob", parameterName: "RESONATOR_FREQ3", xmlLabel: "Freq  3" },
+    "resonator.freq4": { groupCode: "RES", block: "resonator", paramId: 12, wikiName: "FREQ4", name: "freq4", controlType: "knob", parameterName: "RESONATOR_FREQ4", xmlLabel: "Freq  4" },
+    "resonator.fdbk1": { groupCode: "RES", block: "resonator", paramId: 13, wikiName: "FDBK1", name: "fdbk1", controlType: "knob", parameterName: "RESONATOR_FDBK1", xmlLabel: "FB 1" },
+    "resonator.fdbk2": { groupCode: "RES", block: "resonator", paramId: 14, wikiName: "FDBK2", name: "fdbk2", controlType: "knob", parameterName: "RESONATOR_FDBK2", xmlLabel: "FB 2" },
+    "resonator.fdbk3": { groupCode: "RES", block: "resonator", paramId: 15, wikiName: "FDBK3", name: "fdbk3", controlType: "knob", parameterName: "RESONATOR_FDBK3", xmlLabel: "FB 3" },
+    "resonator.fdbk4": { groupCode: "RES", block: "resonator", paramId: 16, wikiName: "FDBK4", name: "fdbk4", controlType: "knob", parameterName: "RESONATOR_FDBK4", xmlLabel: "FB 4" },
+    "resonator.loc1": { groupCode: "RES", block: "resonator", paramId: 17, wikiName: "LOC1", name: "loc1", controlType: "select", parameterName: "RESONATOR_LOC1", xmlLabel: "Filter Loc 1" },
+    "resonator.loc2": { groupCode: "RES", block: "resonator", paramId: 18, wikiName: "LOC2", name: "loc2", controlType: "select", parameterName: "RESONATOR_LOC2", xmlLabel: "Filter Loc 2" },
+    "resonator.loc3": { groupCode: "RES", block: "resonator", paramId: 19, wikiName: "LOC3", name: "loc3", controlType: "select", parameterName: "RESONATOR_LOC3", xmlLabel: "Filter Loc 3" },
+    "resonator.loc4": { groupCode: "RES", block: "resonator", paramId: 20, wikiName: "LOC4", name: "loc4", controlType: "select", parameterName: "RESONATOR_LOC4", xmlLabel: "Filter Loc 4" },
+    "resonator.q1": { groupCode: "RES", block: "resonator", paramId: 21, wikiName: "Q1", name: "q1", controlType: "knob", parameterName: "RESONATOR_Q1", xmlLabel: "Q 1" },
+    "resonator.q2": { groupCode: "RES", block: "resonator", paramId: 22, wikiName: "Q2", name: "q2", controlType: "knob", parameterName: "RESONATOR_Q2", xmlLabel: "Q 2" },
+    "resonator.q3": { groupCode: "RES", block: "resonator", paramId: 23, wikiName: "Q3", name: "q3", controlType: "knob", parameterName: "RESONATOR_Q3", xmlLabel: "Q 3" },
+    "resonator.q4": { groupCode: "RES", block: "resonator", paramId: 24, wikiName: "Q4", name: "q4", controlType: "knob", parameterName: "RESONATOR_Q4", xmlLabel: "Q 4" },
+    "resonator.level1": { groupCode: "RES", block: "resonator", paramId: 25, wikiName: "LEVEL1", name: "level1", controlType: "knob", parameterName: "RESONATOR_LEVEL1", xmlLabel: "Level 1" },
+    "resonator.level2": { groupCode: "RES", block: "resonator", paramId: 26, wikiName: "LEVEL2", name: "level2", controlType: "knob", parameterName: "RESONATOR_LEVEL2", xmlLabel: "Level 2" },
+    "resonator.level3": { groupCode: "RES", block: "resonator", paramId: 27, wikiName: "LEVEL3", name: "level3", controlType: "knob", parameterName: "RESONATOR_LEVEL3", xmlLabel: "Level 3" },
+    "resonator.level4": { groupCode: "RES", block: "resonator", paramId: 28, wikiName: "LEVEL4", name: "level4", controlType: "knob", parameterName: "RESONATOR_LEVEL4", xmlLabel: "Level 4" },
+    "resonator.pan1": { groupCode: "RES", block: "resonator", paramId: 29, wikiName: "PAN1", name: "pan1", controlType: "knob", parameterName: "RESONATOR_PAN1", xmlLabel: "Pan 1" },
+    "resonator.pan2": { groupCode: "RES", block: "resonator", paramId: 30, wikiName: "PAN2", name: "pan2", controlType: "knob", parameterName: "RESONATOR_PAN2", xmlLabel: "Pan 2" },
+    "resonator.pan3": { groupCode: "RES", block: "resonator", paramId: 31, wikiName: "PAN3", name: "pan3", controlType: "knob", parameterName: "RESONATOR_PAN3", xmlLabel: "Pan 3" },
+    "resonator.pan4": { groupCode: "RES", block: "resonator", paramId: 32, wikiName: "PAN4", name: "pan4", controlType: "knob", parameterName: "RESONATOR_PAN4", xmlLabel: "Pan 4" },
+    "resonator.mix": { groupCode: "RES", block: "resonator", paramId: 33, wikiName: "MIX", name: "mix", controlType: "knob", parameterName: "RESONATOR_MIX", xmlLabel: "Mix" },
+    "resonator.level": { groupCode: "RES", block: "resonator", paramId: 34, wikiName: "LEVEL", name: "level", controlType: "knob", parameterName: "RESONATOR_LEVEL", xmlLabel: "Level" },
+    "resonator.pan": { groupCode: "RES", block: "resonator", paramId: 35, wikiName: "PAN", name: "pan", controlType: "knob", parameterName: "RESONATOR_PAN", xmlLabel: "Balance" },
+    "resonator.bypassmode": { groupCode: "RES", block: "resonator", paramId: 36, wikiName: "BYPASSMODE", name: "bypassmode", controlType: "select", parameterName: "RESONATOR_BYPASSMODE", xmlLabel: "Bypass Mode" },
+    "resonator.globalmix": { groupCode: "RES", block: "resonator", paramId: 37, wikiName: "GLOBALMIX", name: "globalmix", controlType: "unknown", parameterName: "RESONATOR_GLOBALMIX" },
+    "resonator.bypass": { groupCode: "RES", block: "resonator", paramId: 38, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "RESONATOR_BYPASS" },
+    "resonator.inputmode": { groupCode: "RES", block: "resonator", paramId: 39, wikiName: "INPUTMODE", name: "inputmode", controlType: "select", parameterName: "RESONATOR_INPUTMODE", xmlLabel: "Input Mode" },
+
+    // --- reverb (REV) ---
+    "reverb.reverbdelay": { groupCode: "REV", block: "reverb", paramId: 6, wikiName: "REVERBDELAY", name: "reverbdelay", controlType: "unknown", parameterName: "REVERB_REVERBDELAY" },
+    "reverb.bypass": { groupCode: "REV", block: "reverb", paramId: 22, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "REVERB_BYPASS" },
+    "reverb.earlysend": { groupCode: "REV", block: "reverb", paramId: 42, wikiName: "EARLYSEND", name: "earlysend", controlType: "knob", parameterName: "REVERB_EARLYSEND", xmlLabel: "Late Input Mix " },
+
+    // --- ringmod (RNG) ---
+    "ringmod.bypass": { groupCode: "RNG", block: "ringmod", paramId: 9, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "RINGMOD_BYPASS" },
+
+    // --- rotary (ROT) ---
+    "rotary.globalmix": { groupCode: "ROT", block: "rotary", paramId: 9, wikiName: "GLOBALMIX", name: "globalmix", controlType: "unknown", parameterName: "ROTARY_GLOBALMIX" },
+    "rotary.bypass": { groupCode: "ROT", block: "rotary", paramId: 11, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "ROTARY_BYPASS" },
+
+    // --- feedbackreturn (RTN) ---
+    "feedbackreturn.bypass": { groupCode: "RTN", block: "feedbackreturn", paramId: 5, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "FDBKRET_BYPASS" },
+
+    // --- synth (SYN) ---
+    "synth.spare1": { groupCode: "SYN", block: "synth", paramId: 22, wikiName: "SPARE1", name: "spare1", controlType: "unknown", parameterName: "SYNTH_SPARE1" },
+    "synth.bypass": { groupCode: "SYN", block: "synth", paramId: 28, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "SYNTH_BYPASS" },
+
+    // --- pantrem (TRM) ---
+    "pantrem.mix": { groupCode: "TRM", block: "pantrem", paramId: 6, wikiName: "MIX", name: "mix", controlType: "unknown", parameterName: "TREMOLO_MIX" },
+    "pantrem.globalmix": { groupCode: "TRM", block: "pantrem", paramId: 10, wikiName: "GLOBALMIX", name: "globalmix", controlType: "unknown", parameterName: "TREMOLO_GLOBALMIX" },
+    "pantrem.bypass": { groupCode: "TRM", block: "pantrem", paramId: 14, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "TREMOLO_BYPASS" },
+
+    // --- vocoder (VOC) ---
+    "vocoder.insource": { groupCode: "VOC", block: "vocoder", paramId: 0, wikiName: "INSOURCE", name: "insource", controlType: "select", parameterName: "VOCODER_INSOURCE", xmlLabel: "Input Select (Carrier)" },
+    "vocoder.numbands": { groupCode: "VOC", block: "vocoder", paramId: 1, wikiName: "NUMBANDS", name: "numbands", controlType: "select", parameterName: "VOCODER_NUMBANDS", xmlLabel: "Bands" },
+    "vocoder.freqstart": { groupCode: "VOC", block: "vocoder", paramId: 2, wikiName: "FREQSTART", name: "freqstart", controlType: "knob", parameterName: "VOCODER_FREQSTART", xmlLabel: "Frequency Min" },
+    "vocoder.freqstop": { groupCode: "VOC", block: "vocoder", paramId: 3, wikiName: "FREQSTOP", name: "freqstop", controlType: "knob", parameterName: "VOCODER_FREQSTOP", xmlLabel: "Frequency Max" },
+    "vocoder.cshift": { groupCode: "VOC", block: "vocoder", paramId: 4, wikiName: "CSHIFT", name: "cshift", controlType: "knob", parameterName: "VOCODER_CSHIFT", xmlLabel: "Shift" },
+    "vocoder.freeze": { groupCode: "VOC", block: "vocoder", paramId: 5, wikiName: "FREEZE", name: "freeze", controlType: "switch", parameterName: "VOCODER_FREEZE", xmlLabel: "Freeze" },
+    "vocoder.masterlvl": { groupCode: "VOC", block: "vocoder", paramId: 6, wikiName: "MASTERLVL", name: "masterlvl", controlType: "knob", parameterName: "VOCODER_MASTERLVL", xmlLabel: "Master Level" },
+    "vocoder.masterpan": { groupCode: "VOC", block: "vocoder", paramId: 7, wikiName: "MASTERPAN", name: "masterpan", controlType: "knob", parameterName: "VOCODER_MASTERPAN", xmlLabel: "Master Pan" },
+    "vocoder.res": { groupCode: "VOC", block: "vocoder", paramId: 8, wikiName: "RES", name: "res", controlType: "knob", parameterName: "VOCODER_RES", xmlLabel: "Resonance" },
+    "vocoder.attack": { groupCode: "VOC", block: "vocoder", paramId: 9, wikiName: "ATTACK", name: "attack", controlType: "knob", parameterName: "VOCODER_ATTACK", xmlLabel: "Attack" },
+    "vocoder.release": { groupCode: "VOC", block: "vocoder", paramId: 10, wikiName: "RELEASE", name: "release", controlType: "knob", parameterName: "VOCODER_RELEASE", xmlLabel: "Release" },
+    "vocoder.hpmix": { groupCode: "VOC", block: "vocoder", paramId: 11, wikiName: "HPMIX", name: "hpmix", controlType: "knob", parameterName: "VOCODER_HPMIX", xmlLabel: "Highpass Mix In" },
+    "vocoder.mix": { groupCode: "VOC", block: "vocoder", paramId: 12, wikiName: "MIX", name: "mix", controlType: "knob", parameterName: "VOCODER_MIX", xmlLabel: "Mix" },
+    "vocoder.level": { groupCode: "VOC", block: "vocoder", paramId: 13, wikiName: "LEVEL", name: "level", controlType: "knob", parameterName: "VOCODER_LEVEL", xmlLabel: "Level" },
+    "vocoder.pan": { groupCode: "VOC", block: "vocoder", paramId: 14, wikiName: "PAN", name: "pan", controlType: "knob", parameterName: "VOCODER_PAN", xmlLabel: "Balance" },
+    "vocoder.bypassmode": { groupCode: "VOC", block: "vocoder", paramId: 15, wikiName: "BYPASSMODE", name: "bypassmode", controlType: "select", parameterName: "VOCODER_BYPASSMODE", xmlLabel: "Bypass Mode" },
+    "vocoder.globalmix": { groupCode: "VOC", block: "vocoder", paramId: 16, wikiName: "GLOBALMIX", name: "globalmix", controlType: "unknown", parameterName: "VOCODER_GLOBALMIX" },
+    "vocoder.level1": { groupCode: "VOC", block: "vocoder", paramId: 17, wikiName: "LEVEL1", name: "level1", controlType: "knob", parameterName: "VOCODER_LEVEL1", xmlLabel: "1" },
+    "vocoder.level2": { groupCode: "VOC", block: "vocoder", paramId: 18, wikiName: "LEVEL2", name: "level2", controlType: "knob", parameterName: "VOCODER_LEVEL2", xmlLabel: "2" },
+    "vocoder.level3": { groupCode: "VOC", block: "vocoder", paramId: 19, wikiName: "LEVEL3", name: "level3", controlType: "knob", parameterName: "VOCODER_LEVEL3", xmlLabel: "3" },
+    "vocoder.level4": { groupCode: "VOC", block: "vocoder", paramId: 20, wikiName: "LEVEL4", name: "level4", controlType: "knob", parameterName: "VOCODER_LEVEL4", xmlLabel: "4" },
+    "vocoder.level5": { groupCode: "VOC", block: "vocoder", paramId: 21, wikiName: "LEVEL5", name: "level5", controlType: "knob", parameterName: "VOCODER_LEVEL5", xmlLabel: "5" },
+    "vocoder.level6": { groupCode: "VOC", block: "vocoder", paramId: 22, wikiName: "LEVEL6", name: "level6", controlType: "knob", parameterName: "VOCODER_LEVEL6", xmlLabel: "6" },
+    "vocoder.level7": { groupCode: "VOC", block: "vocoder", paramId: 23, wikiName: "LEVEL7", name: "level7", controlType: "knob", parameterName: "VOCODER_LEVEL7", xmlLabel: "7" },
+    "vocoder.level8": { groupCode: "VOC", block: "vocoder", paramId: 24, wikiName: "LEVEL8", name: "level8", controlType: "knob", parameterName: "VOCODER_LEVEL8", xmlLabel: "8" },
+    "vocoder.level9": { groupCode: "VOC", block: "vocoder", paramId: 25, wikiName: "LEVEL9", name: "level9", controlType: "knob", parameterName: "VOCODER_LEVEL9", xmlLabel: "9" },
+    "vocoder.level10": { groupCode: "VOC", block: "vocoder", paramId: 26, wikiName: "LEVEL10", name: "level10", controlType: "knob", parameterName: "VOCODER_LEVEL10", xmlLabel: "10" },
+    "vocoder.level11": { groupCode: "VOC", block: "vocoder", paramId: 27, wikiName: "LEVEL11", name: "level11", controlType: "knob", parameterName: "VOCODER_LEVEL11", xmlLabel: "11" },
+    "vocoder.level12": { groupCode: "VOC", block: "vocoder", paramId: 28, wikiName: "LEVEL12", name: "level12", controlType: "knob", parameterName: "VOCODER_LEVEL12", xmlLabel: "12" },
+    "vocoder.level13": { groupCode: "VOC", block: "vocoder", paramId: 29, wikiName: "LEVEL13", name: "level13", controlType: "knob", parameterName: "VOCODER_LEVEL13", xmlLabel: "13" },
+    "vocoder.level14": { groupCode: "VOC", block: "vocoder", paramId: 30, wikiName: "LEVEL14", name: "level14", controlType: "knob", parameterName: "VOCODER_LEVEL14", xmlLabel: "14" },
+    "vocoder.level15": { groupCode: "VOC", block: "vocoder", paramId: 31, wikiName: "LEVEL15", name: "level15", controlType: "knob", parameterName: "VOCODER_LEVEL15", xmlLabel: "15" },
+    "vocoder.level16": { groupCode: "VOC", block: "vocoder", paramId: 32, wikiName: "LEVEL16", name: "level16", controlType: "knob", parameterName: "VOCODER_LEVEL16", xmlLabel: "16" },
+    "vocoder.pan1": { groupCode: "VOC", block: "vocoder", paramId: 33, wikiName: "PAN1", name: "pan1", controlType: "knob", parameterName: "VOCODER_PAN1", xmlLabel: "Pan 1" },
+    "vocoder.pan2": { groupCode: "VOC", block: "vocoder", paramId: 34, wikiName: "PAN2", name: "pan2", controlType: "knob", parameterName: "VOCODER_PAN2", xmlLabel: "Pan 2" },
+    "vocoder.pan3": { groupCode: "VOC", block: "vocoder", paramId: 35, wikiName: "PAN3", name: "pan3", controlType: "knob", parameterName: "VOCODER_PAN3", xmlLabel: "Pan 3" },
+    "vocoder.pan4": { groupCode: "VOC", block: "vocoder", paramId: 36, wikiName: "PAN4", name: "pan4", controlType: "knob", parameterName: "VOCODER_PAN4", xmlLabel: "Pan 4" },
+    "vocoder.pan5": { groupCode: "VOC", block: "vocoder", paramId: 37, wikiName: "PAN5", name: "pan5", controlType: "knob", parameterName: "VOCODER_PAN5", xmlLabel: "Pan 5" },
+    "vocoder.pan6": { groupCode: "VOC", block: "vocoder", paramId: 38, wikiName: "PAN6", name: "pan6", controlType: "knob", parameterName: "VOCODER_PAN6", xmlLabel: "Pan 6" },
+    "vocoder.pan7": { groupCode: "VOC", block: "vocoder", paramId: 39, wikiName: "PAN7", name: "pan7", controlType: "knob", parameterName: "VOCODER_PAN7", xmlLabel: "Pan 7" },
+    "vocoder.pan8": { groupCode: "VOC", block: "vocoder", paramId: 40, wikiName: "PAN8", name: "pan8", controlType: "knob", parameterName: "VOCODER_PAN8", xmlLabel: "Pan 8" },
+    "vocoder.pan9": { groupCode: "VOC", block: "vocoder", paramId: 41, wikiName: "PAN9", name: "pan9", controlType: "knob", parameterName: "VOCODER_PAN9", xmlLabel: "Pan 9" },
+    "vocoder.pan10": { groupCode: "VOC", block: "vocoder", paramId: 42, wikiName: "PAN10", name: "pan10", controlType: "knob", parameterName: "VOCODER_PAN10", xmlLabel: "Pan 10" },
+    "vocoder.pan11": { groupCode: "VOC", block: "vocoder", paramId: 43, wikiName: "PAN11", name: "pan11", controlType: "knob", parameterName: "VOCODER_PAN11", xmlLabel: "Pan 11" },
+    "vocoder.pan12": { groupCode: "VOC", block: "vocoder", paramId: 44, wikiName: "PAN12", name: "pan12", controlType: "knob", parameterName: "VOCODER_PAN12", xmlLabel: "Pan 12" },
+    "vocoder.pan13": { groupCode: "VOC", block: "vocoder", paramId: 45, wikiName: "PAN13", name: "pan13", controlType: "knob", parameterName: "VOCODER_PAN13", xmlLabel: "Pan 13" },
+    "vocoder.pan14": { groupCode: "VOC", block: "vocoder", paramId: 46, wikiName: "PAN14", name: "pan14", controlType: "knob", parameterName: "VOCODER_PAN14", xmlLabel: "Pan 14" },
+    "vocoder.pan15": { groupCode: "VOC", block: "vocoder", paramId: 47, wikiName: "PAN15", name: "pan15", controlType: "knob", parameterName: "VOCODER_PAN15", xmlLabel: "Pan 15" },
+    "vocoder.pan16": { groupCode: "VOC", block: "vocoder", paramId: 48, wikiName: "PAN16", name: "pan16", controlType: "knob", parameterName: "VOCODER_PAN16", xmlLabel: "Pan 16" },
+    "vocoder.bypass": { groupCode: "VOC", block: "vocoder", paramId: 49, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "VOCODER_BYPASS" },
+
+    // --- volpan (VOL) ---
+    "volpan.bypass": { groupCode: "VOL", block: "volpan", paramId: 3, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "VOLUME_BYPASS" },
+
+    // --- wah (WAH) ---
+    "wah.bypass": { groupCode: "WAH", block: "wah", paramId: 12, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "WAH_BYPASS" },
+
+    // --- crossover (XVR) ---
+    "crossover.mix": { groupCode: "XVR", block: "crossover", paramId: 10, wikiName: "MIX", name: "mix", controlType: "unknown", parameterName: "CROSSOVER_MIX" },
+    "crossover.bypass": { groupCode: "XVR", block: "crossover", paramId: 14, wikiName: "BYPASS", name: "bypass", controlType: "unknown", parameterName: "CROSSOVER_BYPASS" },
+
+    // <<< END_GHIDRA_ADDENDUM (Session 94) <<<
 } as const satisfies Readonly<Record<string, AxeFxIIParam>>;
 
 export type AxeFxIIParamKey = keyof typeof KNOWN_PARAMS;
