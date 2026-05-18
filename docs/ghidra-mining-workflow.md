@@ -172,6 +172,144 @@ this walks instruction operands manually to find them.
 
 ---
 
+## Direct-pattern-scan technique (Session 94, 2026-05-17)
+
+**A dispatcher-independent alternative to the three-tier walk above.**
+Use this when the dispatcher-via-xref technique fails (typically:
+32-bit binaries with indirect dispatch — Axe-Edit II) OR as
+independent cross-validation of a dispatcher-mined catalog.
+
+Scripts:
+- `scripts/ghidra/SeekParamTablesII.java` — 32-bit (Axe-Edit II)
+- `scripts/ghidra/SeekParamTables64.java` — 64-bit (AM4-Edit, AxeEdit III)
+
+### Insight
+
+The three-tier walk above finds tables by following the dispatcher's
+switch statement. That requires:
+1. Finding the dispatcher (rank functions by # of param-symbol refs).
+2. The dispatcher's case targets resolve to data pointers via xref.
+
+Step 2 breaks on 32-bit Axe-Edit (Session 87 cont negative finding —
+hash-keyed indirect dispatch produces 9/1125 refs / 3 UI-prompt
+functions only). The instruction-walk fallback (Tier 3) helps but
+still depends on reaching the dispatcher from a known entry point.
+
+The direct-pattern-scan technique bypasses the dispatcher entirely.
+Instead of "find the dispatcher, follow its cases", it asks: where
+in this binary do consecutive `ParamDescriptor` struct entries live?
+Then it reads those tables directly, regardless of how they're
+dispatched.
+
+### Algorithm
+
+1. **Index every Fractal-prefixed string** in .rdata (same as Tier 2
+   byte-pattern scan — store address → symbol name).
+2. **Walk every initialized non-executable memory block** on
+   4-byte alignment.
+3. **At each offset, treat the bytes as a candidate
+   `ParamDescriptor` entry.** Try to extend forward at the struct's
+   natural stride until:
+   - `paramId == -1` (terminator), OR
+   - `paramId` outside plausible range (0..1000), OR
+   - pointer outside image range, OR
+   - pointer doesn't resolve to a known indexed Fractal symbol.
+4. **Tables with at least `MIN_TABLE_ENTRIES` (default 3) survive.**
+5. **Drop nested subtables** — a "table" starting +stride into a
+   larger valid table is a false-match seed.
+
+### ParamDescriptor stride per architecture
+
+| Arch | Struct shape | Stride |
+|---|---|---|
+| 64-bit | `int32 paramId + int32 padding + int64 ptr` | 16 |
+| 32-bit | `int32 paramId + int32 ptr` (or `+ int32 pad + int32 ptr`) | 8 (try 12 too) |
+
+### Pointer-range bounds
+
+64-bit AM4/III: derive from `currentProgram.getMin/MaxAddress()` at
+runtime — handles ASLR-shifted modules without hardcoding
+`0x140000000`.
+
+32-bit Axe-Edit II: `0x00400000 - 0x02000000` (Windows PE default image
+base + plausible image size). Hardcoded constants; revisit if a future
+32-bit Fractal editor uses a different base.
+
+### Cross-validation against dispatcher catalogs
+
+Use `scripts/_research/compare-ghidra-techniques.ts` to join the
+direct-scan output against the dispatcher catalog. Reports:
+- `matched` — same name, same paramId (the bulk should land here)
+- `dispatcher-only` — direct-scan missed (cosmetic UI buttons at
+  high paramIds, tables below `MIN_TABLE_ENTRIES`)
+- `direct-scan-only` — dispatcher missed (tables loaded indirectly,
+  `ID_*` block-identifier constants stored in separate tables)
+- `paramId disagreements` — **MUST be 0**. If non-zero, one of the
+  techniques has a wire-correctness bug and the catalog is unsafe to
+  ship.
+
+### Empirical results (Session 94, 2026-05-17)
+
+| Binary | Symbols indexed | Tables found | Total entries | Unique syms in tables | % indexed |
+|---|---|---|---|---|---|
+| AM4-Edit.exe (64-bit) | 24,950 | 47 | 2,105 | 1,894 | 7% |
+| AxeEdit III.exe (64-bit) | 32,647 | 53 | 2,562 | 2,150 | 6% |
+| Axe-Edit.exe (32-bit II) | 1,257 | 43 | 1,353 | 1,245 | 99% |
+
+The "% indexed" gap on the 64-bit binaries is huge because their
+.rdata is dominated by layout-XML strings (BinaryData payload),
+SYSEX_* function names, ID_* enums, etc. — only ~6-7% of indexed
+strings are actual paramId-bound names. The 32-bit II binary has a
+smaller .rdata so the ratio inverts.
+
+Cross-validation vs dispatcher (all 0 paramId disagreements):
+- **AM4**: dispatcher 1,732 / direct-scan 1,895; 1,684 matched.
+  Dispatcher-only 47 (UI buttons at paramId 65520+ — `CABINET_PICKER1`,
+  `CONTROLLERS_SCENE1_SET_ALL`). Direct-scan-only 210 (ALL `ID_*`
+  block-identifier constants — belong in `blockTypes.ts`).
+- **III**: dispatcher 2,216 / direct-scan 2,097; 1,891 matched.
+  Dispatcher-only 325 (mostly `GLOBAL_FC_*` non-addressable foot-
+  controller config + cosmetic CABINET high-paramIds). Direct-scan-
+  only 206 (ALL `ID_*` constants).
+- **II**: 639 of 640 shipping (parameterName, paramId) pairs validate
+  exactly. 470 NEW entries the wiki never indexed (entire VOCODER /
+  RESONATOR / MOD blocks plus selective CONTROLLERS / DISTORT gaps).
+
+### When to use which technique
+
+- **64-bit Fractal editor (AM4-Edit, AxeEdit III, FM3/FM9/VP4
+  presumably)**: dispatcher walk is the canonical first pass — it
+  finds tables in the order the device addresses them and emits a
+  clean per-effect mapping. Run direct-scan after as cross-
+  validation (wire-correctness gate at 0 disagreements).
+- **32-bit Fractal editor (Axe-Edit II, possibly other legacy
+  editors)**: skip the dispatcher walk entirely — direct-scan is
+  the primary path. Confirmed Session 94 with II at 99% indexed-
+  symbol coverage.
+- **Any binary with auto-analysis incomplete**: direct-scan is
+  independent of data-ref analyzer state. The three-tier walk
+  depends on Tier 1's symbol-table population.
+
+### Limits
+
+The direct-scan technique misses:
+- Tables under `MIN_TABLE_ENTRIES` (default 3). Tune downward at
+  the cost of more false positives.
+- Tables whose first entry's pointer resolves to a symbol NOT in
+  the `PREFIXES` list. Add new prefixes as you discover new effect
+  families.
+- `ID_*` block-identifier tables, by design — those are catalog of
+  block enums, not paramId tables. They belong in `blockTypes.ts`
+  in the cross-published package. The compare script will flag them
+  as `direct-scan-only` in the cross-val report; that's normal.
+- UI-only widget paramIds at very high numbers (typically 65520+ on
+  AM4) where the dispatcher allocates them but they live in a
+  separate "UI helper" table direct-scan doesn't pattern-match. The
+  compare script flags these as `dispatcher-only`. Filter them
+  before shipping to params.ts.
+
+---
+
 ## What DIDN'T work (Session 82 failure modes)
 
 These cost a wall-time iteration each; documenting so we don't redo
