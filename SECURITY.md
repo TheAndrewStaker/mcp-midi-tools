@@ -29,7 +29,8 @@ In scope:
   `src/fractal/axe-fx-ii/`, `src/asm/hydrasynth-explorer/`).
 - Scripts under `scripts/` that process untrusted input (e.g. cache
   parsers, capture parsers).
-- The distributed Windows `.exe` once the v1.0 packaging ships.
+- The distributed Windows release ZIP (`setup.cmd` + bundled Node runtime
+  + the post-install PowerShell merge scripts).
 
 Out of scope:
 

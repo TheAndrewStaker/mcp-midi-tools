@@ -100,6 +100,9 @@ import {
   parseSetGetParameterResponse,
   buildSetBypass,
 } from './setParam.js';
+import { guardActiveBufferOrSave } from './tools/shared.js';
+import { markDirty } from '@mcp-midi-control/core/server-shared/bufferDirty.js';
+import { AXEFX3_LABEL } from '@mcp-midi-control/core/server-shared/connections.js';
 
 const DEVICE_LABEL = 'Fractal Axe-Fx III';
 
@@ -528,6 +531,10 @@ const writer: DeviceWriter = {
     const { param } = resolveParamOrThrow(blockSlugIn, name);
     const bytes = buildSetParameter(effectId, param.paramId, wireValue);
     const errorReport = await sendAndWatchForError(ctx, bytes);
+    // Call-site SET/GET discrimination — see EDIT_FUNCTIONS_III comment
+    // in midi.ts. fn=0x01 is dual-purpose with no byte-level discriminator,
+    // so SET handlers mark dirty explicitly; GET handlers don't.
+    markDirty(AXEFX3_LABEL);
     if (errorReport !== undefined) {
       const desc = errorReport.description
         ? `${errorReport.description} (code 0x${errorReport.resultCode.toString(16).padStart(2, '0')})`
@@ -971,6 +978,22 @@ const writer: DeviceWriter = {
         'confirm via get_preset_name (or by checking the front-panel preset title). ' +
         'Working-buffer scope only; persist with save_preset.',
     };
+  },
+
+  /**
+   * Safe-edit dirty-gate adapter. Delegates to the III's device-sourced
+   * dirty signal (STATE_BROADCAST `fn=0x01 04 01`) classified at the
+   * connection layer in `midi.ts:wrapWithDirtyClassification`. See
+   * `docs/axefx3-dirty-state-research.md` for the evidence chain.
+   *
+   * 🟡 Beta: the inbound broadcast captures are all from AxeEdit-active
+   * sessions; emission when the MCP server is the sole host has not been
+   * confirmed on hardware. The outbound belt-and-suspenders markDirty on
+   * edit-class SysEx keeps the gate fail-safe even if device-sourced
+   * detection misses an edit.
+   */
+  async guardActiveBufferOrSave(_ctx, mode) {
+    return guardActiveBufferOrSave(mode);
   },
 };
 

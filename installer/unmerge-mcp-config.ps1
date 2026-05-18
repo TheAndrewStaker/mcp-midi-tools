@@ -1,5 +1,6 @@
 # Idempotently REMOVE the mcp-midi-control entry from Claude Desktop's
-# claude_desktop_config.json files. Called from the Inno Setup uninstaller.
+# claude_desktop_config.json files. Called from the ZIP-release
+# `uninstall.cmd` wrapper.
 #
 # Walks the same candidate locations as merge-mcp-config.ps1. If a config
 # file exists, removes our entry from mcpServers but leaves any other

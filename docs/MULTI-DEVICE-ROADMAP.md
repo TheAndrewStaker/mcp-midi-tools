@@ -50,7 +50,7 @@ JD-Xi).
 |---|---|---|---|
 | **L1 — MCP project** (this repo) | The ONLY MCP layer. MCP server scaffolding, tool registration, port management, General-MIDI primitive MCP tools, the **unified tool surface** (`apply_preset` / `set_param` / 15 more, port-dispatched), display-first API conventions, the vendor-neutral `DeviceDescriptor` contract. | `mcp-midi-control` | One repo, npm workspaces; one package per device today, one external vendor package per family tomorrow |
 | **L2 — Vendor protocol packages** | Pure MIDI / protocol decoders for one vendor's product family. NO MCP. Each package contains: SysEx envelope + checksum + shared encoding helpers (vendor-level), per-device protocol decoder + parameter registry + applicability data + lineage records (per-device subdirs within the vendor package). | Future: `fractal-midi` (AM4 + Axe-Fx II + Axe-Fx III + FM9 + FM3 + VP4), `asm-midi` (Hydrasynth family), `roland-midi` (RC-505 + VE-500 + SPD-SX + JD-Xi) | One repo per vendor, one npm package per vendor |
-| **L3 — User distribution** | Bundles `mcp-midi-control` + native deps + Claude Desktop config setup. End-user-installable artifact. | Today: `setup.cmd` ZIP via `npm run build:installer`; future: signed `.exe` (P5 milestones) | Separate repo / artifact for distribution form |
+| **L3 — User distribution** | Bundles `mcp-midi-control` + native deps + Claude Desktop config setup. End-user-installable artifact. | `setup.cmd` ZIP via `npm run build:installer` | Separate repo / artifact for distribution form |
 
 L2 is pure code/data, no native deps, npm-friendly, Apache-2.0. The MCP
 project depends on whichever vendor packages it wants to support — it's
@@ -364,8 +364,8 @@ touching the MCP project. The plan is:
    own versions? Or align? Practical answer probably: framework is
    semver-stable, packs version independently.
 3. **Distribution form for end users.** ZIP + `setup.cmd` today via
-   `npm run build:installer`; signed `.exe` post-traction (P5-005).
-   MCPB bundle (P5-008) is another option. Decision parking-lotted.
+   `npm run build:installer`. MCPB bundle (P5-008) is another option.
+   Decision parking-lotted.
 4. **Third-party pack discoverability.** A registry? A page in the
    framework README? Defer until there are third-party packs.
 5. **License consistency.** Framework + first-party packs all

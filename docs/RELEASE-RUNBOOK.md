@@ -227,4 +227,4 @@ Catastrophic case (e.g. installer corrupts user environment):
 
 | Version | Date | Notes |
 |---|---|---|
-| 0.1.0 | TBD | First public release. AM4 working-buffer support; unsigned installer. |
+| 0.1.0 | TBD | First public release. AM4 working-buffer support; unsigned ZIP. |

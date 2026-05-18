@@ -2,22 +2,20 @@
 /**
  * scripts/build-installer.ts
  *
- * Build the MCP MIDI Control release bundle for v0.1.0.
+ * Build the MCP MIDI Control release bundle.
  *
  * Output:
- *   build/staging/                              -- bundle contents (also reused
- *                                                  if/when the Inno Setup .exe
- *                                                  installer ships in v0.2)
+ *   build/staging/                                -- bundle contents
  *   build/dist/mcp-midi-control-v<version>.zip    -- shippable ZIP (this is
  *                                                  what users download)
  *
  * Steps performed:
  *   1. Clean build/staging/.
  *   2. Compile TypeScript -> dist/.
- *   3. Download node.exe for the pinned version (cached in build/node-cache/).
- *   4. Copy dist/, package.json, package-lock.json, LICENSE, NOTICE, node.exe,
- *      installer wrappers (setup.cmd, uninstall.cmd, instructions.txt) and
- *      PowerShell helpers into build/staging/.
+ *   3. Download the pinned Node runtime (cached in build/node-cache/).
+ *   4. Copy dist/, package.json, package-lock.json, LICENSE, NOTICE, the
+ *      Node runtime, install wrappers (setup.cmd, uninstall.cmd,
+ *      instructions.txt) and PowerShell helpers into build/staging/.
  *   5. Run `npm ci --omit=dev` inside build/staging/ using the BUNDLED Node
  *      (so native node-midi compiles against the same V8 ABI we ship).
  *   6. Verify staging by invoking the bundled node --version and asserting
@@ -29,15 +27,9 @@
  *   npm run build:installer -- --clean   # also wipe build/node-cache
  *
  * Why bundle Node + node_modules instead of using `pkg`/`nexe`/SEA:
- *   See docs/DECISIONS.md 2026-05-03 packager row. The native node-midi
- *   .node addon is friendliest with file-on-disk distribution; single-binary
+ *   See docs/DECISIONS.md packager row. The native node-midi `.node`
+ *   addon is friendliest with file-on-disk distribution; single-binary
  *   tools handle native addons via fragile runtime extraction.
- *
- * Why ZIP for v0.1.0 (not .exe installer):
- *   See docs/DECISIONS.md 2026-05-03 cert row + the v0.1.0 strategy
- *   conversation: forum-savvy users prefer "extract folder, double-click
- *   setup.cmd"; .exe installer with full SmartScreen click-through is
- *   deferred to v0.2 once we have install-friction data.
  */
 
 import { execSync } from 'node:child_process';
@@ -289,7 +281,7 @@ async function main() {
 
   // 8. Package staging into a versioned ZIP. Rename staging -> versioned
   // dir so the ZIP contains a clean top-level folder, then rename back so
-  // re-builds and the deferred Inno Setup .iss path keep working.
+  // re-builds keep working.
   console.log('[build] Packaging release ZIP');
   fs.mkdirSync(DIST_DIR, { recursive: true });
   if (fs.existsSync(RELEASE_ZIP_PATH)) {

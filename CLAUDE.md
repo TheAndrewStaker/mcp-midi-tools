@@ -58,16 +58,18 @@ artefacts — and DO ship in the repo.
 - `tsx` is the TypeScript runner for scripts (not `ts-node`) — invoke via
   `npm run <script>` or `npx tsx <path>`
 - node-midi for USB MIDI (native module — requires VS Build Tools on Windows
-  dev machines; end users get a packaged `.exe` and need neither)
+  dev machines; end users get the release ZIP with a bundled Node runtime
+  and a prebuilt native binary, so they need neither)
 - @modelcontextprotocol/sdk for MCP
 - No framework. No ORM. Keep it simple.
 
 ## Target User
 A working guitarist with a Claude account — not a developer. Every UX,
 install, and distribution decision prioritizes the non-technical user.
-The MVP ships as a signed Windows `.exe` that configures Claude Desktop
-automatically; users never install Node, a C++ toolchain, or edit JSON.
-See `docs/DECISIONS.md` for the full reasoning and rejected alternatives.
+The MVP ships as a Windows ZIP that bundles Node + a prebuilt native MIDI
+binary and runs `setup.cmd` to register the server with Claude Desktop;
+users never install Node, a C++ toolchain, or edit JSON. See
+`docs/DECISIONS.md` for the full reasoning and rejected alternatives.
 
 ## Decision Log
 Non-obvious architectural and library choices live in `docs/DECISIONS.md`.
@@ -126,11 +128,10 @@ claims that aren't byte-verified.
 - **Passive capture** — open the device MIDI input with no editor.
   Axe-Fx II broadcasts state continuously; AM4 is silent and needs an
   active query loop. See `docs/fractal-broadcast-vs-poll-research.md`.
-- **loopMIDI + MIDI-OX bridge** — fallback for capturing the
-  editor-write direction. **Use as a last resort.** Fractal gates
-  loopMIDI by driver class explicitly in AxeEdit (Session 85) — this
-  is intentional, not a bug. See
-  `docs/axe-fx-ii-community-re-methodology.md`.
+- **USBPcap + Wireshark** — captures both directions at the USB-class
+  layer when the editor → device direction is needed. The maintainer's
+  default for editor-write decode. See `CONTRIBUTING.md` for the
+  step-by-step.
 
 ### Methods that have failed — don't re-attempt
 - **WinDbg trap-after-launch** — stack-frame too shallow, label written
@@ -138,11 +139,11 @@ claims that aren't byte-verified.
 - **Positional XML → cache-record binding** — XML `parameterName` is a
   per-variant UI symbol, not a unique wire key. 20–40% inversions
   across variants. Session 46 cont 2.
-- **AxeEdit + loopMIDI virtual driver** — Fractal gates loopMIDI by
-  class via `midiInGetDevCaps` / `midiOutGetDevCaps`. Intentional
-  filtering. Session 85.
-- **USBPcap on Axe-Fx II XL+ (Quantum 8.02)** — driver routes above
-  the USB-class layer, misses device traffic. Session 53 era.
+- **Virtual MIDI driver bridges** (any class-compliant virtual port
+  trying to interpose between editor and device) — Fractal editors
+  filter these out by driver class via `midiInGetDevCaps` /
+  `midiOutGetDevCaps`. Intentional filtering, not a bug. Use the
+  USBPcap + Wireshark path instead.
 - **Byte-literal full SysEx envelope (`F0 00 01 74 10`) search in
   Ghidra** — model byte loaded at runtime from a device-handle struct.
   Search the 4-byte `F0 00 01 74` instead and inspect the next

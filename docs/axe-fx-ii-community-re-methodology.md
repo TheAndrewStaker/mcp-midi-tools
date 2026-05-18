@@ -196,20 +196,18 @@ it is net-new contribution back to the public knowledge base.
 ### Why the gap exists — Fractal actively gates editor traffic
 
 The public corpus doesn't stop at the read-and-navigate surface by
-accident. Hands-on testing 2026-05-10 (HW-085 Plans A + B against
-AxeEdit on Windows; cross-referenced against Session 04 against
-AM4-Edit on Windows) confirmed that **both Fractal editors — AxeEdit
-for the Axe-Fx II family and AM4-Edit for the AM4 — gate loopMIDI-
-class virtual MIDI ports out of their port enumeration**. The
-loopMIDI ports do not appear in either editor's Preferences →
-Ports dropdown, even when the virtual port name exactly matches
-the real device port name.
+accident. Hands-on testing confirmed that **both Fractal editors —
+AxeEdit for the Axe-Fx II family and AM4-Edit for the AM4 — gate
+class-compliant virtual MIDI ports out of their port enumeration**.
+Virtual MIDI ports do not appear in either editor's Preferences →
+Ports dropdown, even when the virtual port name exactly matches the
+real device port name.
 
 The diagnostic detail that pins this down: AxeEdit's port dropdown
 *does* show `Microsoft GS Wavetable Synth`, a Windows built-in
 software MIDI port. So the filter isn't "real hardware only" — it's
-specifically excluding loopMIDI-class virtual drivers via the
-Windows MIDI driver-class metadata returned by `midiInGetDevCaps` /
+specifically excluding virtual-driver-class entries via the Windows
+MIDI driver-class metadata returned by `midiInGetDevCaps` /
 `midiOutGetDevCaps`. Two independent Fractal editors carrying the
 same filter posture, with the same allowlist behavior, is not
 coincidence.
@@ -246,9 +244,9 @@ intercepting AxeEdit at all.
 
 ### The simpler-than-expected workaround we found (2026-05-11)
 
-After spending hours fighting AxeEdit's virtual-port filter +
-ipMIDI trial limits + MIDI-OX driver state, we discovered a much
-simpler approach for HALF the conversation:
+After ruling out virtual-MIDI-bridge approaches (gated by AxeEdit's
+port filter, see above), we discovered a much simpler approach for
+HALF the conversation:
 
 **Windows MIDI input ports are shared-readable.** Our script can
 open `AXE-FX II MIDI In` while AxeEdit is also reading it; both see
@@ -311,35 +309,46 @@ workflow's foundation.
 
 ## Capture techniques used across the corpus
 
-### loopMIDI + MIDI-OX bridge (the community standard)
+### Virtual MIDI driver bridges (historical community workaround)
 
-The dominant technique on Windows. Architecture:
+Older forum guides documented sitting a class-compliant virtual MIDI
+port between the editor and the device to capture traffic in transit.
+This project **does not use that approach** — both AxeEdit and
+AM4-Edit gate class-compliant virtual drivers out of their port
+enumeration via the Windows `midiInGetDevCaps` / `midiOutGetDevCaps`
+class metadata, so the bridge never sees outgoing editor traffic.
+Documented here only to explain why other community projects took
+that route historically.
 
-```
-Axe-Edit  →  loopMIDI virtual port  →  MIDI-OX (logs)  →  Axe-Fx II
-Axe-Edit  ←  loopMIDI virtual port  ←  MIDI-OX         ←  Axe-Fx II
-```
+### Passive shared-read of the device's MIDI-In port (this project's primary)
 
-Forum thread ["Using MidiOX to capture sysex sent from Axefx 2"
-(130725)](https://forum.fractalaudio.com/threads/using-midiox-to-capture-sysex-sent-from-axefx-2.130725/)
-is the canonical community recipe. It is the same architecture this
-project uses for HW-082 / HW-083 grid-write captures.
+Windows MIDI input ports are shared-readable. Our capture script
+opens the device's `... MIDI In` port while the vendor editor is
+also reading it; both see the same byte stream from the device.
+Captures every SysEx the device emits (responses, broadcasts, state
+announcements) with no virtual driver, no bridge, no editor
+interception. Implementation: `scripts/capture-midi-passive.ts`.
 
-### MIDI Monitor / Snoize (macOS equivalent)
+### USBPcap + Wireshark (this project's editor → device path)
 
-[MIDI Monitor by Snoize](https://www.snoize.com/MIDIMonitor/) does
-the same job on macOS — sits between editor and device, logs every
-byte. Equivalent role to MIDI-OX.
+For the editor-write direction (what AxeEdit / AM4-Edit / Hydrasynth
+Manager *send* to the device), capture at the USB-class layer with
+USBPcap + Wireshark. Both directions are visible at this layer, and
+class-compliant USB-MIDI frames decode cleanly in Wireshark. The
+maintainer's default workflow for any unknown editor-write op. See
+`CONTRIBUTING.md` for the step-by-step.
 
-### USBPcap + Wireshark (minority, considered noisy)
+Historical note: the older `USBPcap on Axe-Fx II XL+ (Quantum 8.02)`
+attempt failed because the Windows driver of that era routed above
+the USB-class layer; later firmware revisions and III / FM9 do not
+share that limitation.
 
-Used for deeper USB-class capture, but forum consensus is that USB
-status chatter floods the filter and MIDI-OX-level capture is enough
-for SysEx RE. On the Axe-Fx II XL+ specifically, USBPcap **does not
-see Axe-Fx II MIDI traffic at all** — the Fractal Windows driver
-routes through a path standard USB-class capture misses (this
-project's HW-074, 2026-05-10, confirmed empirically). loopMIDI +
-MIDI-OX works because it intercepts above the driver layer.
+### MIDI Monitor / Snoize (macOS)
+
+[MIDI Monitor by Snoize](https://www.snoize.com/MIDIMonitor/) is the
+macOS equivalent for passive byte-level inspection. Equivalent role
+to the passive-capture script above; macOS contributors can use
+either.
 
 ### Direct `.syx` binary analysis
 
@@ -378,10 +387,12 @@ can contribute back to the broader community knowledge base.
 
 ## What this project does that pushes the corpus forward
 
-The community-standard methodology — loopMIDI + MIDI-OX, audible
-verification, hand-curated wire format docs — has carried the public
-corpus from "no documentation" to "wiki-documented for a Fractal-
-defined subset". Where we improve on it:
+The community-standard methodology — virtual-MIDI-bridge captures,
+audible verification, hand-curated wire format docs — has carried the
+public corpus from "no documentation" to "wiki-documented for a
+Fractal-defined subset". Where we improve on it (and where we
+diverge — passive shared-read + USBPcap instead of the
+historically-gated bridge approach):
 
 ### Byte-exact golden test harness
 
@@ -541,7 +552,7 @@ BK-048 workflow.
 
 1. [Fractal wiki: MIDI SysEx](https://wiki.fractalaudio.com/wiki/index.php?title=MIDI_SysEx) — primary wire-format reference (community-built).
 2. [Fractal wiki: Third-party software](https://wiki.fractalaudio.com/wiki/index.php?title=Third-party_software) — catalog of community + commercial tools.
-3. [Forum: Using MidiOX to capture sysex sent from Axefx 2 (130725)](https://forum.fractalaudio.com/threads/using-midiox-to-capture-sysex-sent-from-axefx-2.130725/) — canonical loopMIDI + MIDI-OX recipe.
+3. [Forum: Using MidiOX to capture sysex sent from Axefx 2 (130725)](https://forum.fractalaudio.com/threads/using-midiox-to-capture-sysex-sent-from-axefx-2.130725/) — canonical community virtual-MIDI-bridge recipe (this project does not use this approach; see "Capture techniques" above).
 4. [Forum: Reverse engineer undocumented sysex? (201663)](https://forum.fractalaudio.com/threads/reverse-engineer-undocumented-sysex.201663/) — community discussion of what's still undecoded + firmware-drift expectations.
 5. [Forum: Axe-Fx III and deconstructing/parsing a .syx (159885)](https://forum.fractalaudio.com/threads/axe-fx-iii-and-deconstructing-parsing-a-syx-sysex-preset-file.159885/) — direct binary-format RE on saved files.
 6. [Forum thread #112538](https://forum.fractalaudio.com/threads/fractool-for-power-users-only.112538/) — closed-source third-party Fractal editor's long-running development thread (commercial alternative, decode kept private).
@@ -549,4 +560,4 @@ BK-048 workflow.
 8. [GitHub: bspaulding/axe-fx-midi](https://github.com/bspaulding/axe-fx-midi) — Rust crate, Fractal-wiki-sourced.
 9. [GitHub: tysonlt/AxeFxControl](https://github.com/tysonlt/AxeFxControl) — Axe-Fx III spec implementation.
 10. [GitHub: laxu/AxeFx2VirtualPedalboard](https://github.com/laxu/AxeFx2VirtualPedalboard) — Axe-Fx II CC → SysEx translator.
-11. [Snoize MIDI Monitor](https://www.snoize.com/MIDIMonitor/) — macOS equivalent of MIDI-OX.
+11. [Snoize MIDI Monitor](https://www.snoize.com/MIDIMonitor/) — macOS byte-level MIDI inspection tool.

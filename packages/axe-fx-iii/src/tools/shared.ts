@@ -15,11 +15,23 @@
  */
 
 import {
+  buildQueryPatchName,
+  buildStorePreset,
   describeMultipurposeResultCode,
   isMultipurposeResponse,
+  isQueryPatchNameResponse,
   parseMultipurposeResponse,
+  parseQueryPatchNameResponse,
 } from '../setParam.js';
 import { connectAxeFxIII, type MidiConnection } from '../midi.js';
+import { isDirty } from '@mcp-midi-control/core/server-shared/bufferDirty.js';
+import { AXEFX3_LABEL } from '@mcp-midi-control/core/server-shared/connections.js';
+import {
+  type OnEditedMode as SharedOnEditedMode,
+  type DirtyGuardResult as SharedDirtyGuardResult,
+  ON_EDITED_SCHEMA as SHARED_ON_EDITED_SCHEMA,
+  ON_EDITED_DESCRIPTION as SHARED_ON_EDITED_DESCRIPTION,
+} from '@mcp-midi-control/core/server-shared/safeEdit.js';
 
 /**
  * Default response-await window for GET tools. The III responds to
@@ -43,16 +55,19 @@ export const NO_ACK_NOTE = [
 
 /**
  * Banner appended to every axefx3_* tool result. The III ships as a
- * 🟡 community beta — until a contributor with III hardware runs the
- * USBPcap workflow in HARDWARE-TASKS-AXEFX3.md, every successful tool
- * response is "spec-correct but unverified on real hardware." The
- * banner is brief enough not to drown out the actual response.
+ * 🟡 community beta — wire shapes are byte-verified against the v1.4
+ * spec + 10 public captures (Session 97), but no III owner has yet
+ * confirmed the implementation works end-to-end on real hardware.
+ * Every tool response carries this banner until a beta-tester report
+ * confirms front-panel-correct behavior. The banner is brief enough
+ * not to drown out the actual response.
  */
 export const BETA_NOTE = [
-  '🟡 axe-fx-iii community beta — wire shape per Fractal v1.4 spec, not',
-  'yet hardware-verified end-to-end. If something looks wrong, capture',
-  'a USB-MIDI session of AxeEdit III firing the same op and open an',
-  'issue with the .pcapng (see docs/community/axefx3-captures.md).',
+  '🟡 axe-fx-iii community beta — wire shape verified against public',
+  'captures + v1.4 spec, not yet confirmed against real III hardware.',
+  'If the response disagrees with what the front panel shows, please',
+  'open an issue with the tool call + JSON response',
+  '(see docs/community/axefx3-beta-testing.md).',
 ].join('\n');
 
 // -- MIDI lazy-init -------------------------------------------------------
@@ -158,4 +173,134 @@ export function formatMultipurposeError(err: MultipurposeErrorReport): string {
     `   echoed_fn=0x${fnHex}, result_code=0x${codeHex} (${label}).`,
     `   Recv (${err.rawBytes.length}B): ${toHex(err.rawBytes)}`,
   ].join('\n');
+}
+
+// -- Working-buffer dirty handling ----------------------------------------
+//
+// Shared by every III tool that navigates away from the active preset
+// (apply_preset_at, switch_preset). Mirrors the Axe-Fx II pattern at
+// `packages/axe-fx-ii/src/tools/shared.ts:guardActiveBufferOrSave`. Dirty
+// classification happens at the connection layer (`packages/axe-fx-iii/
+// src/midi.ts:wrapWithDirtyClassification`) — STATE_BROADCAST inbound
+// frames mark dirty; STORE_PRESET / PC outbound mark clean. See
+// `docs/axefx3-dirty-state-research.md` for evidence.
+
+export const AXEFX3_DIRTY_LABEL = AXEFX3_LABEL;
+
+// Re-export the cross-device safe-edit shapes under III-local names so
+// III callers don't import from core directly. The canonical
+// definitions live in `core/server-shared/safeEdit.ts`.
+export type OnEditedMode = SharedOnEditedMode;
+export type DirtyGuardResult = SharedDirtyGuardResult;
+export const ON_EDITED_SCHEMA = SHARED_ON_EDITED_SCHEMA;
+export const ON_EDITED_DESCRIPTION = SHARED_ON_EDITED_DESCRIPTION;
+
+/**
+ * Pre-navigation dirty check + optional save-first behavior.
+ *
+ *   - `mode='warn'` + dirty: returns proceed=false with a warning naming
+ *     the active preset (number + name).
+ *   - `mode='discard'` + dirty: returns proceed=true without saving.
+ *   - `mode='save_active_first'` + dirty: saves the working buffer to
+ *     the currently-active slot via 0x1D STORE_PRESET, then returns
+ *     proceed=true. Returns proceed=false if the save is rejected by a
+ *     0x64 MULTIPURPOSE_RESPONSE frame.
+ *   - Clean buffer: returns proceed=true regardless of mode.
+ *
+ * 🟡 Beta caveat: the III's 0x1D STORE_PRESET envelope is ported from
+ * II and not hardware-confirmed on real III firmware. If the device
+ * rejects 0x1D, callers see a structured warning naming the rejection
+ * code; they can fall back to save-on-the-device-front-panel.
+ */
+export async function guardActiveBufferOrSave(
+  mode: OnEditedMode,
+): Promise<DirtyGuardResult> {
+  if (!isDirty(AXEFX3_DIRTY_LABEL)) {
+    return { proceed: true };
+  }
+  if (mode === 'discard') {
+    return { proceed: true };
+  }
+  const c = ensureConn();
+  // Read the active preset number + name so the warning text is concrete.
+  let presetNumber: number | undefined;
+  let presetName: string | undefined;
+  try {
+    const respPromise = c.receiveSysExMatching(
+      isQueryPatchNameResponse,
+      GET_RESPONSE_TIMEOUT_MS,
+    );
+    c.send(buildQueryPatchName('current'));
+    const resp = await respPromise;
+    const parsed = parseQueryPatchNameResponse(resp);
+    presetNumber = parsed.presetNumber;
+    presetName = parsed.name.trim() || undefined;
+  } catch {
+    presetNumber = undefined;
+  }
+  const activeDescriptor = presetNumber !== undefined
+    ? `preset ${presetNumber}${presetName ? ` ("${presetName}")` : ''}`
+    : 'the currently active preset';
+
+  if (mode === 'warn') {
+    return {
+      proceed: false,
+      warningText:
+        `REFUSING TO NAVIGATE: ${activeDescriptor} has unsaved working-buffer edits ` +
+        `on the Axe-Fx III.\n` +
+        `\n` +
+        `Navigating away would DISCARD those edits silently. Ask the user how to proceed:\n` +
+        `  • "save first" → call this tool again with on_active_preset_edited="save_active_first" ` +
+        `(saves the working buffer to ${activeDescriptor}, then navigates).\n` +
+        `  • "discard"   → call this tool again with on_active_preset_edited="discard" ` +
+        `(silently loses the edits).\n` +
+        `\n` +
+        `If the user wants to save to a DIFFERENT slot than ${activeDescriptor}, ` +
+        `call axefx3_save_preset({ slot: <slot> }) directly first, then retry this tool.`,
+    };
+  }
+
+  // save_active_first
+  if (presetNumber === undefined) {
+    return {
+      proceed: false,
+      warningText:
+        `Could not read the active preset number — refusing to navigate to avoid losing ` +
+        `edits silently. Try axefx3_reconnect_midi, then retry. If the device is in an ` +
+        `unusual state, the user can save manually on the front panel before this tool retries.`,
+    };
+  }
+  try {
+    const errorPromise = c
+      .receiveSysExMatching(isMultipurposeResponse, ERROR_RESPONSE_TIMEOUT_MS)
+      .catch(() => undefined as number[] | undefined);
+    c.send(buildStorePreset(presetNumber));
+    const errorFrame = await errorPromise;
+    if (errorFrame) {
+      const { resultCode } = parseMultipurposeResponse(errorFrame);
+      const label = describeMultipurposeResultCode(resultCode) ?? '(unknown code)';
+      return {
+        proceed: false,
+        warningText:
+          `Save failed: III rejected STORE_PRESET to ${activeDescriptor} with ` +
+          `result_code=0x${resultCode.toString(16).padStart(2, '0').toUpperCase()} (${label}). ` +
+          `Edits NOT saved; refusing to navigate. Pass on_active_preset_edited="discard" ` +
+          `if you want to lose them anyway, or save manually on the device front panel.`,
+      };
+    }
+    return {
+      proceed: true,
+      savedSlot: presetNumber,
+      savedDetail: `Saved working buffer to ${activeDescriptor} before navigating ` +
+        `(🟡 via the III's II-ported 0x1D STORE_PRESET envelope — confirm by checking ` +
+        `the device front panel).`,
+    };
+  } catch (err) {
+    return {
+      proceed: false,
+      warningText:
+        `Save attempt failed: ${err instanceof Error ? err.message : String(err)}. ` +
+        `Refusing to navigate. Pass on_active_preset_edited="discard" to proceed without saving.`,
+    };
+  }
 }

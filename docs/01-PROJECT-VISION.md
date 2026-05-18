@@ -109,7 +109,6 @@ working buffer.
 - Workspace monorepo split (2026-05-04) — one package per device.
 
 ### Phase 5 — Polish, Distribution, Community Devices (next)
-- Signed `.exe` installer (deferred from v0.1.0, see DECISIONS.md 2026-05-03).
 - Axe-Fx III community beta → community-captured wire decodes → write
   parity with AM4/II.
 - FM9 / FM3 / VP4, Roland/Boss family, more synths — see

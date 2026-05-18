@@ -44,11 +44,13 @@ full song preset builds cleanly in one conversational turn.
 > save_preset) refuse with structured "pending community capture"
 > errors because Fractal deliberately omits per-block parameter IDs
 > from the public spec. **III owners: we need your help.** Five
-> 30-minute capture sessions per the
-> [community workflow](./docs/community/axefx3-captures.md) take
-> the III from "scaffolded" to feature parity with the AM4 + Axe-Fx II
-> support. Plug an Axe-Fx III into the server today and it'll greet you; when
-> you're ready to contribute, the issue tracker is the entry point.
+> 5-minute test sessions per the
+> [community beta-testing guide](./docs/community/axefx3-beta-testing.md)
+> take the III from 🟡 community-beta to 🟢 hardware-verified. The wire
+> shapes are already decoded from public captures — what's missing is
+> someone with a real III running the calls and pasting the JSON
+> responses into a GitHub issue. No capture tools, no Wireshark, no
+> developer setup required.
 
 Two surfaces cover the common path; a third covers device-specific
 edge cases:
@@ -80,9 +82,7 @@ edge cases:
 > the trust model in plain English.
 
 Distribution is a Windows ZIP that bundles a Node runtime plus the
-server — no Node or developer tooling required. A signed `.exe`
-installer is planned for v0.2 once we have install-friction data
-from real users.
+server — no Node or developer tooling required.
 
 ---
 
@@ -191,11 +191,10 @@ then delete the extracted folder.
 > [`docs/SAFETY-FOR-MUSICIANS.md`](docs/SAFETY-FOR-MUSICIANS.md) for
 > the full trust model.
 
-> **Note on signing.** v0.1.0 ships unsigned to keep the project free.
-> Windows shows a "this came from another computer" warning until you
-> Unblock. The source is open here on GitHub if you want to read every
-> line of the install scripts before running them. A signed `.exe`
-> installer is on the v0.2 roadmap.
+> **Note on signing.** This is an unsigned community release. Windows
+> shows a "this came from another computer" warning until you Unblock
+> the ZIP. The source is open here on GitHub if you want to read every
+> line of the install scripts before running them.
 
 ### From source (for development or contributing)
 

@@ -150,9 +150,9 @@ The Fractal-authored amp/cab/drive lineage lives in
 - **Shared dirty guard utility:** `src/fractal/axe-fx-ii/tools/shared.ts`
   exports `guardActiveBufferOrSave()`. When III lands, extract this to
   `src/fractal/shared/dirtyGuard.ts` so both II and III can import it.
-- **Capture methodology:** `scripts/capture-midi-passive.ts` (shared-read
-  passive capture; no loopMIDI bridge needed — see
-  `feedback_capture_methodology` memory).
+- **Capture methodology:** `scripts/capture-midi-passive.ts` (shared-
+  read passive device-side capture); USBPcap + Wireshark for the
+  editor → device direction (see `CONTRIBUTING.md`).
 - **HW-107 (AM4 capture):** `docs/_private/HARDWARE-TASKS-AM4.md`.
   Pattern to mirror when capturing III's equivalent.
 
